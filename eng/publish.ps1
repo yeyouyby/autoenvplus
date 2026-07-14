@@ -2,6 +2,7 @@
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Release',
+    [string]$Version,
     [switch]$NoArchive
 )
 
@@ -44,6 +45,15 @@ function Invoke-DotNet {
     }
 }
 
+$versionArguments = @()
+if (-not [string]::IsNullOrWhiteSpace($Version)) {
+    $parsedVersion = $null
+    if (-not [System.Version]::TryParse($Version, [ref]$parsedVersion)) {
+        throw "Version must be a valid .NET assembly version: $Version"
+    }
+    $versionArguments = @("-p:Version=$Version")
+}
+
 New-Item -ItemType Directory -Path $artifactsRoot -Force | Out-Null
 Remove-ArtifactPath -Path $outputRoot
 Remove-ArtifactPath -Path $cliStage
@@ -53,7 +63,7 @@ if (Test-Path -LiteralPath $archivePath) {
 }
 
 try {
-    Invoke-DotNet -Arguments @(
+    $cliPublishArguments = @(
         'publish',
         (Join-Path $repositoryRoot 'src\AutoEnvPlus.Cli\AutoEnvPlus.Cli.csproj'),
         '-c', $Configuration,
@@ -61,11 +71,15 @@ try {
         '--self-contained', 'true',
         '-p:PublishSingleFile=true',
         '-p:DebugType=None',
-        '-p:DebugSymbols=false',
+        '-p:DebugSymbols=false'
+    )
+    $cliPublishArguments += $versionArguments
+    $cliPublishArguments += @(
         '-o', $cliStage
     )
+    Invoke-DotNet -Arguments $cliPublishArguments
 
-    Invoke-DotNet -Arguments @(
+    $appBuildArguments = @(
         'build',
         (Join-Path $repositoryRoot 'src\AutoEnvPlus.App\AutoEnvPlus.App.csproj'),
         '-c', $Configuration,
@@ -76,6 +90,8 @@ try {
         '-p:DebugType=None',
         '-p:DebugSymbols=false'
     )
+    $appBuildArguments += $versionArguments
+    Invoke-DotNet -Arguments $appBuildArguments
 
     New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
     Copy-Item -Path (Join-Path $appBuildRoot '*') -Destination $outputRoot -Recurse -Force

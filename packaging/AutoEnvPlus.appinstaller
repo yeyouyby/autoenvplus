@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AppInstaller
+  Uri="https://github.com/yeyouyby/autoenvplus/releases/latest/download/AutoEnvPlus.appinstaller"
+  Version="0.1.0.0"
+  xmlns="http://schemas.microsoft.com/appx/appinstaller/2018">
+  <MainPackage
+    Name="yeyouyby.AutoEnvPlus"
+    Publisher="CN=AutoEnvPlus Development"
+    Version="0.1.0.0"
+    ProcessorArchitecture="x64"
+    Uri="https://github.com/yeyouyby/autoenvplus/releases/download/v0.1.0/AutoEnvPlus-win-x64.msix" />
+  <UpdateSettings>
+    <OnLaunch
+      HoursBetweenUpdateChecks="6"
+      ShowPrompt="true"
+      UpdateBlocksActivation="false" />
+    <AutomaticBackgroundTask />
+    <ForceUpdateFromAnyVersion>false</ForceUpdateFromAnyVersion>
+  </UpdateSettings>
+</AppInstaller>

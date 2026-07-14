@@ -7,3 +7,10 @@ obj/
 TestResults/
 artifacts/
 *.log
+.build-cache/
+*.pfx
+*.p12
+*.pvk
+*.snk
+*.key
+*.pem

@@ -108,4 +108,6 @@ C/C++ 外部组件安装只允许固定 WinGet ID，并始终先展示计划：M
 
 系统设置变化优先使用 WinRT 事件；无包身份的 Windows 10 可能拒绝 `AccessibilitySettings.HighContrastChanged` 订阅，此时由 WinUI `ActualThemeChanged` 和两秒低频设置轮询补位。设置页只读显示当前实际选择及回退原因。Windows 10 22H2 build 19045 已通过隐藏启动与 UI Automation 验证，透明效果开启时实际选择 Desktop Acrylic；Windows 11 的 Mica 路径仍需在真实 Windows 11 主机上完成端到端验证。功能层不得依赖仅 Windows 11 存在的 API，使用新 API 前必须做能力检测。
 
-当前发布脚本生成 x64 unpackaged 自包含便携布局：GUI 携带 .NET 与 Windows App SDK，`cli` 子目录携带单文件自包含 CLI 和原生 Shim，并生成逐文件及 ZIP SHA-256。WinUI GUI 取自 RID 自包含 Build 布局，并强制检查 PRI 与 XBF；当前 Windows App SDK 的 `dotnet publish -o` 会漏掉这些 XAML 资源，不能直接作为可运行布局。该布局用于开发验证和无需预装运行时的试用，不提供发布者身份、安装注册或自动升级；正式渠道仍需签名 MSIX/安装器与 WinGet 清单。
+便携发布脚本生成 x64 unpackaged 自包含布局：GUI 携带 .NET 与 Windows App SDK，`cli` 子目录携带单文件自包含 CLI 和原生 Shim，并生成逐文件及 ZIP SHA-256。WinUI GUI 取自 RID 自包含 Build 布局，并强制检查 PRI 与 XBF；当前 Windows App SDK 的 `dotnet publish -o` 会漏掉这些 XAML 资源，不能直接作为可运行布局。
+
+MSIX 发布层复用该布局，在隔离 staging 中加入 Windows 10 build 17763 完整信任桌面清单、Fluent 资产、开始菜单注册和 CLI 执行别名。包名、Publisher、四段版本、发布 URI 和 AppInstaller URI 都是受验证参数。生产模式要求证书 Subject 精确匹配 Publisher，使用 SHA-256/RFC 3161 可选时间戳签名，并在输出前执行 CMS、Authenticode、解包身份和更新元数据交叉验证；开发模式使用 30 天临时证书且不修改信任库。AppInstaller XML 由同一参数生成，更新安装最终由目标 MSIX 的相同 Publisher 代码签名授权。正式渠道仍需真实发布者证书、Windows 10/11 安装升级 E2E 与 WinGet 清单。

@@ -96,9 +96,17 @@ Adoptium API 的 `binaries[].package.signature_link` 指向每个 JDK ZIP 的 de
 
 当前已用 2026-04 Temurin 8、11、17、21、25 最新 Windows x64 签名元数据核对同一主指纹和 `843C48A565F8F04B` Key ID。Adoptium API 的发布时间与包签名时间并不严格相等，历史 GA 包可相差数周，因此不把二者的人为时间窗口作为真实性条件；签名本身直接覆盖完整包字节。
 
+## AutoEnvPlus 自身分发链
+
+MSIX 发布脚本不从包清单或更新元数据自报的 Publisher 推断信任。生产模式要求显式 PFX、密码和 Publisher，加载证书后验证私钥、有效期、digital-signature key usage、code-signing EKU、非 CA 属性，并要求 Publisher 与证书规范 Subject 按字节表现完全一致。缺少任一输入时在构建前失败，不能自动降级为未签名包。MSIX 使用 SHA-256 签名；指定 `TimestampUri` 时同时要求 RFC 3161/SHA-256 时间戳。
+
+打包后重新读取 `AppxSignature.p7x`，去掉 PKCX 包装并执行 SignedCms 密码学验签，再核对签名者指纹。随后使用 MakeAppx 解包并把清单 Name、Publisher、四段版本和 x64 架构与 AppInstaller 的 MainPackage 及命令参数逐项比较。生产证书还必须通过系统 Authenticode 信任链验证；开发证书只允许完成密码学验证，不会被写入 Windows 信任库，私钥和 PFX 在签名后删除。
+
+AppInstaller 本身是 XML，当前 Windows SDK SignTool 不识别为可 Authenticode 签名格式。其安全边界是 HTTPS 分发和目标 MSIX 的 Publisher 签名：元数据只能选择与声明 Name、Publisher 和架构一致且签名有效的包，不能凭一个被篡改的 URL 授权不同发布者。SHA-256 sidecar 用于发布审计，不冒充 Windows 自动执行的元数据签名。
+
 ## 尚未完成
 
-- AutoEnvPlus 自身的代码签名、签名安装器与自动更新元数据签名；
+- 正式 AutoEnvPlus 发布者证书、可信时间戳和证书撤销/轮换流程；
 - 可审计的密钥撤销在线更新通道；
 - Windows 11、代理劫持、时间异常和离线密钥缓存的完整端到端测试。
 

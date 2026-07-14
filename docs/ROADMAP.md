@@ -56,9 +56,10 @@
 ## 1.0 质量门槛
 
 - [x] x64 WinUI + 单文件 CLI + 原生 Shim 自包含便携发布与 SHA-256 清单；
+- [x] 参数化 MSIX/AppInstaller、开发签名、生产证书 fail-closed 与包身份/更新 URI 验证；
 - [x] Mica / Desktop Acrylic / 高对比度与透明效果纯色回退的能力检测和 Windows 10 22H2 隐藏 UI 验证；
 - Windows 10 22H2 与受支持 Windows 11 构建的端到端测试；
 - 中断、磁盘不足、权限失败与网络失败的恢复测试；
 - 可访问性、高对比度和完整键盘导航；
-- 签名安装器、自动更新和 WinGet 发布；
+- 真实发布者证书与可信时间戳、MSIX 安装/升级/回滚 E2E 和 WinGet 发布；
 - ARM64 应用构建与运行时管理。

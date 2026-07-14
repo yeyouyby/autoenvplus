@@ -100,9 +100,18 @@ public sealed class NativeShimContractTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_root))
+        for (int attempt = 0; attempt < 20 && Directory.Exists(_root); attempt++)
         {
-            Directory.Delete(_root, recursive: true);
+            try
+            {
+                Directory.Delete(_root, recursive: true);
+            }
+            catch (Exception exception) when (
+                attempt < 19 &&
+                (exception is IOException or UnauthorizedAccessException))
+            {
+                Thread.Sleep(50);
+            }
         }
     }
 

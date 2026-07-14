@@ -36,6 +36,54 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish.ps1 -NoArchi
 
 分发 AutoEnvPlus 或修改版时应同时提供 `LICENSE`、完整对应源码和构建说明。若修改版增加网络服务或远程交互入口，还必须满足 AGPLv3 第 13 节；第三方依赖仍按 `THIRD-PARTY-NOTICES.md` 所列许可证分发。
 
+## MSIX 与 AppInstaller
+
+`eng\publish-msix.ps1` 复用便携发布中已经验证过的 WinUI/CLI 自包含布局，再加入完整信任桌面包清单、开始菜单资产、`autoenvplus.exe` 执行别名和 AppInstaller 更新元数据。Windows 10 最低版本保持 build 17763，包架构固定为 x64。脚本会用 `MakeAppx` 的完整清单校验创建 MSIX，用 SHA-256 代码签名，随后独立执行 PKCX/CMS 验签、Authenticode 验签、解包和以下字段的逐项一致性检查：
+
+- MSIX `Name`、`Publisher`、四段版本与 `x64` 架构；
+- AppInstaller 中的同一包身份、版本与架构；
+- MSIX 和 AppInstaller 自身的绝对 HTTPS 发布 URI；
+- 代码签名证书的私钥、有效期、digital-signature key usage、code-signing EKU、非 CA 属性和精确 Subject；
+- 包内 `LICENSE`、第三方声明、CLI、Shim、PRI/XBF 和逐文件 SHA-256 清单。
+
+先运行不依赖外部测试框架的打包规则测试：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\test-packaging.ps1
+```
+
+开发签名示例：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msix.ps1 `
+  -PackageVersion 0.1.0.0 `
+  -PackageUri https://github.com/yeyouyby/autoenvplus/releases/download/v0.1.0/AutoEnvPlus-win-x64.msix `
+  -AppInstallerUri https://github.com/yeyouyby/autoenvplus/releases/latest/download/AutoEnvPlus.appinstaller `
+  -DevelopmentCertificate
+```
+
+开发模式在 `artifacts\.staging` 中创建 30 天自签名代码签名证书，签名完成后删除 PFX、私钥、密码响应文件和整个 staging，只在版本输出目录保留公开 `.cer`。脚本不会把证书写入 CurrentUser 或 LocalMachine 信任库，因此该 MSIX 默认不会被其他机器或当前机器信任；是否显式信任开发证书由测试人员另行决定。不能把该模式的产物称为正式签名版本。
+
+正式发布示例：
+
+```powershell
+$password = Read-Host 'PFX password' -AsSecureString
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msix.ps1 `
+  -PackageVersion 1.0.0.0 `
+  -PackageUri https://github.com/yeyouyby/autoenvplus/releases/download/v1.0.0/AutoEnvPlus-win-x64.msix `
+  -AppInstallerUri https://github.com/yeyouyby/autoenvplus/releases/latest/download/AutoEnvPlus.appinstaller `
+  -CertificatePath D:\secrets\autoenvplus-code-signing.pfx `
+  -CertificatePassword $password `
+  -Publisher 'CN=Exact certificate subject' `
+  -TimestampUri https://example.test/rfc3161
+```
+
+生产模式没有 PFX、密码或精确 `Publisher` 时会在构建前安全失败。也可仅在 CI 中用 `AUTOENVPLUS_PFX_PASSWORD` 提供密码；私钥文件不得放入仓库、ZIP、MSIX、GitHub Release 或普通构建日志。输出位于 `artifacts\msix\<version>`，包含签名 MSIX、AppInstaller、两个 SHA-256 sidecar、发布元数据 JSON，以及仅开发模式才有的公开 `.cer`。
+
+`.appinstaller` 是 Windows App Installer 消费的 XML 元数据；当前 Windows SDK 的 SignTool 不把它识别为可 Authenticode 签名的文件格式。更新链因此依赖 GitHub HTTPS 传输和每次下载的 MSIX 代码签名：AppInstaller 声明的 Name、Publisher、版本和架构必须与已签包完全一致，攻击者即使改写 URI，也不能在没有同一 Publisher 私钥的情况下替换为可安装更新。`.appinstaller.sha256` 供发布审计和人工校验，不应被描述为 Windows 自动执行的元数据签名。
+
+在当前 D 盘工作区，脚本默认把 `NUGET_PACKAGES`、NuGet HTTP cache、`DOTNET_CLI_HOME`、`TEMP` 和 `TMP` 固定到 `D:\codex`。其他克隆位置默认使用仓库内被忽略的 `.build-cache`，也可通过 `-BuildCacheRoot` 或 `AUTOENVPLUS_BUILD_CACHE_ROOT` 显式指定非系统盘。
+
 ## 运行
 
 将 ZIP 完整解压到普通用户可写目录，再启动：
@@ -54,11 +102,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish.ps1 -NoArchi
 
 ## 安全与限制
 
-当前便携包是开发阶段产物，不是已签名安装器：
+当前便携 ZIP 是开发阶段产物，不是已签名安装器：
 
 - 没有代码签名证书，Windows SmartScreen 可能提示未知发布者；
-- 没有 MSIX 安装/卸载注册、开始菜单快捷方式和自动更新；
+- ZIP 本身没有 MSIX 安装/卸载注册、开始菜单快捷方式和自动更新；
 - 没有 WinGet 社区源发布清单；
 - ZIP 的 SHA-256 只能检测字节变化，不能证明发布者身份。
 
-正式 1.0 分发仍需代码签名证书、签名安装器、升级/回滚策略、Windows 10 与 Windows 11 安装测试以及 WinGet 发布流程。不要把当前便携包描述为已经完成签名或供应链身份验证。
+仓库已经具备签名 MSIX 和 AppInstaller 生成/验证钩子，但正式 1.0 分发仍需真实代码签名证书、可信 RFC 3161 时间戳、升级/回滚验证、Windows 10 与 Windows 11 安装测试以及 WinGet 发布流程。不要把开发证书 MSIX 或便携 ZIP 描述为已经建立正式发布者身份。

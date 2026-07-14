@@ -2,7 +2,7 @@
 
 AutoEnvPlus 是一个面向 Windows 10 和 Windows 11 的 Fluent 风格开发环境控制中心。它的目标是统一管理 Python、Node.js、Java 与 C/C++ 工具链的安装、版本选择、PATH、项目环境以及 pip/npm 等工具的缓存目录。
 
-当前仓库处于功能原型阶段。核心路径和自包含 x64 便携发布已经可运行，但正式签名安装器、自动更新签名和 Win11 端到端验证仍未完成。已经包含：
+当前仓库处于功能原型阶段。核心路径、自包含 x64 便携发布以及参数化 MSIX/AppInstaller 发布链已经可运行，但正式发布者证书、可信时间戳和 Win11 安装/升级端到端验证仍未完成。已经包含：
 
 - WinUI 3 桌面应用骨架；
 - 按系统能力自适应的 Fluent 窗口背景：Windows 11 优先 Mica，Windows 10 使用 Desktop Acrylic，高对比度、关闭透明效果或材料不可用时切换为纯色，并在设置页显示实际状态；
@@ -29,6 +29,7 @@ AutoEnvPlus 是一个面向 Windows 10 和 Windows 11 的 Fluent 风格开发环
 - 保留用户内容、可预览和回滚的项目级 `CMakeUserPresets.json` 生成；
 - 第一组自动化测试；
 - 可复现组合 WinUI、单文件 CLI、原生 Shim 和逐文件 SHA-256 清单的自包含便携发布脚本；
+- 生产证书缺失时安全失败、严格绑定 Publisher/版本/架构/HTTPS 更新 URI 的 MSIX 与 AppInstaller 发布脚本；
 - 产品范围、架构和安全约束文档。
 
 ## 构建
@@ -103,6 +104,19 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish.ps1
 ```
 
 输出位于 `artifacts\AutoEnvPlus-win-x64` 和 `artifacts\AutoEnvPlus-win-x64.zip`。它仍是未签名的开发阶段便携包，不等同于正式安装器；完整结构和限制见 [分发说明](docs/DISTRIBUTION.md)。
+
+快速验证打包规则并生成仅供本机测试的开发签名 MSIX：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\test-packaging.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msix.ps1 `
+  -PackageVersion 0.1.0.0 `
+  -PackageUri https://github.com/yeyouyby/autoenvplus/releases/download/v0.1.0/AutoEnvPlus-win-x64.msix `
+  -AppInstallerUri https://github.com/yeyouyby/autoenvplus/releases/latest/download/AutoEnvPlus.appinstaller `
+  -DevelopmentCertificate
+```
+
+该模式生成短期开发证书，只输出公钥 `.cer`，签名后删除私钥和 PFX，且不会修改 Windows 证书信任库。正式发布必须提供代码签名 PFX、精确等于证书 Subject 的 `-Publisher`，并建议提供 RFC 3161 `-TimestampUri`；详见 [分发说明](docs/DISTRIBUTION.md)。
 
 ## 设计原则
 
