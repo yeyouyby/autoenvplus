@@ -10,12 +10,20 @@ namespace AutoEnvPlus.App.Pages;
 public sealed partial class ToolchainsPage : Page
 {
     private readonly CancellationTokenSource _pageCancellation = new();
+    private readonly SemaphoreSlim _installOperationLock = new(1, 1);
+    private CancellationTokenSource? _installCancellation;
 
     public ToolchainsPage()
     {
         InitializeComponent();
         Loaded += OnLoaded;
-        Unloaded += (_, _) => _pageCancellation.Cancel();
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs args)
+    {
+        _installCancellation?.Cancel();
+        _pageCancellation.Cancel();
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
@@ -46,52 +54,43 @@ public sealed partial class ToolchainsPage : Page
 
     private async void OnInstallComponentClicked(object sender, RoutedEventArgs args)
     {
-        if (sender is not Button button
-            || button.Tag is not string value
+        if (sender is not Button { Tag: string value }
             || !Enum.TryParse(value, out ToolchainComponent component))
         {
             return;
         }
 
-        WingetToolchainInstaller installer = new();
-        string? winget = installer.FindWinget();
-        if (winget is null)
-        {
-            ToolchainInfo.Severity = InfoBarSeverity.Error;
-            ToolchainInfo.Title = "找不到 WinGet";
-            ToolchainInfo.Message = "请先安装或修复 Microsoft App Installer。";
-            return;
-        }
-
-        ExternalToolInstallPlan plan = installer.CreatePlan(component, winget);
-        ContentDialog confirmation = new()
-        {
-            XamlRoot = XamlRoot,
-            Title = $"安装 {plan.DisplayName}",
-            Content = new TextBlock
-            {
-                IsTextSelectionEnabled = true,
-                Text = $"将通过 WinGet 精确安装以下包：\n{plan.PackageId}\n\n{(plan.MayRequireElevation ? "包安装器可能请求管理员权限。" : "通常不需要管理员权限。")}\n\nAutoEnvPlus 不会执行用户提供的任意命令参数。",
-                TextWrapping = TextWrapping.Wrap,
-            },
-            PrimaryButtonText = "调用 WinGet 安装",
-            CloseButtonText = "取消",
-            DefaultButton = ContentDialogButton.Close,
-        };
-        if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
+        if (!_installOperationLock.Wait(0))
         {
             return;
         }
 
-        button.IsEnabled = false;
-        ToolchainInfo.Severity = InfoBarSeverity.Informational;
-        ToolchainInfo.Title = "正在安装工具链组件";
-        ToolchainInfo.Message = plan.PackageId;
+        SetInstallButtonsEnabled(false);
+        ExternalToolInstallPlan? plan = null;
         try
         {
+            WingetToolchainInstaller installer = new();
+            string? winget = installer.FindWinget();
+            if (winget is null)
+            {
+                ToolchainInfo.Severity = InfoBarSeverity.Error;
+                ToolchainInfo.Title = "找不到 WinGet";
+                ToolchainInfo.Message = "请先安装或修复 Microsoft App Installer。";
+                return;
+            }
+
+            plan = installer.CreatePlan(component, winget);
+            ContentDialog confirmation = CreateInstallConfirmation(plan);
+            if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
+            {
+                return;
+            }
+
+            CancellationToken cancellationToken = BeginInstallOperation(plan);
+            cancellationToken.ThrowIfCancellationRequested();
             ExternalToolInstallResult result = await installer.InstallAsync(
                 plan,
-                _pageCancellation.Token);
+                cancellationToken);
             if (!result.Success)
             {
                 throw new InvalidOperationException(
@@ -101,13 +100,14 @@ public sealed partial class ToolchainsPage : Page
             ToolchainInfo.Severity = InfoBarSeverity.Success;
             ToolchainInfo.Title = "组件安装完成";
             ToolchainInfo.Message = plan.DisplayName;
+            CancelInstallButton.IsEnabled = false;
             await DiscoverAndRenderAsync();
         }
         catch (OperationCanceledException)
         {
             ToolchainInfo.Severity = InfoBarSeverity.Informational;
             ToolchainInfo.Title = "安装已取消";
-            ToolchainInfo.Message = plan.DisplayName;
+            ToolchainInfo.Message = plan?.DisplayName ?? "工具链组件";
         }
         catch (Exception exception) when (exception is InvalidOperationException
             or IOException
@@ -119,8 +119,71 @@ public sealed partial class ToolchainsPage : Page
         }
         finally
         {
-            button.IsEnabled = true;
+            EndInstallOperation();
+            SetInstallButtonsEnabled(!_pageCancellation.IsCancellationRequested);
+            _installOperationLock.Release();
         }
+    }
+
+    private ContentDialog CreateInstallConfirmation(ExternalToolInstallPlan plan) => new()
+    {
+        XamlRoot = XamlRoot,
+        Title = $"安装 {plan.DisplayName}",
+        Content = new TextBlock
+        {
+            IsTextSelectionEnabled = true,
+            Text = $"将通过 WinGet 精确安装以下包：\n{plan.PackageId}\n\n{(plan.MayRequireElevation ? "AutoEnvPlus 保持普通用户权限；包安装器可能单独请求管理员权限。" : "AutoEnvPlus 和包安装器通常都不需要管理员权限。")}\n\nAutoEnvPlus 仅使用内置白名单包标识，不会执行用户提供的任意命令参数。",
+            TextWrapping = TextWrapping.Wrap,
+        },
+        PrimaryButtonText = "调用 WinGet 安装",
+        CloseButtonText = "取消",
+        DefaultButton = ContentDialogButton.Close,
+    };
+
+    private CancellationToken BeginInstallOperation(ExternalToolInstallPlan plan)
+    {
+        _installCancellation?.Dispose();
+        _installCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+            _pageCancellation.Token);
+        InstallProgress.IsActive = true;
+        CancelInstallButton.IsEnabled = true;
+        ToolchainInfo.Severity = InfoBarSeverity.Informational;
+        ToolchainInfo.Title = "正在安装工具链组件";
+        ToolchainInfo.Message = plan.PackageId;
+        return _installCancellation.Token;
+    }
+
+    private void EndInstallOperation()
+    {
+        CancelInstallButton.IsEnabled = false;
+        InstallProgress.IsActive = false;
+        _installCancellation?.Dispose();
+        _installCancellation = null;
+    }
+
+    private void SetInstallButtonsEnabled(bool enabled)
+    {
+        foreach (UIElement child in InstallActionsPanel.Children)
+        {
+            if (child is Button button)
+            {
+                button.IsEnabled = enabled;
+            }
+        }
+    }
+
+    private void OnCancelInstallClicked(object sender, RoutedEventArgs args)
+    {
+        if (_installCancellation is not { IsCancellationRequested: false } cancellation)
+        {
+            return;
+        }
+
+        cancellation.Cancel();
+        CancelInstallButton.IsEnabled = false;
+        ToolchainInfo.Severity = InfoBarSeverity.Informational;
+        ToolchainInfo.Title = "正在取消安装";
+        ToolchainInfo.Message = "正在停止 WinGet 及其启动的安装进程…";
     }
 
     private void RenderVisualStudio(IReadOnlyList<VisualCppInstallation> installations)

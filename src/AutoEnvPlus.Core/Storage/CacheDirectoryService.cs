@@ -32,9 +32,21 @@ public sealed class CacheDirectoryService
             true),
         new(
             "nuget",
-            "NuGet",
+            "NuGet global packages",
             "NUGET_PACKAGES",
             environment => Path.Combine(environment.UserProfile, ".nuget", "packages"),
+            true),
+        new(
+            "nuget-http",
+            "NuGet HTTP cache",
+            "NUGET_HTTP_CACHE_PATH",
+            environment => Path.Combine(environment.LocalApplicationData, "NuGet", "v3-cache"),
+            true),
+        new(
+            "nuget-plugins",
+            "NuGet plugin cache",
+            "NUGET_PLUGINS_CACHE_PATH",
+            environment => Path.Combine(environment.LocalApplicationData, "NuGet", "plugins-cache"),
             true),
         new(
             "maven",

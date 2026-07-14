@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="http://schemas.microsoft.com/appx/appinstaller/2018"
+  xmlns="http://schemas.microsoft.com/appx/appinstaller/2018"
+  elementFormDefault="qualified"
+  attributeFormDefault="unqualified">
+  <xs:simpleType name="PackageVersionType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]{1,5}\.[0-9]{1,5}\.[0-9]{1,5}\.[0-9]{1,5}" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="NonEmptyStringType">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="SixHoursType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="6" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CanonicalTrueType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="true" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CanonicalFalseType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="false" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="AppInstaller">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="MainPackage">
+          <xs:complexType>
+            <xs:attribute name="Name" type="NonEmptyStringType" use="required" />
+            <xs:attribute name="Publisher" type="NonEmptyStringType" use="required" />
+            <xs:attribute name="Version" type="PackageVersionType" use="required" />
+            <xs:attribute name="ProcessorArchitecture" type="xs:string" use="required" fixed="x64" />
+            <xs:attribute name="Uri" type="xs:anyURI" use="required" />
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="UpdateSettings">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="OnLaunch">
+                <xs:complexType>
+                  <xs:attribute name="HoursBetweenUpdateChecks" type="SixHoursType" use="required" />
+                  <xs:attribute name="ShowPrompt" type="CanonicalTrueType" use="required" />
+                  <xs:attribute name="UpdateBlocksActivation" type="CanonicalFalseType" use="required" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="AutomaticBackgroundTask">
+                <xs:complexType />
+              </xs:element>
+              <xs:element name="ForceUpdateFromAnyVersion" type="CanonicalFalseType" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="Uri" type="xs:anyURI" use="required" />
+      <xs:attribute name="Version" type="PackageVersionType" use="required" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

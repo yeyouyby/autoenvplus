@@ -46,6 +46,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish.ps1 -NoArchi
 - 代码签名证书的私钥、有效期、digital-signature key usage、code-signing EKU、非 CA 属性和精确 Subject；
 - 包内 `LICENSE`、第三方声明、CLI、Shim、PRI/XBF 和逐文件 SHA-256 清单。
 
+`packaging\AutoEnvPlus.AppInstallerProfile.xsd` 是构建时固定的封闭 profile，而不是从网络下载的可变 schema。它只接受当前支持的 2018 namespace、一个 `MainPackage` 和固定更新策略（每 6 小时检查、提示用户、不阻塞启动、后台检查、禁止从任意版本强制降级）。解析器禁用 DTD 和外部实体；未知/重复元素、未知属性、策略篡改或身份/HTTPS URI 不一致都会使发布失败。这个检查保护仓库模板和 CI 产物，不改变 Windows 仍以目标 MSIX Publisher 签名作为安装信任边界的事实。
+
 先运行不依赖外部测试框架的打包规则测试：
 
 ```powershell

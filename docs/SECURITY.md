@@ -100,7 +100,7 @@ Adoptium API 的 `binaries[].package.signature_link` 指向每个 JDK ZIP 的 de
 
 MSIX 发布脚本不从包清单或更新元数据自报的 Publisher 推断信任。生产模式要求显式 PFX、密码和 Publisher，加载证书后验证私钥、有效期、digital-signature key usage、code-signing EKU、非 CA 属性，并要求 Publisher 与证书规范 Subject 按字节表现完全一致。缺少任一输入时在构建前失败，不能自动降级为未签名包。MSIX 使用 SHA-256 签名；指定 `TimestampUri` 时同时要求 RFC 3161/SHA-256 时间戳。
 
-打包后重新读取 `AppxSignature.p7x`，去掉 PKCX 包装并执行 SignedCms 密码学验签，再核对签名者指纹。随后使用 MakeAppx 解包并把清单 Name、Publisher、四段版本和 x64 架构与 AppInstaller 的 MainPackage 及命令参数逐项比较。生产证书还必须通过系统 Authenticode 信任链验证；开发证书只允许完成密码学验证，不会被写入 Windows 信任库，私钥和 PFX 在签名后删除。
+打包后重新读取 `AppxSignature.p7x`，去掉 PKCX 包装并执行 SignedCms 密码学验签，再核对签名者指纹。随后使用 MakeAppx 解包并把清单 Name、Publisher、四段版本和 x64 架构与 AppInstaller 的 MainPackage 及命令参数逐项比较。AppInstaller 还必须通过仓库内固定的封闭安全 profile schema：只允许一个 `MainPackage`、固定的更新设置和 2018 namespace，未知/重复元素、未知属性、强制降级、非 HTTPS URI、DTD 与外部实体全部安全失败。生产证书还必须通过系统 Authenticode 信任链验证；开发证书只允许完成密码学验证，不会被写入 Windows 信任库，私钥和 PFX 在签名后删除。
 
 AppInstaller 本身是 XML，当前 Windows SDK SignTool 不识别为可 Authenticode 签名格式。其安全边界是 HTTPS 分发和目标 MSIX 的 Publisher 签名：元数据只能选择与声明 Name、Publisher 和架构一致且签名有效的包，不能凭一个被篡改的 URL 授权不同发布者。SHA-256 sidecar 用于发布审计，不冒充 Windows 自动执行的元数据签名。
 
@@ -114,4 +114,8 @@ AppInstaller 本身是 XML，当前 Windows SDK SignTool 不识别为可 Authent
 
 项目终端计划不包含任意用户命令或 Shell 拼接内容。可执行文件固定为系统 Windows PowerShell，参数固定为 `-NoLogo -NoExit`，工作目录来自包含已解析 manifest 的项目根。启动时重新验证清单哈希、托管运行时、Shim 和环境覆盖；只把白名单会话变量与 Shim 优先 PATH 写入新子进程环境块。用户 PATH、系统 PATH、父进程环境和全局版本配置不会被修改。
 
+PATH 快照不能仅凭位于受管目录就获得信任。回滚前必须重新验证它是直接子 JSON 文件、不是链接、大小受限、GUID 与文件名一致、Shim 目录为规范绝对路径，并能从 `Before` 唯一重建 `After`。当前 PATH 已被其他程序或用户改动时，快照状态只显示为 `PathChanged` 并拒绝覆盖。
+
 vcpkg 与 Conan 存储迁移沿用相同的白名单配置目标：快照中的 `VCPKG_DEFAULT_BINARY_CACHE` 或 `CONAN_HOME` 被篡改为 `PATH` 等其他变量时，回滚验证会拒绝执行。迁移只在逐文件 SHA-256 复制验证完成后切换用户变量，原目录和回滚后的迁移副本均保留，删除由用户另行确认。
+
+NuGet 的三个存储目标也使用彼此独立的白名单变量：`nuget` 只能修改 `NUGET_PACKAGES`，`nuget-http` 只能修改 `NUGET_HTTP_CACHE_PATH`，`nuget-plugins` 只能修改 `NUGET_PLUGINS_CACHE_PATH`。快照回滚会重新按缓存 ID 校验变量映射，不能通过篡改快照把任一迁移改为写入 `PATH` 或其他用户变量。

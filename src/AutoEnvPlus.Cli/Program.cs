@@ -1119,7 +1119,7 @@ static async Task<int> RunStorageAsync(string[] args, CancellationToken cancella
         Console.Error.WriteLine(
             "Usage: autoenvplus storage <list|migrate|rollback> [options]");
         Console.Error.WriteLine(
-            "       autoenvplus storage migrate <pip|npm|pnpm|yarn|nuget|maven|gradle|vcpkg|conan> <destination> [--root directory] [--yes]");
+            "       autoenvplus storage migrate <pip|npm|pnpm|yarn|nuget|nuget-http|nuget-plugins|maven|gradle|vcpkg|conan> <destination> [--root directory] [--yes]");
         return 1;
     }
 
@@ -2049,7 +2049,7 @@ static int ShowHelp()
     Console.WriteLine("  autoenvplus shell powershell [--profile file] [--install-profile --yes] [--root directory]");
     Console.WriteLine("  autoenvplus shell powershell --rollback <snapshot-file> [--root directory] [--yes]");
     Console.WriteLine("  autoenvplus storage list [--json]");
-    Console.WriteLine("  autoenvplus storage migrate <pip|npm|pnpm|yarn|nuget|maven|gradle|vcpkg|conan> <destination> [--root directory] [--yes]");
+    Console.WriteLine("  autoenvplus storage migrate <pip|npm|pnpm|yarn|nuget|nuget-http|nuget-plugins|maven|gradle|vcpkg|conan> <destination> [--root directory] [--yes]");
     Console.WriteLine("  autoenvplus storage rollback <snapshot-file> [--root directory] [--yes]");
     Console.WriteLine("  autoenvplus toolchain list [--json]");
     Console.WriteLine("  autoenvplus toolchain install <msvc|llvm|mingw|cmake|ninja> [--yes]");

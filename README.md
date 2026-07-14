@@ -8,12 +8,12 @@ AutoEnvPlus 是一个面向 Windows 10 和 Windows 11 的 Fluent 风格开发环
 - 按系统能力自适应的 Fluent 窗口背景：Windows 11 优先 Mica，Windows 10 使用 Desktop Acrylic，高对比度、关闭透明效果或材料不可用时切换为纯色，并在设置页显示实际状态；
 - 独立的领域核心与命令行入口；
 - `会话 > 项目 > 全局 > 自动选择` 的版本解析模型；
-- PATH 重复、失效和命令冲突检查；
-- WinUI/CLI 共用的 PATH、命令赢家、版本探测、托管状态和全局选择聚合诊断；
+- PATH 重复、失效和命令冲突检查，以及 WinUI 可审计快照列表和安全一键回滚；
+- WinUI/CLI 共用的 PATH、命令赢家、版本探测、托管状态和全局选择聚合诊断，以及 WinUI 结构化 JSON 导出；
 - python.org、Node.js、Eclipse Temurin 官方发行目录、SHA-256 安装资产和校验来源证据；
 - Python Windows release manifest 的 Sigstore v0.3 验证：固定 python.org 版本系列发布身份、内置 trusted-root 快照、Fulcio 证书链/SCT、Rekor SET/Merkle 包含证明/签名检查点和清单签名，缺失或失败时禁止降级；
 - Node.js `SHASUMS256.txt.asc` OpenPGP 验证、固定主指纹/签名子钥映射和历史密钥时限策略；
-- Eclipse Temurin 包本体的 detached OpenPGP 验证、固定 Adoptium 主指纹和签名失败删除缓存策略；
+- Eclipse Adoptium 官方 GA/LTS 版本线动态选择、Temurin 包本体 detached OpenPGP 验证、固定主指纹和签名失败删除缓存策略；
 - WinUI 安装确认页会逐条展示下载地址、包哈希和校验来源，并明确提示数字签名验证状态；
 - 防 Zip Slip、限制下载/解压大小、原子提交的受管理 ZIP 安装器；
 - 带 ETag/Last-Modified/If-Range 的断点续传与 SHA-256 下载缓存；
@@ -24,7 +24,7 @@ AutoEnvPlus 是一个面向 Windows 10 和 Windows 11 的 Fluent 风格开发环
 - 项目清单预解析、精确运行时会话变量与独立 PowerShell 终端启动，不修改父进程或用户 PATH；
 - pip/npm/pnpm/Yarn/NuGet/Maven/Gradle/vcpkg/Conan 存储发现、统计、事务迁移、配置快照与回滚；
 - Visual Studio/MSVC、Windows SDK、clang/GCC/CMake/Ninja 工具链发现；
-- 通过精确 WinGet 白名单安装 MSVC、LLVM、MinGW-w64/GCC、CMake 和 Ninja；
+- 通过精确 WinGet 白名单安装 MSVC、LLVM、MinGW-w64/GCC、CMake 和 Ninja，并提供页面级操作锁、进度和进程树取消；
 - 基于实际 `cl.exe` 布局的 MSVC Host/Target 架构选择与开发终端预览；
 - 保留用户内容、可预览和回滚的项目级 `CMakeUserPresets.json` 生成；
 - 第一组自动化测试；
@@ -73,6 +73,9 @@ dotnet run --project src\AutoEnvPlus.Cli -- shell powershell --rollback C:\path\
 dotnet run --project src\AutoEnvPlus.Cli -- storage list
 dotnet run --project src\AutoEnvPlus.Cli -- storage migrate gradle D:\AutoEnvPlusCaches\gradle
 dotnet run --project src\AutoEnvPlus.Cli -- storage migrate pnpm D:\AutoEnvPlusCaches\pnpm
+dotnet run --project src\AutoEnvPlus.Cli -- storage migrate nuget D:\AutoEnvPlusCaches\nuget-packages
+dotnet run --project src\AutoEnvPlus.Cli -- storage migrate nuget-http D:\AutoEnvPlusCaches\nuget-http
+dotnet run --project src\AutoEnvPlus.Cli -- storage migrate nuget-plugins D:\AutoEnvPlusCaches\nuget-plugins
 dotnet run --project src\AutoEnvPlus.Cli -- storage migrate vcpkg D:\AutoEnvPlusCaches\vcpkg
 dotnet run --project src\AutoEnvPlus.Cli -- storage migrate conan D:\AutoEnvPlusCaches\conan
 dotnet run --project src\AutoEnvPlus.Cli -- storage migrate maven D:\AutoEnvPlusCaches\maven --yes
@@ -90,6 +93,8 @@ dotnet run --project src\AutoEnvPlus.Cli -- project terminal D:\path\to\project 
 dotnet run --project src\AutoEnvPlus.Cli -- project cmake-preset D:\path\to\project --instance 42f2210f --host x64 --target x86
 dotnet run --project src\AutoEnvPlus.Cli -- project cmake-preset D:\path\to\project --instance 42f2210f --host x64 --target x86 --write --yes
 ```
+
+NuGet 的全局包、HTTP 下载缓存和插件缓存是三个独立目录。若目标是释放系统盘空间，需要分别迁移 `nuget`、`nuget-http` 和 `nuget-plugins`；只迁移 `nuget` 不会改变另外两个目录。
 
 运行桌面原型：
 

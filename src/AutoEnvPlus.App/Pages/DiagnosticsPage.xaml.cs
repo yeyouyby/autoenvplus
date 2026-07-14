@@ -1,8 +1,13 @@
+using AutoEnvPlus.App.Diagnostics;
 using AutoEnvPlus.Core.Diagnostics;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+using Windows.Storage.Streams;
+using WinRT.Interop;
 
 namespace AutoEnvPlus.App.Pages;
 
@@ -10,6 +15,7 @@ public sealed partial class DiagnosticsPage : Page
 {
     private readonly CancellationTokenSource _pageCancellation = new();
     private CancellationTokenSource? _scanCancellation;
+    private EnvironmentDiagnosticReport? _lastReport;
     private bool _scanning;
 
     public DiagnosticsPage()
@@ -30,6 +36,46 @@ public sealed partial class DiagnosticsPage : Page
     private async void OnRefreshClicked(object sender, RoutedEventArgs args) => await RefreshAsync();
 
     private void OnCancelClicked(object sender, RoutedEventArgs args) => _scanCancellation?.Cancel();
+
+    private async void OnExportClicked(object sender, RoutedEventArgs args)
+    {
+        if (_lastReport is null
+            || ((App)Application.Current).MainWindowInstance is not Window window)
+        {
+            return;
+        }
+
+        try
+        {
+            FileSavePicker picker = new()
+            {
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                SuggestedFileName = $"autoenvplus-diagnostics-{DateTime.Now:yyyyMMdd-HHmmss}",
+            };
+            picker.FileTypeChoices.Add("JSON 诊断报告", [".json"]);
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(window));
+            StorageFile? file = await picker.PickSaveFileAsync();
+            if (file is null)
+            {
+                return;
+            }
+
+            string json = DiagnosticReportExportSerializer.Serialize(_lastReport);
+            await FileIO.WriteTextAsync(file, json, UnicodeEncoding.Utf8);
+            SummaryInfo.Severity = InfoBarSeverity.Success;
+            SummaryInfo.Title = "诊断报告已导出";
+            SummaryInfo.Message = file.Path;
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException
+            or System.Runtime.InteropServices.COMException)
+        {
+            SummaryInfo.Severity = InfoBarSeverity.Error;
+            SummaryInfo.Title = "无法导出诊断报告";
+            SummaryInfo.Message = exception.Message;
+        }
+    }
 
     private async Task RefreshAsync()
     {
@@ -78,6 +124,7 @@ public sealed partial class DiagnosticsPage : Page
 
     private void ShowReport(EnvironmentDiagnosticReport report)
     {
+        _lastReport = report;
         SummaryInfo.Severity = report.ErrorCount > 0
             ? InfoBarSeverity.Error
             : report.WarningCount > 0
@@ -124,6 +171,7 @@ public sealed partial class DiagnosticsPage : Page
     {
         RefreshButton.IsEnabled = !busy;
         CancelButton.IsEnabled = busy;
+        ExportButton.IsEnabled = !busy && _lastReport is not null;
         DiagnosticProgress.IsActive = busy;
     }
 

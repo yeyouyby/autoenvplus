@@ -5,13 +5,40 @@
 
     <ScrollViewer>
         <StackPanel Padding="{StaticResource PagePadding}" Spacing="18">
-            <StackPanel Spacing="4">
-                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="C/C++ 工具链" />
-                <TextBlock
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="组合 Visual Studio、MSVC、Windows SDK、LLVM、MinGW/GCC、CMake、Ninja 和目标架构。"
-                    TextWrapping="Wrap" />
-            </StackPanel>
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="4">
+                    <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="C/C++ 工具链" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="组合 Visual Studio、MSVC、Windows SDK、LLVM、MinGW/GCC、CMake、Ninja 和目标架构。"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Column="1"
+                    VerticalAlignment="Bottom"
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <ProgressRing
+                        x:Name="InstallProgress"
+                        Width="20"
+                        Height="20"
+                        IsActive="False" />
+                    <Button
+                        x:Name="CancelInstallButton"
+                        Click="OnCancelInstallClicked"
+                        IsEnabled="False"
+                        ToolTipService.ToolTip="取消当前 WinGet 安装">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="Cancel" />
+                            <TextBlock Text="取消安装" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
 
             <InfoBar
                 x:Name="ToolchainInfo"
@@ -21,7 +48,10 @@
                 Severity="Informational"
                 Title="检测工具链" />
 
-            <StackPanel Orientation="Horizontal" Spacing="8">
+            <StackPanel
+                x:Name="InstallActionsPanel"
+                Orientation="Horizontal"
+                Spacing="8">
                 <Button Click="OnInstallComponentClicked" Content="安装/修复 MSVC" Tag="MsvcBuildTools" />
                 <Button Click="OnInstallComponentClicked" Content="安装 LLVM" Tag="Llvm" />
                 <Button Click="OnInstallComponentClicked" Content="安装 MinGW / GCC" Tag="MinGw" />

@@ -33,6 +33,16 @@
                     Height="20"
                     IsActive="False" />
                 <Button
+                    x:Name="ExportButton"
+                    Click="OnExportClicked"
+                    IsEnabled="False"
+                    ToolTipService.ToolTip="将当前诊断保存为结构化 JSON">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Save" />
+                        <TextBlock Text="导出 JSON" />
+                    </StackPanel>
+                </Button>
+                <Button
                     x:Name="CancelButton"
                     Click="OnCancelClicked"
                     IsEnabled="False"

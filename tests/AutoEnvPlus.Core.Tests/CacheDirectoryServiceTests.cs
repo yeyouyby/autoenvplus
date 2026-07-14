@@ -12,6 +12,7 @@ public sealed class CacheDirectoryServiceTests : IDisposable
         string local = Path.Combine(_root, "local");
         string profile = Path.Combine(_root, "profile");
         string customPip = Path.Combine(_root, "custom-pip");
+        string customNugetHttp = Path.Combine(_root, "nuget-http-cache");
         string customVcpkg = Path.Combine(_root, "vcpkg-binary-cache");
         CacheEnvironment environment = new(
             local,
@@ -20,6 +21,9 @@ public sealed class CacheDirectoryServiceTests : IDisposable
             {
                 ["PIP_CACHE_DIR"] = customPip,
                 ["NPM_CONFIG_CACHE"] = null,
+                ["NUGET_PACKAGES"] = null,
+                ["NUGET_HTTP_CACHE_PATH"] = customNugetHttp,
+                ["NUGET_PLUGINS_CACHE_PATH"] = null,
                 ["GRADLE_USER_HOME"] = null,
                 ["VCPKG_DEFAULT_BINARY_CACHE"] = customVcpkg,
                 ["CONAN_HOME"] = null,
@@ -48,6 +52,22 @@ public sealed class CacheDirectoryServiceTests : IDisposable
         Assert.Equal(
             Path.GetFullPath(Path.Combine(local, "Yarn", "Cache")),
             yarn.DirectoryPath);
+        CacheDirectoryLocation nuget = locations.Single(item => item.Definition.Id == "nuget");
+        Assert.Equal(
+            Path.GetFullPath(Path.Combine(profile, ".nuget", "packages")),
+            nuget.DirectoryPath);
+        CacheDirectoryLocation nugetHttp = locations.Single(
+            item => item.Definition.Id == "nuget-http");
+        Assert.Equal(Path.GetFullPath(customNugetHttp), nugetHttp.DirectoryPath);
+        Assert.Contains(
+            "NUGET_HTTP_CACHE_PATH",
+            nugetHttp.ConfigurationSource,
+            StringComparison.Ordinal);
+        CacheDirectoryLocation nugetPlugins = locations.Single(
+            item => item.Definition.Id == "nuget-plugins");
+        Assert.Equal(
+            Path.GetFullPath(Path.Combine(local, "NuGet", "plugins-cache")),
+            nugetPlugins.DirectoryPath);
         CacheDirectoryLocation vcpkg = locations.Single(item => item.Definition.Id == "vcpkg");
         Assert.Equal(Path.GetFullPath(customVcpkg), vcpkg.DirectoryPath);
         Assert.Contains("VCPKG_DEFAULT_BINARY_CACHE", vcpkg.ConfigurationSource, StringComparison.Ordinal);
@@ -55,7 +75,7 @@ public sealed class CacheDirectoryServiceTests : IDisposable
         CacheDirectoryLocation conan = locations.Single(item => item.Definition.Id == "conan");
         Assert.Equal(Path.GetFullPath(Path.Combine(profile, ".conan2")), conan.DirectoryPath);
         Assert.True(conan.Definition.SupportsMigration);
-        Assert.Equal(9, locations.Count);
+        Assert.Equal(11, locations.Count);
     }
 
     [Fact]

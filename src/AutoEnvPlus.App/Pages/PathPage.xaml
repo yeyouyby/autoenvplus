@@ -7,6 +7,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition />
         </Grid.RowDefinitions>
 
@@ -30,9 +31,110 @@
             IsClosable="False"
             IsOpen="True" />
 
+        <Grid Grid.Row="2" RowSpacing="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="2">
+                    <TextBlock
+                        FontSize="16"
+                        FontWeight="SemiBold"
+                        Text="PATH 回滚快照" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="仅恢复 AutoEnvPlus 写入前的用户 PATH；系统 PATH 和 Shim 文件保持不变。"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Column="1"
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <Button
+                        x:Name="RefreshSnapshotsButton"
+                        Width="36"
+                        Height="36"
+                        AutomationProperties.Name="刷新 PATH 快照"
+                        Click="OnRefreshSnapshotsClicked"
+                        ToolTipService.ToolTip="刷新 PATH 快照">
+                        <FontIcon FontSize="14" Glyph="&#xE72C;" />
+                    </Button>
+                    <Button
+                        x:Name="RollbackPathButton"
+                        MinWidth="124"
+                        Height="36"
+                        AutomationProperties.Name="回滚用户 PATH"
+                        Click="OnRollbackPathClicked"
+                        IsEnabled="False">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon FontSize="14" Glyph="&#xE7A7;" />
+                            <TextBlock Text="回滚用户 PATH" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <TextBlock
+                x:Name="SnapshotSummaryText"
+                Grid.Row="1"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="正在读取 PATH 快照…"
+                TextWrapping="Wrap" />
+
+            <Grid Grid.Row="2">
+                <ListView
+                    x:Name="SnapshotList"
+                    MaxHeight="164"
+                    SelectionChanged="OnSnapshotSelectionChanged"
+                    SelectionMode="Single"
+                    Visibility="Collapsed">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="10,6" ColumnSpacing="12" RowSpacing="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock FontWeight="SemiBold" Text="{Binding CreatedAt}" />
+                                <TextBlock Grid.Column="1" Text="{Binding State}" />
+                                <TextBlock
+                                    Grid.Row="1"
+                                    Grid.ColumnSpan="2"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="{Binding AddedDirectory}"
+                                    TextTrimming="CharacterEllipsis"
+                                    ToolTipService.ToolTip="{Binding SnapshotPath}" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <TextBlock
+                    x:Name="SnapshotEmptyText"
+                    Padding="10,6"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="尚未创建 PATH 快照。" />
+            </Grid>
+        </Grid>
+
         <ListView
             x:Name="PathList"
-            Grid.Row="2"
+            Grid.Row="3"
             IsItemClickEnabled="False"
             SelectionMode="None">
             <ListView.Header>

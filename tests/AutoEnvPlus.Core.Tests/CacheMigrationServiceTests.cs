@@ -54,6 +54,37 @@ public sealed class CacheMigrationServiceTests : IDisposable
     }
 
     [Theory]
+    [InlineData("nuget", "NUGET_PACKAGES")]
+    [InlineData("nuget-http", "NUGET_HTTP_CACHE_PATH")]
+    [InlineData("nuget-plugins", "NUGET_PLUGINS_CACHE_PATH")]
+    public async Task MigrateAsync_NuGetStorageUsesDedicatedVariableAndRollsBack(
+        string storageId,
+        string variable)
+    {
+        string source = CreateSource();
+        string destination = Path.Combine(_root, "destination", storageId);
+        CacheDirectoryLocation location = CreateLocation(source, storageId, source);
+        CacheMigrationService service = new(Path.Combine(_root, "managed"));
+        CacheMigrationPlan plan = service.CreatePlan(location, destination);
+        FakeEnvironmentStore environment = new();
+        environment.Values[variable] = source;
+
+        CacheMigrationResult result = await service.MigrateAsync(plan, environment);
+
+        Assert.True(result.Success);
+        Assert.Equal(variable, plan.ConfigurationTarget);
+        Assert.Equal(destination, environment.Values[variable]);
+        Assert.NotNull(result.SnapshotPath);
+
+        CacheMigrationResult rollback = await service.RollbackAsync(
+            result.SnapshotPath!,
+            environment);
+        Assert.True(rollback.Success);
+        Assert.Equal(source, environment.Values[variable]);
+        Assert.True(Directory.Exists(destination));
+    }
+
+    [Theory]
     [InlineData("vcpkg", "VCPKG_DEFAULT_BINARY_CACHE")]
     [InlineData("conan", "CONAN_HOME")]
     public async Task MigrateAsync_CppPackageStorageUsesAllowlistedVariableAndRollsBack(

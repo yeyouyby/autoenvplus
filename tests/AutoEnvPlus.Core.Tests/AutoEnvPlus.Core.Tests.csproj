@@ -19,6 +19,12 @@
     <Compile
       Include="..\..\src\AutoEnvPlus.App\Appearance\BackdropSelectionPolicy.cs"
       Link="App\BackdropSelectionPolicy.cs" />
+    <Compile
+      Include="..\..\src\AutoEnvPlus.App\RuntimeCatalogs\AdoptiumFeatureReleaseCatalog.cs"
+      Link="App\AdoptiumFeatureReleaseCatalog.cs" />
+    <Compile
+      Include="..\..\src\AutoEnvPlus.App\Diagnostics\DiagnosticReportExportSerializer.cs"
+      Link="App\DiagnosticReportExportSerializer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Update="TestData\**\*" CopyToOutputDirectory="PreserveNewest" />

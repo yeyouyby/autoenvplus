@@ -35,6 +35,7 @@ $portableRoot = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64'
 $modulePath = Join-Path $PSScriptRoot 'AutoEnvPlus.Packaging.psm1'
 $manifestTemplate = Join-Path $repositoryRoot 'packaging\AppxManifest.xml'
 $appInstallerTemplate = Join-Path $repositoryRoot 'packaging\AutoEnvPlus.appinstaller'
+$appInstallerSchema = Join-Path $repositoryRoot 'packaging\AutoEnvPlus.AppInstallerProfile.xsd'
 $msixPath = Join-Path $outputRoot 'AutoEnvPlus-win-x64.msix'
 $appInstallerPath = Join-Path $outputRoot 'AutoEnvPlus.appinstaller'
 $developmentCertificatePath = Join-Path $outputRoot 'AutoEnvPlus-development.cer'
@@ -383,6 +384,7 @@ try {
         PackageVersion = $PackageVersion
         PackageUri = $PackageUri
         AppInstallerUri = $AppInstallerUri
+        SchemaPath = $appInstallerSchema
     }
     New-AutoEnvPlusAppInstaller @appInstallerParameters
 
@@ -407,14 +409,16 @@ try {
     Assert-IdentityValue -Label 'MSIX version' -Actual $packageIdentity.Version -Expected $PackageVersion
     Assert-IdentityValue -Label 'MSIX architecture' -Actual $packageIdentity.ProcessorArchitecture -Expected 'x64'
 
-    $appInstallerIdentity = Get-AutoEnvPlusAppInstallerIdentity -Path $appInstallerPath
-    Assert-IdentityValue -Label 'AppInstaller package name' -Actual $appInstallerIdentity.Name -Expected $PackageName
-    Assert-IdentityValue -Label 'AppInstaller publisher' -Actual $appInstallerIdentity.Publisher -Expected $Publisher
-    Assert-IdentityValue -Label 'AppInstaller package version' -Actual $appInstallerIdentity.Version -Expected $PackageVersion
-    Assert-IdentityValue -Label 'AppInstaller metadata version' -Actual $appInstallerIdentity.AppInstallerVersion -Expected $PackageVersion
-    Assert-IdentityValue -Label 'AppInstaller architecture' -Actual $appInstallerIdentity.ProcessorArchitecture -Expected 'x64'
-    Assert-IdentityValue -Label 'AppInstaller package URI' -Actual $appInstallerIdentity.PackageUri -Expected $PackageUri
-    Assert-IdentityValue -Label 'AppInstaller URI' -Actual $appInstallerIdentity.AppInstallerUri -Expected $AppInstallerUri
+    $appInstallerAssertionParameters = @{
+        Path = $appInstallerPath
+        SchemaPath = $appInstallerSchema
+        ExpectedPackageName = $PackageName
+        ExpectedPublisher = $Publisher
+        ExpectedPackageVersion = $PackageVersion
+        ExpectedPackageUri = $PackageUri
+        ExpectedAppInstallerUri = $AppInstallerUri
+    }
+    Assert-AutoEnvPlusAppInstaller @appInstallerAssertionParameters | Out-Null
 
     if ($DevelopmentCertificate) {
         [System.IO.File]::WriteAllBytes(

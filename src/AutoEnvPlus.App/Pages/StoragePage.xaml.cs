@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using AutoEnvPlus.Core.Storage;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -194,6 +195,32 @@ public sealed partial class StoragePage : Page
         }
     }
 
+    private void OnOpenFolderClicked(object sender, RoutedEventArgs args)
+    {
+        if (sender is not Button { Tag: CacheRow row } || !row.CanOpen)
+        {
+            return;
+        }
+
+        try
+        {
+            ProcessStartInfo startInfo = new()
+            {
+                FileName = "explorer.exe",
+                UseShellExecute = true,
+            };
+            startInfo.ArgumentList.Add(row.DirectoryPath);
+            Process.Start(startInfo);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException
+            or System.ComponentModel.Win32Exception)
+        {
+            StorageInfo.Severity = InfoBarSeverity.Error;
+            StorageInfo.Title = "无法打开缓存目录";
+            StorageInfo.Message = exception.Message;
+        }
+    }
+
     private async void OnRollbackClicked(object sender, RoutedEventArgs args)
     {
         if (_lastMigrationSnapshot is null)
@@ -301,6 +328,8 @@ public sealed partial class StoragePage : Page
         public string SourceText => Location.Warning is null
             ? Location.ConfigurationSource
             : $"{Location.ConfigurationSource}: {Location.Warning}";
+
+        public bool CanOpen => Location.Exists;
 
         public bool CanMigrate => Location.Exists
             && Location.Definition.SupportsMigration

@@ -1,3 +1,4 @@
+using AutoEnvPlus.App.RuntimeCatalogs;
 using AutoEnvPlus.Core.Discovery;
 using AutoEnvPlus.Core.Installation;
 using AutoEnvPlus.Core.Providers;
@@ -129,7 +130,19 @@ public sealed partial class RuntimesPage : Page
         try
         {
             RuntimeArchitecture architecture = CurrentArchitecture();
-            IArchiveRuntimeProvider provider = CreateProvider(kind, architecture);
+            int? javaFeatureVersion = kind == RuntimeKind.Java
+                ? await SelectJavaFeatureVersionAsync(cancellationToken)
+                : null;
+            if (kind == RuntimeKind.Java && javaFeatureVersion is null)
+            {
+                ResetActionInfo();
+                return;
+            }
+
+            IArchiveRuntimeProvider provider = CreateProvider(
+                kind,
+                architecture,
+                javaFeatureVersion);
             ActionInfo.Severity = InfoBarSeverity.Informational;
             ActionInfo.Title = "正在加载官方目录";
             ActionInfo.Message = provider.Id;
@@ -421,6 +434,56 @@ public sealed partial class RuntimesPage : Page
     private void OnCancelOperationClicked(object sender, RoutedEventArgs args) =>
         _operationCancellation?.Cancel();
 
+    private async Task<int?> SelectJavaFeatureVersionAsync(CancellationToken cancellationToken)
+    {
+        ActionInfo.Severity = InfoBarSeverity.Informational;
+        ActionInfo.Title = "正在加载 Java 版本线";
+        ActionInfo.Message = "Eclipse Adoptium 官方可用版本目录";
+        JavaFeatureReleaseCatalogSnapshot catalog = await new AdoptiumFeatureReleaseCatalog(
+            _httpClient).GetAsync(cancellationToken);
+        JavaFeatureChoice[] choices = catalog.AvailableReleases
+            .Select(version => new JavaFeatureChoice(
+                version,
+                catalog.LtsReleases.Contains(version),
+                version == catalog.LatestFeatureRelease,
+                version == catalog.RecommendedFeatureRelease))
+            .OrderByDescending(choice => choice.IsRecommended)
+            .ThenByDescending(choice => choice.IsLatestFeature)
+            .ThenByDescending(choice => choice.FeatureVersion)
+            .ToArray();
+
+        ComboBox selector = new()
+        {
+            ItemsSource = choices,
+            DisplayMemberPath = nameof(JavaFeatureChoice.Label),
+            SelectedIndex = 0,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            MinWidth = 360,
+        };
+        StackPanel content = new() { Spacing = 12 };
+        content.Children.Add(new TextBlock
+        {
+            Text = "版本线实时来自 Eclipse Adoptium 官方目录。优先推荐最新 LTS；下一步可选择该版本线的精确补丁版本。",
+            TextWrapping = TextWrapping.Wrap,
+        });
+        content.Children.Add(selector);
+        ContentDialog dialog = new()
+        {
+            XamlRoot = XamlRoot,
+            Title = "选择 Eclipse Temurin JDK 版本线",
+            Content = content,
+            PrimaryButtonText = "加载补丁版本",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Primary,
+        };
+
+        ContentDialogResult result = await dialog.ShowAsync();
+        return result == ContentDialogResult.Primary
+            && selector.SelectedItem is JavaFeatureChoice choice
+                ? choice.FeatureVersion
+                : null;
+    }
+
     private async Task<RuntimeRelease?> SelectReleaseAsync(
         RuntimeKind kind,
         IReadOnlyList<RuntimeRelease> releases)
@@ -437,7 +500,7 @@ public sealed partial class RuntimesPage : Page
         content.Children.Add(new TextBlock
         {
             Text = kind == RuntimeKind.Java
-                ? "当前页面提供 Eclipse Temurin JDK 21 稳定版本。"
+                ? "请选择该 JDK 版本线中的稳定补丁版本和架构。"
                 : "请选择要安装的稳定版本和架构。",
             TextWrapping = TextWrapping.Wrap,
         });
@@ -774,12 +837,17 @@ public sealed partial class RuntimesPage : Page
 
     private IArchiveRuntimeProvider CreateProvider(
         RuntimeKind kind,
-        RuntimeArchitecture architecture) =>
+        RuntimeArchitecture architecture,
+        int? javaFeatureVersion) =>
         kind switch
         {
             RuntimeKind.Python => new PythonOrgCatalogProvider(_httpClient, architecture),
             RuntimeKind.NodeJs => new NodeJsCatalogProvider(_httpClient),
-            RuntimeKind.Java => new AdoptiumCatalogProvider(_httpClient, 21, architecture),
+            RuntimeKind.Java => new AdoptiumCatalogProvider(
+                _httpClient,
+                javaFeatureVersion
+                    ?? throw new InvalidOperationException("安装 Java 前必须选择 JDK 版本线。"),
+                architecture),
             _ => throw new NotSupportedException($"尚未实现 {kind} 安装 Provider。"),
         };
 
@@ -874,6 +942,39 @@ public sealed partial class RuntimesPage : Page
     private sealed record RuntimeChoice(RuntimeRelease Release)
     {
         public string Label => $"{Release.Version} · {Release.Architecture} · {string.Join(", ", Release.Channels)}";
+    }
+
+    private sealed record JavaFeatureChoice(
+        int FeatureVersion,
+        bool IsLts,
+        bool IsLatestFeature,
+        bool IsRecommended)
+    {
+        public string Label
+        {
+            get
+            {
+                List<string> badges = [];
+                if (IsRecommended)
+                {
+                    badges.Add("推荐");
+                }
+
+                if (IsLts)
+                {
+                    badges.Add("LTS");
+                }
+
+                if (IsLatestFeature)
+                {
+                    badges.Add("最新特性版");
+                }
+
+                return badges.Count == 0
+                    ? $"JDK {FeatureVersion}"
+                    : $"JDK {FeatureVersion} · {string.Join(" · ", badges)}";
+            }
+        }
     }
 
     private sealed record ManagedRuntimeRow(

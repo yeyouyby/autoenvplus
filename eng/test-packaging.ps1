@@ -8,6 +8,8 @@ $testRoot = Join-Path $repositoryRoot 'artifacts\.staging\packaging-tests'
 $modulePath = Join-Path $PSScriptRoot 'AutoEnvPlus.Packaging.psm1'
 $manifestTemplate = Join-Path $repositoryRoot 'packaging\AppxManifest.xml'
 $appInstallerTemplate = Join-Path $repositoryRoot 'packaging\AutoEnvPlus.appinstaller'
+$appInstallerSchema = Join-Path $repositoryRoot 'packaging\AutoEnvPlus.AppInstallerProfile.xsd'
+$script:AssertionCount = 0
 
 Import-Module $modulePath -Force
 
@@ -21,6 +23,7 @@ function Assert-Equal {
     if ($Actual -ne $Expected) {
         throw "$Label failed. Expected '$Expected', found '$Actual'."
     }
+    $script:AssertionCount++
 }
 
 function Assert-Throws {
@@ -36,9 +39,29 @@ function Assert-Throws {
         if ($_.Exception.Message -notlike "*$MessageFragment*") {
             throw "Expected error containing '$MessageFragment', found '$($_.Exception.Message)'."
         }
+        $script:AssertionCount++
         return
     }
     throw "Expected action to fail with '$MessageFragment'."
+}
+
+function New-TamperedAppInstaller {
+    param(
+        [Parameter(Mandatory)][string]$Name,
+        [Parameter(Mandatory)][string]$OldValue,
+        [Parameter(Mandatory)][string]$NewValue
+    )
+
+    $content = [System.IO.File]::ReadAllText($appInstallerPath)
+    if (-not $content.Contains($OldValue)) {
+        throw "Tamper fixture '$Name' could not find its source value."
+    }
+    $tamperedPath = Join-Path $testRoot "$Name.appinstaller"
+    [System.IO.File]::WriteAllText(
+        $tamperedPath,
+        $content.Replace($OldValue, $NewValue),
+        (New-Object System.Text.UTF8Encoding($false)))
+    return $tamperedPath
 }
 
 if (Test-Path -LiteralPath $testRoot) {
@@ -99,6 +122,7 @@ try {
         PackageVersion = '1.2.3.4'
         PackageUri = $packageUri
         AppInstallerUri = 'https://github.com/yeyouyby/autoenvplus/releases/latest/download/AutoEnvPlus.appinstaller'
+        SchemaPath = $appInstallerSchema
     }
     New-AutoEnvPlusAppInstaller @appInstallerParameters
     $appInstallerIdentity = Get-AutoEnvPlusAppInstallerIdentity -Path $appInstallerPath
@@ -107,6 +131,76 @@ try {
     Assert-Equal $appInstallerIdentity.Version $manifestIdentity.Version 'AppInstaller version binding'
     Assert-Equal $appInstallerIdentity.ProcessorArchitecture $manifestIdentity.ProcessorArchitecture 'AppInstaller architecture binding'
     Assert-Equal $appInstallerIdentity.PackageUri $packageUri 'AppInstaller package URI binding'
+
+    $strictAppInstallerParameters = @{
+        SchemaPath = $appInstallerSchema
+        ExpectedPackageName = 'yeyouyby.AutoEnvPlus.Tests'
+        ExpectedPublisher = $publisher
+        ExpectedPackageVersion = '1.2.3.4'
+        ExpectedPackageUri = $packageUri
+        ExpectedAppInstallerUri = 'https://github.com/yeyouyby/autoenvplus/releases/latest/download/AutoEnvPlus.appinstaller'
+    }
+    $strictIdentity = Assert-AutoEnvPlusAppInstaller -Path $appInstallerPath @strictAppInstallerParameters
+    Assert-Equal $strictIdentity.Name 'yeyouyby.AutoEnvPlus.Tests' 'Strict AppInstaller profile validation'
+
+    $downgradePath = New-TamperedAppInstaller -Name 'force-downgrade' `
+        -OldValue '<ForceUpdateFromAnyVersion>false</ForceUpdateFromAnyVersion>' `
+        -NewValue '<ForceUpdateFromAnyVersion>true</ForceUpdateFromAnyVersion>'
+    Assert-Throws {
+        Assert-AutoEnvPlusAppInstaller -Path $downgradePath @strictAppInstallerParameters
+    } 'schema validation failed'
+
+    $nonCanonicalBooleanPath = New-TamperedAppInstaller -Name 'noncanonical-boolean' `
+        -OldValue '<ForceUpdateFromAnyVersion>false</ForceUpdateFromAnyVersion>' `
+        -NewValue '<ForceUpdateFromAnyVersion>0</ForceUpdateFromAnyVersion>'
+    Assert-Throws {
+        Assert-AutoEnvPlusAppInstaller -Path $nonCanonicalBooleanPath @strictAppInstallerParameters
+    } 'schema validation failed'
+
+    $unknownElementPath = New-TamperedAppInstaller -Name 'unknown-element' `
+        -OldValue '<AutomaticBackgroundTask />' `
+        -NewValue '<AutomaticBackgroundTask /><Unexpected />'
+    Assert-Throws {
+        Assert-AutoEnvPlusAppInstaller -Path $unknownElementPath @strictAppInstallerParameters
+    } 'schema validation failed'
+
+    $duplicateMainPackage = '<MainPackage Name="yeyouyby.AutoEnvPlus.Tests" ' +
+        'Publisher="CN=AutoEnvPlus &amp; Packaging Tests" Version="1.2.3.4" ' +
+        'ProcessorArchitecture="x64" Uri="' + $packageUri + '" />'
+    $duplicateMainPackagePath = New-TamperedAppInstaller -Name 'duplicate-main-package' `
+        -OldValue '<UpdateSettings>' `
+        -NewValue "$duplicateMainPackage`r`n  <UpdateSettings>"
+    Assert-Throws {
+        Assert-AutoEnvPlusAppInstaller -Path $duplicateMainPackagePath @strictAppInstallerParameters
+    } 'schema validation failed'
+
+    $unknownAttributePath = New-TamperedAppInstaller -Name 'unknown-attribute' `
+        -OldValue 'ProcessorArchitecture="x64"' `
+        -NewValue 'ProcessorArchitecture="x64" Extra="value"'
+    Assert-Throws {
+        Assert-AutoEnvPlusAppInstaller -Path $unknownAttributePath @strictAppInstallerParameters
+    } 'schema validation failed'
+
+    $namespacePath = New-TamperedAppInstaller -Name 'namespace-downgrade' `
+        -OldValue 'http://schemas.microsoft.com/appx/appinstaller/2018' `
+        -NewValue 'http://schemas.microsoft.com/appx/appinstaller/2017'
+    Assert-Throws {
+        Assert-AutoEnvPlusAppInstaller -Path $namespacePath @strictAppInstallerParameters
+    } 'schema validation failed'
+
+    $packageUriTamperPath = New-TamperedAppInstaller -Name 'package-uri' `
+        -OldValue $packageUri `
+        -NewValue 'https://example.test/AutoEnvPlus-win-x64.msix'
+    Assert-Throws {
+        Assert-AutoEnvPlusAppInstaller -Path $packageUriTamperPath @strictAppInstallerParameters
+    } 'AppInstaller package URI mismatch'
+
+    $doctypePath = New-TamperedAppInstaller -Name 'doctype' `
+        -OldValue '?>' `
+        -NewValue "?>`r`n<!DOCTYPE AppInstaller [<!ENTITY publisher SYSTEM 'file:///C:/Windows/win.ini'>]>"
+    Assert-Throws {
+        Assert-AutoEnvPlusAppInstaller -Path $doctypePath @strictAppInstallerParameters
+    } 'could not be parsed safely'
 
     $assetsPath = Join-Path $testRoot 'Assets'
     New-AutoEnvPlusBrandAssets -OutputDirectory $assetsPath
@@ -143,7 +237,7 @@ try {
         & (Join-Path $PSScriptRoot 'publish-msix.ps1') @publishParameters
     } 'Production MSIX publication requires -CertificatePath'
 
-    Write-Host 'Packaging tests passed: 31 assertions.'
+    Write-Host "Packaging tests passed: $script:AssertionCount assertions."
 }
 finally {
     if (Test-Path -LiteralPath $testRoot) {

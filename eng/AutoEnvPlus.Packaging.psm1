@@ -1,5 +1,77 @@
 Set-StrictMode -Version Latest
 
+$script:AppInstallerProfileSchemaPath = [System.IO.Path]::GetFullPath(
+    (Join-Path $PSScriptRoot '..\packaging\AutoEnvPlus.AppInstallerProfile.xsd'))
+
+function Read-AutoEnvPlusXmlDocument {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [string]$SchemaPath,
+        [string]$ExpectedNamespace
+    )
+
+    $settings = New-Object System.Xml.XmlReaderSettings
+    $settings.DtdProcessing = [System.Xml.DtdProcessing]::Prohibit
+    $settings.XmlResolver = $null
+    $settings.IgnoreComments = $true
+    $settings.IgnoreProcessingInstructions = $true
+    $settings.MaxCharactersInDocument = 1MB
+
+    if (-not [string]::IsNullOrWhiteSpace($SchemaPath)) {
+        if (-not (Test-Path -LiteralPath $SchemaPath -PathType Leaf)) {
+            throw "XML schema was not found: $SchemaPath"
+        }
+        $schemas = New-Object System.Xml.Schema.XmlSchemaSet
+        $schemas.XmlResolver = $null
+        $schemas.Add($ExpectedNamespace, $SchemaPath) | Out-Null
+        $settings.Schemas = $schemas
+        $settings.ValidationType = [System.Xml.ValidationType]::Schema
+        $settings.ValidationFlags = [System.Xml.Schema.XmlSchemaValidationFlags]::ReportValidationWarnings
+    }
+
+    $reader = $null
+    try {
+        $reader = [System.Xml.XmlReader]::Create($Path, $settings)
+        $document = New-Object System.Xml.XmlDocument
+        $document.PreserveWhitespace = $false
+        $document.XmlResolver = $null
+        $document.Load($reader)
+        if (-not [string]::IsNullOrWhiteSpace($SchemaPath) -and
+            ($null -eq $document.DocumentElement -or
+             -not [string]::Equals(
+                $document.DocumentElement.NamespaceURI,
+                $ExpectedNamespace,
+                [System.StringComparison]::Ordinal))) {
+            throw "XML schema validation failed for '$Path': the root namespace must be '$ExpectedNamespace'."
+        }
+        return $document
+    }
+    catch [System.Xml.Schema.XmlSchemaValidationException] {
+        throw "XML schema validation failed for '$Path': $($_.Exception.Message)"
+    }
+    catch [System.Xml.XmlException] {
+        throw "XML could not be parsed safely from '$Path': $($_.Exception.Message)"
+    }
+    finally {
+        if ($null -ne $reader) {
+            $reader.Dispose()
+        }
+    }
+}
+
+function Assert-AutoEnvPlusExactValue {
+    param(
+        [Parameter(Mandatory)][string]$Label,
+        [AllowEmptyString()][string]$Actual,
+        [AllowEmptyString()][string]$Expected
+    )
+
+    if (-not [string]::Equals($Actual, $Expected, [System.StringComparison]::Ordinal)) {
+        throw "$Label mismatch. Expected '$Expected', found '$Actual'."
+    }
+}
+
 function ConvertTo-AutoEnvPlusPackageVersion {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Version)
@@ -109,9 +181,7 @@ function New-AutoEnvPlusAppxManifest {
         throw 'PublisherDisplayName cannot be empty.'
     }
 
-    $document = New-Object System.Xml.XmlDocument
-    $document.PreserveWhitespace = $false
-    $document.Load($TemplatePath)
+    $document = Read-AutoEnvPlusXmlDocument -Path $TemplatePath
     $namespaceManager = New-Object System.Xml.XmlNamespaceManager($document.NameTable)
     $namespaceManager.AddNamespace('m', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
 
@@ -138,7 +208,8 @@ function New-AutoEnvPlusAppInstaller {
         [Parameter(Mandatory)][string]$Publisher,
         [Parameter(Mandatory)][string]$PackageVersion,
         [Parameter(Mandatory)][string]$PackageUri,
-        [Parameter(Mandatory)][string]$AppInstallerUri
+        [Parameter(Mandatory)][string]$AppInstallerUri,
+        [string]$SchemaPath = $script:AppInstallerProfileSchemaPath
     )
 
     Assert-AutoEnvPlusPackageName -Name $PackageName
@@ -146,9 +217,8 @@ function New-AutoEnvPlusAppInstaller {
     $PackageUri = ConvertTo-AutoEnvPlusHttpsUri -Value $PackageUri -ParameterName 'PackageUri' -RequiredExtension '.msix'
     $AppInstallerUri = ConvertTo-AutoEnvPlusHttpsUri -Value $AppInstallerUri -ParameterName 'AppInstallerUri' -RequiredExtension '.appinstaller'
 
-    $document = New-Object System.Xml.XmlDocument
-    $document.PreserveWhitespace = $false
-    $document.Load($TemplatePath)
+    $document = Read-AutoEnvPlusXmlDocument -Path $TemplatePath -SchemaPath $SchemaPath `
+        -ExpectedNamespace 'http://schemas.microsoft.com/appx/appinstaller/2018'
     $namespaceManager = New-Object System.Xml.XmlNamespaceManager($document.NameTable)
     $namespaceManager.AddNamespace('a', 'http://schemas.microsoft.com/appx/appinstaller/2018')
 
@@ -166,6 +236,17 @@ function New-AutoEnvPlusAppInstaller {
     $mainPackage.SetAttribute('ProcessorArchitecture', 'x64')
     $mainPackage.SetAttribute('Uri', $PackageUri)
     Write-AutoEnvPlusXmlDocument -Document $document -Path $OutputPath
+
+    $assertionParameters = @{
+        Path = $OutputPath
+        SchemaPath = $SchemaPath
+        ExpectedPackageName = $PackageName
+        ExpectedPublisher = $Publisher
+        ExpectedPackageVersion = $PackageVersion
+        ExpectedPackageUri = $PackageUri
+        ExpectedAppInstallerUri = $AppInstallerUri
+    }
+    Assert-AutoEnvPlusAppInstaller @assertionParameters | Out-Null
 }
 
 function New-AutoEnvPlusRoundedRectanglePath {
@@ -365,8 +446,7 @@ function Get-AutoEnvPlusMsixIdentity {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$ManifestPath)
 
-    $document = New-Object System.Xml.XmlDocument
-    $document.Load($ManifestPath)
+    $document = Read-AutoEnvPlusXmlDocument -Path $ManifestPath
     $namespaceManager = New-Object System.Xml.XmlNamespaceManager($document.NameTable)
     $namespaceManager.AddNamespace('m', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
     $identity = $document.SelectSingleNode('/m:Package/m:Identity', $namespaceManager)
@@ -384,20 +464,23 @@ function Get-AutoEnvPlusMsixIdentity {
 
 function Get-AutoEnvPlusAppInstallerIdentity {
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$Path)
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [string]$SchemaPath = $script:AppInstallerProfileSchemaPath
+    )
 
-    $document = New-Object System.Xml.XmlDocument
-    $document.PreserveWhitespace = $true
-    $document.Load($Path)
+    $appInstallerNamespace = 'http://schemas.microsoft.com/appx/appinstaller/2018'
+    $document = Read-AutoEnvPlusXmlDocument -Path $Path -SchemaPath $SchemaPath `
+        -ExpectedNamespace $appInstallerNamespace
     $namespaceManager = New-Object System.Xml.XmlNamespaceManager($document.NameTable)
-    $namespaceManager.AddNamespace('a', 'http://schemas.microsoft.com/appx/appinstaller/2018')
+    $namespaceManager.AddNamespace('a', $appInstallerNamespace)
     $appInstaller = $document.SelectSingleNode('/a:AppInstaller', $namespaceManager)
     $mainPackage = $document.SelectSingleNode('/a:AppInstaller/a:MainPackage', $namespaceManager)
     if ($null -eq $appInstaller -or $null -eq $mainPackage) {
         throw "AppInstaller does not contain AppInstaller and MainPackage elements: $Path"
     }
 
-    return [pscustomobject]@{
+    $identity = [pscustomobject]@{
         AppInstallerUri = $appInstaller.GetAttribute('Uri')
         AppInstallerVersion = $appInstaller.GetAttribute('Version')
         Name = $mainPackage.GetAttribute('Name')
@@ -406,6 +489,57 @@ function Get-AutoEnvPlusAppInstallerIdentity {
         ProcessorArchitecture = $mainPackage.GetAttribute('ProcessorArchitecture')
         PackageUri = $mainPackage.GetAttribute('Uri')
     }
+
+    Assert-AutoEnvPlusPackageName -Name $identity.Name
+    ConvertTo-AutoEnvPlusPackageVersion -Version $identity.Version | Out-Null
+    ConvertTo-AutoEnvPlusPackageVersion -Version $identity.AppInstallerVersion | Out-Null
+    ConvertTo-AutoEnvPlusHttpsUri -Value $identity.PackageUri -ParameterName 'PackageUri' `
+        -RequiredExtension '.msix' | Out-Null
+    ConvertTo-AutoEnvPlusHttpsUri -Value $identity.AppInstallerUri -ParameterName 'AppInstallerUri' `
+        -RequiredExtension '.appinstaller' | Out-Null
+    Assert-AutoEnvPlusExactValue -Label 'AppInstaller metadata/package version' `
+        -Actual $identity.AppInstallerVersion -Expected $identity.Version
+    return $identity
+}
+
+function Assert-AutoEnvPlusAppInstaller {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$Path,
+        [string]$SchemaPath = $script:AppInstallerProfileSchemaPath,
+        [Parameter(Mandatory)][string]$ExpectedPackageName,
+        [Parameter(Mandatory)][string]$ExpectedPublisher,
+        [Parameter(Mandatory)][string]$ExpectedPackageVersion,
+        [Parameter(Mandatory)][string]$ExpectedPackageUri,
+        [Parameter(Mandatory)][string]$ExpectedAppInstallerUri
+    )
+
+    Assert-AutoEnvPlusPackageName -Name $ExpectedPackageName
+    $ExpectedPackageVersion = ConvertTo-AutoEnvPlusPackageVersion -Version $ExpectedPackageVersion
+    $ExpectedPackageUri = ConvertTo-AutoEnvPlusHttpsUri -Value $ExpectedPackageUri `
+        -ParameterName 'ExpectedPackageUri' -RequiredExtension '.msix'
+    $ExpectedAppInstallerUri = ConvertTo-AutoEnvPlusHttpsUri -Value $ExpectedAppInstallerUri `
+        -ParameterName 'ExpectedAppInstallerUri' -RequiredExtension '.appinstaller'
+    if ([string]::IsNullOrWhiteSpace($ExpectedPublisher)) {
+        throw 'ExpectedPublisher cannot be empty.'
+    }
+
+    $identity = Get-AutoEnvPlusAppInstallerIdentity -Path $Path -SchemaPath $SchemaPath
+    Assert-AutoEnvPlusExactValue -Label 'AppInstaller package name' `
+        -Actual $identity.Name -Expected $ExpectedPackageName
+    Assert-AutoEnvPlusExactValue -Label 'AppInstaller publisher' `
+        -Actual $identity.Publisher -Expected $ExpectedPublisher
+    Assert-AutoEnvPlusExactValue -Label 'AppInstaller package version' `
+        -Actual $identity.Version -Expected $ExpectedPackageVersion
+    Assert-AutoEnvPlusExactValue -Label 'AppInstaller metadata version' `
+        -Actual $identity.AppInstallerVersion -Expected $ExpectedPackageVersion
+    Assert-AutoEnvPlusExactValue -Label 'AppInstaller architecture' `
+        -Actual $identity.ProcessorArchitecture -Expected 'x64'
+    Assert-AutoEnvPlusExactValue -Label 'AppInstaller package URI' `
+        -Actual $identity.PackageUri -Expected $ExpectedPackageUri
+    Assert-AutoEnvPlusExactValue -Label 'AppInstaller URI' `
+        -Actual $identity.AppInstallerUri -Expected $ExpectedAppInstallerUri
+    return $identity
 }
 
 function Test-AutoEnvPlusMsixSignature {
@@ -466,6 +600,7 @@ function Test-AutoEnvPlusMsixSignature {
 }
 
 Export-ModuleMember -Function @(
+    'Assert-AutoEnvPlusAppInstaller',
     'Assert-AutoEnvPlusPackageName',
     'Assert-AutoEnvPlusSigningCertificate',
     'ConvertTo-AutoEnvPlusHttpsUri',

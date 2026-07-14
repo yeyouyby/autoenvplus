@@ -131,7 +131,7 @@
                             x:Name="JavaInstallButton"
                             Grid.Column="2"
                             Click="OnInstallClicked"
-                            Content="安装 JDK 21"
+                            Content="安装版本"
                             Tag="Java" />
                     </Grid>
                 </Border>
