@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>AutoEnvPlus.Cli</RootNamespace>
+    <AssemblyName>autoenvplus</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AutoEnvPlus.Core\AutoEnvPlus.Core.csproj" />
+  </ItemGroup>
+  <Target Name="BuildNativeShim" AfterTargets="Build">
+    <MSBuild
+      Projects="..\AutoEnvPlus.Shim\AutoEnvPlus.Shim.proj"
+      Targets="Build"
+      BuildInParallel="false"
+      Properties="Configuration=$(Configuration);Platform=x64" />
+    <Copy
+      SourceFiles="..\AutoEnvPlus.Shim\bin\$(Configuration)\win-x64\autoenvplus-shim.exe"
+      DestinationFolder="$(OutDir)"
+      SkipUnchangedFiles="true" />
+  </Target>
+</Project>

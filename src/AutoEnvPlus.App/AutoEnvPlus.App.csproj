@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <RootNamespace>AutoEnvPlus.App</RootNamespace>
+    <AssemblyName>AutoEnvPlus.App</AssemblyName>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260529003" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AutoEnvPlus.Core\AutoEnvPlus.Core.csproj" />
+    <ProjectReference
+      Include="..\AutoEnvPlus.Cli\AutoEnvPlus.Cli.csproj"
+      ReferenceOutputAssembly="false"
+      AdditionalProperties="Platform=AnyCPU" />
+  </ItemGroup>
+  <Target Name="CopyAutoEnvPlusCli" AfterTargets="Build">
+    <ItemGroup>
+      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus.exe" />
+      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus.dll" />
+      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus.deps.json" />
+      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus.runtimeconfig.json" />
+      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\AutoEnvPlus.Core.dll" />
+      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus-shim.exe" />
+    </ItemGroup>
+    <MakeDir Directories="$(OutDir)cli" />
+    <Copy SourceFiles="@(AutoEnvPlusCliFiles)" DestinationFolder="$(OutDir)cli" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

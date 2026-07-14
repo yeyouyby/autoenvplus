@@ -1,0 +1,29 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <IsRestoreable>false</IsRestoreable>
+    <NativeShimOutput>$(MSBuildProjectDirectory)\bin\$(Configuration)\win-x64\autoenvplus-shim.exe</NativeShimOutput>
+  </PropertyGroup>
+
+  <Target Name="Restore" />
+
+  <Target Name="_IsProjectRestoreSupported" Returns="@(_ValidProjectsForRestore)">
+    <ItemGroup>
+      <_ValidProjectsForRestore Include="$(MSBuildProjectFullPath)" />
+    </ItemGroup>
+  </Target>
+
+  <Target
+    Name="Build"
+    Inputs="$(MSBuildProjectDirectory)\native-shim.cpp;$(MSBuildProjectDirectory)\build-native.cmd"
+    Outputs="$(NativeShimOutput)">
+    <Exec
+      Command="&quot;$(MSBuildProjectDirectory)\build-native.cmd&quot; &quot;$(MSBuildProjectDirectory)\native-shim.cpp&quot; &quot;$(NativeShimOutput)&quot;" />
+  </Target>
+
+  <Target Name="Clean">
+    <Delete Files="$(NativeShimOutput)" />
+  </Target>
+
+  <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
+</Project>

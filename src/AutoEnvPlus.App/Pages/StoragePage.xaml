@@ -1,0 +1,110 @@
+<Page
+    x:Class="AutoEnvPlus.App.Pages.StoragePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Padding="{StaticResource PagePadding}" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="4">
+                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="缓存与存储" />
+                <TextBlock
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="识别 pip、npm、pnpm、Yarn、NuGet、Maven、Gradle、vcpkg 和 Conan 的真实存储位置与配置来源。"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel
+                Grid.Column="1"
+                VerticalAlignment="Bottom"
+                Orientation="Horizontal"
+                Spacing="8">
+                <Button
+                    x:Name="RollbackButton"
+                    Click="OnRollbackClicked"
+                    IsEnabled="False"
+                    ToolTipService.ToolTip="恢复最近一次迁移前的工具配置">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Undo" />
+                        <TextBlock Text="回滚最近配置" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    x:Name="MeasureButton"
+                    Click="OnMeasureClicked"
+                    Content="计算全部大小" />
+            </StackPanel>
+        </Grid>
+
+        <InfoBar
+            x:Name="StorageInfo"
+            Grid.Row="1"
+            IsClosable="False"
+            IsOpen="True"
+            Message="目录发现是只读操作；九类存储均支持复制校验、配置快照与回滚。"
+            Severity="Informational"
+            Title="已读取当前配置" />
+
+        <Grid Grid.Row="2" Padding="12,8" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="90" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="160" />
+                <ColumnDefinition Width="110" />
+                <ColumnDefinition Width="90" />
+            </Grid.ColumnDefinitions>
+            <TextBlock FontWeight="SemiBold" Text="工具" />
+            <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="目录" />
+            <TextBlock Grid.Column="2" FontWeight="SemiBold" Text="来源" />
+            <TextBlock Grid.Column="3" FontWeight="SemiBold" Text="大小" />
+            <TextBlock Grid.Column="4" FontWeight="SemiBold" Text="操作" />
+        </Grid>
+
+        <ListView
+            x:Name="CacheList"
+            Grid.Row="3"
+            SelectionMode="None">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="12,8" ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="160" />
+                            <ColumnDefinition Width="110" />
+                            <ColumnDefinition Width="90" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Text="{Binding DirectoryPath}"
+                            TextTrimming="CharacterEllipsis"
+                            ToolTipService.ToolTip="{Binding DirectoryPath}" />
+                        <TextBlock
+                            Grid.Column="2"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{Binding SourceText}"
+                            TextTrimming="CharacterEllipsis"
+                            ToolTipService.ToolTip="{Binding SourceText}" />
+                        <TextBlock Grid.Column="3" Text="{Binding SizeText}" />
+                        <Button
+                            Grid.Column="4"
+                            Click="OnMigrateClicked"
+                            Content="迁移"
+                            IsEnabled="{Binding CanMigrate}"
+                            Tag="{Binding}" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</Page>

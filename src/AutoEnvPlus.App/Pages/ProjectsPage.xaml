@@ -1,0 +1,79 @@
+<Page
+    x:Class="AutoEnvPlus.App.Pages.ProjectsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer>
+        <StackPanel Padding="{StaticResource PagePadding}" Spacing="18">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="4">
+                    <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="项目环境" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="导入版本文件、生成 autoenvplus.toml/lock，并打开只对新 PowerShell 生效的精确项目环境。"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+                <Button
+                    Grid.Column="1"
+                    VerticalAlignment="Bottom"
+                    Click="OnChooseProjectClicked"
+                    Content="选择项目文件夹" />
+            </Grid>
+
+            <InfoBar
+                x:Name="ProjectInfo"
+                IsClosable="False"
+                IsOpen="True"
+                Message="支持 .python-version、.nvmrc、.node-version、.java-version、package.json 和 global.json；项目终端不会修改全局 PATH。"
+                Severity="Informational"
+                Title="尚未选择项目" />
+
+            <Border
+                Padding="18"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource CardCornerRadius}">
+                <StackPanel Spacing="12">
+                    <TextBlock x:Name="ProjectPathText" FontWeight="SemiBold" Text="—" TextWrapping="Wrap" />
+                    <TextBlock
+                        x:Name="ProjectDetailsText"
+                        IsTextSelectionEnabled="True"
+                        Text="选择一个项目后显示解析来源。"
+                        TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button
+                            x:Name="OpenProjectTerminalButton"
+                            Click="OnOpenProjectTerminalClicked"
+                            Content="打开已激活终端"
+                            IsEnabled="False" />
+                        <Button
+                            x:Name="CreateManifestButton"
+                            Click="OnCreateManifestClicked"
+                            Content="生成 autoenvplus.toml"
+                            IsEnabled="False" />
+                        <Button
+                            x:Name="CreateLockButton"
+                            Click="OnCreateLockClicked"
+                            Content="生成 autoenvplus.lock"
+                            IsEnabled="False" />
+                        <Button
+                            x:Name="CreateCMakePresetButton"
+                            Click="OnCreateCMakePresetClicked"
+                            Content="生成 CMake Preset"
+                            IsEnabled="False" />
+                        <Button
+                            x:Name="RollbackCMakePresetButton"
+                            Click="OnRollbackCMakePresetClicked"
+                            Content="回滚 CMake Preset"
+                            IsEnabled="False" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

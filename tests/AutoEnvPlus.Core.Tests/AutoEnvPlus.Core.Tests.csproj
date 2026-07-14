@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AutoEnvPlus.Core\AutoEnvPlus.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile
+      Include="..\..\src\AutoEnvPlus.App\Appearance\BackdropSelectionPolicy.cs"
+      Link="App\BackdropSelectionPolicy.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="TestData\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="BuildNativeShimForTests" AfterTargets="Build">
+    <MSBuild
+      Projects="..\..\src\AutoEnvPlus.Shim\AutoEnvPlus.Shim.proj"
+      Targets="Build"
+      BuildInParallel="false"
+      Properties="Configuration=$(Configuration);Platform=x64" />
+    <Copy
+      SourceFiles="..\..\src\AutoEnvPlus.Shim\bin\$(Configuration)\win-x64\autoenvplus-shim.exe"
+      DestinationFolder="$(OutDir)"
+      SkipUnchangedFiles="true" />
+  </Target>
+</Project>

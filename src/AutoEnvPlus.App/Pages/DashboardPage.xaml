@@ -1,0 +1,134 @@
+<Page
+    x:Class="AutoEnvPlus.App.Pages.DashboardPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer>
+        <StackPanel Padding="{StaticResource PagePadding}" Spacing="20">
+            <StackPanel Spacing="4">
+                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="开发环境概览" />
+                <TextBlock
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="运行时、PATH、项目环境和缓存的统一入口"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+
+            <InfoBar
+                x:Name="PathHealthInfo"
+                IsClosable="False"
+                IsOpen="True"
+                Severity="Informational"
+                Title="正在读取环境" />
+
+            <Grid ColumnSpacing="16" RowSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+
+                <Border
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Padding="20"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource CardCornerRadius}">
+                    <StackPanel Spacing="10">
+                        <FontIcon
+                            HorizontalAlignment="Left"
+                            FontSize="24"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                            Glyph="&#xE950;" />
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="运行时" />
+                        <TextBlock
+                            x:Name="RuntimeSummaryText"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="正在发现 PATH 中的运行时…"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Padding="20"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource CardCornerRadius}">
+                    <StackPanel Spacing="10">
+                        <FontIcon
+                            HorizontalAlignment="Left"
+                            FontSize="24"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                            Glyph="&#xE8A5;" />
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="PATH 健康度" />
+                        <TextBlock x:Name="PathSummaryText" Text="正在检查…" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Grid.Row="0"
+                    Grid.Column="2"
+                    Padding="20"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource CardCornerRadius}">
+                    <StackPanel Spacing="10">
+                        <FontIcon
+                            HorizontalAlignment="Left"
+                            FontSize="24"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                            Glyph="&#xE8B7;" />
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="当前项目" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="尚未选择项目目录"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Grid.Row="1"
+                    Grid.ColumnSpan="3"
+                    Padding="20"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource CardCornerRadius}">
+                    <Grid ColumnSpacing="24">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <FontIcon
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="28"
+                            Glyph="&#xE90F;" />
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="从环境诊断开始" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="先了解当前 PATH 中的失效目录、重复项和命令遮蔽，再决定是否修改。"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <Button
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Click="OnOpenPathClicked"
+                            Content="查看 PATH" />
+                    </Grid>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</Page>
