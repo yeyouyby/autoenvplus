@@ -3,8 +3,15 @@
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>AutoEnvPlus.Core</RootNamespace>
     <AssemblyName>AutoEnvPlus.Core</AssemblyName>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
+    <PackageReference Include="Sigstore.Net" Version="1.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource
+      Include="Providers\Python\Trust\sigstore-trusted-root-2026-07-14.json"
+      LogicalName="AutoEnvPlus.Core.Providers.Python.Trust.sigstore-trusted-root.json" />
   </ItemGroup>
 </Project>

@@ -101,6 +101,12 @@ try {
     $nativeShim = Join-Path $repositoryRoot "src\AutoEnvPlus.Shim\bin\$Configuration\win-x64\autoenvplus-shim.exe"
     Copy-Item -LiteralPath $nativeShim -Destination $cliOutput
 
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'LICENSE') -Destination $outputRoot
+    Copy-Item -LiteralPath (Join-Path $repositoryRoot 'THIRD-PARTY-NOTICES.md') -Destination $outputRoot
+    $licensesOutput = Join-Path $outputRoot 'third_party\licenses'
+    New-Item -ItemType Directory -Path $licensesOutput -Force | Out-Null
+    Copy-Item -Path (Join-Path $repositoryRoot 'third_party\licenses\*') -Destination $licensesOutput -Force
+
     $requiredFiles = @(
         (Join-Path $outputRoot 'AutoEnvPlus.App.exe'),
         (Join-Path $outputRoot 'AutoEnvPlus.App.pri'),
@@ -108,6 +114,9 @@ try {
         (Join-Path $outputRoot 'Pages\DashboardPage.xbf'),
         (Join-Path $outputRoot 'coreclr.dll'),
         (Join-Path $outputRoot 'hostfxr.dll'),
+        (Join-Path $outputRoot 'LICENSE'),
+        (Join-Path $outputRoot 'THIRD-PARTY-NOTICES.md'),
+        (Join-Path $licensesOutput 'Sigstore.Net-Apache-2.0.txt'),
         (Join-Path $cliOutput 'autoenvplus.exe'),
         (Join-Path $cliOutput 'autoenvplus-shim.exe')
     )

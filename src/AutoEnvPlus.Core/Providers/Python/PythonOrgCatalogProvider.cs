@@ -17,19 +17,22 @@ public sealed partial class PythonOrgCatalogProvider : IArchiveRuntimeProvider
     private readonly HttpClient _httpClient;
     private readonly Uri _apiBaseUri;
     private readonly RuntimeArchitecture _architecture;
+    private readonly IPythonReleaseSignatureVerifier _signatureVerifier;
     private readonly ConcurrentDictionary<string, int> _releaseIds = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, RuntimePackageAsset> _assets = new(StringComparer.Ordinal);
 
     public PythonOrgCatalogProvider(
         HttpClient httpClient,
         RuntimeArchitecture architecture = RuntimeArchitecture.X64,
-        Uri? apiBaseUri = null)
+        Uri? apiBaseUri = null,
+        IPythonReleaseSignatureVerifier? signatureVerifier = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _architecture = architecture is RuntimeArchitecture.X64 or RuntimeArchitecture.X86 or RuntimeArchitecture.Arm64
             ? architecture
             : throw new NotSupportedException($"python.org does not provide a Windows package for '{architecture}'.");
         _apiBaseUri = EnsureTrailingSlash(apiBaseUri ?? DefaultApiBaseUri);
+        _signatureVerifier = signatureVerifier ?? new PythonReleaseSignatureVerifier(_httpClient);
     }
 
     public string Id => ProviderName;
@@ -127,6 +130,7 @@ public sealed partial class PythonOrgCatalogProvider : IArchiveRuntimeProvider
         }
 
         VerifiedManifest manifest = await GetVerifiedWindowsManifestAsync(
+            release,
             releaseId,
             cancellationToken).ConfigureAwait(false);
         RuntimePackageAsset asset = ParsePythonCoreAsset(release, manifest);
@@ -156,6 +160,7 @@ public sealed partial class PythonOrgCatalogProvider : IArchiveRuntimeProvider
     }
 
     private async Task<VerifiedManifest> GetVerifiedWindowsManifestAsync(
+        RuntimeRelease release,
         int releaseId,
         CancellationToken cancellationToken)
     {
@@ -176,6 +181,7 @@ public sealed partial class PythonOrgCatalogProvider : IArchiveRuntimeProvider
         }
 
         Uri? manifestUri = null;
+        Uri? sigstoreBundleUri = null;
         string? expectedHash = null;
         foreach (JsonElement file in filesDocument.RootElement.EnumerateArray())
         {
@@ -185,18 +191,22 @@ public sealed partial class PythonOrgCatalogProvider : IArchiveRuntimeProvider
                 && Uri.TryCreate(url, UriKind.Absolute, out Uri? parsedUri)
                 && parsedUri.Scheme == Uri.UriSchemeHttps
                 && TryGetString(file, "sha256_sum", out string? sha256)
-                && IsSha256(sha256))
+                && IsSha256(sha256)
+                && TryGetString(file, "sigstore_bundle_file", out string? sigstoreBundle)
+                && Uri.TryCreate(sigstoreBundle, UriKind.Absolute, out Uri? parsedBundleUri)
+                && parsedBundleUri.Scheme == Uri.UriSchemeHttps)
             {
                 manifestUri = parsedUri;
+                sigstoreBundleUri = parsedBundleUri;
                 expectedHash = sha256;
                 break;
             }
         }
 
-        if (manifestUri is null || expectedHash is null)
+        if (manifestUri is null || sigstoreBundleUri is null || expectedHash is null)
         {
             throw new InvalidDataException(
-                "This Python release does not publish a verified Windows install manifest.");
+                "This Python release does not publish a Sigstore-signed Windows install manifest.");
         }
 
         byte[] content = await _httpClient.GetByteArrayAsync(manifestUri, cancellationToken).ConfigureAwait(false);
@@ -207,7 +217,18 @@ public sealed partial class PythonOrgCatalogProvider : IArchiveRuntimeProvider
                 $"SHA-256 mismatch for the Python Windows release manifest. Expected {expectedHash}, got {actualHash}.");
         }
 
-        return new VerifiedManifest(content, manifestUri, expectedHash.ToLowerInvariant());
+        PythonReleaseSigningPolicy signingPolicy = PythonReleaseSigningPolicy.ForVersion(release.Version);
+        PackageSignatureVerification signature = await _signatureVerifier.VerifyAsync(
+            content,
+            manifestUri,
+            sigstoreBundleUri,
+            signingPolicy,
+            cancellationToken).ConfigureAwait(false);
+        return new VerifiedManifest(
+            content,
+            manifestUri,
+            expectedHash.ToLowerInvariant(),
+            signature);
     }
 
     private RuntimePackageAsset ParsePythonCoreAsset(RuntimeRelease release, VerifiedManifest verifiedManifest)
@@ -271,8 +292,8 @@ public sealed partial class PythonOrgCatalogProvider : IArchiveRuntimeProvider
                         "SHA-256",
                         sha256.ToLowerInvariant()),
                 ],
-                [],
-                PackageAuthenticityRequirement.ChecksumEvidence);
+                [verifiedManifest.Signature],
+                PackageAuthenticityRequirement.SignedChecksumManifest);
         }
 
         throw new InvalidDataException(
@@ -348,5 +369,9 @@ public sealed partial class PythonOrgCatalogProvider : IArchiveRuntimeProvider
     [GeneratedRegex(@"/release/(?<id>\d+)/?$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase)]
     private static partial Regex ReleaseIdPattern();
 
-    private sealed record VerifiedManifest(byte[] Content, Uri Uri, string Sha256);
+    private sealed record VerifiedManifest(
+        byte[] Content,
+        Uri Uri,
+        string Sha256,
+        PackageSignatureVerification Signature);
 }

@@ -54,6 +54,7 @@ public enum PackageSignatureVerificationKind
 {
     OpenPgpCleartext,
     OpenPgpDetached,
+    SigstoreBundle,
 }
 
 public enum PackageSignerTrust
@@ -71,7 +72,15 @@ public sealed record PackageSignatureVerification(
     string PrimaryKeyFingerprint,
     string SigningKeyId,
     DateTimeOffset CreatedAtUtc,
-    PackageSignerTrust SignerTrust);
+    PackageSignerTrust SignerTrust,
+    Uri? SignedContentUri = null,
+    string? CertificateIdentity = null,
+    string? CertificateOidcIssuer = null,
+    long? TransparencyLogIndex = null,
+    long? TransparencyLogTreeSize = null,
+    string? TransparencyLogId = null,
+    string? TrustRootSha256 = null,
+    Uri? IdentityPolicyUri = null);
 
 public sealed record PackageSignatureRequirement(
     PackageSignatureVerificationKind Kind,

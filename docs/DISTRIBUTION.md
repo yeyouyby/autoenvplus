@@ -18,6 +18,9 @@ artifacts\AutoEnvPlus-win-x64\
   cli\
     autoenvplus.exe
     autoenvplus-shim.exe
+  LICENSE
+  THIRD-PARTY-NOTICES.md
+  third_party\licenses\
   SHA256SUMS.txt
 artifacts\AutoEnvPlus-win-x64.zip
 artifacts\AutoEnvPlus-win-x64.zip.sha256
@@ -29,7 +32,9 @@ artifacts\AutoEnvPlus-win-x64.zip.sha256
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish.ps1 -NoArchive
 ```
 
-脚本会生成并复制 WinUI RID 自包含 Build 布局，同时发布自包含单文件 CLI。之所以不直接使用 `dotnet publish -o` 作为 GUI 布局，是因为当前 Windows App SDK 工具链会在该路径漏掉 XBF 页面资源和 PRI 资源索引；脚本把 `App.xbf`、页面 XBF 和 `AutoEnvPlus.App.pri` 作为硬性完整性门禁。随后它移除根目录的框架依赖 CLI apphost，把单文件 CLI 和原生 Shim 固定放入 `cli` 子目录，并生成逐文件 SHA-256 清单。发布输出和清理操作被限制在仓库的 `artifacts` 目录内。
+脚本会生成并复制 WinUI RID 自包含 Build 布局，同时发布自包含单文件 CLI。之所以不直接使用 `dotnet publish -o` 作为 GUI 布局，是因为当前 Windows App SDK 工具链会在该路径漏掉 XBF 页面资源和 PRI 资源索引；脚本把 `App.xbf`、页面 XBF 和 `AutoEnvPlus.App.pri` 作为硬性完整性门禁。随后它移除根目录的框架依赖 CLI apphost，把单文件 CLI 和原生 Shim 固定放入 `cli` 子目录，复制 AutoEnvPlus 的 AGPLv3、第三方组件声明及许可证，并生成逐文件 SHA-256 清单。发布输出和清理操作被限制在仓库的 `artifacts` 目录内。
+
+分发 AutoEnvPlus 或修改版时应同时提供 `LICENSE`、完整对应源码和构建说明。若修改版增加网络服务或远程交互入口，还必须满足 AGPLv3 第 13 节；第三方依赖仍按 `THIRD-PARTY-NOTICES.md` 所列许可证分发。
 
 ## 运行
 

@@ -73,9 +73,9 @@ Plan -> Preview -> Snapshot -> Apply -> Validate -> Commit
 
 操作计划使用白名单步骤，例如下载、验证哈希、解压到临时目录、原子重命名、写用户环境变量、广播 `WM_SETTINGCHANGE`。不把拼接后的命令行当作通用事务步骤。
 
-下载缓存按包 SHA-256 稳定寻址。未完成下载保留 `.partial` 与 URI、ETag、Last-Modified、总长度元数据；重试只在服务器确认同一实体时使用 Range/If-Range，服务器忽略范围或返回无效 Content-Range 时从零重新下载。完成文件仍需通过 Provider 给出的 SHA-256 才能进入解压阶段。安装计划还必须携带至少一条 HTTPS 来源的 SHA-256 证据，且证据值必须覆盖待安装资产哈希。签名清单模式还必须证明提供包哈希的证据 URI 与已验证签名 URI 相同；detached 包签名模式则要求签名对象与包文件名一致，并在 SHA-256 后直接验证缓存包字节。两种模式都不能降级到 checksum-only。
+下载缓存按包 SHA-256 稳定寻址。未完成下载保留 `.partial` 与 URI、ETag、Last-Modified、总长度元数据；重试只在服务器确认同一实体时使用 Range/If-Range，服务器忽略范围或返回无效 Content-Range 时从零重新下载。完成文件仍需通过 Provider 给出的 SHA-256 才能进入解压阶段。安装计划还必须携带至少一条 HTTPS 来源的 SHA-256 证据，且证据值必须覆盖待安装资产哈希。签名清单模式必须证明“实际被签名的内容 URI”等于提供包哈希的证据 URI：OpenPGP cleartext 清单的签名 URI 本身就是该内容，Sigstore 则分别记录 manifest URI 与 `.sigstore` bundle URI。detached 包签名模式要求签名对象与包文件名一致，并在 SHA-256 后直接验证缓存包字节。两种模式都不能降级到 checksum-only。
 
-WinUI 安装确认页按证据链展示包文件、下载 URI、目标目录、SHA-256、每条校验对象和值及其 HTTPS 来源。Node.js 展示已验证的 OpenPGP 清单签名、完整主指纹、实际签名 Key ID、活跃/历史状态、签名 URI 和固定公钥来源。Temurin 展示安装时强制执行的 detached 包签名、固定主指纹、签名 URI 和公钥来源；只有 Python 明确显示发布者签名尚未验证。
+WinUI 安装确认页按证据链展示包文件、下载 URI、目标目录、SHA-256、每条校验对象和值及其 HTTPS 来源。Python 展示精确 release-manager 邮件、OIDC Issuer、叶证书 SHA-256/SKI、Rekor index/tree/log ID、trusted-root SHA-256、身份策略、manifest 与 bundle URI；Node.js 展示已验证的 OpenPGP 清单签名、完整主指纹、实际签名 Key ID、活跃/历史状态、签名 URI 和固定公钥来源。Temurin 展示安装时强制执行的 detached 包签名、固定主指纹、签名 URI 和公钥来源。
 
 卸载先扫描全局选择、已知项目 `autoenvplus.toml` 和 `autoenvplus.lock`。无引用时将目录同卷移动到 `.trash`，再更新安装注册表；注册表失败则移回原目录。单个运行时卸载不会删除可能共享的包下载缓存。
 
@@ -85,7 +85,7 @@ WinUI 安装确认页按证据链展示包文件、下载 URI、目标目录、S
 
 ## Provider 契约
 
-Provider 描述版本搜索、已有安装检测、安装计划和健康检查。每个 Release 必须记录版本、架构、通道、官方来源、哈希、校验来源证据、签名证据或待执行签名要求、真实性要求、命令入口和许可证信息。Node Provider 使用 Bouncy Castle 验证 cleartext OpenPGP 签名，密钥文件固定到 `nodejs/release-keys` 提交，完整主指纹与签名子钥 Key ID 映射固定在源码；信任快照之后只接受活跃钥，历史钥只能验证更早版本。Temurin Provider 固定 Adoptium 完整主指纹，安装器在下载后流式验证 API 指定的 detached 签名。详细策略见 `docs/SECURITY.md`。
+Provider 描述版本搜索、已有安装检测、安装计划和健康检查。每个 Release 必须记录版本、架构、通道、官方来源、哈希、校验来源证据、签名证据或待执行签名要求、真实性要求、命令入口和许可证信息。Python Provider 对 Windows manifest 执行固定身份与固定 trusted-root 的 Sigstore 验证，并把实际签名内容 URI 与 bundle URI 分开记录；Node Provider 使用 Bouncy Castle 验证 cleartext OpenPGP 签名，密钥文件固定到 `nodejs/release-keys` 提交，完整主指纹与签名子钥 Key ID 映射固定在源码；信任快照之后只接受活跃钥，历史钥只能验证更早版本。Temurin Provider 固定 Adoptium 完整主指纹，安装器在下载后流式验证 API 指定的 detached 签名。详细策略见 `docs/SECURITY.md`。
 
 首批 Provider：
 

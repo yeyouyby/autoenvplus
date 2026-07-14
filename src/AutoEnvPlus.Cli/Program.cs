@@ -33,6 +33,14 @@ catch (OperationCanceledException)
     Console.Error.WriteLine("Operation cancelled.");
     return 130;
 }
+catch (Exception exception) when (exception is IOException
+    or InvalidDataException
+    or HttpRequestException
+    or UnauthorizedAccessException)
+{
+    Console.Error.WriteLine($"Error: {exception.Message}");
+    return 1;
+}
 finally
 {
     Console.CancelKeyPress -= cancelHandler;
@@ -261,7 +269,21 @@ static async Task<int> RunCatalogAsync(string[] args, CancellationToken cancella
             {
                 Console.WriteLine(
                     $"Signed:  {signature.Kind} {signature.HashAlgorithm} · {signature.PrimaryKeyFingerprint}");
-                Console.WriteLine($"Key ID:  {signature.SigningKeyId} · {signature.SignerTrust}");
+                if (signature.Kind == PackageSignatureVerificationKind.SigstoreBundle)
+                {
+                    Console.WriteLine($"Identity: {signature.CertificateIdentity}");
+                    Console.WriteLine($"Issuer:   {signature.CertificateOidcIssuer}");
+                    Console.WriteLine(
+                        $"Rekor:    index {signature.TransparencyLogIndex} · tree {signature.TransparencyLogTreeSize} · {signature.TransparencyLogId}");
+                    Console.WriteLine($"Trust:    SHA-256 {signature.TrustRootSha256} · {signature.KeySourceUri}");
+                    Console.WriteLine($"Policy:   {signature.IdentityPolicyUri}");
+                }
+                else
+                {
+                    Console.WriteLine($"Key ID:  {signature.SigningKeyId} · {signature.SignerTrust}");
+                }
+
+                Console.WriteLine($"Content: {signature.SignedContentUri ?? signature.SignatureUri}");
                 Console.WriteLine($"Source:  {signature.SignatureUri}");
             }
 
@@ -360,8 +382,22 @@ static async Task<int> RunInstallAsync(string[] args, CancellationToken cancella
     {
         Console.WriteLine(
             $"  Signature:   {signature.Kind} {signature.HashAlgorithm} · {signature.PrimaryKeyFingerprint}");
-        Console.WriteLine($"  Signing key: {signature.SigningKeyId} · {signature.SignerTrust}");
+        if (signature.Kind == PackageSignatureVerificationKind.SigstoreBundle)
+        {
+            Console.WriteLine($"  Identity:    {signature.CertificateIdentity}");
+            Console.WriteLine($"  OIDC issuer: {signature.CertificateOidcIssuer}");
+            Console.WriteLine(
+                $"  Rekor:       index {signature.TransparencyLogIndex} · tree {signature.TransparencyLogTreeSize} · {signature.TransparencyLogId}");
+            Console.WriteLine($"  Trust root:  SHA-256 {signature.TrustRootSha256}");
+            Console.WriteLine($"  Policy:      {signature.IdentityPolicyUri}");
+        }
+        else
+        {
+            Console.WriteLine($"  Signing key: {signature.SigningKeyId} · {signature.SignerTrust}");
+        }
+
         Console.WriteLine($"  Signed at:   {signature.CreatedAtUtc:O}");
+        Console.WriteLine($"  Signed content: {signature.SignedContentUri ?? signature.SignatureUri}");
         Console.WriteLine($"  Signature URI: {signature.SignatureUri}");
         Console.WriteLine($"  Key source:    {signature.KeySourceUri}");
     }

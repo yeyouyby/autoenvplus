@@ -378,18 +378,36 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
                     nameof(asset));
             }
 
-            if (signature.Kind is not (PackageSignatureVerificationKind.OpenPgpCleartext
-                    or PackageSignatureVerificationKind.OpenPgpDetached)
-                || !IsStrongSignatureHash(signature.HashAlgorithm)
-                || signature.PrimaryKeyFingerprint.Length != 40
-                || !signature.PrimaryKeyFingerprint.All(Uri.IsHexDigit)
-                || signature.SigningKeyId.Length != 16
-                || !signature.SigningKeyId.All(Uri.IsHexDigit)
+            if (!IsStrongSignatureHash(signature.HashAlgorithm)
                 || string.IsNullOrWhiteSpace(signature.SignedSubject)
                 || signature.CreatedAtUtc == default
                 || !Enum.IsDefined(signature.SignerTrust))
             {
                 throw new ArgumentException("Package signature evidence is invalid.", nameof(asset));
+            }
+
+            switch (signature.Kind)
+            {
+                case PackageSignatureVerificationKind.OpenPgpCleartext:
+                case PackageSignatureVerificationKind.OpenPgpDetached:
+                    if (signature.PrimaryKeyFingerprint.Length != 40
+                        || !signature.PrimaryKeyFingerprint.All(Uri.IsHexDigit)
+                        || signature.SigningKeyId.Length != 16
+                        || !signature.SigningKeyId.All(Uri.IsHexDigit))
+                    {
+                        throw new ArgumentException(
+                            "OpenPGP package signature evidence is invalid.",
+                            nameof(asset));
+                    }
+
+                    break;
+                case PackageSignatureVerificationKind.SigstoreBundle:
+                    ValidateSigstoreSignature(signature, asset);
+                    break;
+                default:
+                    throw new ArgumentException(
+                        "The package signature evidence kind is unsupported.",
+                        nameof(asset));
             }
         }
 
@@ -401,12 +419,53 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
         bool signedEvidenceCoversAsset = asset.Verifications.Any(verification =>
             verification.Value.Equals(asset.Sha256, StringComparison.OrdinalIgnoreCase)
             && asset.SignatureVerifications.Any(signature =>
-                signature.SignatureUri.Equals(verification.SourceUri)));
+                (signature.SignedContentUri ?? signature.SignatureUri)
+                    .Equals(verification.SourceUri)));
         if (!signedEvidenceCoversAsset)
         {
             throw new ArgumentException(
                 "The verified signature must cover the checksum manifest that supplies the install asset SHA-256.",
                 nameof(asset));
+        }
+    }
+
+    private static void ValidateSigstoreSignature(
+        PackageSignatureVerification signature,
+        RuntimePackageAsset asset)
+    {
+        bool hasValidLogId;
+        try
+        {
+            hasValidLogId = Convert.FromBase64String(signature.TransparencyLogId ?? string.Empty).Length == 32;
+        }
+        catch (FormatException)
+        {
+            hasValidLogId = false;
+        }
+
+        if (signature.SignedContentUri is not { } signedContentUri
+            || !IsAbsoluteHttps(signedContentUri)
+            || !signature.SignatureUri.AbsoluteUri.Equals(
+                signedContentUri.AbsoluteUri + ".sigstore",
+                StringComparison.Ordinal)
+            || signature.PrimaryKeyFingerprint.Length != 64
+            || !signature.PrimaryKeyFingerprint.All(Uri.IsHexDigit)
+            || signature.SigningKeyId.Length != 40
+            || !signature.SigningKeyId.All(Uri.IsHexDigit)
+            || string.IsNullOrWhiteSpace(signature.CertificateIdentity)
+            || string.IsNullOrWhiteSpace(signature.CertificateOidcIssuer)
+            || signature.TransparencyLogIndex is null or < 0
+            || signature.TransparencyLogTreeSize is null or <= 0
+            || !hasValidLogId
+            || signature.TrustRootSha256 is not { Length: 64 } trustRootSha256
+            || !trustRootSha256.All(Uri.IsHexDigit)
+            || !IsAbsoluteHttps(signature.IdentityPolicyUri)
+            || signature.SignerTrust != PackageSignerTrust.ActiveAtTrustSnapshot
+            || !signature.SignedSubject.Equals(
+                Path.GetFileName(signedContentUri.LocalPath),
+                StringComparison.Ordinal))
+        {
+            throw new ArgumentException("Sigstore package signature evidence is invalid.", nameof(asset));
         }
     }
 

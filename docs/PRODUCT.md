@@ -81,7 +81,7 @@ C/C++ 不是单个运行时。MSVC 激活还需要 `INCLUDE`、`LIB`、Windows S
 - 下载包必须使用 HTTPS，安装前按 Provider 给出的 SHA-256 校验字节，并记录 checksum/manifest 来源证据；
 - Node.js 必须先用固定发布密钥验证 `SHASUMS256.txt.asc` OpenPGP 签名，再从已签名正文读取包哈希；
 - Temurin 必须在 SHA-256 通过后，用固定 Adoptium 主指纹验证 ZIP 包本体的 detached OpenPGP 签名，失败时删除缓存包且不解压；
-- Python 的 Authenticode、PGP 或 Sigstore 等发布者签名仍属于后续强化项，不能把来源证据等同为完整签名验证；
+- Python 必须用内置 Sigstore trusted-root 快照和 python.org 对应版本系列的精确 release-manager 邮件/OIDC 策略验证 Windows manifest，再从该签名 manifest 读取 PythonCore ZIP SHA-256；bundle、身份、Fulcio/SCT/Rekor 或签名任一失败时不能降级；
 - 软件目录清单需要签名；
 - 外部安装默认只读，不允许 AutoEnvPlus 擅自删除；
 - PATH 和配置修改前创建快照；

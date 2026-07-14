@@ -35,7 +35,7 @@
 - [x] WinUI 安装预览中的逐条 SHA-256 来源证据与签名状态提示；
 - [x] Node.js clear-signed checksum 清单的 OpenPGP 验证与固定发布密钥策略；
 - [x] Eclipse Temurin 包本体 detached OpenPGP 验证与固定 Adoptium 主指纹；
-- [ ] Python 的 Sigstore、Authenticode、PGP 或等价签名验证。
+- [x] Python Windows manifest 的 Sigstore v0.3、固定 release-manager 身份、Fulcio/SCT/Rekor 与内置 trusted-root 验证；
 
 ## 0.2
 

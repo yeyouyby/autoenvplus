@@ -255,6 +255,45 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
     }
 
     [Fact]
+    public async Task InstallAsync_AcceptsSigstoreBundleCoveringAssetChecksumSource()
+    {
+        byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "node-binary"));
+        ArchiveInstallPlan plan = CreatePlan(archive);
+        plan = plan with
+        {
+            Asset = plan.Asset with
+            {
+                AuthenticityRequirement = PackageAuthenticityRequirement.SignedChecksumManifest,
+                SignatureVerifications =
+                [
+                    CreateSigstoreSignature(new Uri("https://example.test/SHASUMS256.txt")),
+                ],
+            },
+        };
+        using HttpClient client = new(new StubHttpMessageHandler(_ => StubHttpMessageHandler.Bytes(archive)));
+
+        InstallResult result = await new ManagedArchiveInstaller(client).InstallAsync(plan);
+
+        Assert.Equal(InstallOutcome.Installed, result.Outcome);
+    }
+
+    [Fact]
+    public async Task InstallAsync_RejectsIncompleteSigstoreEvidenceBeforeDownloading()
+    {
+        await AssertVerificationRejectedBeforeDownloadingAsync(asset => asset with
+        {
+            AuthenticityRequirement = PackageAuthenticityRequirement.SignedChecksumManifest,
+            SignatureVerifications =
+            [
+                CreateSigstoreSignature(new Uri("https://example.test/SHASUMS256.txt")) with
+                {
+                    CertificateIdentity = null,
+                },
+            ],
+        });
+    }
+
+    [Fact]
     public async Task InstallAsync_VerifiesRequiredDetachedSignatureBeforeExtraction()
     {
         byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "node-binary"));
@@ -354,6 +393,26 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
             "C43CEC45C17AB93C",
             new DateTimeOffset(2026, 7, 8, 12, 0, 0, TimeSpan.Zero),
             PackageSignerTrust.ActiveAtTrustSnapshot);
+
+    private static PackageSignatureVerification CreateSigstoreSignature(Uri signedContentUri) =>
+        new(
+            PackageSignatureVerificationKind.SigstoreBundle,
+            new Uri(signedContentUri.AbsoluteUri + ".sigstore"),
+            new Uri("https://raw.githubusercontent.com/sigstore/root-signing/commit/trusted_root.json"),
+            Path.GetFileName(signedContentUri.LocalPath),
+            "SHA-256",
+            new string('a', 64),
+            new string('b', 40),
+            new DateTimeOffset(2026, 7, 8, 12, 0, 0, TimeSpan.Zero),
+            PackageSignerTrust.ActiveAtTrustSnapshot,
+            signedContentUri,
+            "release@example.test",
+            "https://issuer.example.test",
+            123,
+            456,
+            Convert.ToBase64String(new byte[32]),
+            new string('c', 64),
+            new Uri("https://example.test/signing-policy"));
 
     private static ArchiveInstallPlan AddDetachedSignatureRequirement(ArchiveInstallPlan plan)
     {

@@ -66,7 +66,8 @@ public sealed class PythonOrgCatalogProviderTests : IDisposable
         PythonOrgCatalogProvider provider = new(
             client,
             RuntimeArchitecture.X64,
-            new Uri("https://api.example.test/downloads/"));
+            new Uri("https://api.example.test/downloads/"),
+            new StubPythonReleaseSignatureVerifier());
 
         RuntimeRelease release = Assert.Single(await provider.GetReleasesAsync());
         RuntimePackageAsset asset = await provider.GetAssetAsync(release);
@@ -87,6 +88,11 @@ public sealed class PythonOrgCatalogProviderTests : IDisposable
             && verification.SourceUri == new Uri("https://files.example.test/windows-3.14.6.json")
             && verification.Subject == "python-3.14.6-amd64.zip"
             && verification.Value == PythonPackageHash);
+        PackageSignatureVerification signature = Assert.Single(asset.SignatureVerifications);
+        Assert.Equal(PackageSignatureVerificationKind.SigstoreBundle, signature.Kind);
+        Assert.Equal("hugo@python.org", signature.CertificateIdentity);
+        Assert.Equal("https://github.com/login/oauth", signature.CertificateOidcIssuer);
+        Assert.Equal(PackageAuthenticityRequirement.SignedChecksumManifest, asset.AuthenticityRequirement);
         Assert.Equal(3, requests);
     }
 
@@ -112,12 +118,49 @@ public sealed class PythonOrgCatalogProviderTests : IDisposable
         PythonOrgCatalogProvider provider = new(
             client,
             RuntimeArchitecture.X64,
-            new Uri("https://api.example.test/downloads/"));
+            new Uri("https://api.example.test/downloads/"),
+            new StubPythonReleaseSignatureVerifier());
         RuntimeRelease release = Assert.Single(await provider.GetReleasesAsync());
 
         InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(
             () => provider.GetAssetAsync(release));
         Assert.Contains("release manifest", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GetAssetAsync_RejectsReleaseWithoutSigstoreBundle()
+    {
+        byte[] manifest = CreateManifest();
+        string releaseFiles = $$"""
+            [
+              {
+                "name": "Windows release manifest",
+                "url": "https://files.example.test/windows-3.14.6.json",
+                "sha256_sum": "{{Sha256(manifest)}}"
+              }
+            ]
+            """;
+        using HttpClient client = new(new StubHttpMessageHandler(request =>
+        {
+            string path = request.RequestUri!.AbsolutePath;
+            if (path.EndsWith("/release/", StringComparison.Ordinal))
+            {
+                return StubHttpMessageHandler.Text(ReleaseIndex, "application/json");
+            }
+
+            return StubHttpMessageHandler.Text(releaseFiles, "application/json");
+        }));
+        PythonOrgCatalogProvider provider = new(
+            client,
+            RuntimeArchitecture.X64,
+            new Uri("https://api.example.test/downloads/"),
+            new StubPythonReleaseSignatureVerifier());
+        RuntimeRelease release = Assert.Single(await provider.GetReleasesAsync());
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(
+            () => provider.GetAssetAsync(release));
+
+        Assert.Contains("Sigstore-signed", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -143,7 +186,8 @@ public sealed class PythonOrgCatalogProviderTests : IDisposable
         PythonOrgCatalogProvider provider = new(
             client,
             RuntimeArchitecture.X64,
-            new Uri("https://api.example.test/downloads/"));
+            new Uri("https://api.example.test/downloads/"),
+            new StubPythonReleaseSignatureVerifier());
         RuntimeRelease release = Assert.Single(await provider.GetReleasesAsync());
         RuntimePackageAsset asset = await provider.GetAssetAsync(release);
 
@@ -188,13 +232,46 @@ public sealed class PythonOrgCatalogProviderTests : IDisposable
           {
             "name": "Windows release manifest",
             "url": "https://files.example.test/windows-3.14.6.json",
-            "sha256_sum": "{{manifestHash}}"
+            "sha256_sum": "{{manifestHash}}",
+            "sigstore_bundle_file": "https://files.example.test/windows-3.14.6.json.sigstore"
           }
         ]
         """;
 
     private static string Sha256(byte[] value) =>
         Convert.ToHexString(SHA256.HashData(value)).ToLowerInvariant();
+
+    private sealed class StubPythonReleaseSignatureVerifier : IPythonReleaseSignatureVerifier
+    {
+        public Task<PackageSignatureVerification> VerifyAsync(
+            ReadOnlyMemory<byte> manifest,
+            Uri manifestUri,
+            Uri bundleUri,
+            PythonReleaseSigningPolicy signingPolicy,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Assert.False(manifest.IsEmpty);
+            return Task.FromResult(new PackageSignatureVerification(
+                PackageSignatureVerificationKind.SigstoreBundle,
+                bundleUri,
+                PythonReleaseSignatureVerifier.TrustRootSourceUri,
+                Path.GetFileName(manifestUri.LocalPath),
+                "SHA-256",
+                new string('a', 64),
+                new string('b', 40),
+                new DateTimeOffset(2026, 6, 10, 13, 11, 40, TimeSpan.Zero),
+                PackageSignerTrust.ActiveAtTrustSnapshot,
+                manifestUri,
+                signingPolicy.CertificateIdentity,
+                signingPolicy.OidcIssuer,
+                123,
+                456,
+                Convert.ToBase64String(new byte[32]),
+                PythonReleaseSignatureVerifier.TrustRootSha256,
+                signingPolicy.PolicySourceUri));
+        }
+    }
 
     public void Dispose()
     {

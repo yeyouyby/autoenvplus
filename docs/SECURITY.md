@@ -5,22 +5,56 @@
 AutoEnvPlus 把“下载来源”“checksum 来源”和“发布者签名”作为不同层级处理：
 
 ```text
-Node:    固定发布密钥 -> 验证签名清单 -> 从已签名正文读取包 SHA-256
-Temurin: 固定发布密钥 ---------------------> 验证 ZIP detached 签名
-                                      下载 ZIP -> 逐字节 SHA-256 -> 安全解压 -> 原子提交
+Python:  固定 trusted root + 版本系列身份 -> 验证 manifest Sigstore bundle -> 读取包 SHA-256
+Node:    固定发布密钥 --------------------> 验证签名清单 ------------> 读取包 SHA-256
+Temurin: 固定发布密钥 ----------------------------------------------> 验证 ZIP detached 签名
+                                                        下载 ZIP -> 逐字节 SHA-256 -> 安全解压 -> 原子提交
 ```
 
-HTTPS 用于传输保护，SHA-256 用于内容完整性，OpenPGP 等数字签名用于把清单绑定到受信发布密钥。任何一层都不能替代其他层。
+HTTPS 用于传输保护，SHA-256 用于内容完整性，OpenPGP/Sigstore 数字签名用于把清单或包绑定到受信发布身份。任何一层都不能替代其他层。
 
 当前 Provider 策略：
 
 | Provider | checksum | 发布者签名 |
 |---|---|---|
 | Node.js | 已签名 `SHASUMS256.txt.asc` 中的 SHA-256 | 验证 OpenPGP cleartext signature |
-| python.org | 经 release-file API SHA-256 验证的 Windows 清单及包哈希 | 尚未验证 |
+| python.org | Sigstore 签名 Windows manifest 中的 PythonCore ZIP SHA-256 | 验证 Fulcio 身份、SCT、Rekor 透明日志与 manifest 签名 |
 | Eclipse Temurin | Adoptium API/checksum link 提供的 SHA-256 | 下载后验证包本体的 OpenPGP detached signature |
 
-签名必需的安装资产不能降级为 checksum-only。对 Node.js，安装器要求提供当前包哈希的 checksum 证据 URI 与已验证签名 URI 完全一致；无关清单上的有效签名不能授权另一个包。对 Temurin，安装计划必须携带与包文件名完全一致的 detached 签名要求；安装器完成 SHA-256 后流式验证同一个缓存包，签名无效、指纹错配或证据与计划不一致时删除缓存包且不进入解压。
+签名必需的安装资产不能降级为 checksum-only。对 Python，安装器要求包哈希证据的来源 URI 等于 Sigstore 实际验证的 manifest URI，bundle URI 必须是该 manifest URI 加 `.sigstore`；无关 bundle 不能授权另一个清单。对 Node.js，安装器要求提供当前包哈希的 checksum 证据 URI 与已验证签名正文 URI 完全一致；无关清单上的有效签名不能授权另一个包。对 Temurin，安装计划必须携带与包文件名完全一致的 detached 签名要求；安装器完成 SHA-256 后流式验证同一个缓存包，签名无效、指纹错配或证据与计划不一致时删除缓存包且不进入解压。
+
+## Python Sigstore 信任策略
+
+Python 3.14 起不再发布 OpenPGP 签名，python.org 明确要求使用 Sigstore。AutoEnvPlus 验证 Windows release manifest，而不是只验证 ZIP 中的 `python.exe`：只有签名 manifest 提供的 PythonCore ZIP SHA-256 才能进入下载与安装。
+
+身份策略固定到 python.org 的 [`Sigstore Information`](https://www.python.org/downloads/metadata/sigstore/) 表格，而不是从 bundle 自报身份推断。当前源码覆盖 3.7–3.17 的官方 release manager 邮件和 OIDC Issuer；例如 Python 3.14/3.15 必须精确匹配：
+
+- RFC822 SAN：`hugo@python.org`；
+- Fulcio OIDC Issuer：`https://github.com/login/oauth`。
+
+未知 Python 系列会安全失败并要求先审核 python.org 的新身份策略。验证流程还强制执行：
+
+- release-file API 必须同时提供 Windows manifest、SHA-256 和匹配的 `.sigstore` bundle URI；
+- 只接受 `application/vnd.dev.sigstore.bundle.v0.3+json`，一个 SHA-256 message signature、一个 Fulcio 叶证书和一个 Rekor entry；
+- 叶证书必须具有 critical digital-signature key usage、code-signing EKU、单一 critical RFC822 SAN 和精确 OIDC Issuer；
+- 证书链必须在 Rekor integrated time 上有效，并终止于固定 trusted root 中当时有效的 Fulcio trust anchor；
+- 重建 RFC 6962 precertificate TBS，使用固定 CT log 公钥实际验证至少一个 SCT 签名，而不只比较 SCT log ID；
+- canonicalized body 必须是 `hashedrekord 0.0.1`，其中 artifact SHA-256、签名字节和 PEM 证书必须分别与 bundle/manifest/叶证书逐项一致；
+- Rekor log ID 必须存在于固定 trusted root；SET、Merkle inclusion proof、tree checkpoint 签名和最终 artifact ECDSA 签名全部验证成功；
+- bundle 缺失、身份不匹配、manifest 篡改、SET/包含证明/检查点/证书链/SCT 任一失败时拒绝该 release，不回退到 release-file API checksum-only。
+
+因此，目录中仍可显示 python.org 的历史稳定版本，但只有实际发布了 Sigstore-signed Windows manifest 的版本才能生成安装资产；例如缺少该 bundle 的旧版会返回明确错误，而不是恢复此前的双层 SHA-256-only 安装路径。
+
+Sigstore 信任根不在运行时通过任意在线 TUF bootstrap 建立。AutoEnvPlus 内置并逐字节校验官方 [`sigstore/root-signing`](https://github.com/sigstore/root-signing) 提交 `0287f2e6b92ffaa95621afa7732d30f46344040c` 的 `targets/trusted_root.json`：
+
+```text
+SHA-256 6494e21ea73fa7ee769f85f57d5a3e6a08725eae1e38c755fc3517c9e6bc0b66
+信任快照 2026-07-14
+```
+
+底层密码学管线使用固定 NuGet `Sigstore.Net 1.0.3`（源码提交 `d592bc978c6a27cc46e502da9792a1b6ec1c588f`），`packages.lock.json` 固定包及传递依赖内容哈希。源码审计发现该版本自带 `TufClient` 会在线下载第 14 版 root 后只做自签名检查，缺少完整 root 轮换、过期、回滚及 target length/hash 验证；它的默认身份解析也不适用于 Python 的 RFC822 SAN，SCT 路径只比较 log ID。AutoEnvPlus 因此注入拒绝联网的 TUF 实现、始终显式传入内置 trusted root，并在调用底层管线前后独立执行邮件/OIDC、trusted-root 时间窗口、canonicalized body 与完整 SCT 签名验证。不能改回库的默认网络 TUF 路径。
+
+当前离线真实夹具与在线验证均覆盖 Python 3.14.6：manifest SHA-256 `610e427f32889496c08584f0397d2d1d649ed0096be8bcb4341bbe2d3c27138c`，PythonCore x64 ZIP SHA-256 `75afa83f93b284d19040e24bc440ab741c09582c0d5310504d607a4e08c3dbaf`。更新 trusted root 时必须固定新的官方提交和文件 SHA-256，复核 CA/Rekor/CT 时间窗口，更新真实 bundle 夹具，并重新运行身份、manifest 篡改、SET、inclusion proof、checkpoint 与 SCT 失败测试。
 
 ## Node.js 发布密钥
 
@@ -64,7 +98,6 @@ Adoptium API 的 `binaries[].package.signature_link` 指向每个 JDK ZIP 的 de
 
 ## 尚未完成
 
-- Python 的 Authenticode、PGP、Sigstore 或等价发布者身份验证；
 - AutoEnvPlus 自身的代码签名、签名安装器与自动更新元数据签名；
 - 可审计的密钥撤销在线更新通道；
 - Windows 11、代理劫持、时间异常和离线密钥缓存的完整端到端测试。

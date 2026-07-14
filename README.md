@@ -2,7 +2,7 @@
 
 AutoEnvPlus 是一个面向 Windows 10 和 Windows 11 的 Fluent 风格开发环境控制中心。它的目标是统一管理 Python、Node.js、Java 与 C/C++ 工具链的安装、版本选择、PATH、项目环境以及 pip/npm 等工具的缓存目录。
 
-当前仓库处于功能原型阶段。核心路径和自包含 x64 便携发布已经可运行，但 Python 发布者签名、正式安装器和 Win11 端到端验证仍未完成。已经包含：
+当前仓库处于功能原型阶段。核心路径和自包含 x64 便携发布已经可运行，但正式签名安装器、自动更新签名和 Win11 端到端验证仍未完成。已经包含：
 
 - WinUI 3 桌面应用骨架；
 - 按系统能力自适应的 Fluent 窗口背景：Windows 11 优先 Mica，Windows 10 使用 Desktop Acrylic，高对比度、关闭透明效果或材料不可用时切换为纯色，并在设置页显示实际状态；
@@ -11,6 +11,7 @@ AutoEnvPlus 是一个面向 Windows 10 和 Windows 11 的 Fluent 风格开发环
 - PATH 重复、失效和命令冲突检查；
 - WinUI/CLI 共用的 PATH、命令赢家、版本探测、托管状态和全局选择聚合诊断；
 - python.org、Node.js、Eclipse Temurin 官方发行目录、SHA-256 安装资产和校验来源证据；
+- Python Windows release manifest 的 Sigstore v0.3 验证：固定 python.org 版本系列发布身份、内置 trusted-root 快照、Fulcio 证书链/SCT、Rekor SET/Merkle 包含证明/签名检查点和清单签名，缺失或失败时禁止降级；
 - Node.js `SHASUMS256.txt.asc` OpenPGP 验证、固定主指纹/签名子钥映射和历史密钥时限策略；
 - Eclipse Temurin 包本体的 detached OpenPGP 验证、固定 Adoptium 主指纹和签名失败删除缓存策略；
 - WinUI 安装确认页会逐条展示下载地址、包哈希和校验来源，并明确提示数字签名验证状态；
@@ -115,4 +116,8 @@ PowerShell 安装命令默认只输出计划。只有同时提供 `--install-pro
 
 原生 Shim 是不加载 CLR 的 x64 Win32 程序，直接读取同一份托管注册表、项目清单、全局 Profile 和会话变量。它覆盖 `python`/`python3`、`pip`/`pip3`、`node`、`npm`/`npx`、`java`、`javac`、`jar`；构建产物缺失时安装器才显式回退到 CMD 包装器。在本机 60 次交替差分基准中，直接子进程中位耗时为 11.73 ms，经 Shim 为 27.28 ms，中位额外开销 15.55 ms。
 
-详细内容见 [产品规格](docs/PRODUCT.md)、[技术架构](docs/ARCHITECTURE.md)、[安全模型](docs/SECURITY.md)、[分发说明](docs/DISTRIBUTION.md) 和 [路线图](docs/ROADMAP.md)。
+详细内容见 [产品规格](docs/PRODUCT.md)、[技术架构](docs/ARCHITECTURE.md)、[安全模型](docs/SECURITY.md)、[分发说明](docs/DISTRIBUTION.md)、[第三方组件声明](THIRD-PARTY-NOTICES.md) 和 [路线图](docs/ROADMAP.md)。
+
+## 许可证
+
+AutoEnvPlus 本体以 [`AGPL-3.0-only`](LICENSE) 发布。分发修改版时必须按 GNU Affero General Public License v3 提供对应源码；如果修改版允许用户通过网络与程序交互，还必须遵守 AGPLv3 第 13 节的网络源码提供要求。第三方组件不被重新许可，仍分别适用 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) 中列出的 Apache-2.0、MIT、BSD 等原许可证。

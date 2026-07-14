@@ -518,7 +518,10 @@ public sealed partial class RuntimesPage : Page
                 IsOpen = true,
                 Severity = InfoBarSeverity.Success,
                 Title = "发布清单数字签名已验证",
-                Message = "OpenPGP 签名证明校验清单由固定信任的发布密钥签署；下载包仍会再按清单中的 SHA-256 逐字节校验。",
+                Message = plan.Asset.SignatureVerifications.Any(signature =>
+                    signature.Kind == PackageSignatureVerificationKind.SigstoreBundle)
+                    ? "Sigstore 已验证 Fulcio 证书链、python.org 固定发布身份、Rekor SET/包含证明/检查点和清单签名；下载包仍会再按签名清单中的 SHA-256 逐字节校验。"
+                    : "OpenPGP 签名证明校验清单由固定信任的发布密钥签署；下载包仍会再按清单中的 SHA-256 逐字节校验。",
             });
         }
         else if (plan.Asset.SignatureRequirement is PackageSignatureRequirement requirement)
@@ -615,13 +618,47 @@ public sealed partial class RuntimesPage : Page
         details.Children.Add(CreateDetail("签名对象", signature.SignedSubject));
         details.Children.Add(CreateDetail("签名类型", SignatureKindName(signature.Kind)));
         details.Children.Add(CreateDetail("摘要算法", signature.HashAlgorithm));
-        details.Children.Add(CreateDetail("主密钥指纹", signature.PrimaryKeyFingerprint));
-        details.Children.Add(CreateDetail("实际签名 Key ID", signature.SigningKeyId));
+        if (signature.Kind == PackageSignatureVerificationKind.SigstoreBundle)
+        {
+            details.Children.Add(CreateDetail("证书身份", signature.CertificateIdentity ?? "未知"));
+            details.Children.Add(CreateDetail("OIDC Issuer", signature.CertificateOidcIssuer ?? "未知"));
+            details.Children.Add(CreateDetail("叶证书 SHA-256", signature.PrimaryKeyFingerprint));
+            details.Children.Add(CreateDetail("证书 Subject Key ID", signature.SigningKeyId));
+            details.Children.Add(CreateDetail(
+                "Rekor 位置",
+                $"index {signature.TransparencyLogIndex} · tree {signature.TransparencyLogTreeSize}"));
+            details.Children.Add(CreateDetail("Rekor Log ID", signature.TransparencyLogId ?? "未知"));
+            details.Children.Add(CreateDetail("Trusted root SHA-256", signature.TrustRootSha256 ?? "未知"));
+        }
+        else
+        {
+            details.Children.Add(CreateDetail("主密钥指纹", signature.PrimaryKeyFingerprint));
+            details.Children.Add(CreateDetail("实际签名 Key ID", signature.SigningKeyId));
+        }
+
         details.Children.Add(CreateDetail(
             "签名时间（UTC）",
             signature.CreatedAtUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss 'UTC'")));
-        details.Children.Add(CreateLinkDetail("签名清单", signature.SignatureUri));
-        details.Children.Add(CreateLinkDetail("固定公钥来源", signature.KeySourceUri));
+        if (signature.SignedContentUri is Uri signedContentUri)
+        {
+            details.Children.Add(CreateLinkDetail("已签名内容", signedContentUri));
+        }
+
+        details.Children.Add(CreateLinkDetail(
+            signature.Kind == PackageSignatureVerificationKind.SigstoreBundle
+                ? "Sigstore bundle"
+                : "签名清单",
+            signature.SignatureUri));
+        details.Children.Add(CreateLinkDetail(
+            signature.Kind == PackageSignatureVerificationKind.SigstoreBundle
+                ? "固定 trusted root 来源"
+                : "固定公钥来源",
+            signature.KeySourceUri));
+        if (signature.IdentityPolicyUri is Uri identityPolicyUri)
+        {
+            details.Children.Add(CreateLinkDetail("发布身份策略", identityPolicyUri));
+        }
+
         details.Children.Add(new InfoBar
         {
             IsClosable = false,
@@ -629,16 +666,22 @@ public sealed partial class RuntimesPage : Page
             Severity = signature.SignerTrust == PackageSignerTrust.ActiveAtTrustSnapshot
                 ? InfoBarSeverity.Success
                 : InfoBarSeverity.Informational,
-            Title = signature.SignerTrust == PackageSignerTrust.ActiveAtTrustSnapshot
-                ? "活跃发布密钥"
-                : "历史发布密钥",
-            Message = signature.SignerTrust == PackageSignerTrust.ActiveAtTrustSnapshot
-                ? "完整主指纹和实际签名密钥均匹配 AutoEnvPlus 固定的发布密钥信任快照。"
-                : "该密钥只允许验证信任快照日期之前的历史版本。",
+            Title = signature.Kind == PackageSignatureVerificationKind.SigstoreBundle
+                ? "Sigstore 发布身份与透明日志已验证"
+                : signature.SignerTrust == PackageSignerTrust.ActiveAtTrustSnapshot
+                    ? "活跃发布密钥"
+                    : "历史发布密钥",
+            Message = signature.Kind == PackageSignatureVerificationKind.SigstoreBundle
+                ? "证书邮件身份和 OIDC Issuer 精确匹配 python.org 的版本系列策略；Fulcio 链、SCT 日志、Rekor SET、Merkle 包含证明与签名检查点均锚定到内置 trusted-root 快照。"
+                : signature.SignerTrust == PackageSignerTrust.ActiveAtTrustSnapshot
+                    ? "完整主指纹和实际签名密钥均匹配 AutoEnvPlus 固定的发布密钥信任快照。"
+                    : "该密钥只允许验证信任快照日期之前的历史版本。",
         });
         return new Expander
         {
-            Header = $"{SignatureKindName(signature.Kind)} · {signature.SigningKeyId}",
+            Header = signature.Kind == PackageSignatureVerificationKind.SigstoreBundle
+                ? $"{SignatureKindName(signature.Kind)} · {signature.CertificateIdentity}"
+                : $"{SignatureKindName(signature.Kind)} · {signature.SigningKeyId}",
             Content = details,
             IsExpanded = true,
         };
@@ -714,6 +757,7 @@ public sealed partial class RuntimesPage : Page
     {
         PackageSignatureVerificationKind.OpenPgpCleartext => "OpenPGP Cleartext Signature",
         PackageSignatureVerificationKind.OpenPgpDetached => "OpenPGP Detached Signature",
+        PackageSignatureVerificationKind.SigstoreBundle => "Sigstore Bundle",
         _ => kind.ToString(),
     };
 

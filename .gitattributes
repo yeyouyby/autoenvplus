@@ -1,0 +1,2 @@
+src/AutoEnvPlus.Core/Providers/Python/Trust/*.json -text
+tests/AutoEnvPlus.Core.Tests/TestData/Python/* -text
