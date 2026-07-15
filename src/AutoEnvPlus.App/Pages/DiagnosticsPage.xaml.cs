@@ -1,5 +1,8 @@
+using AutoEnvPlus.App.Activity;
 using AutoEnvPlus.App.Diagnostics;
+using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Diagnostics;
+using AutoEnvPlus.Core.Environment;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -65,6 +68,11 @@ public sealed partial class DiagnosticsPage : Page
             SummaryInfo.Severity = InfoBarSeverity.Success;
             SummaryInfo.Title = "诊断报告已导出";
             SummaryInfo.Message = file.Path;
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.DiagnosticExport,
+                ActivityStatus.Succeeded,
+                "已导出脱敏的结构化环境诊断 JSON。",
+                [file.Path]);
         }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
@@ -74,6 +82,10 @@ public sealed partial class DiagnosticsPage : Page
             SummaryInfo.Severity = InfoBarSeverity.Error;
             SummaryInfo.Title = "无法导出诊断报告";
             SummaryInfo.Message = exception.Message;
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.DiagnosticExport,
+                ActivityStatus.Failed,
+                $"环境诊断 JSON 导出失败。错误类型：{exception.GetType().Name}。");
         }
     }
 
@@ -175,9 +187,7 @@ public sealed partial class DiagnosticsPage : Page
         DiagnosticProgress.IsActive = busy;
     }
 
-    private static string GetManagedRoot() => Path.Combine(
-        System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
-        "AutoEnvPlus");
+    private static string GetManagedRoot() => ManagedRootResolver.ResolveOrThrow();
 
     private sealed record IssueRow(
         string Severity,

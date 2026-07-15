@@ -1908,10 +1908,7 @@ static bool TryGetManagedRoot(
         return false;
     }
 
-    managedRoot = Path.GetFullPath(configuredRoot ?? Path.Combine(
-        System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
-        "AutoEnvPlus"));
-    return true;
+    return ManagedRootResolver.TryResolve(configuredRoot, out managedRoot, out error);
 }
 
 static bool TryGetOption(

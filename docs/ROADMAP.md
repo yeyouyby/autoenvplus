@@ -28,6 +28,9 @@
 - [x] pnpm `store-dir` 与 Yarn Classic 缓存事务迁移；
 - [x] PATH、命令冲突和运行时健康诊断；
 - [x] WinUI/CLI 聚合诊断页、结构化报告与 WinUI JSON 导出；
+- [x] `--root` / `AUTOENVPLUS_HOME` / 默认目录统一解析与非系统盘设置；
+- [x] 纯缓存同卷隔离、可恢复清理和二次确认永久清空；
+- [x] 有界脱敏活动记录、跨进程写入锁与 WinUI 筛选/复制页面；
 - [x] 下载与归档 SHA-256 校验；
 - [x] HTTP Range、ETag/Last-Modified、If-Range 断点续传；
 - [x] 引用扫描、隔离目录和注册表回滚的安全卸载；

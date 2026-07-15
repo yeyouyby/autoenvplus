@@ -14,7 +14,8 @@ public sealed record CacheDirectoryDefinition(
     Func<CacheEnvironment, string> DefaultPathFactory,
     bool SupportsMigration,
     CacheConfigurationKind ConfigurationKind = CacheConfigurationKind.EnvironmentVariable,
-    Func<CacheEnvironment, string>? ConfigurationFilePathFactory = null);
+    Func<CacheEnvironment, string>? ConfigurationFilePathFactory = null,
+    bool SupportsSafeCleanup = false);
 
 public sealed record CacheEnvironment(
     string LocalApplicationData,

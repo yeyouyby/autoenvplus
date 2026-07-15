@@ -1,5 +1,6 @@
 using AutoEnvPlus.App.Pages;
 using AutoEnvPlus.App.Appearance;
+using AutoEnvPlus.Core.Environment;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Graphics;
@@ -34,16 +35,27 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        ContentFrame.Content = tag switch
+        try
         {
-            "dashboard" => new DashboardPage(),
-            "runtimes" => new RuntimesPage(),
-            "path" => new PathPage(),
-            "storage" => new StoragePage(),
-            "toolchains" => new ToolchainsPage(),
-            "projects" => new ProjectsPage(),
-            "doctor" => new DiagnosticsPage(),
-            _ => new DashboardPage(),
-        };
+            ContentFrame.Content = tag switch
+            {
+                "dashboard" => new DashboardPage(),
+                "runtimes" => new RuntimesPage(),
+                "path" => new PathPage(),
+                "storage" => new StoragePage(),
+                "toolchains" => new ToolchainsPage(),
+                "projects" => new ProjectsPage(),
+                "doctor" => new DiagnosticsPage(),
+                "activity" => new ActivityPage(),
+                _ => new DashboardPage(),
+            };
+        }
+        catch (InvalidOperationException) when (!ManagedRootResolver.TryResolve(
+            null,
+            out _,
+            out _))
+        {
+            ContentFrame.Content = new SettingsPage(_backdropManager);
+        }
     }
 }

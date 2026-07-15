@@ -22,11 +22,13 @@ AutoEnvPlus 是一个面向 Windows 10 和 Windows 11 的 Fluent 风格开发环
 - PowerShell 会话模块、受管 Profile 块、修改前快照与并发安全回滚；
 - 项目现有版本文件导入、精确 `autoenvplus.lock` 和引用保护卸载；
 - 项目清单预解析、精确运行时会话变量与独立 PowerShell 终端启动，不修改父进程或用户 PATH；
-- pip/npm/pnpm/Yarn/NuGet/Maven/Gradle/vcpkg/Conan 存储发现、统计、事务迁移、配置快照与回滚；
+- 可通过 `AUTOENVPLUS_HOME` 和设置页把运行时、Shim、状态与日志放到非系统盘，CLI 的显式 `--root` 仍具有最高优先级；
+- pip/npm/pnpm/Yarn/NuGet/Maven/Gradle/vcpkg/Conan 存储发现、统计、事务迁移、配置快照与回滚；纯缓存目录还支持可恢复隔离和二次确认后的永久清空；
 - Visual Studio/MSVC、Windows SDK、clang/GCC/CMake/Ninja 工具链发现；
 - 通过精确 WinGet 白名单安装 MSVC、LLVM、MinGW-w64/GCC、CMake 和 Ninja，并提供页面级操作锁、进度和进程树取消；
 - 基于实际 `cl.exe` 布局的 MSVC Host/Target 架构选择与开发终端预览；
 - 保留用户内容、可预览和回滚的项目级 `CMakeUserPresets.json` 生成；
+- 有大小与条目上限、跨进程写入锁和凭据脱敏的活动记录，以及可筛选、复制摘要的 WinUI 审计页；
 - 第一组自动化测试；
 - 可复现组合 WinUI、单文件 CLI、原生 Shim 和逐文件 SHA-256 清单的自包含便携发布脚本；
 - 生产证书缺失时安全失败、严格绑定 Publisher/版本/架构/HTTPS 更新 URI 的 MSIX 与 AppInstaller 发布脚本；
@@ -38,6 +40,7 @@ AutoEnvPlus 是一个面向 Windows 10 和 Windows 11 的 Fluent 风格开发环
 
 - Windows 10 1809 或更高版本；
 - Visual Studio 2022（包含 Windows 应用 SDK/C++ 桌面构建工具），或 .NET SDK 10.0.200；
+- Windows SDK 10.0.26100 或更高版本；本机发布链已用 `10.0.28000.2114` 验证；
 - x64 环境。
 
 ```powershell
@@ -95,6 +98,10 @@ dotnet run --project src\AutoEnvPlus.Cli -- project cmake-preset D:\path\to\proj
 ```
 
 NuGet 的全局包、HTTP 下载缓存和插件缓存是三个独立目录。若目标是释放系统盘空间，需要分别迁移 `nuget`、`nuget-http` 和 `nuget-plugins`；只迁移 `nuget` 不会改变另外两个目录。
+
+“缓存与存储”页的清理是两阶段操作：先把通过复检的纯缓存内容同卷移入受控隔离区，此时仍可恢复且尚未释放磁盘空间；只有再次选择“永久清空”并确认后才逐项删除隔离内容。Gradle User Home 与 Conan Home 还包含配置、Profile 等非缓存数据，因此不提供整目录清理，只保留迁移能力。
+
+AutoEnvPlus 的受管数据根按 `--root`、用户环境变量 `AUTOENVPLUS_HOME`、`%LOCALAPPDATA%\AutoEnvPlus` 的顺序解析。设置页可以选择非系统盘上的绝对目录，并在确认后写入用户级 `AUTOENVPLUS_HOME`；新目录在重启 AutoEnvPlus 后生效。更改数据根不会自动迁移运行时、缓存或快照，也不会删除旧目录。
 
 运行桌面原型：
 

@@ -59,6 +59,60 @@
                 BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
                 BorderThickness="0,1,0,1"
                 Padding="0,18">
+                <Grid RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock
+                            Style="{StaticResource SubtitleTextBlockStyle}"
+                            Text="受管数据根" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="运行时、Shim、注册表、项目状态和诊断快照都保存在这里。不会自动迁移或删除旧目录。"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Name="ManagedRootText"
+                            FontWeight="SemiBold"
+                            IsTextSelectionEnabled="True"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBlock
+                            x:Name="ManagedRootDescriptionText"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            IsTextSelectionEnabled="True"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <StackPanel
+                        Grid.Row="1"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button
+                            x:Name="ChooseManagedRootButton"
+                            Click="OnChooseManagedRootClicked"
+                            ToolTipService.ToolTip="选择非系统盘上的受管数据目录">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="OpenFile" />
+                                <TextBlock Text="选择数据根" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <InfoBar
+                        x:Name="ManagedRootInfo"
+                        Grid.Row="2"
+                        IsClosable="False"
+                        IsOpen="False" />
+                </Grid>
+            </Border>
+
+            <Border
+                BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,1"
+                Padding="0,18">
                 <Grid RowSpacing="14">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

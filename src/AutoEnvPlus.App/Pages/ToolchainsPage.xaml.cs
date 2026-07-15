@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using AutoEnvPlus.App.Activity;
+using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Discovery;
 using AutoEnvPlus.Core.Runtimes;
 using AutoEnvPlus.Core.Toolchains;
@@ -67,6 +69,7 @@ public sealed partial class ToolchainsPage : Page
 
         SetInstallButtonsEnabled(false);
         ExternalToolInstallPlan? plan = null;
+        bool terminalStatusCaptured = false;
         try
         {
             WingetToolchainInstaller installer = new();
@@ -76,6 +79,10 @@ public sealed partial class ToolchainsPage : Page
                 ToolchainInfo.Severity = InfoBarSeverity.Error;
                 ToolchainInfo.Title = "找不到 WinGet";
                 ToolchainInfo.Message = "请先安装或修复 Microsoft App Installer。";
+                await TryWriteInstallActivityAsync(
+                    ActivityStatus.Failed,
+                    $"工具链安装失败：找不到 WinGet。组件：{component}。");
+                terminalStatusCaptured = true;
                 return;
             }
 
@@ -83,6 +90,10 @@ public sealed partial class ToolchainsPage : Page
             ContentDialog confirmation = CreateInstallConfirmation(plan);
             if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
             {
+                await TryWriteInstallActivityAsync(
+                    ActivityStatus.Cancelled,
+                    $"用户取消工具链安装：{plan.DisplayName}（{plan.PackageId}）。");
+                terminalStatusCaptured = true;
                 return;
             }
 
@@ -101,6 +112,10 @@ public sealed partial class ToolchainsPage : Page
             ToolchainInfo.Title = "组件安装完成";
             ToolchainInfo.Message = plan.DisplayName;
             CancelInstallButton.IsEnabled = false;
+            await TryWriteInstallActivityAsync(
+                ActivityStatus.Succeeded,
+                $"WinGet 工具链安装完成：{plan.DisplayName}（{plan.PackageId}）。");
+            terminalStatusCaptured = true;
             await DiscoverAndRenderAsync();
         }
         catch (OperationCanceledException)
@@ -108,6 +123,14 @@ public sealed partial class ToolchainsPage : Page
             ToolchainInfo.Severity = InfoBarSeverity.Informational;
             ToolchainInfo.Title = "安装已取消";
             ToolchainInfo.Message = plan?.DisplayName ?? "工具链组件";
+            if (!terminalStatusCaptured)
+            {
+                await TryWriteInstallActivityAsync(
+                    ActivityStatus.Cancelled,
+                    plan is null
+                        ? $"工具链安装已取消。组件：{component}。"
+                        : $"WinGet 工具链安装已取消：{plan.DisplayName}（{plan.PackageId}）。");
+            }
         }
         catch (Exception exception) when (exception is InvalidOperationException
             or IOException
@@ -116,6 +139,14 @@ public sealed partial class ToolchainsPage : Page
             ToolchainInfo.Severity = InfoBarSeverity.Error;
             ToolchainInfo.Title = "组件安装失败";
             ToolchainInfo.Message = exception.Message;
+            if (!terminalStatusCaptured)
+            {
+                await TryWriteInstallActivityAsync(
+                    ActivityStatus.Failed,
+                    plan is null
+                        ? $"工具链安装失败。组件：{component}。错误类型：{exception.GetType().Name}。"
+                        : $"WinGet 工具链安装失败：{plan.DisplayName}（{plan.PackageId}）。错误类型：{exception.GetType().Name}。");
+            }
         }
         finally
         {
@@ -124,6 +155,13 @@ public sealed partial class ToolchainsPage : Page
             _installOperationLock.Release();
         }
     }
+
+    private async Task TryWriteInstallActivityAsync(
+        ActivityStatus status,
+        string summary) => await AppActivityLog.TryWriteAsync(
+            ActivityOperationType.ToolchainInstall,
+            status,
+            summary);
 
     private ContentDialog CreateInstallConfirmation(ExternalToolInstallPlan plan) => new()
     {

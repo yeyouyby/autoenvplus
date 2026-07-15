@@ -1,4 +1,7 @@
 using System.Text;
+using AutoEnvPlus.App.Activity;
+using AutoEnvPlus.Core.Activity;
+using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Projects;
 using AutoEnvPlus.Core.State;
 using AutoEnvPlus.Core.Toolchains;
@@ -114,6 +117,11 @@ public sealed partial class ProjectsPage : Page
             ProjectInfo.Severity = InfoBarSeverity.Success;
             ProjectInfo.Title = "项目清单已创建";
             ProjectInfo.Message = _manifestPath;
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.ProjectImport,
+                ActivityStatus.Succeeded,
+                "已从现有版本声明生成 autoenvplus.toml。",
+                [_projectRoot!, _manifestPath]);
             await LoadProjectAsync(_projectRoot!);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
@@ -121,6 +129,14 @@ public sealed partial class ProjectsPage : Page
             ProjectInfo.Severity = InfoBarSeverity.Error;
             ProjectInfo.Title = "无法创建项目清单";
             ProjectInfo.Message = exception.Message;
+            if (_projectRoot is not null)
+            {
+                await AppActivityLog.TryWriteAsync(
+                    ActivityOperationType.ProjectImport,
+                    ActivityStatus.Failed,
+                    $"生成 autoenvplus.toml 失败。错误类型：{exception.GetType().Name}。",
+                    [_projectRoot]);
+            }
         }
     }
 
@@ -221,21 +237,51 @@ public sealed partial class ProjectsPage : Page
             return;
         }
 
-        RegistryLoadResult registry = await new ManagedRuntimeRegistry(GetManagedRoot()).LoadAsync();
-        ProjectLockResult result = await new ProjectLockFileService().CreateAsync(
-            _manifestPath,
-            registry.Entries);
-        if (!result.Success)
+        try
         {
-            ProjectInfo.Severity = InfoBarSeverity.Warning;
-            ProjectInfo.Title = "锁文件尚未生成";
-            ProjectInfo.Message = string.Join("；", result.Errors);
-            return;
-        }
+            RegistryLoadResult registry = await new ManagedRuntimeRegistry(GetManagedRoot()).LoadAsync();
+            ProjectLockResult result = await new ProjectLockFileService().CreateAsync(
+                _manifestPath,
+                registry.Entries);
+            if (!result.Success)
+            {
+                ProjectInfo.Severity = InfoBarSeverity.Warning;
+                ProjectInfo.Title = "锁文件尚未生成";
+                ProjectInfo.Message = string.Join("；", result.Errors);
+                await AppActivityLog.TryWriteAsync(
+                    ActivityOperationType.ProjectImport,
+                    ActivityStatus.Failed,
+                    "项目精确锁文件未生成；运行时解析存在未满足项。",
+                    [_manifestPath]);
+                return;
+            }
 
-        ProjectInfo.Severity = InfoBarSeverity.Success;
-        ProjectInfo.Title = "项目锁文件已生成";
-        ProjectInfo.Message = $"{result.LockPath} · {result.Document!.Runtimes.Count} 个精确运行时";
+            string lockPath = result.LockPath ?? Path.Combine(
+                Path.GetDirectoryName(_manifestPath)!,
+                ProjectLockFileService.LockFileName);
+            ProjectInfo.Severity = InfoBarSeverity.Success;
+            ProjectInfo.Title = "项目锁文件已生成";
+            ProjectInfo.Message = $"{lockPath} · {result.Document!.Runtimes.Count} 个精确运行时";
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.ProjectImport,
+                ActivityStatus.Succeeded,
+                $"已生成包含 {result.Document.Runtimes.Count} 个精确运行时的项目锁文件。",
+                [_manifestPath, lockPath]);
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidDataException
+            or InvalidOperationException)
+        {
+            ProjectInfo.Severity = InfoBarSeverity.Error;
+            ProjectInfo.Title = "无法生成项目锁文件";
+            ProjectInfo.Message = exception.Message;
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.ProjectImport,
+                ActivityStatus.Failed,
+                $"项目锁文件生成失败。错误类型：{exception.GetType().Name}。",
+                [_manifestPath]);
+        }
     }
 
     private async void OnCreateCMakePresetClicked(object sender, RoutedEventArgs args)
@@ -329,6 +375,15 @@ public sealed partial class ProjectsPage : Page
             ProjectInfo.Severity = InfoBarSeverity.Success;
             ProjectInfo.Title = "CMake User Preset 已写入";
             ProjectInfo.Message = $"{result.PresetsPath} · {plan.ConfigurePresetName} · 快照 {result.SnapshotPath}";
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.CMakePreset,
+                ActivityStatus.Succeeded,
+                $"已写入项目级 {CMakeUserPresetsService.PresetsFileName}：{plan.ConfigurePresetName}。",
+                result.SnapshotPath is null
+                    ? [result.PresetsPath]
+                    : [result.PresetsPath, result.SnapshotPath],
+                result.SnapshotPath,
+                result.SnapshotPath);
         }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
@@ -339,6 +394,14 @@ public sealed partial class ProjectsPage : Page
             ProjectInfo.Severity = InfoBarSeverity.Error;
             ProjectInfo.Title = "无法生成 CMake Preset";
             ProjectInfo.Message = exception.Message;
+            if (_projectRoot is not null)
+            {
+                await AppActivityLog.TryWriteAsync(
+                    ActivityOperationType.CMakePreset,
+                    ActivityStatus.Failed,
+                    $"项目级 CMake User Preset 写入失败。错误类型：{exception.GetType().Name}。",
+                    [_projectRoot]);
+            }
         }
         finally
         {
@@ -374,27 +437,59 @@ public sealed partial class ProjectsPage : Page
             return;
         }
 
-        CMakeUserPresetsResult result = await new CMakeUserPresetsService(
-            GetManagedRoot(),
-            _projectRoot).RollbackAsync(snapshot);
-        if (!result.Success)
+        try
+        {
+            CMakeUserPresetsResult result = await new CMakeUserPresetsService(
+                GetManagedRoot(),
+                _projectRoot).RollbackAsync(snapshot);
+            if (!result.Success)
+            {
+                ProjectInfo.Severity = InfoBarSeverity.Error;
+                ProjectInfo.Title = "CMake Preset 回滚失败";
+                ProjectInfo.Message = result.Error;
+                await AppActivityLog.TryWriteAsync(
+                    ActivityOperationType.CMakePreset,
+                    ActivityStatus.Failed,
+                    "CMake User Preset 回滚在执行时复检阶段被拒绝。",
+                    [_projectRoot, snapshot],
+                    snapshot,
+                    snapshot);
+                return;
+            }
+
+            _lastCMakePresetSnapshot = null;
+            RollbackCMakePresetButton.IsEnabled = false;
+            ProjectInfo.Severity = InfoBarSeverity.Success;
+            ProjectInfo.Title = "CMake User Presets 已回滚";
+            ProjectInfo.Message = result.PresetsPath;
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.CMakePreset,
+                ActivityStatus.Succeeded,
+                "已回滚项目级 CMake User Preset。",
+                [_projectRoot, result.PresetsPath, snapshot],
+                snapshot,
+                snapshot);
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidDataException
+            or InvalidOperationException
+            or NotSupportedException)
         {
             ProjectInfo.Severity = InfoBarSeverity.Error;
             ProjectInfo.Title = "CMake Preset 回滚失败";
-            ProjectInfo.Message = result.Error;
-            return;
+            ProjectInfo.Message = exception.Message;
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.CMakePreset,
+                ActivityStatus.Failed,
+                $"CMake User Preset 回滚失败。错误类型：{exception.GetType().Name}。",
+                [_projectRoot, snapshot],
+                snapshot,
+                snapshot);
         }
-
-        _lastCMakePresetSnapshot = null;
-        RollbackCMakePresetButton.IsEnabled = false;
-        ProjectInfo.Severity = InfoBarSeverity.Success;
-        ProjectInfo.Title = "CMake User Presets 已回滚";
-        ProjectInfo.Message = result.PresetsPath;
     }
 
-    private static string GetManagedRoot() => Path.Combine(
-        System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
-        "AutoEnvPlus");
+    private static string GetManagedRoot() => ManagedRootResolver.ResolveOrThrow();
 
     private sealed record CMakePresetChoice(
         VisualCppInstallation Installation,

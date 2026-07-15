@@ -1,5 +1,8 @@
+using AutoEnvPlus.App.Activity;
 using AutoEnvPlus.App.RuntimeCatalogs;
+using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Discovery;
+using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Installation;
 using AutoEnvPlus.Core.Providers;
 using AutoEnvPlus.Core.Providers.Java;
@@ -127,6 +130,9 @@ public sealed partial class RuntimesPage : Page
         }
 
         CancellationToken cancellationToken = BeginOperation();
+        ArchiveInstallPlan? activityPlan = null;
+        RuntimeRelease? activityRelease = null;
+        bool installConfirmed = false;
         try
         {
             RuntimeArchitecture architecture = CurrentArchitecture();
@@ -163,6 +169,7 @@ public sealed partial class RuntimesPage : Page
                 ResetActionInfo();
                 return;
             }
+            activityRelease = selectedRelease;
 
             ActionInfo.Title = "正在解析安装资产";
             ActionInfo.Message = selectedRelease.ProviderVersion;
@@ -170,12 +177,14 @@ public sealed partial class RuntimesPage : Page
                 selectedRelease,
                 cancellationToken);
             ArchiveInstallPlan plan = provider.CreateInstallPlan(asset, GetManagedRoot());
+            activityPlan = plan;
             bool confirmed = await ConfirmInstallPlanAsync(plan);
             if (!confirmed)
             {
                 ResetActionInfo();
                 return;
             }
+            installConfirmed = true;
 
             Progress<InstallProgress> progress = new(value =>
             {
@@ -215,6 +224,13 @@ public sealed partial class RuntimesPage : Page
                 ? "运行时已登记"
                 : "安装完成";
             ActionInfo.Message = $"{selectedRelease.Kind} {selectedRelease.Version} · {result.InstallRoot}";
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.RuntimeInstall,
+                ActivityStatus.Succeeded,
+                result.InstallOutcome == InstallOutcome.AlreadyInstalled
+                    ? $"已重新确认托管运行时：{selectedRelease.Kind} {selectedRelease.Version} ({selectedRelease.Architecture})。"
+                    : $"已安装托管运行时：{selectedRelease.Kind} {selectedRelease.Version} ({selectedRelease.Architecture})。",
+                [result.InstallRoot ?? plan.DestinationRoot]);
             await RefreshStatusesAsync();
         }
         catch (OperationCanceledException)
@@ -222,6 +238,16 @@ public sealed partial class RuntimesPage : Page
             ActionInfo.Severity = InfoBarSeverity.Informational;
             ActionInfo.Title = "操作已取消";
             ActionInfo.Message = "没有提交未完成的安装。";
+            if (installConfirmed)
+            {
+                await AppActivityLog.TryWriteAsync(
+                    ActivityOperationType.RuntimeInstall,
+                    ActivityStatus.Cancelled,
+                    activityRelease is null
+                        ? $"{kind} 运行时安装已取消。"
+                        : $"{activityRelease.Kind} {activityRelease.Version} 安装已取消。",
+                    activityPlan is null ? [] : [activityPlan.DestinationRoot]);
+            }
         }
         catch (Exception exception) when (exception is HttpRequestException
             or InvalidDataException
@@ -232,6 +258,16 @@ public sealed partial class RuntimesPage : Page
             ActionInfo.Severity = InfoBarSeverity.Error;
             ActionInfo.Title = "安装未完成";
             ActionInfo.Message = exception.Message;
+            if (installConfirmed)
+            {
+                await AppActivityLog.TryWriteAsync(
+                    ActivityOperationType.RuntimeInstall,
+                    ActivityStatus.Failed,
+                    activityRelease is null
+                        ? $"{kind} 运行时安装失败。错误类型：{exception.GetType().Name}。"
+                        : $"{activityRelease.Kind} {activityRelease.Version} 安装失败。错误类型：{exception.GetType().Name}。",
+                    activityPlan is null ? [] : [activityPlan.DestinationRoot]);
+            }
         }
         finally
         {
@@ -249,6 +285,7 @@ public sealed partial class RuntimesPage : Page
         }
 
         CancellationToken cancellationToken = BeginOperation();
+        bool changeConfirmed = false;
         try
         {
             ContentDialog confirmation = new()
@@ -269,6 +306,7 @@ public sealed partial class RuntimesPage : Page
             {
                 return;
             }
+            changeConfirmed = true;
 
             if (!File.Exists(row.Entry.ExecutablePath))
             {
@@ -284,6 +322,11 @@ public sealed partial class RuntimesPage : Page
             ActionInfo.Severity = InfoBarSeverity.Success;
             ActionInfo.Title = "全局默认版本已更新";
             ActionInfo.Message = $"{DisplayName(row.Entry.Kind)} {row.Entry.Version}。项目和会话选择未修改。";
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.RuntimeSwitch,
+                ActivityStatus.Succeeded,
+                $"已把 {DisplayName(row.Entry.Kind)} 全局默认切换到 {row.Entry.Version}；项目与会话选择未修改。",
+                [row.Entry.ExecutablePath]);
             await RefreshStatusesAsync();
         }
         catch (OperationCanceledException)
@@ -291,6 +334,14 @@ public sealed partial class RuntimesPage : Page
             ActionInfo.Severity = InfoBarSeverity.Informational;
             ActionInfo.Title = "操作已取消";
             ActionInfo.Message = string.Empty;
+            if (changeConfirmed)
+            {
+                await AppActivityLog.TryWriteAsync(
+                    ActivityOperationType.RuntimeSwitch,
+                    ActivityStatus.Cancelled,
+                    $"{DisplayName(row.Entry.Kind)} 全局默认切换到 {row.Entry.Version} 的操作已取消。",
+                    [row.Entry.ExecutablePath]);
+            }
         }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
@@ -300,6 +351,14 @@ public sealed partial class RuntimesPage : Page
             ActionInfo.Severity = InfoBarSeverity.Error;
             ActionInfo.Title = "无法更新全局默认版本";
             ActionInfo.Message = exception.Message;
+            if (changeConfirmed)
+            {
+                await AppActivityLog.TryWriteAsync(
+                    ActivityOperationType.RuntimeSwitch,
+                    ActivityStatus.Failed,
+                    $"{DisplayName(row.Entry.Kind)} 全局默认切换失败。错误类型：{exception.GetType().Name}。",
+                    [row.Entry.ExecutablePath]);
+            }
         }
         finally
         {
@@ -315,6 +374,7 @@ public sealed partial class RuntimesPage : Page
         }
 
         CancellationToken cancellationToken = BeginOperation();
+        bool uninstallConfirmed = false;
         try
         {
             ManagedRuntimeUninstaller uninstaller = new(GetManagedRoot());
@@ -358,6 +418,7 @@ public sealed partial class RuntimesPage : Page
             {
                 return;
             }
+            uninstallConfirmed = true;
 
             ManagedRuntimeUninstallResult result = await uninstaller.ExecuteAsync(
                 plan,
@@ -374,10 +435,28 @@ public sealed partial class RuntimesPage : Page
             ActionInfo.Message = result.PendingTrashCleanup
                 ? "注册表已更新；被占用的文件留在 .trash，稍后可重试清理。"
                 : "运行时目录已删除，共享下载缓存已保留。";
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.RuntimeUninstall,
+                ActivityStatus.Succeeded,
+                result.PendingTrashCleanup
+                    ? $"已卸载 {row.DisplayName}；部分被占用文件保留在受管 .trash。"
+                    : $"已卸载 {row.DisplayName}；共享下载缓存保持不变。",
+                [row.InstallRoot]);
             await RefreshStatusesAsync();
         }
         catch (OperationCanceledException)
         {
+            ActionInfo.Severity = InfoBarSeverity.Informational;
+            ActionInfo.Title = "卸载已取消";
+            ActionInfo.Message = string.Empty;
+            if (uninstallConfirmed)
+            {
+                await AppActivityLog.TryWriteAsync(
+                    ActivityOperationType.RuntimeUninstall,
+                    ActivityStatus.Cancelled,
+                    $"卸载 {row.DisplayName} 的操作已取消。",
+                    [row.InstallRoot]);
+            }
         }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
@@ -388,6 +467,14 @@ public sealed partial class RuntimesPage : Page
             ActionInfo.Severity = InfoBarSeverity.Error;
             ActionInfo.Title = "无法卸载运行时";
             ActionInfo.Message = exception.Message;
+            if (uninstallConfirmed)
+            {
+                await AppActivityLog.TryWriteAsync(
+                    ActivityOperationType.RuntimeUninstall,
+                    ActivityStatus.Failed,
+                    $"卸载 {row.DisplayName} 失败。错误类型：{exception.GetType().Name}。",
+                    [row.InstallRoot]);
+            }
         }
         finally
         {
@@ -935,9 +1022,7 @@ public sealed partial class RuntimesPage : Page
         _ => RuntimeArchitecture.X64,
     };
 
-    private static string GetManagedRoot() => Path.Combine(
-        System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
-        "AutoEnvPlus");
+    private static string GetManagedRoot() => ManagedRootResolver.ResolveOrThrow();
 
     private sealed record RuntimeChoice(RuntimeRelease Release)
     {

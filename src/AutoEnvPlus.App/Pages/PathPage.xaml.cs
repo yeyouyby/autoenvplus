@@ -1,4 +1,6 @@
 using System.Globalization;
+using AutoEnvPlus.App.Activity;
+using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Shell;
 using AutoEnvPlus.Core.Storage;
@@ -17,9 +19,7 @@ public sealed partial class PathPage : Page
 
     public PathPage()
     {
-        _managedRoot = Path.Combine(
-            System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
-            "AutoEnvPlus");
+        _managedRoot = ManagedRootResolver.ResolveOrThrow();
         _cliPath = Path.Combine(AppContext.BaseDirectory, "cli", "autoenvplus.exe");
         _nativeShimPath = Path.Combine(AppContext.BaseDirectory, "cli", "autoenvplus-shim.exe");
         _pathManager = new UserPathManager(
@@ -115,6 +115,15 @@ public sealed partial class PathPage : Page
             SummaryInfo.Message = result.Changed
                 ? $"已安装 {implementation} 并保存 PATH 快照：{result.SnapshotPath}。请打开新终端。"
                 : $"{implementation} 已安装，Shim 已经处于用户 PATH 第一位。";
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.PathChange,
+                ActivityStatus.Succeeded,
+                result.Changed
+                    ? $"已安装 {implementation}，并把 AutoEnvPlus Shim 置于用户 PATH 第一位。"
+                    : $"已确认 {implementation} 与用户 PATH 无需变更。",
+                [shims.ShimDirectory],
+                result.SnapshotPath,
+                result.SnapshotPath);
             await LoadSnapshotsAsync();
         }
         catch (Exception exception) when (exception is IOException
@@ -124,6 +133,11 @@ public sealed partial class PathPage : Page
             SummaryInfo.Severity = InfoBarSeverity.Error;
             SummaryInfo.Title = "无法启用命令切换";
             SummaryInfo.Message = exception.Message;
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.PathChange,
+                ActivityStatus.Failed,
+                $"启用 AutoEnvPlus Shim 与用户 PATH 失败。错误类型：{exception.GetType().Name}。",
+                [shimDirectory]);
         }
         finally
         {
@@ -183,6 +197,13 @@ public sealed partial class PathPage : Page
                 SummaryInfo.Severity = InfoBarSeverity.Error;
                 SummaryInfo.Title = "无法回滚用户 PATH";
                 SummaryInfo.Message = result.Error ?? "PATH 回滚失败。";
+                await AppActivityLog.TryWriteAsync(
+                    ActivityOperationType.PathRollback,
+                    ActivityStatus.Failed,
+                    "用户 PATH 回滚在执行时复检阶段被拒绝。",
+                    [selected.AddedDirectory],
+                    selected.Snapshot.SnapshotPath,
+                    selected.Snapshot.SnapshotPath);
                 await LoadSnapshotsAsync();
                 return;
             }
@@ -191,6 +212,13 @@ public sealed partial class PathPage : Page
             SummaryInfo.Severity = InfoBarSeverity.Success;
             SummaryInfo.Title = "用户 PATH 已回滚";
             SummaryInfo.Message = "已恢复快照写入前的用户 PATH；系统 PATH 和 Shim 文件未修改。请打开新终端。";
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.PathRollback,
+                ActivityStatus.Succeeded,
+                "已恢复 AutoEnvPlus 修改前的用户 PATH；系统 PATH 与 Shim 文件保持不变。",
+                [selected.AddedDirectory],
+                selected.Snapshot.SnapshotPath,
+                selected.Snapshot.SnapshotPath);
             await LoadSnapshotsAsync();
         }
         catch (Exception exception) when (exception is IOException
@@ -202,6 +230,13 @@ public sealed partial class PathPage : Page
             SummaryInfo.Severity = InfoBarSeverity.Error;
             SummaryInfo.Title = "无法回滚用户 PATH";
             SummaryInfo.Message = exception.Message;
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.PathRollback,
+                ActivityStatus.Failed,
+                $"用户 PATH 回滚失败。错误类型：{exception.GetType().Name}。",
+                [selected.AddedDirectory],
+                selected.Snapshot.SnapshotPath,
+                selected.Snapshot.SnapshotPath);
             await LoadSnapshotsAsync();
         }
         finally

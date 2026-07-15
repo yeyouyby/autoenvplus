@@ -22,20 +22,21 @@ Shell Hook ┘                         │
 ## 文件布局
 
 ```text
-%LOCALAPPDATA%\AutoEnvPlus\runtimes
-%LOCALAPPDATA%\AutoEnvPlus\shims
-%LOCALAPPDATA%\AutoEnvPlus\downloads
-%LOCALAPPDATA%\AutoEnvPlus\state
-%LOCALAPPDATA%\AutoEnvPlus\shell\powershell\AutoEnvPlus.PowerShell.psm1
-%LOCALAPPDATA%\AutoEnvPlus\logs
-%APPDATA%\AutoEnvPlus\settings.json
+<managed-root>\runtimes
+<managed-root>\shims
+<managed-root>\downloads
+<managed-root>\state
+<managed-root>\shell\powershell\AutoEnvPlus.PowerShell.psm1
+<managed-root>\state\activity.jsonl
 ```
+
+受管根按 CLI 显式 `--root`、`AUTOENVPLUS_HOME`、`%LOCALAPPDATA%\AutoEnvPlus` 的顺序解析，并统一拒绝相对路径、驱动器根与 UNC 共享根。设置页写入用户级环境变量后要求重启，不修改当前进程环境，也不隐式搬迁旧数据；这样一个进程生命周期内的 WinUI、CLI 调用和生成的 Shell 模块始终绑定同一根。
 
 程序更新、运行时安装和用户数据彼此分离。卸载 AutoEnvPlus 时，不会在未确认的情况下删除运行时与项目锁文件。
 
 ## Shim 设计
 
-AutoEnvPlus 只需把 `%LOCALAPPDATA%\AutoEnvPlus\shims` 加入用户 PATH 一次。`python.exe`、`node.exe`、`java.exe` 等无 CLR Win32 Shim 从当前目录向上查找 `autoenvplus.toml`，再按会话、项目、全局顺序解析实际运行时。
+AutoEnvPlus 只需把 `<managed-root>\shims` 加入用户 PATH 一次。`python.exe`、`node.exe`、`java.exe` 等无 CLR Win32 Shim 从当前目录向上查找 `autoenvplus.toml`，再按会话、项目、全局顺序解析实际运行时。
 
 用户 PATH 修改前的快照只能位于受管 `state\path-snapshots` 的直接子目录。核心层枚举和回滚都会重新限制文件大小、拒绝 reparse point、校验 GUID 与文件名、规范 Shim 绝对路径，并严格重建 `Before -> Shim-first After` 变换。只有当前 PATH 仍与快照 `After` 完全一致时才允许回滚；WinUI 仅消费核心层返回的状态，不自行读取 JSON 或注册表。
 
@@ -60,7 +61,7 @@ PowerShell 模块只修改当前进程的 `AUTOENVPLUS_PYTHON_VERSION`、`AUTOEN
 - `Clear-AutoEnvPlusRuntime [runtime]`：清除一个或全部会话选择；
 - 导入时只在当前 PowerShell 进程中把受管 Shim 目录置于 PATH 前部，不修改用户或系统 PATH。
 
-Profile 使用固定的开始/结束标记管理单个块。安装计划会保留块外全部内容、清理重复受管块，并在写入前检查 Profile 与模块是否仍等于预览版本。实际写入顺序为模块原子写入、快照原子写入、Profile 原子替换。回滚只接受 `%LOCALAPPDATA%\AutoEnvPlus\state\powershell-profile-snapshots` 内、ID 与文件名一致的快照；Profile 出现较新修改时拒绝覆盖。
+Profile 使用固定的开始/结束标记管理单个块。安装计划会保留块外全部内容、清理重复受管块，并在写入前检查 Profile 与模块是否仍等于预览版本。实际写入顺序为模块原子写入、快照原子写入、Profile 原子替换。回滚只接受 `<managed-root>\state\powershell-profile-snapshots` 内、ID 与文件名一致的快照；Profile 出现较新修改时拒绝覆盖。
 
 项目已激活终端是独立流程：服务读取最近的 `autoenvplus.toml`，从托管注册表把 Python/Node.js/Java 选择器预解析为精确版本，验证注册可执行文件和对应 Shim，再生成只读启动计划。WinUI/CLI 展示计划后，启动前重新计算 manifest SHA-256、重新加载注册表并比较环境覆盖，任何变化都会拒绝旧计划。实际启动使用 `CreateProcessW`、`CREATE_NEW_CONSOLE` 和独立 Unicode 环境块，工作目录固定为项目根；父进程与持久环境变量均不改变。
 
@@ -84,6 +85,10 @@ WinUI 安装确认页按证据链展示包文件、下载 URI、目标目录、S
 运行时安装由协调器串联“归档安装、托管注册表登记、可选全局默认写入”。协调器先验证计划与注册表条目的 Provider、版本、架构、目标目录、可执行文件相对路径和包 SHA-256 完全一致。登记或全局配置失败时恢复原注册表条目和原全局 Profile；只有本次新建且状态已恢复的安装目录才会自动清理，既有安装不会因重新登记失败被删除。
 
 存储迁移共用逐文件 SHA-256 复制验证和原目录保留策略。pip、npm、Yarn Classic、NuGet、Gradle、vcpkg 二进制缓存和 Conan 2 Home 在提交阶段通过受限的用户环境变量存储切换。NuGet 的全局包、HTTP 下载缓存和插件缓存分别使用 `NUGET_PACKAGES`、`NUGET_HTTP_CACHE_PATH` 和 `NUGET_PLUGINS_CACHE_PATH`，避免只迁移全局包后下载缓存仍写入 `%LOCALAPPDATA%\NuGet`。vcpkg 使用 `VCPKG_DEFAULT_BINARY_CACHE`，默认 `%LOCALAPPDATA%\vcpkg\archives`，Conan 使用 `CONAN_HOME`，默认 `%USERPROFILE%\.conan2`。Maven 使用禁用 DTD 和外部实体解析的结构化 XML 读写器更新用户 `.m2\settings.xml` 中唯一的 `localRepository`，并保留其他节点。pnpm 使用 Windows 官方全局配置 `%LOCALAPPDATA%\pnpm\config\rc` 中唯一的 `store-dir`，保留注释与其他键。配置切换前会检查其仍等于预览版本并保存受管快照；回滚只恢复配置，不自动删除迁移副本。快照绑定缓存 ID、白名单变量或授权的 Maven/pnpm 配置路径，防止篡改后修改其他配置。
+
+纯缓存清理采用单独的两阶段协议。计划与执行都拒绝根目录、任意祖先重解析点、受管根重叠和包含保护系统目录的目标；变更期间通过不共享删除权限的 Win32 目录句柄锁定从卷根到源/隔离目录的每个路径组件，防止检查后把祖先替换为 junction。第一阶段把经过指纹复检的顶层项同卷移动到源目录旁的 `.autoenvplus-cache-trash\<transaction-id>\content`，并以原子 manifest 记录状态。恢复要求隔离清单和源目录仍可无覆盖合并；永久清空在锁定全部已枚举目录后逐文件删除并逐层非递归移除空目录，不调用递归删除。Gradle 与 Conan 根包含非缓存用户状态，不进入清理白名单。
+
+活动记录使用 `<managed-root>\state\activity.jsonl`。每条记录带固定 schema、UTC 时间、操作类型、终态、脱敏摘要、受影响路径和可选快照/回滚路径。写入以同路径进程内门闩和 `FileShare.None` 锁文件串行化，重新读取有界记录后原子替换；损坏行只被跳过，超大文件安全失败。WinUI 活动页只展示和复制摘要，绝不把日志中的路径当作可执行命令或自动回滚入口。
 
 ## Provider 契约
 
