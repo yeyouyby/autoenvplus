@@ -81,13 +81,20 @@ public sealed class RuntimeReferenceScanner
                 ProjectLockResult locked = await new ProjectLockFileService().LoadAsync(
                     lockPath,
                     cancellationToken).ConfigureAwait(false);
-                if (locked.Success
-                    && locked.Document!.Runtimes.Any(entry =>
+                if (!locked.Success)
+                {
+                    references.Add(new RuntimeReference(
+                        RuntimeReferenceKind.ProjectLock,
+                        project.ProjectRoot,
+                        "unreadable lock: " + string.Join("; ", locked.Errors.Take(2))));
+                }
+                else if (locked.Document!.Runtimes.Any(entry =>
                         entry.Kind == runtime.Kind
                         && entry.ResolvedVersion == runtime.Version
                         && entry.Architecture == runtime.Architecture
                         && entry.ProviderId.Equals(runtime.ProviderId, StringComparison.Ordinal)
-                        && entry.PackageSha256.Equals(runtime.PackageSha256, StringComparison.OrdinalIgnoreCase)))
+                        && entry.PackageHashAlgorithm == runtime.PackageHashAlgorithm
+                        && entry.PackageHash.Equals(runtime.PackageHash, StringComparison.OrdinalIgnoreCase)))
                 {
                     references.Add(new RuntimeReference(
                         RuntimeReferenceKind.ProjectLock,

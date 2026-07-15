@@ -498,12 +498,36 @@ bool KnownArchitecture(std::string_view value) {
     return value == "x64" || value == "x86" || value == "arm64";
 }
 
-bool ValidSha256(std::string_view value) {
-    return value.size() == 64 && std::all_of(value.begin(), value.end(), [](unsigned char character) {
-        return (character >= '0' && character <= '9')
-            || (character >= 'a' && character <= 'f')
-            || (character >= 'A' && character <= 'F');
-    });
+std::string CurrentArchitecture() {
+#if defined(_M_X64)
+    return "x64";
+#elif defined(_M_IX86)
+    return "x86";
+#elif defined(_M_ARM64)
+    return "arm64";
+#else
+#error Unsupported AutoEnvPlus Shim architecture.
+#endif
+}
+
+bool ValidHexHash(std::string_view value, size_t expected_length) {
+    return value.size() == expected_length
+        && std::all_of(value.begin(), value.end(), [](unsigned char character) {
+            return (character >= '0' && character <= '9')
+                || (character >= 'a' && character <= 'f')
+                || (character >= 'A' && character <= 'F');
+        });
+}
+
+bool ValidPackageHash(std::string_view algorithm, std::string_view value) {
+    const std::string normalized = ToLowerAscii(std::string(algorithm));
+    if (normalized == "sha256" || normalized == "sha-256") {
+        return ValidHexHash(value, 64);
+    }
+    if (normalized == "sha512" || normalized == "sha-512") {
+        return ValidHexHash(value, 128);
+    }
+    return false;
 }
 
 std::vector<Installation> LoadRegistry(const fs::path& managed_root) {
@@ -512,7 +536,8 @@ std::vector<Installation> LoadRegistry(const fs::path& managed_root) {
         throw ShimError("No AutoEnvPlus managed runtimes are registered. Install a runtime first.", 69);
     }
     const JsonObject root = ParseJsonFile(registry_path);
-    if (RequiredInteger(root, L"schemaVersion") != 1) {
+    const int schema_version = RequiredInteger(root, L"schemaVersion");
+    if (schema_version != 1 && schema_version != 2) {
         throw ShimError("The managed runtime registry schema is not supported.", 70);
     }
     if (!root.HasKey(L"installations")
@@ -533,10 +558,15 @@ std::vector<Installation> LoadRegistry(const fs::path& managed_root) {
             WideToUtf8(RequiredString(item, L"architecture")));
         const fs::path install_root = FullPath(RequiredString(item, L"installRoot"));
         const fs::path relative_executable = RequiredString(item, L"executableRelativePath");
-        const std::string sha256 = WideToUtf8(RequiredString(item, L"packageSha256"));
+        const std::string package_hash = WideToUtf8(RequiredString(
+            item, schema_version == 1 ? L"packageSha256" : L"packageHash"));
+        const std::string package_hash_algorithm = schema_version == 1
+            ? "sha256"
+            : WideToUtf8(RequiredString(item, L"packageHashAlgorithm"));
         const std::optional<Version> version = Version::Parse(version_text);
         if (id.empty() || provider.empty() || !KnownRuntimeKind(kind)
-            || !version || !KnownArchitecture(architecture) || !ValidSha256(sha256)
+            || !version || !KnownArchitecture(architecture)
+            || !ValidPackageHash(package_hash_algorithm, package_hash)
             || !IsChildPath(managed_root, install_root)) {
             throw ShimError("Managed runtime registry entry '" + id + "' is invalid.", 70);
         }
@@ -717,8 +747,10 @@ SelectedInstallation SelectInstallation(
     }
     std::vector<Installation> registry = LoadRegistry(managed_root);
     Installation* selected = nullptr;
+    const std::string current_architecture = CurrentArchitecture();
     for (Installation& installation : registry) {
         if (installation.kind != runtime_kind
+            || installation.architecture != current_architecture
             || !constraint.Matches(installation.version, installation.channels)) {
             continue;
         }
@@ -765,6 +797,7 @@ const std::unordered_map<std::wstring, AliasDefinition>& Aliases() {
         {L"java", {"java", "java", LaunchMode::RuntimeExecutable, {}, {}}},
         {L"javac", {"java", "java", LaunchMode::RelativeExecutable, L"bin\\javac.exe", {}}},
         {L"jar", {"java", "java", LaunchMode::RelativeExecutable, L"bin\\jar.exe", {}}},
+        {L"dotnet", {"dotnet", "dotnet", LaunchMode::RuntimeExecutable, {}, {}}},
     };
     return aliases;
 }
@@ -843,6 +876,12 @@ int Launch(
     std::optional<EnvironmentOverride> java_home;
     if (runtime.kind == "java") {
         java_home.emplace(L"JAVA_HOME", runtime.root.wstring());
+    }
+    std::optional<EnvironmentOverride> dotnet_root;
+    std::optional<EnvironmentOverride> dotnet_multilevel_lookup;
+    if (runtime.kind == "dotnet") {
+        dotnet_root.emplace(L"DOTNET_ROOT", runtime.root.wstring());
+        dotnet_multilevel_lookup.emplace(L"DOTNET_MULTILEVEL_LOOKUP", L"0");
     }
     STARTUPINFOW startup{};
     startup.cb = sizeof(startup);

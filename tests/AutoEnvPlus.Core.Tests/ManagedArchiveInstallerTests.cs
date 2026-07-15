@@ -37,16 +37,74 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
     }
 
     [Fact]
-    public async Task InstallAsync_ChecksumMismatchLeavesNoInstallation()
+    public async Task InstallAsync_VerifiesSha512AndPartitionsDownloadCacheByAlgorithm()
     {
         byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "node-binary"));
-        ArchiveInstallPlan validPlan = CreatePlan(archive);
-        RuntimePackageAsset invalidAsset = validPlan.Asset with { Sha256 = new string('0', 64) };
+        ArchiveInstallPlan plan = CreatePlan(archive, PackageHashAlgorithm.Sha512);
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+            StubHttpMessageHandler.Bytes(archive)));
+
+        InstallResult result = await new ManagedArchiveInstaller(client).InstallAsync(plan);
+
+        Assert.Equal(InstallOutcome.Installed, result.Outcome);
+        Assert.True(File.Exists(Path.Combine(plan.DestinationRoot, "node.exe")));
+        Assert.True(File.Exists(Path.Combine(
+            _root,
+            "downloads",
+            "sha512",
+            plan.Asset.PackageHash,
+            plan.Asset.FileName)));
+        AssertStagingIsEmpty();
+    }
+
+    [Fact]
+    public async Task InstallAsync_Sha512MismatchDeletesPackageAndLeavesNoInstallation()
+    {
+        byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "node-binary"));
+        ArchiveInstallPlan validPlan = CreatePlan(archive, PackageHashAlgorithm.Sha512);
+        RuntimePackageAsset invalidAsset = validPlan.Asset with
+        {
+            PackageHash = new string('0', 128),
+        };
         invalidAsset = invalidAsset with
         {
             Verifications =
             [
-                CreateVerification(invalidAsset.FileName, invalidAsset.Sha256),
+                CreateVerification(
+                    invalidAsset.FileName,
+                    invalidAsset.PackageHash,
+                    PackageHashAlgorithm.Sha512),
+            ],
+        };
+        ArchiveInstallPlan plan = validPlan with { Asset = invalidAsset };
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+            StubHttpMessageHandler.Bytes(archive)));
+
+        InstallResult result = await new ManagedArchiveInstaller(client).InstallAsync(plan);
+
+        Assert.Equal(InstallOutcome.Failed, result.Outcome);
+        Assert.Contains("SHA-512 mismatch", result.Error);
+        Assert.False(Directory.Exists(plan.DestinationRoot));
+        Assert.False(File.Exists(Path.Combine(
+            _root,
+            "downloads",
+            "sha512",
+            invalidAsset.PackageHash,
+            invalidAsset.FileName)));
+        AssertStagingIsEmpty();
+    }
+
+    [Fact]
+    public async Task InstallAsync_ChecksumMismatchLeavesNoInstallation()
+    {
+        byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "node-binary"));
+        ArchiveInstallPlan validPlan = CreatePlan(archive);
+        RuntimePackageAsset invalidAsset = validPlan.Asset with { PackageHash = new string('0', 64) };
+        invalidAsset = invalidAsset with
+        {
+            Verifications =
+            [
+                CreateVerification(invalidAsset.FileName, invalidAsset.PackageHash),
             ],
         };
         ArchiveInstallPlan plan = validPlan with { Asset = invalidAsset };
@@ -141,7 +199,7 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         {
             Verifications =
             [
-                CreateVerification(asset.FileName, asset.Sha256) with
+                CreateVerification(asset.FileName, asset.PackageHash) with
                 {
                     SourceUri = new Uri("http://example.test/SHASUMS256.txt"),
                 },
@@ -156,7 +214,7 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         {
             Verifications =
             [
-                CreateVerification(asset.FileName, asset.Sha256) with
+                CreateVerification(asset.FileName, asset.PackageHash) with
                 {
                     SourceUri = new Uri("SHASUMS256.txt", UriKind.Relative),
                 },
@@ -171,7 +229,7 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         {
             Verifications =
             [
-                CreateVerification(asset.FileName, asset.Sha256) with
+                CreateVerification(asset.FileName, asset.PackageHash) with
                 {
                     Algorithm = "SHA-1",
                 },
@@ -186,7 +244,7 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         {
             Verifications =
             [
-                CreateVerification(asset.FileName, asset.Sha256) with
+                CreateVerification(asset.FileName, asset.PackageHash) with
                 {
                     Value = "not-a-sha256",
                 },
@@ -201,7 +259,7 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         {
             Verifications =
             [
-                CreateVerification(asset.FileName, asset.Sha256) with
+                CreateVerification(asset.FileName, asset.PackageHash) with
                 {
                     Subject = " ",
                 },
@@ -331,7 +389,8 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         Assert.False(File.Exists(Path.Combine(
             _root,
             "downloads",
-            plan.Asset.Sha256,
+            "sha256",
+            plan.Asset.PackageHash,
             plan.Asset.FileName)));
         AssertStagingIsEmpty();
     }
@@ -345,7 +404,9 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         });
     }
 
-    private ArchiveInstallPlan CreatePlan(byte[] archive)
+    private ArchiveInstallPlan CreatePlan(
+        byte[] archive,
+        PackageHashAlgorithm hashAlgorithm = PackageHashAlgorithm.Sha256)
     {
         RuntimeRelease release = new(
             "nodejs-official",
@@ -357,7 +418,12 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
             new DateOnly(2025, 6, 24),
             ["lts"],
             false);
-        string hash = Convert.ToHexString(SHA256.HashData(archive)).ToLowerInvariant();
+        string hash = Convert.ToHexString(hashAlgorithm switch
+        {
+            PackageHashAlgorithm.Sha256 => SHA256.HashData(archive),
+            PackageHashAlgorithm.Sha512 => SHA512.HashData(archive),
+            _ => throw new ArgumentOutOfRangeException(nameof(hashAlgorithm)),
+        }).ToLowerInvariant();
         RuntimePackageAsset asset = new(
             release,
             new Uri("https://example.test/node.zip"),
@@ -366,20 +432,24 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
             RuntimePackageFormat.Zip,
             ArchiveRoot,
             [
-                CreateVerification("node.zip", hash),
+                CreateVerification("node.zip", hash, hashAlgorithm),
             ],
             [],
-            PackageAuthenticityRequirement.ChecksumEvidence);
+            PackageAuthenticityRequirement.ChecksumEvidence,
+            HashAlgorithm: hashAlgorithm);
         string destination = Path.Combine(_root, "runtimes", "node", "22.17.0", "x64");
         return new ArchiveInstallPlan(asset, _root, destination, "node.exe");
     }
 
-    private static PackageVerification CreateVerification(string subject, string value) =>
+    private static PackageVerification CreateVerification(
+        string subject,
+        string value,
+        PackageHashAlgorithm hashAlgorithm = PackageHashAlgorithm.Sha256) =>
         new(
             PackageVerificationKind.ProviderChecksum,
             new Uri("https://example.test/SHASUMS256.txt"),
             subject,
-            "SHA-256",
+            hashAlgorithm.DisplayName(),
             value);
 
     private static PackageSignatureVerification CreateSignature(Uri signatureUri) =>

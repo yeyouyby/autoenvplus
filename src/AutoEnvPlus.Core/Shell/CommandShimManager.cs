@@ -22,6 +22,7 @@ public sealed class CommandShimManager
             ["python3.cmd"] = "python",
             ["node.cmd"] = "node",
             ["java.cmd"] = "java",
+            ["dotnet.cmd"] = "dotnet",
         };
 
     private static readonly IReadOnlyDictionary<string, string> ToolCommands =

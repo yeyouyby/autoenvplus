@@ -1,5 +1,4 @@
 using System.IO.Compression;
-using System.Security.Cryptography;
 using AutoEnvPlus.Core.Providers;
 
 namespace AutoEnvPlus.Core.Installation;
@@ -55,7 +54,8 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
         string downloadDirectory = Path.Combine(
             paths.ManagedRoot,
             "downloads",
-            plan.Asset.Sha256.ToLowerInvariant());
+            plan.Asset.HashAlgorithm.DisplayName().ToLowerInvariant().Replace("-", string.Empty),
+            plan.Asset.PackageHash.ToLowerInvariant());
         EnsureChildPath(paths.ManagedRoot, downloadDirectory, "download cache directory");
         Directory.CreateDirectory(downloadDirectory);
         string packagePath = Path.Combine(downloadDirectory, plan.Asset.FileName);
@@ -76,12 +76,15 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
                 cancellationToken).ConfigureAwait(false);
 
             progress?.Report(new InstallProgress("verify"));
-            string actualHash = await ComputeSha256Async(packagePath, cancellationToken).ConfigureAwait(false);
-            if (!actualHash.Equals(plan.Asset.Sha256, StringComparison.OrdinalIgnoreCase))
+            string actualHash = await plan.Asset.HashAlgorithm.ComputeFileHashAsync(
+                packagePath,
+                cancellationToken).ConfigureAwait(false);
+            if (!actualHash.Equals(plan.Asset.PackageHash, StringComparison.OrdinalIgnoreCase))
             {
                 TryDeleteFile(packagePath);
                 throw new InvalidDataException(
-                    $"SHA-256 mismatch for '{plan.Asset.FileName}'. Expected {plan.Asset.Sha256}, got {actualHash}.");
+                    $"{plan.Asset.HashAlgorithm.DisplayName()} mismatch for '{plan.Asset.FileName}'. "
+                    + $"Expected {plan.Asset.PackageHash}, got {actualHash}.");
             }
 
             if (plan.Asset.SignatureRequirement is PackageSignatureRequirement signatureRequirement)
@@ -160,21 +163,6 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
         {
             TryDeleteDirectory(paths.ManagedRoot, stagingRoot);
         }
-    }
-
-    private static async Task<string> ComputeSha256Async(
-        string path,
-        CancellationToken cancellationToken)
-    {
-        await using FileStream stream = new(
-            path,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.Read,
-            81_920,
-            FileOptions.Asynchronous | FileOptions.SequentialScan);
-        byte[] hash = await SHA256.HashDataAsync(stream, cancellationToken).ConfigureAwait(false);
-        return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
     private static void ExtractZipSafely(
@@ -266,9 +254,11 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
             throw new NotSupportedException($"Package format '{plan.Asset.Format}' is not supported.");
         }
 
-        if (plan.Asset.Sha256.Length != 64 || !plan.Asset.Sha256.All(Uri.IsHexDigit))
+        if (!plan.Asset.HashAlgorithm.IsValidHash(plan.Asset.PackageHash))
         {
-            throw new ArgumentException("The install asset must contain a valid SHA-256 value.", nameof(plan));
+            throw new ArgumentException(
+                $"The install asset must contain a valid {plan.Asset.HashAlgorithm.DisplayName()} value.",
+                nameof(plan));
         }
 
 
@@ -322,11 +312,15 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
                 throw new ArgumentException("Package verification evidence must come from an absolute HTTPS URI.", nameof(asset));
             }
 
-            if (!verification.Algorithm.Equals("SHA-256", StringComparison.OrdinalIgnoreCase)
-                || verification.Value.Length != 64
-                || !verification.Value.All(Uri.IsHexDigit))
+            if (!verification.Algorithm.Equals(
+                    asset.HashAlgorithm.DisplayName(),
+                    StringComparison.OrdinalIgnoreCase)
+                || !asset.HashAlgorithm.IsValidHash(verification.Value))
             {
-                throw new ArgumentException("Package verification evidence must contain a valid SHA-256 value.", nameof(asset));
+                throw new ArgumentException(
+                    $"Package verification evidence must contain a valid "
+                    + $"{asset.HashAlgorithm.DisplayName()} value.",
+                    nameof(asset));
             }
 
             if (string.IsNullOrWhiteSpace(verification.Subject))
@@ -334,12 +328,17 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
                 throw new ArgumentException("Package verification evidence must identify its subject.", nameof(asset));
             }
 
-            matchesAssetHash |= verification.Value.Equals(asset.Sha256, StringComparison.OrdinalIgnoreCase);
+            matchesAssetHash |= verification.Value.Equals(
+                asset.PackageHash,
+                StringComparison.OrdinalIgnoreCase);
         }
 
         if (!matchesAssetHash)
         {
-            throw new ArgumentException("Package verification evidence must include the install asset SHA-256.", nameof(asset));
+            throw new ArgumentException(
+                $"Package verification evidence must include the install asset "
+                + $"{asset.HashAlgorithm.DisplayName()}.",
+                nameof(asset));
         }
     }
 
@@ -417,14 +416,15 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
         }
 
         bool signedEvidenceCoversAsset = asset.Verifications.Any(verification =>
-            verification.Value.Equals(asset.Sha256, StringComparison.OrdinalIgnoreCase)
+            verification.Value.Equals(asset.PackageHash, StringComparison.OrdinalIgnoreCase)
             && asset.SignatureVerifications.Any(signature =>
                 (signature.SignedContentUri ?? signature.SignatureUri)
                     .Equals(verification.SourceUri)));
         if (!signedEvidenceCoversAsset)
         {
             throw new ArgumentException(
-                "The verified signature must cover the checksum manifest that supplies the install asset SHA-256.",
+                "The verified signature must cover the checksum manifest that supplies "
+                + $"the install asset {asset.HashAlgorithm.DisplayName()}.",
                 nameof(asset));
         }
     }

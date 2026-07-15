@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using AutoEnvPlus.Core.Providers;
 using AutoEnvPlus.Core.Runtimes;
 using AutoEnvPlus.Core.State;
 
@@ -96,6 +97,187 @@ public sealed class NativeShimContractTests : IDisposable
         Assert.Contains("ARG0=pip", result.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("ARG1=12", result.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("ARG3=package name", result.StandardOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task NativeShim_SelectsRuntimeMatchingItsProcessArchitecture()
+    {
+        TestEnvironment environment = await CreateEnvironmentAsync();
+        string pythonX86 = Directory.CreateDirectory(Path.Combine(
+            environment.ManagedRoot,
+            "runtimes",
+            "python",
+            "3.12.8",
+            "x86")).FullName;
+        await File.WriteAllTextAsync(
+            Path.Combine(pythonX86, "python.cmd"),
+            "@echo off\r\necho ARCH=x86\r\nexit /b 86\r\n");
+        await new ManagedRuntimeRegistry(environment.ManagedRoot).UpsertAsync(new ManagedRuntimeEntry(
+            "python-3.12.8-x86",
+            "test-provider",
+            RuntimeKind.Python,
+            RuntimeVersion.Parse("3.12.8"),
+            RuntimeArchitecture.X86,
+            pythonX86,
+            "python.cmd",
+            new string('a', 64),
+            DateTimeOffset.UtcNow,
+            ["latest"]));
+
+        ProcessResult result = await RunAsync(
+            environment.Shim,
+            environment.Project,
+            ["12", "architecture"]);
+
+        Assert.Equal(12, result.ExitCode);
+        Assert.Contains("VERSION=12", result.StandardOutput, StringComparison.Ordinal);
+        Assert.DoesNotContain("ARCH=x86", result.StandardOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task NativeShim_AcceptsLegacySchemaOneRegistryWithInferredSha256()
+    {
+        TestEnvironment environment = await CreateEnvironmentAsync();
+        string pythonRoot = Path.Combine(
+            environment.ManagedRoot,
+            "runtimes",
+            "python",
+            "3.12.8",
+            "x64");
+        string registry = JsonSerializer.Serialize(new
+        {
+            schemaVersion = 1,
+            installations = new[]
+            {
+                new
+                {
+                    id = "python-3.12.8-x64",
+                    providerId = "legacy-provider",
+                    kind = "Python",
+                    version = "3.12.8",
+                    architecture = "X64",
+                    installRoot = pythonRoot,
+                    executableRelativePath = "python.cmd",
+                    packageSha256 = new string('a', 64),
+                    channels = new[] { "latest" },
+                },
+            },
+        });
+        await File.WriteAllTextAsync(
+            Path.Combine(environment.ManagedRoot, "state", "installations.json"),
+            registry);
+
+        ProcessResult result = await RunAsync(
+            environment.Shim,
+            environment.Project,
+            ["12", "legacy schema"]);
+
+        Assert.Equal(12, result.ExitCode);
+        Assert.Contains("VERSION=12", result.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("ARG0=legacy schema", result.StandardOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task NativeShim_LaunchesDotNetFromSchemaTwoSha512AndSetsIsolationEnvironment()
+    {
+        TestEnvironment environment = await CreateEnvironmentAsync();
+        string dotnetRoot = Directory.CreateDirectory(Path.Combine(
+            environment.ManagedRoot,
+            "runtimes",
+            "dotnet",
+            "sdk",
+            "10.0.302",
+            "x64")).FullName;
+        const string fakeDotNet = """
+            @echo off
+            echo DOTNET_ROOT=%DOTNET_ROOT%
+            echo DOTNET_MULTILEVEL_LOOKUP=%DOTNET_MULTILEVEL_LOOKUP%
+            echo PATH=%PATH%
+            exit /b 0
+            """;
+        await File.WriteAllTextAsync(Path.Combine(dotnetRoot, "dotnet.cmd"), fakeDotNet);
+        await new ManagedRuntimeRegistry(environment.ManagedRoot).UpsertAsync(new ManagedRuntimeEntry(
+            "dotnet-10.0.302-x64",
+            "microsoft-dotnet-sdk",
+            RuntimeKind.DotNet,
+            RuntimeVersion.Parse("10.0.302"),
+            RuntimeArchitecture.X64,
+            dotnetRoot,
+            "dotnet.cmd",
+            new string('b', 128),
+            DateTimeOffset.UtcNow,
+            ["stable"],
+            PackageHashAlgorithm.Sha512));
+        string dotnetShim = Path.Combine(environment.ManagedRoot, "shims", "dotnet.exe");
+        File.Copy(environment.Shim, dotnetShim);
+
+        ProcessResult result = await RunAsync(
+            dotnetShim,
+            environment.Project,
+            [],
+            new Dictionary<string, string?>
+            {
+                ["DOTNET_ROOT"] = @"C:\system-dotnet",
+                ["DOTNET_MULTILEVEL_LOOKUP"] = "1",
+            });
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains(
+            $"DOTNET_ROOT={dotnetRoot}",
+            result.StandardOutput,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(
+            "DOTNET_MULTILEVEL_LOOKUP=0",
+            result.StandardOutput,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            $"PATH={dotnetRoot};",
+            result.StandardOutput,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task NativeShim_RejectsSchemaTwoHashThatDoesNotMatchItsAlgorithm()
+    {
+        TestEnvironment environment = await CreateEnvironmentAsync();
+        string pythonRoot = Path.Combine(
+            environment.ManagedRoot,
+            "runtimes",
+            "python",
+            "3.12.8",
+            "x64");
+        string registry = JsonSerializer.Serialize(new
+        {
+            schemaVersion = 2,
+            installations = new[]
+            {
+                new
+                {
+                    id = "python-3.12.8-x64",
+                    providerId = "test-provider",
+                    kind = "Python",
+                    version = "3.12.8",
+                    architecture = "X64",
+                    installRoot = pythonRoot,
+                    executableRelativePath = "python.cmd",
+                    packageHash = new string('a', 64),
+                    packageHashAlgorithm = "Sha512",
+                    channels = new[] { "latest" },
+                },
+            },
+        });
+        await File.WriteAllTextAsync(
+            Path.Combine(environment.ManagedRoot, "state", "installations.json"),
+            registry);
+
+        ProcessResult result = await RunAsync(
+            environment.Shim,
+            environment.Project,
+            []);
+
+        Assert.Equal(70, result.ExitCode);
+        Assert.Contains("registry entry", result.StandardError, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("invalid", result.StandardError, StringComparison.OrdinalIgnoreCase);
     }
 
     public void Dispose()

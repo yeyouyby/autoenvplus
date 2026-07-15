@@ -78,7 +78,7 @@ public sealed class NodeJsCatalogProviderTests
 
         RuntimePackageAsset asset = await provider.GetAssetAsync(release);
 
-        Assert.Equal(expectedHash, asset.Sha256);
+        Assert.Equal(expectedHash, asset.PackageHash);
         Assert.Equal("node-v22.17.0-win-x64.zip", asset.FileName);
         Assert.Equal(
             new Uri("https://example.test/dist/v22.17.0/node-v22.17.0-win-x64.zip"),

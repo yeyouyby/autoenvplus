@@ -8,6 +8,12 @@ using AutoEnvPlus.Core.State;
 
 namespace AutoEnvPlus.Core.Projects;
 
+public enum ProjectTerminalHost
+{
+    WindowsPowerShell,
+    WindowsTerminal,
+}
+
 public sealed record ProjectTerminalSelection(
     RuntimeKind Kind,
     VersionSelector RequestedSelector,
@@ -20,6 +26,8 @@ public sealed record ProjectTerminalPlan(
     string ProjectRoot,
     string ManifestPath,
     string ManifestSha256,
+    ProjectTerminalHost RequestedHost,
+    ProjectTerminalHost EffectiveHost,
     string ShellExecutable,
     IReadOnlyList<string> ShellArguments,
     string ShimDirectory,
@@ -39,31 +47,66 @@ public sealed class ProjectTerminalService
             [RuntimeKind.Python] = ("AUTOENVPLUS_PYTHON_VERSION", "python"),
             [RuntimeKind.NodeJs] = ("AUTOENVPLUS_NODE_VERSION", "node"),
             [RuntimeKind.Java] = ("AUTOENVPLUS_JAVA_VERSION", "java"),
+            [RuntimeKind.DotNet] = ("AUTOENVPLUS_DOTNET_VERSION", "dotnet"),
         };
 
     private readonly string _managedRoot;
     private readonly IManagedRuntimeRegistryStore _registry;
     private readonly RuntimeArchitecture _architecture;
-    private readonly string _shellExecutable;
+    private readonly string _windowsPowerShellExecutable;
+    private readonly string? _windowsTerminalExecutable;
 
     public ProjectTerminalService(
         string managedRoot,
         IManagedRuntimeRegistryStore? registry = null,
         RuntimeArchitecture? architecture = null,
-        string? shellExecutable = null)
+        string? shellExecutable = null,
+        string? windowsTerminalExecutable = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(managedRoot);
         _managedRoot = Path.GetFullPath(managedRoot);
         _registry = registry ?? new ManagedRuntimeRegistry(_managedRoot);
         _architecture = architecture ?? CurrentArchitecture();
-        _shellExecutable = Path.GetFullPath(shellExecutable ?? GetWindowsPowerShellPath());
+        _windowsPowerShellExecutable = Path.GetFullPath(
+            shellExecutable ?? GetWindowsPowerShellPath());
+        if (!Path.GetFileName(_windowsPowerShellExecutable)
+            .Equals("powershell.exe", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                "The Windows PowerShell executable must be named 'powershell.exe'.",
+                nameof(shellExecutable));
+        }
+
+        _windowsTerminalExecutable = ResolveWindowsTerminalPath(windowsTerminalExecutable);
     }
+
+    public bool IsHostAvailable(ProjectTerminalHost host) => host switch
+    {
+        ProjectTerminalHost.WindowsPowerShell => File.Exists(_windowsPowerShellExecutable),
+        ProjectTerminalHost.WindowsTerminal => _windowsTerminalExecutable is not null
+            && File.Exists(_windowsTerminalExecutable),
+        _ => throw new ArgumentOutOfRangeException(nameof(host), host, "Unsupported project terminal host."),
+    };
+
+    public Task<ProjectTerminalPlan> CreatePlanAsync(
+        string startPath,
+        CancellationToken cancellationToken = default) =>
+        CreatePlanAsync(startPath, ProjectTerminalHost.WindowsPowerShell, cancellationToken);
 
     public async Task<ProjectTerminalPlan> CreatePlanAsync(
         string startPath,
+        ProjectTerminalHost requestedHost,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(startPath);
+        if (!Enum.IsDefined(requestedHost))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(requestedHost),
+                requestedHost,
+                "Unsupported project terminal host.");
+        }
+
         string fullStartPath = Path.GetFullPath(startPath);
         string? manifestPath = new ProjectManifestService().FindManifest(fullStartPath);
         if (manifestPath is null)
@@ -133,9 +176,20 @@ public sealed class ProjectTerminalService
                 supported.Variable));
         }
 
-        if (!File.Exists(_shellExecutable))
+        ProjectTerminalHost effectiveHost = requestedHost;
+        if (requestedHost == ProjectTerminalHost.WindowsTerminal
+            && !IsHostAvailable(ProjectTerminalHost.WindowsTerminal))
         {
-            errors.Add($"Windows PowerShell was not found at '{_shellExecutable}'.");
+            effectiveHost = ProjectTerminalHost.WindowsPowerShell;
+            warnings.Add("Windows Terminal (wt.exe) is unavailable; this plan will fall back to Windows PowerShell.");
+        }
+
+        if (!File.Exists(_windowsPowerShellExecutable))
+        {
+            string role = effectiveHost == ProjectTerminalHost.WindowsTerminal
+                ? "Windows PowerShell child shell"
+                : "Windows PowerShell";
+            errors.Add($"{role} was not found at '{_windowsPowerShellExecutable}'.");
         }
 
         environment["PATH"] = PrependPath(
@@ -144,12 +198,21 @@ public sealed class ProjectTerminalService
         environment["AUTOENVPLUS_PROJECT_ROOT"] = projectRoot;
         environment["AUTOENVPLUS_PROJECT_MANIFEST"] = manifestPath;
 
+        string shellExecutable = effectiveHost == ProjectTerminalHost.WindowsTerminal
+            ? _windowsTerminalExecutable!
+            : _windowsPowerShellExecutable;
+        IReadOnlyList<string> shellArguments = effectiveHost == ProjectTerminalHost.WindowsTerminal
+            ? CreateWindowsTerminalArguments(projectRoot, _windowsPowerShellExecutable)
+            : ["-NoLogo", "-NoExit"];
+
         return new ProjectTerminalPlan(
             projectRoot,
             manifestPath,
             await ComputeSha256Async(manifestPath, cancellationToken).ConfigureAwait(false),
-            _shellExecutable,
-            ["-NoLogo", "-NoExit"],
+            requestedHost,
+            effectiveHost,
+            shellExecutable,
+            shellArguments,
             shimDirectory,
             environment,
             selections,
@@ -169,6 +232,7 @@ public sealed class ProjectTerminalService
 
         ProjectTerminalPlan current = await CreatePlanAsync(
             reviewedPlan.ProjectRoot,
+            reviewedPlan.RequestedHost,
             cancellationToken).ConfigureAwait(false);
         if (!current.CanLaunch || !PlansMatch(reviewedPlan, current))
         {
@@ -184,6 +248,8 @@ public sealed class ProjectTerminalService
         reviewed.ProjectRoot.Equals(current.ProjectRoot, StringComparison.OrdinalIgnoreCase)
         && reviewed.ManifestPath.Equals(current.ManifestPath, StringComparison.OrdinalIgnoreCase)
         && reviewed.ManifestSha256.Equals(current.ManifestSha256, StringComparison.Ordinal)
+        && reviewed.RequestedHost == current.RequestedHost
+        && reviewed.EffectiveHost == current.EffectiveHost
         && reviewed.ShellExecutable.Equals(current.ShellExecutable, StringComparison.OrdinalIgnoreCase)
         && reviewed.ShellArguments.SequenceEqual(current.ShellArguments, StringComparer.Ordinal)
         && reviewed.ShimDirectory.Equals(current.ShimDirectory, StringComparison.OrdinalIgnoreCase)
@@ -249,6 +315,68 @@ public sealed class ProjectTerminalService
         "v1.0",
         "powershell.exe");
 
+    private static IReadOnlyList<string> CreateWindowsTerminalArguments(
+        string projectRoot,
+        string windowsPowerShellExecutable) =>
+        [
+            "new-tab",
+            "--startingDirectory",
+            projectRoot,
+            windowsPowerShellExecutable,
+            "-NoLogo",
+            "-NoExit",
+        ];
+
+    private static string? ResolveWindowsTerminalPath(string? configuredPath)
+    {
+        if (configuredPath is not null)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(configuredPath);
+            string fullPath = Path.GetFullPath(configuredPath);
+            if (!Path.GetFileName(fullPath).Equals("wt.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException(
+                    "The Windows Terminal executable must be named 'wt.exe'.",
+                    nameof(configuredPath));
+            }
+
+            return fullPath;
+        }
+
+        string windowsAppsPath = Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+            "Microsoft",
+            "WindowsApps",
+            "wt.exe");
+        if (File.Exists(windowsAppsPath))
+        {
+            return windowsAppsPath;
+        }
+
+        foreach (string pathEntry in (System.Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            try
+            {
+                string candidate = Path.GetFullPath(Path.Combine(
+                    System.Environment.ExpandEnvironmentVariables(pathEntry.Trim('"')),
+                    "wt.exe"));
+                if (File.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+            catch (Exception exception) when (exception is ArgumentException
+                or NotSupportedException
+                or PathTooLongException)
+            {
+                // Ignore malformed PATH entries and continue deterministic discovery.
+            }
+        }
+
+        return null;
+    }
+
     private static RuntimeArchitecture CurrentArchitecture() => RuntimeInformation.ProcessArchitecture switch
     {
         Architecture.X86 => RuntimeArchitecture.X86,
@@ -265,6 +393,12 @@ public sealed class ProjectTerminalService
 
         const uint CreateNewConsole = 0x00000010;
         const uint CreateUnicodeEnvironment = 0x00000400;
+        uint creationFlags = CreateUnicodeEnvironment;
+        if (plan.EffectiveHost == ProjectTerminalHost.WindowsPowerShell)
+        {
+            creationFlags |= CreateNewConsole;
+        }
+
         string commandLine = string.Join(
             ' ',
             new[] { QuoteWindowsArgument(plan.ShellExecutable) }
@@ -280,7 +414,7 @@ public sealed class ProjectTerminalService
                 IntPtr.Zero,
                 IntPtr.Zero,
                 false,
-                CreateNewConsole | CreateUnicodeEnvironment,
+                creationFlags,
                 environmentBlock,
                 plan.ProjectRoot,
                 ref startup,
@@ -336,10 +470,42 @@ public sealed class ProjectTerminalService
         return block.ToString();
     }
 
-    private static string QuoteWindowsArgument(string value) =>
-        value.Contains(' ') || value.Contains('\t') || value.Contains('"')
-            ? '"' + value.Replace("\"", "\\\"", StringComparison.Ordinal) + '"'
-            : value;
+    private static string QuoteWindowsArgument(string value)
+    {
+        if (value.Length > 0
+            && !value.Any(character => character is ' ' or '\t' or '"'))
+        {
+            return value;
+        }
+
+        StringBuilder quoted = new(value.Length + 2);
+        quoted.Append('"');
+        int backslashes = 0;
+        foreach (char character in value)
+        {
+            if (character == '\\')
+            {
+                backslashes++;
+                continue;
+            }
+
+            if (character == '"')
+            {
+                quoted.Append('\\', (backslashes * 2) + 1);
+                quoted.Append('"');
+                backslashes = 0;
+                continue;
+            }
+
+            quoted.Append('\\', backslashes);
+            quoted.Append(character);
+            backslashes = 0;
+        }
+
+        quoted.Append('\\', backslashes * 2);
+        quoted.Append('"');
+        return quoted.ToString();
+    }
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true, EntryPoint = "CreateProcessW")]
     [return: MarshalAs(UnmanagedType.Bool)]

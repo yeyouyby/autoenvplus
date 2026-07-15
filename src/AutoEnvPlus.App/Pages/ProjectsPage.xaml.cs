@@ -14,14 +14,33 @@ namespace AutoEnvPlus.App.Pages;
 
 public sealed partial class ProjectsPage : Page
 {
+    private readonly string? _initialProjectRoot;
     private string? _projectRoot;
     private string? _manifestPath;
     private ProjectEnvironmentImportResult? _import;
     private string? _lastCMakePresetSnapshot;
 
     public ProjectsPage()
+        : this(null)
     {
+    }
+
+    internal ProjectsPage(string? initialProjectRoot)
+    {
+        _initialProjectRoot = string.IsNullOrWhiteSpace(initialProjectRoot)
+            ? null
+            : Path.GetFullPath(initialProjectRoot);
         InitializeComponent();
+        Loaded += OnLoaded;
+    }
+
+    private async void OnLoaded(object sender, RoutedEventArgs args)
+    {
+        Loaded -= OnLoaded;
+        if (_initialProjectRoot is not null)
+        {
+            await TryLoadProjectAsync(_initialProjectRoot);
+        }
     }
 
     private async void OnChooseProjectClicked(object sender, RoutedEventArgs args)
@@ -45,7 +64,30 @@ public sealed partial class ProjectsPage : Page
             return;
         }
 
-        await LoadProjectAsync(folder.Path);
+        await TryLoadProjectAsync(folder.Path);
+    }
+
+    private async Task TryLoadProjectAsync(string startPath)
+    {
+        try
+        {
+            if (!Directory.Exists(startPath))
+            {
+                throw new DirectoryNotFoundException($"项目目录不存在：{startPath}");
+            }
+
+            await LoadProjectAsync(startPath);
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidDataException
+            or InvalidOperationException
+            or ArgumentException)
+        {
+            ProjectInfo.Severity = InfoBarSeverity.Error;
+            ProjectInfo.Title = "无法读取项目环境";
+            ProjectInfo.Message = exception.Message;
+        }
     }
 
     private async Task LoadProjectAsync(string startPath)
@@ -151,37 +193,52 @@ public sealed partial class ProjectsPage : Page
         try
         {
             ProjectTerminalService service = new(GetManagedRoot());
-            ProjectTerminalPlan plan = await service.CreatePlanAsync(_projectRoot);
-            StringBuilder preview = new();
-            preview.AppendLine($"项目\n{plan.ProjectRoot}");
-            preview.AppendLine($"\n清单\n{plan.ManifestPath}");
-            preview.AppendLine($"\nShell\n{plan.ShellExecutable} {string.Join(' ', plan.ShellArguments)}");
-            preview.AppendLine($"\nShim\n{plan.ShimDirectory}");
-            preview.AppendLine("\n精确运行时");
-            if (plan.Selections.Count == 0)
+            ProjectTerminalHost[] availableHosts = service.IsHostAvailable(
+                ProjectTerminalHost.WindowsTerminal)
+                    ? [ProjectTerminalHost.WindowsTerminal, ProjectTerminalHost.WindowsPowerShell]
+                    : [ProjectTerminalHost.WindowsPowerShell];
+            TerminalHostChoice[] hostChoices = availableHosts
+                .Select(host => new TerminalHostChoice(host, TerminalHostDisplayName(host)))
+                .ToArray();
+            Dictionary<ProjectTerminalHost, ProjectTerminalPlan> plans = [];
+            foreach (ProjectTerminalHost host in availableHosts)
             {
-                preview.AppendLine("（没有可由 AutoEnvPlus Shim 激活的运行时）");
+                plans[host] = await service.CreatePlanAsync(_projectRoot, host);
             }
-            else
+
+            ComboBox hostSelector = new()
             {
-                foreach (ProjectTerminalSelection selection in plan.Selections)
+                ItemsSource = hostChoices,
+                DisplayMemberPath = nameof(TerminalHostChoice.Label),
+                SelectedIndex = 0,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
+            TextBlock previewText = new()
+            {
+                IsTextSelectionEnabled = true,
+                MinWidth = 500,
+                TextWrapping = TextWrapping.Wrap,
+            };
+            StackPanel dialogContent = new() { Spacing = 10 };
+            dialogContent.Children.Add(new TextBlock
+            {
+                Text = "终端主机",
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            });
+            dialogContent.Children.Add(hostSelector);
+            if (availableHosts.Length == 1)
+            {
+                dialogContent.Children.Add(new InfoBar
                 {
-                    preview.AppendLine(
-                        $"{selection.Kind}: {selection.RequestedSelector} → {selection.ResolvedVersion} ({selection.RuntimeId})");
-                    preview.AppendLine($"  {selection.EnvironmentVariable}={selection.ResolvedVersion}");
-                }
+                    IsClosable = false,
+                    IsOpen = true,
+                    Severity = InfoBarSeverity.Informational,
+                    Title = "Windows Terminal 不可用",
+                    Message = "当前未检测到 wt.exe，本次将打开 Windows PowerShell。",
+                });
             }
 
-            foreach (string warning in plan.Warnings)
-            {
-                preview.AppendLine($"\n警告：{warning}");
-            }
-
-            foreach (string error in plan.Errors)
-            {
-                preview.AppendLine($"\n错误：{error}");
-            }
-
+            dialogContent.Children.Add(previewText);
             ContentDialog confirmation = new()
             {
                 XamlRoot = XamlRoot,
@@ -190,28 +247,38 @@ public sealed partial class ProjectsPage : Page
                 {
                     MaxHeight = 560,
                     VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                    Content = new TextBlock
-                    {
-                        IsTextSelectionEnabled = true,
-                        MinWidth = 540,
-                        Text = preview.ToString().TrimEnd(),
-                        TextWrapping = TextWrapping.Wrap,
-                    },
+                    Content = dialogContent,
                 },
-                PrimaryButtonText = "打开新 PowerShell",
                 CloseButtonText = "取消",
                 DefaultButton = ContentDialogButton.Close,
-                IsPrimaryButtonEnabled = plan.CanLaunch,
             };
+            ProjectTerminalPlan selectedPlan = plans[hostChoices[0].Host];
+            void UpdateTerminalPreview()
+            {
+                if (hostSelector.SelectedItem is not TerminalHostChoice choice)
+                {
+                    return;
+                }
+
+                selectedPlan = plans[choice.Host];
+                previewText.Text = CreateTerminalPreview(selectedPlan);
+                confirmation.PrimaryButtonText = choice.Host == ProjectTerminalHost.WindowsTerminal
+                    ? "在 Windows Terminal 中打开"
+                    : "打开新 PowerShell";
+                confirmation.IsPrimaryButtonEnabled = selectedPlan.CanLaunch;
+            }
+
+            hostSelector.SelectionChanged += (_, _) => UpdateTerminalPreview();
+            UpdateTerminalPreview();
             if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
             {
                 return;
             }
 
-            int processId = await service.LaunchAsync(plan);
+            int processId = await service.LaunchAsync(selectedPlan);
             ProjectInfo.Severity = InfoBarSeverity.Success;
             ProjectInfo.Title = "项目终端已启动";
-            ProjectInfo.Message = $"PID {processId} · 会话级精确版本，不修改用户 PATH 或全局默认。";
+            ProjectInfo.Message = $"PID {processId} · {TerminalHostDisplayName(selectedPlan.EffectiveHost)} · 会话级精确版本，不修改用户 PATH 或全局默认。";
         }
         catch (Exception exception) when (exception is FileNotFoundException
             or IOException
@@ -229,6 +296,49 @@ public sealed partial class ProjectsPage : Page
             OpenProjectTerminalButton.IsEnabled = _manifestPath is not null;
         }
     }
+
+    private static string CreateTerminalPreview(ProjectTerminalPlan plan)
+    {
+        StringBuilder preview = new();
+        preview.AppendLine($"项目\n{plan.ProjectRoot}");
+        preview.AppendLine($"\n清单\n{plan.ManifestPath}");
+        preview.AppendLine($"\n终端主机\n{TerminalHostDisplayName(plan.EffectiveHost)}");
+        preview.AppendLine($"\nShell\n{plan.ShellExecutable} {string.Join(' ', plan.ShellArguments)}");
+        preview.AppendLine($"\nShim\n{plan.ShimDirectory}");
+        preview.AppendLine("\n精确运行时");
+        if (plan.Selections.Count == 0)
+        {
+            preview.AppendLine("（没有可由 AutoEnvPlus Shim 激活的运行时）");
+        }
+        else
+        {
+            foreach (ProjectTerminalSelection selection in plan.Selections)
+            {
+                preview.AppendLine(
+                    $"{selection.Kind}: {selection.RequestedSelector} → {selection.ResolvedVersion} ({selection.RuntimeId})");
+                preview.AppendLine($"  {selection.EnvironmentVariable}={selection.ResolvedVersion}");
+            }
+        }
+
+        foreach (string warning in plan.Warnings)
+        {
+            preview.AppendLine($"\n警告：{warning}");
+        }
+
+        foreach (string error in plan.Errors)
+        {
+            preview.AppendLine($"\n错误：{error}");
+        }
+
+        return preview.ToString().TrimEnd();
+    }
+
+    private static string TerminalHostDisplayName(ProjectTerminalHost host) => host switch
+    {
+        ProjectTerminalHost.WindowsTerminal => "Windows Terminal",
+        ProjectTerminalHost.WindowsPowerShell => "Windows PowerShell",
+        _ => host.ToString(),
+    };
 
     private async void OnCreateLockClicked(object sender, RoutedEventArgs args)
     {
@@ -490,6 +600,8 @@ public sealed partial class ProjectsPage : Page
     }
 
     private static string GetManagedRoot() => ManagedRootResolver.ResolveOrThrow();
+
+    private sealed record TerminalHostChoice(ProjectTerminalHost Host, string Label);
 
     private sealed record CMakePresetChoice(
         VisualCppInstallation Installation,

@@ -46,7 +46,7 @@ public sealed partial class PathPage : Page
     private void LoadReport()
     {
         PathInspectionReport report = new PathInspector().InspectCurrent(
-            ["python", "node", "npm", "java", "javac", "cl", "clang", "cmake"]);
+            ["python", "node", "npm", "java", "javac", "dotnet", "cl", "clang", "cmake"]);
 
         PathList.ItemsSource = report.Entries.Select(entry => new PathEntryRow(
             (entry.Index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -79,7 +79,7 @@ public sealed partial class PathPage : Page
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"将生成命令\npython、python3、pip、pip3、node、npm、npx、java、javac、jar\n\nShim 目录\n{shimDirectory}\n\nPATH 变化\n{(plan.Changed ? "添加到用户 PATH 第一位，并保存回滚快照" : "Shim 已位于用户 PATH 第一位")}\n\n系统 PATH 不会修改。",
+                Text = $"将生成命令\npython、python3、pip、pip3、node、npm、npx、java、javac、jar、dotnet\n\nShim 目录\n{shimDirectory}\n\nPATH 变化\n{(plan.Changed ? "添加到用户 PATH 第一位，并保存回滚快照" : "Shim 已位于用户 PATH 第一位")}\n\n系统 PATH 不会修改。",
                 TextWrapping = TextWrapping.Wrap,
             },
             PrimaryButtonText = "生成 Shim 并应用",

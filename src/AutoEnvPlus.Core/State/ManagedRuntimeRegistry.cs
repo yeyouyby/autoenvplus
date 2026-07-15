@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AutoEnvPlus.Core.Providers;
 using AutoEnvPlus.Core.Runtimes;
 
 namespace AutoEnvPlus.Core.State;
@@ -12,9 +13,10 @@ public sealed record ManagedRuntimeEntry(
     RuntimeArchitecture Architecture,
     string InstallRoot,
     string ExecutableRelativePath,
-    string PackageSha256,
+    string PackageHash,
     DateTimeOffset InstalledAtUtc,
-    IReadOnlyCollection<string>? Channels = null)
+    IReadOnlyCollection<string>? Channels = null,
+    PackageHashAlgorithm PackageHashAlgorithm = PackageHashAlgorithm.Sha256)
 {
     public string ExecutablePath => Path.GetFullPath(
         Path.Combine(InstallRoot, ExecutableRelativePath));
@@ -48,12 +50,13 @@ public interface IManagedRuntimeRegistryStore
 
 public sealed class ManagedRuntimeRegistry : IManagedRuntimeRegistryStore
 {
-    private const int CurrentSchemaVersion = 1;
+    private const int CurrentSchemaVersion = 2;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         Converters = { new JsonStringEnumConverter() },
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
     private readonly string _managedRoot;
@@ -183,7 +186,7 @@ public sealed class ManagedRuntimeRegistry : IManagedRuntimeRegistryStore
             return new RegistryLoadResult([], ["The registry document is empty."]);
         }
 
-        if (document.SchemaVersion != CurrentSchemaVersion)
+        if (document.SchemaVersion is < 1 or > CurrentSchemaVersion)
         {
             return new RegistryLoadResult(
                 [],
@@ -194,7 +197,11 @@ public sealed class ManagedRuntimeRegistry : IManagedRuntimeRegistryStore
         List<string> errors = [];
         foreach (RegistryItem item in document.Installations ?? [])
         {
-            if (!TryConvert(item, out ManagedRuntimeEntry? entry, out string? error))
+            if (!TryConvert(
+                    item,
+                    document.SchemaVersion,
+                    out ManagedRuntimeEntry? entry,
+                    out string? error))
             {
                 errors.Add(error!);
                 continue;
@@ -251,11 +258,30 @@ public sealed class ManagedRuntimeRegistry : IManagedRuntimeRegistryStore
 
     private bool TryConvert(
         RegistryItem item,
+        int schemaVersion,
         out ManagedRuntimeEntry? entry,
         out string? error)
     {
         entry = null;
         error = null;
+        string? packageHash;
+        PackageHashAlgorithm packageHashAlgorithm;
+        if (schemaVersion == 1)
+        {
+            packageHash = item.PackageSha256;
+            packageHashAlgorithm = PackageHashAlgorithm.Sha256;
+        }
+        else if (item.PackageHashAlgorithm is PackageHashAlgorithm declaredAlgorithm)
+        {
+            packageHash = item.PackageHash;
+            packageHashAlgorithm = declaredAlgorithm;
+        }
+        else
+        {
+            error = $"Registry entry '{item.Id ?? "<unknown>"}' is missing its package hash algorithm.";
+            return false;
+        }
+
         if (string.IsNullOrWhiteSpace(item.Id)
             || string.IsNullOrWhiteSpace(item.ProviderId)
             || !Enum.TryParse(item.Kind, true, out RuntimeKind kind)
@@ -264,7 +290,7 @@ public sealed class ManagedRuntimeRegistry : IManagedRuntimeRegistryStore
             || architecture == RuntimeArchitecture.Any
             || string.IsNullOrWhiteSpace(item.InstallRoot)
             || string.IsNullOrWhiteSpace(item.ExecutableRelativePath)
-            || string.IsNullOrWhiteSpace(item.PackageSha256))
+            || string.IsNullOrWhiteSpace(packageHash))
         {
             error = $"Registry entry '{item.Id ?? "<unknown>"}' has missing or invalid fields.";
             return false;
@@ -278,9 +304,10 @@ public sealed class ManagedRuntimeRegistry : IManagedRuntimeRegistryStore
             architecture,
             Path.GetFullPath(item.InstallRoot),
             item.ExecutableRelativePath,
-            item.PackageSha256,
+            packageHash,
             item.InstalledAtUtc,
-            item.Channels ?? []);
+            item.Channels ?? [],
+            packageHashAlgorithm);
         try
         {
             ValidateEntry(candidate);
@@ -304,9 +331,11 @@ public sealed class ManagedRuntimeRegistry : IManagedRuntimeRegistryStore
             throw new ArgumentException("Managed runtime identity fields cannot be empty.", nameof(entry));
         }
 
-        if (entry.PackageSha256.Length != 64 || !entry.PackageSha256.All(Uri.IsHexDigit))
+        if (!entry.PackageHashAlgorithm.IsValidHash(entry.PackageHash))
         {
-            throw new ArgumentException("Managed runtime package SHA-256 is invalid.", nameof(entry));
+            throw new ArgumentException(
+                $"Managed runtime package {entry.PackageHashAlgorithm.DisplayName()} is invalid.",
+                nameof(entry));
         }
 
         string installRoot = Path.GetFullPath(entry.InstallRoot);
@@ -345,6 +374,8 @@ public sealed class ManagedRuntimeRegistry : IManagedRuntimeRegistryStore
         string? Architecture,
         string? InstallRoot,
         string? ExecutableRelativePath,
+        string? PackageHash,
+        PackageHashAlgorithm? PackageHashAlgorithm,
         string? PackageSha256,
         DateTimeOffset InstalledAtUtc,
         List<string>? Channels)
@@ -357,7 +388,9 @@ public sealed class ManagedRuntimeRegistry : IManagedRuntimeRegistryStore
             entry.Architecture.ToString(),
             entry.InstallRoot,
             entry.ExecutableRelativePath,
-            entry.PackageSha256,
+            entry.PackageHash,
+            entry.PackageHashAlgorithm,
+            null,
             entry.InstalledAtUtc,
             entry.Channels?.ToList());
     }

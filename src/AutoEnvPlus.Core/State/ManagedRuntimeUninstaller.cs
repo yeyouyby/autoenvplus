@@ -183,7 +183,8 @@ public sealed class ManagedRuntimeUninstaller
             Path.GetFullPath(right.InstallRoot),
             StringComparison.OrdinalIgnoreCase)
         && left.ExecutableRelativePath.Equals(right.ExecutableRelativePath, StringComparison.OrdinalIgnoreCase)
-        && left.PackageSha256.Equals(right.PackageSha256, StringComparison.OrdinalIgnoreCase)
+        && left.PackageHashAlgorithm == right.PackageHashAlgorithm
+        && left.PackageHash.Equals(right.PackageHash, StringComparison.OrdinalIgnoreCase)
         && (left.Channels ?? []).Order(StringComparer.OrdinalIgnoreCase).SequenceEqual(
             (right.Channels ?? []).Order(StringComparer.OrdinalIgnoreCase),
             StringComparer.OrdinalIgnoreCase);

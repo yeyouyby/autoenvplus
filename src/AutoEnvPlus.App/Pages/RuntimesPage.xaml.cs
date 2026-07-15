@@ -5,6 +5,7 @@ using AutoEnvPlus.Core.Discovery;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Installation;
 using AutoEnvPlus.Core.Providers;
+using AutoEnvPlus.Core.Providers.DotNet;
 using AutoEnvPlus.Core.Providers.Java;
 using AutoEnvPlus.Core.Providers.NodeJs;
 using AutoEnvPlus.Core.Providers.Python;
@@ -89,6 +90,7 @@ public sealed partial class RuntimesPage : Page
         SetStatus(PythonStatus, RuntimeKind.Python, runtimes, registry.Entries);
         SetStatus(NodeStatus, RuntimeKind.NodeJs, runtimes, registry.Entries);
         SetStatus(JavaStatus, RuntimeKind.Java, runtimes, registry.Entries);
+        SetStatus(DotNetStatus, RuntimeKind.DotNet, runtimes, registry.Entries);
     }
 
     private static void SetStatus(
@@ -188,7 +190,7 @@ public sealed partial class RuntimesPage : Page
 
             Progress<InstallProgress> progress = new(value =>
             {
-                ActionInfo.Title = StageTitle(value.Stage);
+                ActionInfo.Title = StageTitle(value.Stage, asset.HashAlgorithm);
                 ActionInfo.Message = value.TotalBytes > 0 && value.CompletedBytes is long completed
                     ? $"{completed / 1_048_576d:F1} / {value.TotalBytes / 1_048_576d:F1} MB"
                     : asset.FileName;
@@ -201,9 +203,10 @@ public sealed partial class RuntimesPage : Page
                 selectedRelease.Architecture,
                 plan.DestinationRoot,
                 plan.ExpectedExecutableRelativePath,
-                asset.Sha256,
+                asset.PackageHash,
                 DateTimeOffset.UtcNow,
-                selectedRelease.Channels);
+                selectedRelease.Channels,
+                asset.HashAlgorithm);
             ManagedRuntimeInstallTransactionResult result = await new ManagedRuntimeInstallCoordinator(
                 GetManagedRoot(),
                 _httpClient).InstallAsync(
@@ -624,6 +627,7 @@ public sealed partial class RuntimesPage : Page
 
     private static ScrollViewer CreateInstallPlanPreview(ArchiveInstallPlan plan)
     {
+        string hashName = plan.Asset.HashAlgorithm.DisplayName();
         StackPanel content = new()
         {
             MinWidth = 460,
@@ -635,7 +639,7 @@ public sealed partial class RuntimesPage : Page
             IsClosable = false,
             IsOpen = true,
             Severity = InfoBarSeverity.Success,
-            Title = "下载后强制校验 SHA-256",
+            Title = $"下载后强制校验 {hashName}",
             Message = "只有实际下载字节与 Provider 给出的包哈希完全一致时，安装才会继续。",
         });
         content.Children.Add(CreatePackageDetailsExpander(plan));
@@ -647,7 +651,9 @@ public sealed partial class RuntimesPage : Page
         });
         foreach (PackageVerification verification in plan.Asset.Verifications)
         {
-            content.Children.Add(CreateVerificationExpander(verification, plan.Asset.Sha256));
+            content.Children.Add(CreateVerificationExpander(
+                verification,
+                plan.Asset.PackageHash));
         }
 
         if (plan.Asset.SignatureVerifications.Count > 0)
@@ -670,8 +676,8 @@ public sealed partial class RuntimesPage : Page
                 Title = "发布清单数字签名已验证",
                 Message = plan.Asset.SignatureVerifications.Any(signature =>
                     signature.Kind == PackageSignatureVerificationKind.SigstoreBundle)
-                    ? "Sigstore 已验证 Fulcio 证书链、python.org 固定发布身份、Rekor SET/包含证明/检查点和清单签名；下载包仍会再按签名清单中的 SHA-256 逐字节校验。"
-                    : "OpenPGP 签名证明校验清单由固定信任的发布密钥签署；下载包仍会再按清单中的 SHA-256 逐字节校验。",
+                    ? $"Sigstore 已验证 Fulcio 证书链、python.org 固定发布身份、Rekor SET/包含证明/检查点和清单签名；下载包仍会再按签名清单中的 {hashName} 逐字节校验。"
+                    : $"OpenPGP 签名证明校验清单由固定信任的发布密钥签署；下载包仍会再按清单中的 {hashName} 逐字节校验。",
             });
         }
         else if (plan.Asset.SignatureRequirement is PackageSignatureRequirement requirement)
@@ -688,7 +694,7 @@ public sealed partial class RuntimesPage : Page
                 IsOpen = true,
                 Severity = InfoBarSeverity.Informational,
                 Title = "下载后强制验证包签名",
-                Message = "安装器会先核对 SHA-256，再用固定主指纹的发布密钥流式验证包本体；签名无效时删除缓存包且不会解压。",
+                Message = $"安装器会先核对 {hashName}，再用固定主指纹的发布密钥流式验证包本体；签名无效时删除缓存包且不会解压。",
             });
         }
         else
@@ -699,7 +705,7 @@ public sealed partial class RuntimesPage : Page
                 IsOpen = true,
                 Severity = InfoBarSeverity.Warning,
                 Title = "数字签名尚未验证",
-                Message = "这些证据说明 SHA-256 来自哪里，但不能证明 PGP、Authenticode 或 Sigstore 签名有效。",
+                Message = $"这些证据说明 {hashName} 来自哪里，但不能证明 PGP、Authenticode 或 Sigstore 签名有效。",
             });
         }
         content.Children.Add(new TextBlock
@@ -722,7 +728,9 @@ public sealed partial class RuntimesPage : Page
         StackPanel details = new() { Spacing = 10 };
         details.Children.Add(CreateDetail("文件", plan.Asset.FileName));
         details.Children.Add(CreateLinkDetail("下载地址", plan.Asset.DownloadUri));
-        details.Children.Add(CreateDetail("SHA-256", plan.Asset.Sha256));
+        details.Children.Add(CreateDetail(
+            plan.Asset.HashAlgorithm.DisplayName(),
+            plan.Asset.PackageHash));
         details.Children.Add(CreateDetail("安装目录", plan.DestinationRoot));
         return new Expander
         {
@@ -734,10 +742,10 @@ public sealed partial class RuntimesPage : Page
 
     private static Expander CreateVerificationExpander(
         PackageVerification verification,
-        string assetSha256)
+        string assetHash)
     {
         bool coversPackage = verification.Value.Equals(
-            assetSha256,
+            assetHash,
             StringComparison.OrdinalIgnoreCase);
         StackPanel details = new() { Spacing = 10 };
         details.Children.Add(CreateDetail("对象", verification.Subject));
@@ -752,7 +760,10 @@ public sealed partial class RuntimesPage : Page
                 ? InfoBarSeverity.Success
                 : InfoBarSeverity.Informational,
             Title = coversPackage ? "覆盖当前安装包" : "验证上游清单",
-            Message = VerificationDescription(verification.Kind, coversPackage),
+            Message = VerificationDescription(
+                verification.Kind,
+                coversPackage,
+                verification.Algorithm),
         });
         return new Expander
         {
@@ -913,12 +924,13 @@ public sealed partial class RuntimesPage : Page
 
     private static string VerificationDescription(
         PackageVerificationKind kind,
-        bool coversPackage) => kind switch
+        bool coversPackage,
+        string algorithm) => kind switch
         {
             PackageVerificationKind.VerifiedManifest =>
-                "发行文件 API 中的 SHA-256 已用于验证这份 Windows 包清单。",
+                $"发行文件 API 中的 {algorithm} 已用于验证这份 Windows 包清单。",
             PackageVerificationKind.ProviderChecksum when coversPackage =>
-                "该 HTTPS 来源声明了当前安装包的 SHA-256。",
+                $"该 HTTPS 来源声明了当前安装包的 {algorithm}。",
             _ => "该证据参与解释安装包校验链。",
         };
 
@@ -930,6 +942,7 @@ public sealed partial class RuntimesPage : Page
         {
             RuntimeKind.Python => new PythonOrgCatalogProvider(_httpClient, architecture),
             RuntimeKind.NodeJs => new NodeJsCatalogProvider(_httpClient),
+            RuntimeKind.DotNet => new DotNetSdkCatalogProvider(_httpClient, architecture),
             RuntimeKind.Java => new AdoptiumCatalogProvider(
                 _httpClient,
                 javaFeatureVersion
@@ -943,6 +956,7 @@ public sealed partial class RuntimesPage : Page
         PythonInstallButton.IsEnabled = enabled;
         NodeInstallButton.IsEnabled = enabled;
         JavaInstallButton.IsEnabled = enabled;
+        DotNetInstallButton.IsEnabled = enabled;
         RefreshButton.IsEnabled = enabled;
         ManagedRuntimeList.IsEnabled = enabled;
     }
@@ -994,24 +1008,27 @@ public sealed partial class RuntimesPage : Page
     {
         ActionInfo.Severity = InfoBarSeverity.Informational;
         ActionInfo.Title = "安全安装模式";
-        ActionInfo.Message = "Node.js 验证签名清单；Java 安装时验证包本体的 detached OpenPGP 签名；Python 当前验证 HTTPS 来源和 SHA-256。";
+        ActionInfo.Message = "Node.js 验证签名清单；Java 安装时验证包本体的 detached OpenPGP 签名；Python 验证官方发布证据；.NET SDK 按 Microsoft 官方元数据校验 SHA-512。";
     }
 
-    private static string StageTitle(string stage) => stage switch
-    {
-        "download" => "正在下载",
-        "verify" => "正在校验 SHA-256",
-        "verify-signature" => "正在验证 OpenPGP 包签名",
-        "extract" => "正在安全解压",
-        "commit" => "正在提交安装",
-        "complete" => "安装完成",
-        _ => stage,
-    };
+    private static string StageTitle(
+        string stage,
+        PackageHashAlgorithm hashAlgorithm) => stage switch
+        {
+            "download" => "正在下载",
+            "verify" => $"正在校验 {hashAlgorithm.DisplayName()}",
+            "verify-signature" => "正在验证 OpenPGP 包签名",
+            "extract" => "正在安全解压",
+            "commit" => "正在提交安装",
+            "complete" => "安装完成",
+            _ => stage,
+        };
 
     private static string DisplayName(RuntimeKind kind) => kind switch
     {
         RuntimeKind.NodeJs => "Node.js",
         RuntimeKind.Java => "Java",
+        RuntimeKind.DotNet => ".NET SDK",
         _ => kind.ToString(),
     };
 

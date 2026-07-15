@@ -7,6 +7,7 @@ using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Installation;
 using AutoEnvPlus.Core.Projects;
 using AutoEnvPlus.Core.Providers;
+using AutoEnvPlus.Core.Providers.DotNet;
 using AutoEnvPlus.Core.Providers.Java;
 using AutoEnvPlus.Core.Providers.NodeJs;
 using AutoEnvPlus.Core.Providers.Python;
@@ -198,10 +199,11 @@ static async Task<int> RunCatalogAsync(string[] args, CancellationToken cancella
     if (args.Length == 0
         || (!args[0].Equals("python", StringComparison.OrdinalIgnoreCase)
             && !args[0].Equals("node", StringComparison.OrdinalIgnoreCase)
-            && !args[0].Equals("java", StringComparison.OrdinalIgnoreCase)))
+            && !args[0].Equals("java", StringComparison.OrdinalIgnoreCase)
+            && !args[0].Equals("dotnet", StringComparison.OrdinalIgnoreCase)))
     {
         Console.Error.WriteLine(
-            "Usage: autoenvplus catalog <python|node|java> [--feature java-major] [--lts] [--arch x64|x86|arm64] [--limit count] [--asset version] [--json]");
+            "Usage: autoenvplus catalog <python|node|java|dotnet> [--feature java-major] [--lts] [--arch x64|x86|arm64] [--limit count] [--asset version] [--json]");
         return 1;
     }
 
@@ -263,7 +265,7 @@ static async Task<int> RunCatalogAsync(string[] args, CancellationToken cancella
         {
             Console.WriteLine($"Asset:   {asset.FileName}");
             Console.WriteLine($"URL:     {asset.DownloadUri}");
-            Console.WriteLine($"SHA-256: {asset.Sha256}");
+            Console.WriteLine($"{asset.HashAlgorithm.DisplayName()}: {asset.PackageHash}");
             Console.WriteLine($"Root:    {asset.ArchiveRootDirectory}");
             foreach (PackageSignatureVerification signature in asset.SignatureVerifications)
             {
@@ -324,7 +326,7 @@ static async Task<int> RunInstallAsync(string[] args, CancellationToken cancella
         || !RuntimeVersion.TryParse(args[1], out RuntimeVersion? requestedVersion))
     {
         Console.Error.WriteLine(
-            "Usage: autoenvplus install <python|node|java> <exact-version> [--arch x64|x86|arm64] [--root directory] [--yes]");
+            "Usage: autoenvplus install <python|node|java|dotnet> <exact-version> [--arch x64|x86|arm64] [--root directory] [--yes]");
         return 1;
     }
 
@@ -371,7 +373,7 @@ static async Task<int> RunInstallAsync(string[] args, CancellationToken cancella
     Console.WriteLine($"  Runtime:     {release.Kind} {release.Version} ({release.Architecture})");
     Console.WriteLine($"  Provider:    {release.ProviderId}");
     Console.WriteLine($"  Download:    {asset.DownloadUri}");
-    Console.WriteLine($"  SHA-256:     {asset.Sha256}");
+    Console.WriteLine($"  {asset.HashAlgorithm.DisplayName()}:     {asset.PackageHash}");
     foreach (PackageVerification verification in asset.Verifications)
     {
         Console.WriteLine(
@@ -427,9 +429,10 @@ static async Task<int> RunInstallAsync(string[] args, CancellationToken cancella
         release.Architecture,
         plan.DestinationRoot,
         plan.ExpectedExecutableRelativePath,
-        asset.Sha256,
+        asset.PackageHash,
         DateTimeOffset.UtcNow,
-        release.Channels);
+        release.Channels,
+        asset.HashAlgorithm);
     ManagedRuntimeInstallTransactionResult result = await new ManagedRuntimeInstallCoordinator(
         managedRoot!,
         client).InstallAsync(
@@ -703,6 +706,11 @@ static async Task<int> RunExecAsync(string[] args, CancellationToken cancellatio
     {
         startInfo.Environment["JAVA_HOME"] = entry.InstallRoot;
     }
+    else if (entry.Kind == RuntimeKind.DotNet)
+    {
+        startInfo.Environment["DOTNET_ROOT"] = entry.InstallRoot;
+        startInfo.Environment["DOTNET_MULTILEVEL_LOOKUP"] = "0";
+    }
 
     using Process process = new() { StartInfo = startInfo };
     if (!process.Start())
@@ -869,7 +877,7 @@ static async Task<int> RunShimAsync(string[] args, CancellationToken cancellatio
     Console.WriteLine("Shim activation plan");
     Console.WriteLine($"  Directory: {shimDirectory}");
     Console.WriteLine($"  Engine:    {(nativeShim is null ? "CMD fallback" : "native Win32 x64")}");
-    Console.WriteLine("  Commands:  python, python3, pip, pip3, node, npm, npx, java, javac, jar");
+    Console.WriteLine("  Commands:  python, python3, pip, pip3, node, npm, npx, java, javac, jar, dotnet");
     Console.WriteLine($"  PATH:      {(pathPlan.Changed ? "add/move Shim directory to first user position" : "already active")}");
     if (!args.Contains("--yes", StringComparer.OrdinalIgnoreCase))
     {
@@ -898,7 +906,7 @@ static async Task<int> RunShimAsync(string[] args, CancellationToken cancellatio
     Console.WriteLine(applied.Changed
         ? $"User PATH updated. Snapshot: {applied.SnapshotPath}"
         : "User PATH already contained the Shim directory first.");
-    Console.WriteLine("Open a new terminal before using python/node/java directly.");
+    Console.WriteLine("Open a new terminal before using python/node/java/dotnet directly.");
     return 0;
 }
 
@@ -979,7 +987,7 @@ static async Task<int> RunShellAsync(string[] args, CancellationToken cancellati
     Console.WriteLine($"  Module:       {plan.ModulePath}");
     Console.WriteLine($"  Shim folder:  {Path.Combine(managedRoot!, "shims")}");
     Console.WriteLine("  Commands:     Use-AutoEnvPlusRuntime, Clear-AutoEnvPlusRuntime");
-    Console.WriteLine("  Variables:    AUTOENVPLUS_PYTHON_VERSION, AUTOENVPLUS_NODE_VERSION, AUTOENVPLUS_JAVA_VERSION");
+    Console.WriteLine("  Variables:    AUTOENVPLUS_PYTHON_VERSION, AUTOENVPLUS_NODE_VERSION, AUTOENVPLUS_JAVA_VERSION, AUTOENVPLUS_DOTNET_VERSION");
     Console.WriteLine($"  Profile:      {(plan.ProfileChanged ? "create/update with snapshot" : "managed block already current")}");
     Console.WriteLine($"  Module:       {(plan.ModuleChanged ? "create/update atomically" : "already current")}");
     if (plan.ExistingProfileBlockCount > 1)
@@ -1841,7 +1849,12 @@ static IRuntimeCatalogProvider? CreateProvider(
         return new AdoptiumCatalogProvider(client, feature, architecture);
     }
 
-    error = "The runtime provider must be python, node, or java.";
+    if (runtime.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
+    {
+        return new DotNetSdkCatalogProvider(client, architecture);
+    }
+
+    error = "The runtime provider must be python, node, java, or dotnet.";
     return null;
 }
 
@@ -2034,8 +2047,8 @@ static int ShowHelp()
     Console.WriteLine();
     Console.WriteLine("  autoenvplus doctor [--json]");
     Console.WriteLine("  autoenvplus list [--managed] [--json] [--root directory]");
-    Console.WriteLine("  autoenvplus catalog <python|node|java> [catalog options]");
-    Console.WriteLine("  autoenvplus install <python|node|java> <exact-version> [--arch value] [--root directory] [--yes]");
+    Console.WriteLine("  autoenvplus catalog <python|node|java|dotnet> [catalog options]");
+    Console.WriteLine("  autoenvplus install <python|node|java|dotnet> <exact-version> [--arch value] [--root directory] [--yes]");
     Console.WriteLine("  autoenvplus uninstall <managed-runtime-id> [--root directory] [--force] [--yes]");
     Console.WriteLine("  autoenvplus use <runtime> <selector> --global [--root directory]");
     Console.WriteLine("  autoenvplus which <runtime> [--project directory] [--root directory]");

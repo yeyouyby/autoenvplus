@@ -14,7 +14,7 @@
                     <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="运行时" />
                     <TextBlock
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="安装、发现和切换多版本 Python、Node.js 与 Java。"
+                        Text="安装、发现和切换多版本 Python、Node.js、Java 与 .NET SDK。"
                         TextWrapping="Wrap" />
                 </StackPanel>
                 <StackPanel
@@ -53,7 +53,7 @@
                 x:Name="ActionInfo"
                 IsClosable="False"
                 IsOpen="True"
-                Message="Node.js 会验证 OpenPGP 签名清单；Java 下载后会验证包本体的 detached OpenPGP 签名；Python 当前验证 HTTPS 来源和 SHA-256。"
+                Message="Node.js 会验证 OpenPGP 签名清单；Java 会验证包本体的 detached OpenPGP 签名；Python 会验证官方发布证据；.NET SDK 会按 Microsoft 官方元数据校验 SHA-512。"
                 Severity="Informational"
                 Title="安全安装模式" />
 
@@ -133,6 +133,32 @@
                             Click="OnInstallClicked"
                             Content="安装版本"
                             Tag="Java" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    Padding="20"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource CardCornerRadius}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180" />
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock FontSize="18" FontWeight="SemiBold" Text=".NET SDK" />
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock Text="C#、F#、Visual Basic 与跨平台 .NET 工具链" />
+                            <TextBlock x:Name="DotNetStatus" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="正在检测 dotnet…" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <Button
+                            x:Name="DotNetInstallButton"
+                            Grid.Column="2"
+                            Click="OnInstallClicked"
+                            Content="安装版本"
+                            Tag="DotNet" />
                     </Grid>
                 </Border>
             </StackPanel>

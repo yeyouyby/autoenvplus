@@ -64,7 +64,7 @@ public sealed class ManagedRuntimeInstallCoordinatorTests : IDisposable
         ManagedRuntimeEntry previous = request.Entry with
         {
             Version = RuntimeVersion.Parse("20.0.0"),
-            PackageSha256 = new string('b', 64),
+            PackageHash = new string('b', 64),
         };
         RuntimeProfile originalProfile = new(new Dictionary<RuntimeKind, VersionSelector>
         {
@@ -123,7 +123,30 @@ public sealed class ManagedRuntimeInstallCoordinatorTests : IDisposable
             new FakeGlobalProfile());
         request = request with
         {
-            Entry = request.Entry with { PackageSha256 = new string('f', 64) },
+            Entry = request.Entry with { PackageHash = new string('f', 64) },
+        };
+
+        await Assert.ThrowsAsync<ArgumentException>(() => coordinator.InstallAsync(request));
+
+        Assert.Equal(0, installer.CallCount);
+    }
+
+    [Fact]
+    public async Task InstallAsync_RejectsMismatchedHashAlgorithmBeforeInstallerRuns()
+    {
+        ManagedRuntimeInstallRequest request = CreateRequest(setGlobalDefault: false);
+        FakeInstaller installer = new(InstallOutcome.Installed, createDestination: true);
+        ManagedRuntimeInstallCoordinator coordinator = new(
+            _root,
+            installer,
+            new FakeRegistry(),
+            new FakeGlobalProfile());
+        request = request with
+        {
+            Entry = request.Entry with
+            {
+                PackageHashAlgorithm = PackageHashAlgorithm.Sha512,
+            },
         };
 
         await Assert.ThrowsAsync<ArgumentException>(() => coordinator.InstallAsync(request));

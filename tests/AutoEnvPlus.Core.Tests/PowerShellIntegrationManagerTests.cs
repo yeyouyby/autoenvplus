@@ -26,6 +26,11 @@ public sealed class PowerShellIntegrationManagerTests : IDisposable
         Assert.Contains("AUTOENVPLUS_PYTHON_VERSION", plan.ModuleContent, StringComparison.Ordinal);
         Assert.Contains("AUTOENVPLUS_NODE_VERSION", plan.ModuleContent, StringComparison.Ordinal);
         Assert.Contains("AUTOENVPLUS_JAVA_VERSION", plan.ModuleContent, StringComparison.Ordinal);
+        Assert.Contains("AUTOENVPLUS_DOTNET_VERSION", plan.ModuleContent, StringComparison.Ordinal);
+        Assert.Contains(
+            "[ValidateSet('python', 'node', 'java', 'dotnet')]",
+            plan.ModuleContent,
+            StringComparison.Ordinal);
         Assert.Contains("autoenvplus''s cli.exe'", plan.ModuleContent, StringComparison.Ordinal);
         Assert.Contains("autoenvplus''s cli.dll'", plan.ModuleContent, StringComparison.Ordinal);
         Assert.Contains("managed root''s files'", plan.ModuleContent, StringComparison.Ordinal);

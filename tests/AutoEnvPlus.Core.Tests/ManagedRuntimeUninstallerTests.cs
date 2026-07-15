@@ -59,7 +59,7 @@ public sealed class ManagedRuntimeUninstallerTests : IDisposable
         ManagedRuntimeUninstallPlan plan = await uninstaller.CreatePlanAsync(runtime.Id);
         await new ManagedRuntimeRegistry(_root).UpsertAsync(runtime with
         {
-            PackageSha256 = new string('b', 64),
+            PackageHash = new string('b', 64),
         });
 
         ManagedRuntimeUninstallResult result = await uninstaller.ExecuteAsync(plan);
@@ -86,6 +86,29 @@ public sealed class ManagedRuntimeUninstallerTests : IDisposable
             reference.Kind == RuntimeReferenceKind.GlobalProfile);
         Assert.Contains(currentPlan.References, reference =>
             reference.Kind == RuntimeReferenceKind.GlobalProfile);
+    }
+
+    [Fact]
+    public async Task CreatePlanAsync_FailsClosedForUnreadableProjectLock()
+    {
+        ManagedRuntimeEntry runtime = await RegisterPython();
+        string project = Directory.CreateDirectory(Path.Combine(_root, "locked-project")).FullName;
+        await File.WriteAllTextAsync(
+            Path.Combine(project, ProjectLockFileService.LockFileName),
+            "{ \"schemaVersion\": 999, \"runtimes\": [] }");
+        await new KnownProjectStore(_root).AddAsync(project);
+
+        ManagedRuntimeUninstallPlan plan = await new ManagedRuntimeUninstaller(_root)
+            .CreatePlanAsync(runtime.Id);
+
+        Assert.True(plan.IsReferenced);
+        Assert.Contains(plan.References, reference =>
+            reference.Kind == RuntimeReferenceKind.ProjectLock
+            && reference.Detail.Contains("unreadable lock", StringComparison.OrdinalIgnoreCase));
+        ManagedRuntimeUninstallResult result = await new ManagedRuntimeUninstaller(_root)
+            .ExecuteAsync(plan);
+        Assert.False(result.Success);
+        Assert.True(Directory.Exists(runtime.InstallRoot));
     }
 
     private async Task<ManagedRuntimeEntry> RegisterPython()

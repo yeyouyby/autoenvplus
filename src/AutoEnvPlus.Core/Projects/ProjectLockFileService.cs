@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AutoEnvPlus.Core.Providers;
 using AutoEnvPlus.Core.Runtimes;
 using AutoEnvPlus.Core.State;
 
@@ -12,7 +13,8 @@ public sealed record ProjectLockEntry(
     RuntimeVersion ResolvedVersion,
     RuntimeArchitecture Architecture,
     string ProviderId,
-    string PackageSha256);
+    PackageHashAlgorithm PackageHashAlgorithm,
+    string PackageHash);
 
 public sealed record ProjectLockDocument(
     int SchemaVersion,
@@ -28,7 +30,7 @@ public sealed record ProjectLockResult(
 
 public sealed class ProjectLockFileService
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
     public const string LockFileName = "autoenvplus.lock";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -90,7 +92,8 @@ public sealed class ProjectLockFileService
                 installed.Version,
                 installed.Architecture,
                 installed.ProviderId,
-                installed.PackageSha256.ToLowerInvariant()));
+                installed.PackageHashAlgorithm,
+                installed.PackageHash.ToLowerInvariant()));
         }
 
         if (errors.Count > 0)
@@ -158,20 +161,32 @@ public sealed class ProjectLockFileService
                 FileShare.Read,
                 16_384,
                 FileOptions.Asynchronous | FileOptions.SequentialScan);
-            ProjectLockDocument? document = await JsonSerializer.DeserializeAsync<ProjectLockDocument>(
+            LockDocumentDto? serialized = await JsonSerializer.DeserializeAsync<LockDocumentDto>(
                 stream,
                 JsonOptions,
                 cancellationToken).ConfigureAwait(false);
-            if (document is null || document.SchemaVersion != CurrentSchemaVersion)
+            if (serialized is null)
             {
                 return new ProjectLockResult(
                     false,
                     fullPath,
-                    document,
-                    ["The project lock file has an unsupported schema."]);
+                    null,
+                    ["The project lock file is empty."]);
             }
 
-            return new ProjectLockResult(true, fullPath, document, []);
+            if (serialized.SchemaVersion is < 1 or > CurrentSchemaVersion)
+            {
+                return new ProjectLockResult(
+                    false,
+                    fullPath,
+                    null,
+                    [$"The project lock file has unsupported schema {serialized.SchemaVersion}."]);
+            }
+
+            ProjectLockDocument? document = ValidateAndConvert(serialized, out string[] errors);
+            return errors.Length == 0
+                ? new ProjectLockResult(true, fullPath, document, [])
+                : new ProjectLockResult(false, fullPath, null, errors);
         }
         catch (JsonException exception)
         {
@@ -195,6 +210,129 @@ public sealed class ProjectLockFileService
         return document.ManifestSha256.Equals(hash, StringComparison.OrdinalIgnoreCase);
     }
 
+    private static ProjectLockDocument? ValidateAndConvert(
+        LockDocumentDto serialized,
+        out string[] errors)
+    {
+        List<string> validationErrors = [];
+        if (serialized.GeneratedAtUtc == default)
+        {
+            validationErrors.Add("The project lock file has an invalid generation timestamp.");
+        }
+
+        if (!PackageHashAlgorithm.Sha256.IsValidHash(serialized.ManifestSha256))
+        {
+            validationErrors.Add("The project lock manifest SHA-256 is invalid.");
+        }
+
+        if (serialized.Runtimes is null)
+        {
+            validationErrors.Add("The project lock file does not contain a runtimes array.");
+            errors = validationErrors.ToArray();
+            return null;
+        }
+
+        List<ProjectLockEntry> entries = [];
+        HashSet<RuntimeKind> kinds = [];
+        for (int index = 0; index < serialized.Runtimes.Count; index++)
+        {
+            LockEntryDto? item = serialized.Runtimes[index];
+            string label = $"Project lock runtime entry {index + 1}";
+            if (item is null)
+            {
+                validationErrors.Add($"{label} is null.");
+                continue;
+            }
+
+            if (item.Kind is not RuntimeKind kind || !Enum.IsDefined(kind))
+            {
+                validationErrors.Add($"{label} has an invalid runtime kind.");
+                continue;
+            }
+
+            if (!kinds.Add(kind))
+            {
+                validationErrors.Add($"{label} duplicates runtime kind {kind}.");
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(item.RequestedSelector)
+                || !VersionSelector.TryParse(item.RequestedSelector, out _))
+            {
+                validationErrors.Add($"{label} has an invalid requested selector.");
+                continue;
+            }
+
+            if (item.ResolvedVersion is null
+                || !RuntimeVersion.TryParse(
+                    item.ResolvedVersion.ToString(),
+                    out RuntimeVersion? normalizedVersion)
+                || normalizedVersion != item.ResolvedVersion)
+            {
+                validationErrors.Add($"{label} has an invalid resolved version.");
+                continue;
+            }
+
+            if (item.Architecture is not RuntimeArchitecture architecture
+                || !Enum.IsDefined(architecture)
+                || architecture == RuntimeArchitecture.Any)
+            {
+                validationErrors.Add($"{label} has an invalid architecture.");
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(item.ProviderId))
+            {
+                validationErrors.Add($"{label} has an empty provider ID.");
+                continue;
+            }
+
+            PackageHashAlgorithm hashAlgorithm;
+            string? packageHash;
+            if (serialized.SchemaVersion == 1)
+            {
+                hashAlgorithm = PackageHashAlgorithm.Sha256;
+                packageHash = item.PackageSha256;
+            }
+            else if (item.PackageHashAlgorithm is PackageHashAlgorithm declaredAlgorithm
+                && Enum.IsDefined(declaredAlgorithm))
+            {
+                hashAlgorithm = declaredAlgorithm;
+                packageHash = item.PackageHash;
+            }
+            else
+            {
+                validationErrors.Add($"{label} has an invalid package hash algorithm.");
+                continue;
+            }
+
+            if (!hashAlgorithm.IsValidHash(packageHash))
+            {
+                validationErrors.Add(
+                    $"{label} has an invalid {hashAlgorithm.DisplayName()} package hash.");
+                continue;
+            }
+
+            entries.Add(new ProjectLockEntry(
+                kind,
+                item.RequestedSelector,
+                item.ResolvedVersion,
+                architecture,
+                item.ProviderId,
+                hashAlgorithm,
+                packageHash!.ToLowerInvariant()));
+        }
+
+        errors = validationErrors.ToArray();
+        return errors.Length == 0
+            ? new ProjectLockDocument(
+                CurrentSchemaVersion,
+                serialized.GeneratedAtUtc,
+                serialized.ManifestSha256!.ToLowerInvariant(),
+                entries)
+            : null;
+    }
+
     private static async Task<string> ComputeSha256Async(
         string path,
         CancellationToken cancellationToken)
@@ -209,4 +347,20 @@ public sealed class ProjectLockFileService
         byte[] hash = await SHA256.HashDataAsync(stream, cancellationToken).ConfigureAwait(false);
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
+
+    private sealed record LockDocumentDto(
+        int SchemaVersion,
+        DateTimeOffset GeneratedAtUtc,
+        string? ManifestSha256,
+        List<LockEntryDto?>? Runtimes);
+
+    private sealed record LockEntryDto(
+        RuntimeKind? Kind,
+        string? RequestedSelector,
+        RuntimeVersion? ResolvedVersion,
+        RuntimeArchitecture? Architecture,
+        string? ProviderId,
+        PackageHashAlgorithm? PackageHashAlgorithm,
+        string? PackageHash,
+        string? PackageSha256);
 }

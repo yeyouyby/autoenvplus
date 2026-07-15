@@ -76,7 +76,7 @@ public sealed class PythonOrgCatalogProviderTests : IDisposable
         Assert.Contains("latest", release.Channels);
         Assert.Equal(new DateOnly(2026, 6, 10), release.ReleaseDate);
         Assert.Equal("python-3.14.6-amd64.zip", asset.FileName);
-        Assert.Equal(PythonPackageHash, asset.Sha256);
+        Assert.Equal(PythonPackageHash, asset.PackageHash);
         Assert.Null(asset.ArchiveRootDirectory);
         Assert.Contains(asset.Verifications, verification =>
             verification.Kind == PackageVerificationKind.VerifiedManifest

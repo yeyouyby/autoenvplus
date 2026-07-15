@@ -21,7 +21,7 @@ public sealed class ProjectTerminalServiceTests : IDisposable
         _shellExecutable = Path.Combine(_root, "powershell.exe");
         File.WriteAllText(_shellExecutable, string.Empty);
         string shims = Directory.CreateDirectory(Path.Combine(_managedRoot, "shims")).FullName;
-        foreach (string command in new[] { "python", "node", "java" })
+        foreach (string command in new[] { "python", "node", "java", "dotnet" })
         {
             File.WriteAllText(Path.Combine(shims, command + ".exe"), string.Empty);
         }
@@ -30,6 +30,7 @@ public sealed class ProjectTerminalServiceTests : IDisposable
         _entries.Add(CreateRuntime("python-3.12.8", RuntimeKind.Python, "3.12.8", "python.exe"));
         _entries.Add(CreateRuntime("node-22.17.0", RuntimeKind.NodeJs, "22.17.0", "node.exe", ["lts"]));
         _entries.Add(CreateRuntime("java-21.0.8", RuntimeKind.Java, "21.0.8", "bin/java.exe", ["lts"]));
+        _entries.Add(CreateRuntime("dotnet-10.0.200", RuntimeKind.DotNet, "10.0.200", "dotnet.exe"));
         WriteManifest(
             """
             [tools]
@@ -50,15 +51,16 @@ public sealed class ProjectTerminalServiceTests : IDisposable
 
         Assert.True(plan.CanLaunch);
         Assert.Equal(_projectRoot, plan.ProjectRoot);
-        Assert.Equal(3, plan.Selections.Count);
+        Assert.Equal(4, plan.Selections.Count);
         Assert.Equal("3.12.8", plan.EnvironmentOverrides["AUTOENVPLUS_PYTHON_VERSION"]);
         Assert.Equal("22.17.0", plan.EnvironmentOverrides["AUTOENVPLUS_NODE_VERSION"]);
         Assert.Equal("21.0.8", plan.EnvironmentOverrides["AUTOENVPLUS_JAVA_VERSION"]);
+        Assert.Equal("10.0.200", plan.EnvironmentOverrides["AUTOENVPLUS_DOTNET_VERSION"]);
         Assert.Equal(_projectRoot, plan.EnvironmentOverrides["AUTOENVPLUS_PROJECT_ROOT"]);
         Assert.Equal(
             Path.Combine(_managedRoot, "shims"),
             plan.EnvironmentOverrides["PATH"].Split(';')[0]);
-        Assert.Contains(plan.Warnings, warning => warning.Contains("DotNet", StringComparison.Ordinal));
+        Assert.DoesNotContain(plan.Warnings, warning => warning.Contains("DotNet", StringComparison.Ordinal));
         Assert.Equal(parentPath, System.Environment.GetEnvironmentVariable("PATH") ?? string.Empty);
 
         ProjectTerminalSelection python = Assert.Single(
@@ -66,6 +68,92 @@ public sealed class ProjectTerminalServiceTests : IDisposable
             selection => selection.Kind == RuntimeKind.Python);
         Assert.Equal(VersionSelector.Parse("3.12"), python.RequestedSelector);
         Assert.Equal(RuntimeVersion.Parse("3.12.8"), python.ResolvedVersion);
+    }
+
+    [Fact]
+    public async Task CreatePlanAsync_UsesFixedWindowsTerminalCommandWhenAvailable()
+    {
+        string windowsTerminalExecutable = Path.Combine(_root, "wt.exe");
+        File.WriteAllText(windowsTerminalExecutable, string.Empty);
+        ProjectTerminalService service = CreateService(windowsTerminalExecutable);
+
+        ProjectTerminalPlan plan = await service.CreatePlanAsync(
+            _projectRoot,
+            ProjectTerminalHost.WindowsTerminal);
+
+        Assert.True(service.IsHostAvailable(ProjectTerminalHost.WindowsTerminal));
+        Assert.True(plan.CanLaunch);
+        Assert.Equal(ProjectTerminalHost.WindowsTerminal, plan.RequestedHost);
+        Assert.Equal(ProjectTerminalHost.WindowsTerminal, plan.EffectiveHost);
+        Assert.Equal(windowsTerminalExecutable, plan.ShellExecutable);
+        Assert.Equal(
+            [
+                "new-tab",
+                "--startingDirectory",
+                _projectRoot,
+                _shellExecutable,
+                "-NoLogo",
+                "-NoExit",
+            ],
+            plan.ShellArguments);
+        Assert.DoesNotContain(plan.Warnings, warning =>
+            warning.Contains("fall back", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task CreatePlanAsync_FallsBackDeterministicallyWhenWindowsTerminalIsUnavailable()
+    {
+        string missingWindowsTerminal = Path.Combine(_root, "missing", "wt.exe");
+        ProjectTerminalService service = CreateService(missingWindowsTerminal);
+
+        ProjectTerminalPlan plan = await service.CreatePlanAsync(
+            _projectRoot,
+            ProjectTerminalHost.WindowsTerminal);
+
+        Assert.False(service.IsHostAvailable(ProjectTerminalHost.WindowsTerminal));
+        Assert.True(plan.CanLaunch);
+        Assert.Equal(ProjectTerminalHost.WindowsTerminal, plan.RequestedHost);
+        Assert.Equal(ProjectTerminalHost.WindowsPowerShell, plan.EffectiveHost);
+        Assert.Equal(_shellExecutable, plan.ShellExecutable);
+        Assert.Equal(["-NoLogo", "-NoExit"], plan.ShellArguments);
+        Assert.Contains(plan.Warnings, warning =>
+            warning.Contains("fall back", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task CreatePlanAsync_ActivatesManagedDotNetSelection()
+    {
+        ProjectTerminalPlan plan = await CreateService().CreatePlanAsync(_projectRoot);
+
+        ProjectTerminalSelection dotnet = Assert.Single(
+            plan.Selections,
+            selection => selection.Kind == RuntimeKind.DotNet);
+        Assert.Equal(VersionSelector.Parse("10.0.200"), dotnet.RequestedSelector);
+        Assert.Equal(RuntimeVersion.Parse("10.0.200"), dotnet.ResolvedVersion);
+        Assert.Equal("AUTOENVPLUS_DOTNET_VERSION", dotnet.EnvironmentVariable);
+        Assert.Equal("10.0.200", plan.EnvironmentOverrides[dotnet.EnvironmentVariable]);
+    }
+
+    [Fact]
+    public void Constructor_RejectsAnArbitraryWindowsTerminalCommand()
+    {
+        ArgumentException exception = Assert.Throws<ArgumentException>(() => new ProjectTerminalService(
+            _managedRoot,
+            new FakeRegistry(_entries),
+            RuntimeArchitecture.X64,
+            _shellExecutable,
+            Path.Combine(_root, "cmd.exe")));
+
+        Assert.Contains("wt.exe", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task CreatePlanAsync_RejectsAnUndefinedHost()
+    {
+        ArgumentOutOfRangeException exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            () => CreateService().CreatePlanAsync(_projectRoot, (ProjectTerminalHost)42));
+
+        Assert.Equal("requestedHost", exception.ParamName);
     }
 
     [Fact]
@@ -111,11 +199,12 @@ public sealed class ProjectTerminalServiceTests : IDisposable
         Assert.Contains(plan.Errors, error => error.Contains("declared more than once", StringComparison.Ordinal));
     }
 
-    private ProjectTerminalService CreateService() => new(
+    private ProjectTerminalService CreateService(string? windowsTerminalExecutable = null) => new(
         _managedRoot,
         new FakeRegistry(_entries),
         RuntimeArchitecture.X64,
-        _shellExecutable);
+        _shellExecutable,
+        windowsTerminalExecutable);
 
     private ManagedRuntimeEntry CreateRuntime(
         string id,

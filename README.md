@@ -1,27 +1,29 @@
 # AutoEnvPlus
 
-AutoEnvPlus 是一个面向 Windows 10 和 Windows 11 的 Fluent 风格开发环境控制中心。它的目标是统一管理 Python、Node.js、Java 与 C/C++ 工具链的安装、版本选择、PATH、项目环境以及 pip/npm 等工具的缓存目录。
+AutoEnvPlus 是一个面向 Windows 10 和 Windows 11 的 Fluent 风格开发环境控制中心。它的目标是统一管理 Python、Node.js、Java、.NET SDK 与 C/C++ 工具链的安装、版本选择、PATH、项目环境以及 pip/npm 等工具的缓存目录。
 
 当前仓库处于功能原型阶段。核心路径、自包含 x64 便携发布以及参数化 MSIX/AppInstaller 发布链已经可运行，但正式发布者证书、可信时间戳和 Win11 安装/升级端到端验证仍未完成。已经包含：
 
 - WinUI 3 桌面应用骨架；
 - 按系统能力自适应的 Fluent 窗口背景：Windows 11 优先 Mica，Windows 10 使用 Desktop Acrylic，高对比度、关闭透明效果或材料不可用时切换为纯色，并在设置页显示实际状态；
+- 统一的 WinUI 开发环境工作台：汇总 Python、Node.js、Java、.NET SDK 的托管/全局/PATH 状态，PATH 健康度，缓存容量与受管根磁盘空间，并提供最近项目、最近活动和各功能页直达入口；
 - 独立的领域核心与命令行入口；
 - `会话 > 项目 > 全局 > 自动选择` 的版本解析模型；
 - PATH 重复、失效和命令冲突检查，以及 WinUI 可审计快照列表和安全一键回滚；
 - WinUI/CLI 共用的 PATH、命令赢家、版本探测、托管状态和全局选择聚合诊断，以及 WinUI 结构化 JSON 导出；
-- python.org、Node.js、Eclipse Temurin 官方发行目录、SHA-256 安装资产和校验来源证据；
+- python.org、Node.js、Eclipse Temurin 和 Microsoft .NET 官方发行目录；Python、Node.js、Temurin 使用各自官方 SHA-256 资产，.NET SDK 使用 Microsoft release metadata 中的 SHA-512 Windows ZIP；
 - Python Windows release manifest 的 Sigstore v0.3 验证：固定 python.org 版本系列发布身份、内置 trusted-root 快照、Fulcio 证书链/SCT、Rekor SET/Merkle 包含证明/签名检查点和清单签名，缺失或失败时禁止降级；
 - Node.js `SHASUMS256.txt.asc` OpenPGP 验证、固定主指纹/签名子钥映射和历史密钥时限策略；
 - Eclipse Adoptium 官方 GA/LTS 版本线动态选择、Temurin 包本体 detached OpenPGP 验证、固定主指纹和签名失败删除缓存策略；
-- WinUI 安装确认页会逐条展示下载地址、包哈希和校验来源，并明确提示数字签名验证状态；
+- .NET SDK 从 Microsoft 官方 release index 读取 active/maintenance 通道中的稳定 SDK，支持 x64/x86/ARM64 Windows ZIP，并隔离安装到受管根下的版本/架构目录；
+- WinUI 安装确认页会逐条展示下载地址、哈希算法、包哈希和校验来源，并明确提示数字签名验证状态；
 - 防 Zip Slip、限制下载/解压大小、原子提交的受管理 ZIP 安装器；
-- 带 ETag/Last-Modified/If-Range 的断点续传与 SHA-256 下载缓存；
-- 安装注册表、全局版本选择、`which`/`exec`、Win32 原生 Shim 与 CMD 回退；
+- 带 ETag/Last-Modified/If-Range 的断点续传，以及按 SHA-256/SHA-512 算法和包哈希分区的下载缓存；
+- 安装注册表 schema 2、全局版本选择、`which`/`exec`、Win32 原生 Shim 与 CMD 回退；schema 2 记录哈希算法与值，Core 和原生 Shim 仍可读取旧 schema 1 的 `packageSha256`；
 - 运行时目录提交、注册表登记和全局选择之间的补偿式安装事务；
 - PowerShell 会话模块、受管 Profile 块、修改前快照与并发安全回滚；
 - 项目现有版本文件导入、精确 `autoenvplus.lock` 和引用保护卸载；
-- 项目清单预解析、精确运行时会话变量与独立 PowerShell 终端启动，不修改父进程或用户 PATH；
+- 项目清单预解析、Python/Node.js/Java/.NET 精确运行时会话变量，以及 WinUI 中 Windows Terminal/Windows PowerShell 宿主选择；未检测到 `wt.exe` 时回退到独立 PowerShell，不修改父进程或用户 PATH；
 - 可通过 `AUTOENVPLUS_HOME` 和设置页把运行时、Shim、状态与日志放到非系统盘，CLI 的显式 `--root` 仍具有最高优先级；
 - pip/npm/pnpm/Yarn/NuGet/Maven/Gradle/vcpkg/Conan 存储发现、统计、事务迁移、配置快照与回滚；纯缓存目录还支持可恢复隔离和二次确认后的永久清空；
 - Visual Studio/MSVC、Windows SDK、clang/GCC/CMake/Ninja 工具链发现；
@@ -59,8 +61,10 @@ dotnet run --project src\AutoEnvPlus.Cli -- catalog node --lts --limit 10
 dotnet run --project src\AutoEnvPlus.Cli -- catalog node --asset 24.18.0
 dotnet run --project src\AutoEnvPlus.Cli -- catalog java --feature 21 --asset 21.0.11
 dotnet run --project src\AutoEnvPlus.Cli -- catalog python --asset 3.14.6
+dotnet run --project src\AutoEnvPlus.Cli -- catalog dotnet --asset 10.0.302
 dotnet run --project src\AutoEnvPlus.Cli -- install python 3.14.6
 dotnet run --project src\AutoEnvPlus.Cli -- install python 3.14.6 --yes
+dotnet run --project src\AutoEnvPlus.Cli -- install dotnet 10.0.302 --yes
 dotnet run --project src\AutoEnvPlus.Cli -- list --managed
 dotnet run --project src\AutoEnvPlus.Cli -- uninstall python-3.14.6-x64
 dotnet run --project src\AutoEnvPlus.Cli -- use python 3.14 --global
@@ -128,7 +132,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msix.ps1 `
   -DevelopmentCertificate
 ```
 
-该模式生成短期开发证书，只输出公钥 `.cer`，签名后删除私钥和 PFX，且不会修改 Windows 证书信任库。正式发布必须提供代码签名 PFX、精确等于证书 Subject 的 `-Publisher`，并建议提供 RFC 3161 `-TimestampUri`；详见 [分发说明](docs/DISTRIBUTION.md)。
+该模式生成短期开发证书，只输出公钥 `.cer`，签名后删除私钥和 PFX，且不会修改 Windows 证书信任库；得到的是仅供开发测试的测试签名 MSIX，不是生产签名。正式发布必须提供代码签名 PFX、精确等于证书 Subject 的 `-Publisher`，并建议提供 RFC 3161 `-TimestampUri`；详见 [分发说明](docs/DISTRIBUTION.md)。
 
 ## 设计原则
 
@@ -140,7 +144,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msix.ps1 `
 
 PowerShell 安装命令默认只输出计划。只有同时提供 `--install-profile --yes` 才会生成模块、会话 Shim 和受管 Profile 块；回滚同样先预览，再通过 `--yes` 确认。开发构建既支持 `autoenvplus.exe`，也支持 `dotnet autoenvplus.dll` 形式的固定前置参数。
 
-原生 Shim 是不加载 CLR 的 x64 Win32 程序，直接读取同一份托管注册表、项目清单、全局 Profile 和会话变量。它覆盖 `python`/`python3`、`pip`/`pip3`、`node`、`npm`/`npx`、`java`、`javac`、`jar`；构建产物缺失时安装器才显式回退到 CMD 包装器。在本机 60 次交替差分基准中，直接子进程中位耗时为 11.73 ms，经 Shim 为 27.28 ms，中位额外开销 15.55 ms。
+原生 Shim 是不加载 CLR 的 x64 Win32 程序，直接读取同一份托管注册表、项目清单、全局 Profile 和会话变量。它覆盖 `python`/`python3`、`pip`/`pip3`、`node`、`npm`/`npx`、`java`、`javac`、`jar` 和 `dotnet`；启动受管 .NET SDK 时只为该子进程设置选中安装根对应的 `DOTNET_ROOT`，并关闭多级查找，日常版本切换不重写用户 PATH。构建产物缺失时安装器才显式回退到 CMD 包装器。在本机 60 次交替差分基准中，直接子进程中位耗时为 11.73 ms，经 Shim 为 27.28 ms，中位额外开销 15.55 ms。
 
 详细内容见 [产品规格](docs/PRODUCT.md)、[技术架构](docs/ARCHITECTURE.md)、[安全模型](docs/SECURITY.md)、[分发说明](docs/DISTRIBUTION.md)、[第三方组件声明](THIRD-PARTY-NOTICES.md) 和 [路线图](docs/ROADMAP.md)。
 

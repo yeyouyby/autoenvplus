@@ -234,9 +234,10 @@ public sealed class ManagedRuntimeInstallCoordinator
             || !request.Plan.ExpectedExecutableRelativePath.Equals(
                 request.Entry.ExecutableRelativePath,
                 StringComparison.OrdinalIgnoreCase)
-            || !request.Plan.Asset.Sha256.Equals(
-                request.Entry.PackageSha256,
+            || !request.Plan.Asset.PackageHash.Equals(
+                request.Entry.PackageHash,
                 StringComparison.OrdinalIgnoreCase)
+            || request.Plan.Asset.HashAlgorithm != request.Entry.PackageHashAlgorithm
             || request.Plan.Asset.Release.Kind != request.Entry.Kind
             || request.Plan.Asset.Release.Version != request.Entry.Version
             || request.Plan.Asset.Release.Architecture != request.Entry.Architecture
