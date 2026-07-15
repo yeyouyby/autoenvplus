@@ -30,27 +30,27 @@ public sealed class ActivityLogStore
     };
 
     private static readonly Regex SensitiveAssignmentRegex = new(
-        "(?<name>(?:\\\"|')?\\b(?:password|passwd|pwd|token|access[_-]?token|refresh[_-]?token|api[_-]?key|authorization|credential|client[_-]?secret|private[_-]?key|secret|(?:https?|all)[_-]?proxy|proxy(?:[_-]?(?:user|username|password|pass))?|pfx(?:[_-]?(?:password|pass|secret))?)\\b(?:\\\"|')?)\\s*[:=]\\s*(?:\\\"[^\\\"]*\\\"|'[^']*'|[^\\s,;]+)",
+        """(?<name>(?:"|')?\b(?:password|passwd|pwd|token|access[_-]?token|refresh[_-]?token|api[_-]?key|authorization|credential|client[_-]?secret|private[_-]?key|secret[_-]?key|(?:https?|all)[_-]?proxy|proxy(?:[_-]?(?:user|username|password|pass))?|pfx(?:[_-]?(?:password|pass|secret))?)\b(?:"|')?)\s*[:=]\s*(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[^\s]+)""",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static readonly Regex SensitiveCommandArgumentRegex = new(
-        "(?<name>--?(?:password|passwd|token|access-token|refresh-token|api-key|authorization|proxy-password|pfx-password))\\s+(?:\\\"[^\\\"]*\\\"|'[^']*'|\\S+)",
+        """(?<name>--?(?:password|passwd|pwd|token|access[-_]token|refresh[-_]token|api[-_]key|authorization|credential|client[-_]secret|private[-_]key|secret[-_]key|proxy[-_]?(?:password|pass|user|username)|pfx[-_]?(?:password|pass|secret)))\s+(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\S+)""",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static readonly Regex BearerTokenRegex = new(
-        "\\bBearer\\s+[A-Za-z0-9._~+/-]+=*",
+        @"\bBearer\s+\S+",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static readonly Regex AuthorizationHeaderRegex = new(
-        "(?<name>\\b(?:proxy[-_ ]?)?authorization\\b\\s*[:=]\\s*)(?:basic|bearer|digest|negotiate|ntlm)\\s+[^\\s,;]+",
+        @"(?<name>\b(?:proxy[-_ ]?)?authorization\b\s*[:=]\s*)(?:basic|bearer|digest|negotiate|ntlm)\s+\S+",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static readonly Regex UriCredentialRegex = new(
-        "(?<scheme>https?://)[^/@\\s:]+:[^/@\\s]+@",
+        @"(?<scheme>[A-Za-z][A-Za-z0-9+.-]*://)[^/@\s:]+:[^/@\s]+@",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static readonly Regex SensitiveQueryRegex = new(
-        "(?<prefix>[?&](?:token|access_token|refresh_token|password|passwd|pwd|secret|api[_-]?key|sig|signature)=)[^&#\\s]+",
+        @"(?<prefix>[?&](?:token|access[_-]?token|refresh[_-]?token|password|passwd|pwd|secret|secret[_-]?key|api[_-]?key|credential|client[_-]?secret|private[_-]?key|sig|signature|x[-_]amz[-_]?(?:signature|credential|security[-_]token)|x[-_]goog[-_]?(?:signature|credential))=)[^&#\s]+",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> Gates = new(
@@ -134,6 +134,12 @@ public sealed class ActivityLogStore
                 cancellationToken).ConfigureAwait(false);
             EnsureSafeLogLocation(createDirectory: true);
             ActivityLogLoadResult existing = await LoadCoreAsync(cancellationToken).ConfigureAwait(false);
+            if (existing.Errors.Count > 0)
+            {
+                throw new InvalidDataException(
+                    "The activity log contains invalid records and cannot be rewritten safely.");
+            }
+
             List<ActivityLogEntry> entries = existing.Entries.ToList();
             entries.Add(normalized);
             entries = TrimToLimits(entries);
@@ -299,6 +305,7 @@ public sealed class ActivityLogStore
                 16_384,
                 leaveOpen: true))
             {
+                writer.NewLine = "\n";
                 long bytes = 0;
                 foreach (ActivityLogEntry entry in entries)
                 {

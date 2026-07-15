@@ -46,6 +46,35 @@ public sealed class ActivityLogStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task AppendAsync_RedactsExtendedCredentialFormsAndKeepsByteLimitStable()
+    {
+        ActivityLogStore store = new(_root, maxBytes: 8 * 1024);
+        ActivityLogEntry written = await store.AppendAsync(
+            ActivityOperationType.Other,
+            ActivityStatus.Failed,
+            "password=alpha-secret;omega-secret --client-secret client-secret-value "
+            + "socks5://proxy-user:proxy-pass@example.test/pkg "
+            + "?X-Amz-Signature=signature-secret&next=visible "
+            + "\"apiKey\":\"escaped-secret\\\"tail\"",
+            timestampUtc: DateTimeOffset.UtcNow);
+
+        string raw = await File.ReadAllTextAsync(store.LogPath);
+        long lfByteLength = Encoding.UTF8.GetByteCount(raw.Replace("\r\n", "\n", StringComparison.Ordinal));
+        ActivityLogLoadResult loaded = await new ActivityLogStore(_root, maxBytes: lfByteLength).LoadAsync();
+
+        ActivityLogEntry entry = Assert.Single(loaded.Entries);
+        Assert.Equal(written.Id, entry.Id);
+        Assert.DoesNotContain("alpha-secret", entry.Summary, StringComparison.Ordinal);
+        Assert.DoesNotContain("omega-secret", entry.Summary, StringComparison.Ordinal);
+        Assert.DoesNotContain("client-secret-value", entry.Summary, StringComparison.Ordinal);
+        Assert.DoesNotContain("proxy-user:proxy-pass@", entry.Summary, StringComparison.Ordinal);
+        Assert.DoesNotContain("signature-secret", entry.Summary, StringComparison.Ordinal);
+        Assert.DoesNotContain("escaped-secret", entry.Summary, StringComparison.Ordinal);
+        Assert.Contains("next=visible", entry.Summary, StringComparison.Ordinal);
+        Assert.Empty(loaded.Errors);
+    }
+
+    [Fact]
     public async Task LoadAsync_MissingManagedRootReturnsEmpty()
     {
         ActivityLogStore store = new(_root);
@@ -121,6 +150,25 @@ public sealed class ActivityLogStoreTests : IDisposable
         Assert.Single(loaded.Entries);
         Assert.Equal(2, loaded.Errors.Count);
         Assert.All(loaded.Errors, error => Assert.Contains("line", error, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task AppendAsync_DoesNotRewriteMalformedRecords()
+    {
+        ActivityLogStore store = new(_root);
+        await store.AppendAsync(
+            ActivityOperationType.Other,
+            ActivityStatus.Succeeded,
+            "valid record");
+        await File.AppendAllTextAsync(store.LogPath, "{ malformed json\n", Encoding.UTF8);
+        string original = await File.ReadAllTextAsync(store.LogPath);
+
+        await Assert.ThrowsAsync<InvalidDataException>(() => store.AppendAsync(
+            ActivityOperationType.Other,
+            ActivityStatus.Succeeded,
+            "must not replace invalid records"));
+
+        Assert.Equal(original, await File.ReadAllTextAsync(store.LogPath));
     }
 
     [Fact]

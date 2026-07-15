@@ -172,9 +172,11 @@ public sealed class CacheCleanupService
             mutationLease = DirectoryMutationLease.Acquire([source.DirectoryPath]);
             Directory.CreateDirectory(trashRoot);
             ValidateTrashRoot(trashRoot, mustExist: true);
+            mutationLease.AddPath(trashRoot);
             Directory.CreateDirectory(expectedTrashPath);
-            transactionCreated = true;
             EnsureDirectoryNotReparse(expectedTrashPath, "cleanup transaction");
+            mutationLease.AddPath(expectedTrashPath);
+            transactionCreated = true;
             Directory.CreateDirectory(contentPath);
             EnsureDirectoryNotReparse(contentPath, "cleanup content directory");
             mutationLease.AddPath(contentPath);
@@ -389,7 +391,9 @@ public sealed class CacheCleanupService
 
             try
             {
-                normalizedLocations.Add(ValidateLocation(location));
+                normalizedLocations.Add(ValidateLocation(
+                    location,
+                    requireExistingDirectory: false));
             }
             catch (Exception exception) when (IsExpectedValidationException(exception))
             {
@@ -629,7 +633,7 @@ public sealed class CacheCleanupService
         LoadedCleanupItem loaded;
         try
         {
-            loaded = ReloadItem(item);
+            loaded = ReloadItem(item, requireExistingSourceDirectory: false);
         }
         catch (Exception exception) when (IsExpectedValidationException(exception))
         {
@@ -819,9 +823,13 @@ public sealed class CacheCleanupService
         }
     }
 
-    private LoadedCleanupItem ReloadItem(CacheCleanupItem item)
+    private LoadedCleanupItem ReloadItem(
+        CacheCleanupItem item,
+        bool requireExistingSourceDirectory = true)
     {
-        CacheDirectoryLocation location = ValidateLocation(item.Location);
+        CacheDirectoryLocation location = ValidateLocation(
+            item.Location,
+            requireExistingSourceDirectory);
         string trashRoot = GetTrashRoot(location.DirectoryPath);
         ValidateTrashRoot(trashRoot, mustExist: true);
         EnsureDirectChild(trashRoot, item.TrashPath, "cleanup transaction");
@@ -1030,7 +1038,9 @@ public sealed class CacheCleanupService
             loaded.Content.FileCount,
             loaded.Content.TotalBytes);
 
-    private CacheDirectoryLocation ValidateLocation(CacheDirectoryLocation location)
+    private CacheDirectoryLocation ValidateLocation(
+        CacheDirectoryLocation location,
+        bool requireExistingDirectory = true)
     {
         CacheDirectoryDefinition definition = GetCanonicalDefinition(location.Definition.Id);
         if (!definition.SupportsSafeCleanup)
@@ -1047,12 +1057,21 @@ public sealed class CacheCleanupService
         string sourcePath = Path.GetFullPath(location.DirectoryPath);
         EnsureNotFileSystemRoot(sourcePath);
         EnsureNotInsideTrash(sourcePath);
-        if (!Directory.Exists(sourcePath))
+        bool sourceExists = Directory.Exists(sourcePath);
+        if (!sourceExists && File.Exists(sourcePath))
+        {
+            throw new InvalidDataException($"The cache path is not a directory: {sourcePath}");
+        }
+
+        if (!sourceExists && requireExistingDirectory)
         {
             throw new DirectoryNotFoundException($"Cache directory does not exist: {sourcePath}");
         }
 
-        EnsureDirectoryNotReparse(sourcePath, "cache directory");
+        if (sourceExists)
+        {
+            EnsureDirectoryNotReparse(sourcePath, "cache directory");
+        }
         if (!string.IsNullOrWhiteSpace(location.ConfigurationFilePath))
         {
             if (!Path.IsPathFullyQualified(location.ConfigurationFilePath))
@@ -1084,7 +1103,7 @@ public sealed class CacheCleanupService
         {
             Definition = definition,
             DirectoryPath = sourcePath,
-            Exists = true,
+            Exists = sourceExists,
         };
     }
 

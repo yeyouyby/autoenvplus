@@ -247,6 +247,27 @@ public sealed class CacheCleanupServiceTests : IDisposable
         Assert.Empty((await service.DiscoverItemsAsync([location])).Items);
     }
 
+    [Fact]
+    public async Task DiscoverItemsAsync_KeepsPurgeAvailableWhenEmptySourceDirectoryIsDeleted()
+    {
+        string source = CreateCache("deleted-source");
+        CacheDirectoryLocation location = CreateLocation(source);
+        CacheCleanupService service = new();
+        CacheCleanupPlan plan = await service.CreatePlanAsync(location);
+        Assert.True((await service.CleanupAsync(plan)).Success);
+        Directory.Delete(source, recursive: false);
+
+        CacheCleanupItem item = Assert.Single(
+            (await service.DiscoverItemsAsync([location with { Exists = false }])).Items);
+
+        Assert.False(item.CanRestore);
+        Assert.True(item.CanPurge);
+        Assert.NotNull(item.RestoreBlockedReason);
+        CacheCleanupOperationResult result = await service.PurgeAsync(item);
+        Assert.True(result.Success);
+        Assert.False(Directory.Exists(item.TrashPath));
+    }
+
     [Theory]
     [InlineData("gradle")]
     [InlineData("conan")]
