@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <cstdint>
 #include <cwctype>
 #include <filesystem>
 #include <fstream>
@@ -27,6 +28,11 @@ using winrt::Windows::Data::Json::JsonValueType;
 namespace {
 
 constexpr int kMaximumRecursionDepth = 4;
+constexpr std::uintmax_t kMaximumRegistryBytes = 4ULL * 1024ULL * 1024ULL;
+constexpr std::uintmax_t kMaximumGlobalProfileBytes = 256ULL * 1024ULL;
+constexpr std::uintmax_t kMaximumProjectManifestBytes = 256ULL * 1024ULL;
+constexpr std::uint32_t kMaximumRegistryEntries = 4096;
+constexpr std::uint32_t kMaximumGlobalSelections = 64;
 
 struct ShimError final : std::runtime_error {
     ShimError(std::string message, int code)
@@ -101,14 +107,34 @@ std::wstring Utf8ToWide(std::string_view value) {
     return output;
 }
 
-std::wstring ReadUtf8File(const fs::path& path) {
-    std::ifstream input(path, std::ios::binary);
+std::wstring ReadUtf8File(
+    const fs::path& path,
+    std::uintmax_t maximum_bytes,
+    std::string_view description) {
+    std::ifstream input(path, std::ios::binary | std::ios::ate);
     if (!input) {
         throw ShimError("Unable to read state file: " + WideToUtf8(path.wstring()), 70);
     }
-    std::string bytes(
-        (std::istreambuf_iterator<char>(input)),
-        std::istreambuf_iterator<char>());
+
+    const std::streamoff length = input.tellg();
+    if (length < 0) {
+        throw ShimError("Unable to determine the size of the " + std::string(description) + ".", 70);
+    }
+    if (static_cast<std::uintmax_t>(length) > maximum_bytes) {
+        throw ShimError(
+            "The " + std::string(description) + " exceeds the "
+                + std::to_string(maximum_bytes) + "-byte limit.",
+            70);
+    }
+
+    std::string bytes(static_cast<size_t>(length), '\0');
+    input.seekg(0, std::ios::beg);
+    if (!bytes.empty()) {
+        input.read(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+        if (input.gcount() != static_cast<std::streamsize>(bytes.size())) {
+            throw ShimError("Unable to read the complete " + std::string(description) + ".", 70);
+        }
+    }
     if (bytes.size() >= 3
         && static_cast<unsigned char>(bytes[0]) == 0xEF
         && static_cast<unsigned char>(bytes[1]) == 0xBB
@@ -467,9 +493,15 @@ int RequiredInteger(const JsonObject& object, std::wstring_view name) {
     return integer;
 }
 
-JsonObject ParseJsonFile(const fs::path& path) {
+JsonObject ParseJsonFile(
+    const fs::path& path,
+    std::uintmax_t maximum_bytes,
+    std::string_view description) {
     try {
-        return JsonObject::Parse(winrt::hstring(ReadUtf8File(path)));
+        return JsonObject::Parse(winrt::hstring(ReadUtf8File(
+            path,
+            maximum_bytes,
+            description)));
     } catch (const winrt::hresult_error& error) {
         throw ShimError(
             "Invalid JSON in " + WideToUtf8(path.wstring()) + ": "
@@ -480,6 +512,7 @@ JsonObject ParseJsonFile(const fs::path& path) {
 
 struct Installation {
     std::string id;
+    std::string provider;
     std::string kind;
     Version version;
     std::string architecture;
@@ -498,12 +531,36 @@ bool KnownArchitecture(std::string_view value) {
     return value == "x64" || value == "x86" || value == "arm64";
 }
 
-bool ValidSha256(std::string_view value) {
-    return value.size() == 64 && std::all_of(value.begin(), value.end(), [](unsigned char character) {
-        return (character >= '0' && character <= '9')
-            || (character >= 'a' && character <= 'f')
-            || (character >= 'A' && character <= 'F');
-    });
+std::string CurrentArchitecture() {
+#if defined(_M_X64)
+    return "x64";
+#elif defined(_M_IX86)
+    return "x86";
+#elif defined(_M_ARM64)
+    return "arm64";
+#else
+#error Unsupported AutoEnvPlus Shim architecture.
+#endif
+}
+
+bool ValidHexHash(std::string_view value, size_t expected_length) {
+    return value.size() == expected_length
+        && std::all_of(value.begin(), value.end(), [](unsigned char character) {
+            return (character >= '0' && character <= '9')
+                || (character >= 'a' && character <= 'f')
+                || (character >= 'A' && character <= 'F');
+        });
+}
+
+bool ValidPackageHash(std::string_view algorithm, std::string_view value) {
+    const std::string normalized = ToLowerAscii(std::string(algorithm));
+    if (normalized == "sha256" || normalized == "sha-256") {
+        return ValidHexHash(value, 64);
+    }
+    if (normalized == "sha512" || normalized == "sha-512") {
+        return ValidHexHash(value, 128);
+    }
+    return false;
 }
 
 std::vector<Installation> LoadRegistry(const fs::path& managed_root) {
@@ -511,16 +568,25 @@ std::vector<Installation> LoadRegistry(const fs::path& managed_root) {
     if (!FileExists(registry_path)) {
         throw ShimError("No AutoEnvPlus managed runtimes are registered. Install a runtime first.", 69);
     }
-    const JsonObject root = ParseJsonFile(registry_path);
-    if (RequiredInteger(root, L"schemaVersion") != 1) {
+    const JsonObject root = ParseJsonFile(
+        registry_path,
+        kMaximumRegistryBytes,
+        "managed runtime registry");
+    const int schema_version = RequiredInteger(root, L"schemaVersion");
+    if (schema_version != 1 && schema_version != 2) {
         throw ShimError("The managed runtime registry schema is not supported.", 70);
     }
     if (!root.HasKey(L"installations")
         || root.GetNamedValue(L"installations").ValueType() != JsonValueType::Array) {
         throw ShimError("The managed runtime registry installations property must be an array.", 70);
     }
+    const JsonArray installation_values = root.GetNamedArray(L"installations");
+    if (installation_values.Size() > kMaximumRegistryEntries) {
+        throw ShimError("The managed runtime registry exceeds its entry limit.", 70);
+    }
     std::vector<Installation> installations;
-    for (const auto& value : root.GetNamedArray(L"installations")) {
+    installations.reserve(installation_values.Size());
+    for (const auto& value : installation_values) {
         if (value.ValueType() != JsonValueType::Object) {
             throw ShimError("The managed runtime registry contains a non-object entry.", 70);
         }
@@ -533,10 +599,15 @@ std::vector<Installation> LoadRegistry(const fs::path& managed_root) {
             WideToUtf8(RequiredString(item, L"architecture")));
         const fs::path install_root = FullPath(RequiredString(item, L"installRoot"));
         const fs::path relative_executable = RequiredString(item, L"executableRelativePath");
-        const std::string sha256 = WideToUtf8(RequiredString(item, L"packageSha256"));
+        const std::string package_hash = WideToUtf8(RequiredString(
+            item, schema_version == 1 ? L"packageSha256" : L"packageHash"));
+        const std::string package_hash_algorithm = schema_version == 1
+            ? "sha256"
+            : WideToUtf8(RequiredString(item, L"packageHashAlgorithm"));
         const std::optional<Version> version = Version::Parse(version_text);
         if (id.empty() || provider.empty() || !KnownRuntimeKind(kind)
-            || !version || !KnownArchitecture(architecture) || !ValidSha256(sha256)
+            || !version || !KnownArchitecture(architecture)
+            || !ValidPackageHash(package_hash_algorithm, package_hash)
             || !IsChildPath(managed_root, install_root)) {
             throw ShimError("Managed runtime registry entry '" + id + "' is invalid.", 70);
         }
@@ -554,7 +625,7 @@ std::vector<Installation> LoadRegistry(const fs::path& managed_root) {
             }
         }
         installations.push_back(Installation{
-            id, kind, *version, architecture, install_root,
+            id, provider, kind, *version, architecture, install_root,
             ResolveInside(install_root, relative_executable, "runtime executable"),
             std::move(channels)});
     }
@@ -567,7 +638,11 @@ std::string NormalizeToolKey(std::string value) {
     if (value == "node" || value == "nodejs" || value == "node.js") return "node";
     if (value == "java" || value == "jdk") return "java";
     if (value == "dotnet" || value == ".net") return "dotnet";
+    if (value == "msvc" || value == "visual-cpp" || value == "visual-c++") return "msvc";
+    if (value == "llvm" || value == "clang") return "llvm";
+    if (value == "mingw" || value == "gcc") return "mingw";
     if (value == "cmake") return "cmake";
+    if (value == "ninja") return "ninja";
     return {};
 }
 
@@ -591,18 +666,30 @@ void Trim(std::string& value) {
     value = value.substr(first, last - first + 1);
 }
 
-std::optional<std::string> ReadProjectSelector(
+struct ScopedSelection {
+    std::string selector;
+    std::string runtime_id;
+    std::string provider_id;
+};
+
+std::optional<ScopedSelection> ReadProjectSelection(
     const fs::path& start_path,
     std::string_view requested_key) {
     fs::path directory = FullPath(start_path);
     while (!directory.empty()) {
         const fs::path manifest = directory / L"autoenvplus.toml";
         if (FileExists(manifest)) {
-            const std::wstring text = ReadUtf8File(manifest);
+            const std::wstring text = ReadUtf8File(
+                manifest,
+                kMaximumProjectManifestBytes,
+                "project manifest");
             std::istringstream input(WideToUtf8(text));
             std::string line;
-            bool tools = false;
-            std::unordered_map<std::string, std::string> values;
+            enum class Section { Other, Tools, Identities };
+            Section active_section = Section::Other;
+            std::unordered_map<std::string, std::string> selectors;
+            std::unordered_map<std::string, std::string> runtime_ids;
+            std::unordered_map<std::string, std::string> provider_ids;
             while (std::getline(input, line)) {
                 line = StripComment(line);
                 Trim(line);
@@ -610,13 +697,21 @@ std::optional<std::string> ReadProjectSelector(
                 if (line.front() == '[' && line.back() == ']') {
                     std::string section = line.substr(1, line.size() - 2);
                     Trim(section);
-                    tools = ToLowerAscii(section) == "tools";
+                    section = ToLowerAscii(std::move(section));
+                    active_section = section == "tools"
+                        ? Section::Tools
+                        : section == "tool-identities"
+                            ? Section::Identities
+                            : Section::Other;
                     continue;
                 }
-                if (!tools) continue;
+                if (active_section == Section::Other) continue;
                 const size_t equals = line.find('=');
                 if (equals == std::string::npos || equals == 0 || equals + 1 == line.size()) {
-                    throw ShimError("Invalid [tools] entry in " + WideToUtf8(manifest.wstring()), 70);
+                    throw ShimError(
+                        "Invalid project selection entry in "
+                            + WideToUtf8(manifest.wstring()),
+                        70);
                 }
                 std::string key = line.substr(0, equals);
                 std::string value = line.substr(equals + 1);
@@ -624,10 +719,6 @@ std::optional<std::string> ReadProjectSelector(
                 if (key.size() >= 2 && (key.front() == '\'' || key.front() == '"')
                     && key.back() == key.front()) {
                     key = key.substr(1, key.size() - 2);
-                }
-                key = NormalizeToolKey(std::move(key));
-                if (key.empty()) {
-                    throw ShimError("An unsupported tool is declared in " + WideToUtf8(manifest.wstring()), 70);
                 }
                 if (value.size() >= 2 && (value.front() == '\'' || value.front() == '"')
                     && value.back() == value.front()) {
@@ -637,16 +728,74 @@ std::optional<std::string> ReadProjectSelector(
                     throw ShimError("A project version selector contains unquoted whitespace.", 70);
                 }
                 if (value.empty()) {
-                    throw ShimError("A project version selector is empty.", 70);
+                    throw ShimError("A project selection value is empty.", 70);
                 }
-                (void)Constraint::Parse(value);
-                if (!values.emplace(key, value).second) {
-                    throw ShimError("A project tool is declared more than once.", 70);
+
+                if (active_section == Section::Tools) {
+                    key = NormalizeToolKey(std::move(key));
+                    if (key.empty()) {
+                        throw ShimError(
+                            "An unsupported tool is declared in "
+                                + WideToUtf8(manifest.wstring()),
+                            70);
+                    }
+                    (void)Constraint::Parse(value);
+                    if (!selectors.emplace(key, value).second) {
+                        throw ShimError("A project tool is declared more than once.", 70);
+                    }
+                    continue;
+                }
+
+                key = ToLowerAscii(std::move(key));
+                constexpr std::string_view runtime_suffix = ".runtime-id";
+                constexpr std::string_view provider_suffix = ".provider-id";
+                std::unordered_map<std::string, std::string>* destination = nullptr;
+                size_t suffix_length = 0;
+                if (key.ends_with(runtime_suffix)) {
+                    destination = &runtime_ids;
+                    suffix_length = runtime_suffix.size();
+                } else if (key.ends_with(provider_suffix)) {
+                    destination = &provider_ids;
+                    suffix_length = provider_suffix.size();
+                } else {
+                    throw ShimError("A project tool identity key is unsupported.", 70);
+                }
+                std::string tool_key = NormalizeToolKey(
+                    key.substr(0, key.size() - suffix_length));
+                if (tool_key.empty() || value.size() > 256) {
+                    throw ShimError("A project tool identity is invalid.", 70);
+                }
+                if (!destination->emplace(tool_key, value).second) {
+                    throw ShimError("A project tool identity is declared more than once.", 70);
                 }
             }
-            auto found = values.find(std::string(requested_key));
-            return found == values.end() ? std::nullopt
-                                         : std::optional<std::string>(found->second);
+
+            for (const auto& pair : runtime_ids) {
+                if (provider_ids.find(pair.first) == provider_ids.end()
+                    || selectors.find(pair.first) == selectors.end()) {
+                    throw ShimError(
+                        "A project runtime identity requires a Provider identity and version selector.",
+                        70);
+                }
+            }
+            for (const auto& pair : provider_ids) {
+                if (runtime_ids.find(pair.first) == runtime_ids.end()
+                    || selectors.find(pair.first) == selectors.end()) {
+                    throw ShimError(
+                        "A project Provider identity requires a runtime identity and version selector.",
+                        70);
+                }
+            }
+
+            const std::string requested(requested_key);
+            const auto selector = selectors.find(requested);
+            if (selector == selectors.end()) return std::nullopt;
+            const auto runtime = runtime_ids.find(requested);
+            const auto provider = provider_ids.find(requested);
+            return ScopedSelection{
+                selector->second,
+                runtime == runtime_ids.end() ? std::string{} : runtime->second,
+                provider == provider_ids.end() ? std::string{} : provider->second};
         }
         const fs::path parent = directory.parent_path();
         if (parent == directory) break;
@@ -655,13 +804,17 @@ std::optional<std::string> ReadProjectSelector(
     return std::nullopt;
 }
 
-std::optional<std::string> ReadGlobalSelector(
+std::optional<ScopedSelection> ReadGlobalSelection(
     const fs::path& managed_root,
     std::string_view requested_kind) {
     const fs::path profile_path = managed_root / L"state" / L"global-profile.json";
     if (!FileExists(profile_path)) return std::nullopt;
-    const JsonObject root = ParseJsonFile(profile_path);
-    if (RequiredInteger(root, L"schemaVersion") != 1) {
+    const JsonObject root = ParseJsonFile(
+        profile_path,
+        kMaximumGlobalProfileBytes,
+        "global runtime profile");
+    const int schema_version = RequiredInteger(root, L"schemaVersion");
+    if (schema_version != 1 && schema_version != 2) {
         throw ShimError("The global runtime profile schema is not supported.", 70);
     }
     if (!root.HasKey(L"selections")
@@ -669,7 +822,10 @@ std::optional<std::string> ReadGlobalSelector(
         throw ShimError("The global runtime profile selections property must be an object.", 70);
     }
     const JsonObject selections = root.GetNamedObject(L"selections");
-    std::optional<std::string> result;
+    if (selections.Size() > kMaximumGlobalSelections) {
+        throw ShimError("The global runtime profile exceeds its selection limit.", 70);
+    }
+    std::unordered_map<std::string, std::string> selector_values;
     for (const auto& pair : selections) {
         const std::string key = ToLowerAscii(WideToUtf8(pair.Key()));
         if (!KnownRuntimeKind(key)) {
@@ -680,9 +836,58 @@ std::optional<std::string> ReadGlobalSelector(
         }
         const std::string value = WideToUtf8(pair.Value().GetString());
         (void)Constraint::Parse(value);
-        if (key == requested_kind) result = value;
+        if (!selector_values.emplace(key, value).second) {
+            throw ShimError("The global runtime profile contains a duplicate runtime kind.", 70);
+        }
     }
-    return result;
+
+    std::unordered_map<std::string, std::pair<std::string, std::string>> exact_values;
+    if (schema_version == 1 && root.HasKey(L"exactSelections")) {
+        throw ShimError("A schema 1 global runtime profile cannot contain exact selections.", 70);
+    }
+    if (schema_version == 2) {
+        if (!root.HasKey(L"exactSelections")
+            || root.GetNamedValue(L"exactSelections").ValueType() != JsonValueType::Object) {
+            throw ShimError(
+                "The schema 2 global runtime profile exactSelections property must be an object.",
+                70);
+        }
+        const JsonObject exact = root.GetNamedObject(L"exactSelections");
+        if (exact.Size() > kMaximumGlobalSelections) {
+            throw ShimError("The global runtime profile exceeds its exact selection limit.", 70);
+        }
+        for (const auto& pair : exact) {
+            const std::string key = ToLowerAscii(WideToUtf8(pair.Key()));
+            if (!KnownRuntimeKind(key) || selector_values.find(key) == selector_values.end()) {
+                throw ShimError(
+                    "An exact global runtime selection has no matching version selector.",
+                    70);
+            }
+            if (pair.Value().ValueType() != JsonValueType::Object) {
+                throw ShimError("An exact global runtime selection must be an object.", 70);
+            }
+            const JsonObject identity = pair.Value().GetObject();
+            const std::string runtime_id = WideToUtf8(RequiredString(identity, L"runtimeId"));
+            const std::string provider_id = WideToUtf8(RequiredString(identity, L"providerId"));
+            if (runtime_id.empty() || provider_id.empty()
+                || runtime_id.size() > 256 || provider_id.size() > 256) {
+                throw ShimError("A global runtime identity pin is invalid.", 70);
+            }
+            if (!exact_values.emplace(key, std::make_pair(runtime_id, provider_id)).second) {
+                throw ShimError(
+                    "The global runtime profile contains a duplicate exact selection kind.",
+                    70);
+            }
+        }
+    }
+
+    const auto selector = selector_values.find(std::string(requested_kind));
+    if (selector == selector_values.end()) return std::nullopt;
+    const auto exact = exact_values.find(std::string(requested_kind));
+    return ScopedSelection{
+        selector->second,
+        exact == exact_values.end() ? std::string{} : exact->second.first,
+        exact == exact_values.end() ? std::string{} : exact->second.second};
 }
 
 struct SelectedInstallation {
@@ -696,6 +901,9 @@ SelectedInstallation SelectInstallation(
     std::string_view project_key) {
     Constraint constraint;
     std::string scope;
+    std::string profile_runtime_id;
+    std::string profile_provider_id;
+    std::string profile_identity_scope;
     std::wstring session_name = runtime_kind == "nodejs"
         ? L"AUTOENVPLUS_NODE_VERSION"
         : L"AUTOENVPLUS_" + Utf8ToWide(std::string(runtime_kind)) + L"_VERSION";
@@ -704,26 +912,104 @@ SelectedInstallation SelectInstallation(
     if (!session.empty()) {
         constraint = Constraint::Parse(WideToUtf8(session));
         scope = "Session";
-    } else if (const auto project = ReadProjectSelector(
+    } else if (const auto project = ReadProjectSelection(
                    fs::current_path(), project_key)) {
-        constraint = Constraint::Parse(*project);
+        constraint = Constraint::Parse(project->selector);
         scope = "Project";
-    } else if (const auto global = ReadGlobalSelector(managed_root, runtime_kind)) {
-        constraint = Constraint::Parse(*global);
+        profile_runtime_id = project->runtime_id;
+        profile_provider_id = project->provider_id;
+        profile_identity_scope = "Project ID";
+    } else if (const auto global = ReadGlobalSelection(managed_root, runtime_kind)) {
+        constraint = Constraint::Parse(global->selector);
         scope = "Global";
+        profile_runtime_id = global->runtime_id;
+        profile_provider_id = global->provider_id;
+        profile_identity_scope = "Global ID";
     } else {
         constraint = Constraint::Parse("auto");
         scope = "Automatic";
     }
     std::vector<Installation> registry = LoadRegistry(managed_root);
+    const std::string current_architecture = CurrentArchitecture();
+    std::wstring runtime_id_name = runtime_kind == "nodejs"
+        ? L"AUTOENVPLUS_NODE_RUNTIME_ID"
+        : L"AUTOENVPLUS_" + Utf8ToWide(std::string(runtime_kind)) + L"_RUNTIME_ID";
+    std::wstring provider_id_name = runtime_kind == "nodejs"
+        ? L"AUTOENVPLUS_NODE_RUNTIME_PROVIDER_ID"
+        : L"AUTOENVPLUS_" + Utf8ToWide(std::string(runtime_kind))
+            + L"_RUNTIME_PROVIDER_ID";
+    std::transform(
+        runtime_id_name.begin(), runtime_id_name.end(),
+        runtime_id_name.begin(), std::towupper);
+    std::transform(
+        provider_id_name.begin(), provider_id_name.end(),
+        provider_id_name.begin(), std::towupper);
+    const std::string session_runtime_id = WideToUtf8(GetEnvironment(runtime_id_name));
+    const std::string session_provider_id = WideToUtf8(GetEnvironment(provider_id_name));
+    if (!session_provider_id.empty() && session_runtime_id.empty()) {
+        throw ShimError(
+            "The " + std::string(runtime_kind)
+                + " session Provider pin requires an exact runtime ID pin.",
+            69);
+    }
+    const bool has_session_identity = !session_runtime_id.empty();
+    const std::string runtime_id = has_session_identity
+        ? session_runtime_id
+        : profile_runtime_id;
+    const std::string provider_id = has_session_identity
+        ? session_provider_id
+        : profile_provider_id;
+    if (!provider_id.empty() && runtime_id.empty()) {
+        throw ShimError(
+            "The " + std::string(runtime_kind)
+                + " Provider pin requires an exact runtime ID pin.",
+            69);
+    }
+
     Installation* selected = nullptr;
-    for (Installation& installation : registry) {
-        if (installation.kind != runtime_kind
-            || !constraint.Matches(installation.version, installation.channels)) {
-            continue;
-        }
-        if (selected == nullptr || installation.version.Compare(selected->version) > 0) {
+    if (!runtime_id.empty()) {
+        const std::string normalized_id = ToLowerAscii(runtime_id);
+        for (Installation& installation : registry) {
+            if (ToLowerAscii(installation.id) != normalized_id) continue;
+            if (selected != nullptr) {
+                throw ShimError(
+                    "The managed runtime registry contains more than one entry for the pinned "
+                        + std::string(runtime_kind) + " runtime ID.",
+                    70);
+            }
             selected = &installation;
+        }
+        if (selected == nullptr) {
+            throw ShimError(
+                "The pinned " + std::string(runtime_kind)
+                    + " runtime is no longer registered. Refresh the session selection.",
+                69);
+        }
+        const bool provider_matches = provider_id.empty()
+            || ToLowerAscii(selected->provider) == ToLowerAscii(provider_id);
+        if (selected->kind != runtime_kind
+            || selected->architecture != current_architecture
+            || !constraint.Matches(selected->version, selected->channels)
+            || !provider_matches) {
+            throw ShimError(
+                "The pinned " + std::string(runtime_kind)
+                    + " runtime does not match the requested kind, architecture, "
+                      "active version selector, or Provider. Refresh the session selection.",
+                69);
+        }
+        scope = has_session_identity ? "Session ID" : profile_identity_scope;
+    }
+
+    if (selected == nullptr) {
+        for (Installation& installation : registry) {
+            if (installation.kind != runtime_kind
+                || installation.architecture != current_architecture
+                || !constraint.Matches(installation.version, installation.channels)) {
+                continue;
+            }
+            if (selected == nullptr || installation.version.Compare(selected->version) > 0) {
+                selected = &installation;
+            }
         }
     }
     if (selected == nullptr) {
@@ -731,6 +1017,29 @@ SelectedInstallation SelectInstallation(
             "No managed " + std::string(runtime_kind) + " runtime matches '"
                 + constraint.raw + "' from the " + scope + " scope.",
             69);
+    }
+    if (runtime_id.empty()) {
+        std::vector<std::string> providers;
+        for (const Installation& installation : registry) {
+            if (installation.kind != runtime_kind
+                || installation.architecture != current_architecture
+                || installation.version.Compare(selected->version) != 0
+                || !constraint.Matches(installation.version, installation.channels)) {
+                continue;
+            }
+            const std::string normalized_provider = ToLowerAscii(installation.provider);
+            if (std::find(providers.begin(), providers.end(), normalized_provider)
+                == providers.end()) {
+                providers.push_back(normalized_provider);
+            }
+        }
+        if (providers.size() > 1) {
+            throw ShimError(
+                "Multiple Providers supply " + std::string(runtime_kind) + " "
+                    + selected->version.ToString() + " for " + current_architecture
+                    + ". Select an exact runtime ID before execution.",
+                69);
+        }
     }
     if (!FileExists(selected->executable)) {
         throw ShimError(
@@ -765,6 +1074,16 @@ const std::unordered_map<std::wstring, AliasDefinition>& Aliases() {
         {L"java", {"java", "java", LaunchMode::RuntimeExecutable, {}, {}}},
         {L"javac", {"java", "java", LaunchMode::RelativeExecutable, L"bin\\javac.exe", {}}},
         {L"jar", {"java", "java", LaunchMode::RelativeExecutable, L"bin\\jar.exe", {}}},
+        {L"dotnet", {"dotnet", "dotnet", LaunchMode::RuntimeExecutable, {}, {}}},
+        {L"cl", {"msvc", "msvc", LaunchMode::RuntimeExecutable, {}, {}}},
+        {L"clang", {"llvm", "llvm", LaunchMode::RuntimeExecutable, {}, {}}},
+        {L"clang++", {"llvm", "llvm", LaunchMode::RelativeExecutable,
+            L"bin\\clang++.exe", {}}},
+        {L"gcc", {"mingw", "mingw", LaunchMode::RuntimeExecutable, {}, {}}},
+        {L"g++", {"mingw", "mingw", LaunchMode::RelativeExecutable,
+            L"bin\\g++.exe", {}}},
+        {L"cmake", {"cmake", "cmake", LaunchMode::RuntimeExecutable, {}, {}}},
+        {L"ninja", {"ninja", "ninja", LaunchMode::RuntimeExecutable, {}, {}}},
     };
     return aliases;
 }
@@ -843,6 +1162,12 @@ int Launch(
     std::optional<EnvironmentOverride> java_home;
     if (runtime.kind == "java") {
         java_home.emplace(L"JAVA_HOME", runtime.root.wstring());
+    }
+    std::optional<EnvironmentOverride> dotnet_root;
+    std::optional<EnvironmentOverride> dotnet_multilevel_lookup;
+    if (runtime.kind == "dotnet") {
+        dotnet_root.emplace(L"DOTNET_ROOT", runtime.root.wstring());
+        dotnet_multilevel_lookup.emplace(L"DOTNET_MULTILEVEL_LOOKUP", L"0");
     }
     STARTUPINFOW startup{};
     startup.cb = sizeof(startup);

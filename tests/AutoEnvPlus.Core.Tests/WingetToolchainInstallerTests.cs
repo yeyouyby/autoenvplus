@@ -1,9 +1,48 @@
+using AutoEnvPlus.Core.Networking;
+using AutoEnvPlus.Core.Runtimes;
 using AutoEnvPlus.Core.Toolchains;
 
 namespace AutoEnvPlus.Core.Tests;
 
 public sealed class WingetToolchainInstallerTests
 {
+    [Theory]
+    [InlineData(ToolchainComponent.MsvcBuildTools, RuntimeKind.Msvc)]
+    [InlineData(ToolchainComponent.Llvm, RuntimeKind.Llvm)]
+    [InlineData(ToolchainComponent.MinGw, RuntimeKind.Mingw)]
+    [InlineData(ToolchainComponent.CMake, RuntimeKind.CMake)]
+    [InlineData(ToolchainComponent.Ninja, RuntimeKind.Ninja)]
+    public void RuntimeProviderPolicy_MapsEveryWinGetComponentToDeclarativeKind(
+        ToolchainComponent component,
+        RuntimeKind expectedKind)
+    {
+        RuntimeKind kind = ToolchainRuntimeProviderPolicy.GetRuntimeKind(component);
+
+        Assert.Equal(expectedKind, kind);
+        Assert.True(ToolchainRuntimeProviderPolicy.RequiresExplicitPlugin(kind));
+        Assert.True(NetworkToolIds.TryGetRuntimeScope(kind, out string networkScope));
+        Assert.Equal(NetworkToolIds.RuntimeCpp, networkScope);
+    }
+
+    [Fact]
+    public void RuntimeProviderPolicy_DoesNotTreatLanguageProvidersAsToolchainPlugins()
+    {
+        Assert.False(ToolchainRuntimeProviderPolicy.RequiresExplicitPlugin(RuntimeKind.Python));
+        Assert.DoesNotContain(
+            RuntimeKind.DotNet,
+            ToolchainRuntimeProviderPolicy.DeclarativeRuntimeKinds);
+    }
+
+    [Fact]
+    public void RuntimeProviderPolicy_ExplainsMsvcActivationBoundary()
+    {
+        string notice = ToolchainRuntimeProviderPolicy.GetActivationNotice(RuntimeKind.Msvc);
+
+        Assert.Contains("managed executable", notice, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Visual Studio C++ workload", notice, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("vcvars", notice, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Theory]
     [InlineData(ToolchainComponent.Llvm, "LLVM.LLVM")]
     [InlineData(ToolchainComponent.MinGw, "BrechtSanders.WinLibs.POSIX.UCRT")]

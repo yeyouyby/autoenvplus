@@ -3,9 +3,11 @@ param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Release',
     [string]$Version,
+    [string]$BuildCacheRoot,
     [switch]$NoArchive
 )
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $artifactsRoot = Join-Path $repositoryRoot 'artifacts'
@@ -44,6 +46,42 @@ function Invoke-DotNet {
         throw "dotnet exited with code $LASTEXITCODE."
     }
 }
+
+function Set-BuildCacheEnvironment {
+    if ([string]::IsNullOrWhiteSpace($BuildCacheRoot)) {
+        if (-not [string]::IsNullOrWhiteSpace($env:AUTOENVPLUS_BUILD_CACHE_ROOT)) {
+            $script:BuildCacheRoot = $env:AUTOENVPLUS_BUILD_CACHE_ROOT
+        }
+        elseif ([System.IO.Path]::GetPathRoot($repositoryRoot) -eq 'D:\') {
+            $script:BuildCacheRoot = 'D:\codex'
+        }
+        else {
+            $script:BuildCacheRoot = Join-Path $repositoryRoot '.build-cache'
+        }
+    }
+
+    $script:BuildCacheRoot = [System.IO.Path]::GetFullPath($script:BuildCacheRoot)
+    $env:AUTOENVPLUS_BUILD_CACHE_ROOT = $script:BuildCacheRoot
+    $env:NUGET_PACKAGES = Join-Path $script:BuildCacheRoot '.nuget\packages'
+    $env:NUGET_HTTP_CACHE_PATH = Join-Path $script:BuildCacheRoot '.nuget\v3-cache'
+    $env:NUGET_PLUGINS_CACHE_PATH = Join-Path $script:BuildCacheRoot '.nuget\plugins-cache'
+    $env:DOTNET_CLI_HOME = Join-Path $script:BuildCacheRoot '.dotnet'
+    $env:TEMP = Join-Path $script:BuildCacheRoot 'tmp'
+    $env:TMP = $env:TEMP
+    $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
+    $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+    foreach ($path in @(
+        $env:NUGET_PACKAGES,
+        $env:NUGET_HTTP_CACHE_PATH,
+        $env:NUGET_PLUGINS_CACHE_PATH,
+        $env:DOTNET_CLI_HOME,
+        $env:TEMP
+    )) {
+        New-Item -ItemType Directory -Path $path -Force | Out-Null
+    }
+}
+
+Set-BuildCacheEnvironment
 
 $versionArguments = @()
 if (-not [string]::IsNullOrWhiteSpace($Version)) {

@@ -167,6 +167,50 @@ function New-DevelopmentSigningCertificate {
     )
 }
 
+function Resolve-ResponseFileToolPath {
+    param([Parameter(Mandatory)][string]$Path)
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    if ($fullPath -notmatch '\s') {
+        return $fullPath
+    }
+
+    if ($null -eq ('AutoEnvPlus.NativePathMethods' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System.Runtime.InteropServices;
+using System.Text;
+
+namespace AutoEnvPlus
+{
+    public static class NativePathMethods
+    {
+        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern uint GetShortPathName(
+            string longPath,
+            StringBuilder shortPath,
+            uint bufferLength);
+    }
+}
+'@
+    }
+
+    $buffer = New-Object System.Text.StringBuilder 32768
+    $length = [AutoEnvPlus.NativePathMethods]::GetShortPathName(
+        $fullPath,
+        $buffer,
+        [uint32]$buffer.Capacity)
+    if ($length -eq 0 -or $length -ge $buffer.Capacity) {
+        $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+        throw "SignTool response-file invocation requires a path without spaces, and Windows could not resolve a short path for '$fullPath' (Win32 error $errorCode)."
+    }
+
+    $shortPath = $buffer.ToString()
+    if ([string]::IsNullOrWhiteSpace($shortPath) -or $shortPath -match '\s') {
+        throw "The resolved SignTool short path still contains whitespace: '$shortPath'."
+    }
+    return $shortPath
+}
+
 function Invoke-SignTool {
     param(
         [Parameter(Mandatory)][string]$Path,
@@ -191,7 +235,8 @@ function Invoke-SignTool {
         $arguments,
         (New-Object System.Text.UTF8Encoding($false)))
     try {
-        Invoke-ExternalTool -FilePath $SignToolPath -Arguments @("@$responsePath")
+        $responseFileToolPath = Resolve-ResponseFileToolPath -Path $SignToolPath
+        Invoke-ExternalTool -FilePath $responseFileToolPath -Arguments @("@$responsePath")
     }
     finally {
         if (Test-Path -LiteralPath $responsePath) {
@@ -263,14 +308,22 @@ function Set-BuildCacheEnvironment {
     }
 
     $script:BuildCacheRoot = [System.IO.Path]::GetFullPath($script:BuildCacheRoot)
+    $env:AUTOENVPLUS_BUILD_CACHE_ROOT = $script:BuildCacheRoot
     $env:NUGET_PACKAGES = Join-Path $script:BuildCacheRoot '.nuget\packages'
     $env:NUGET_HTTP_CACHE_PATH = Join-Path $script:BuildCacheRoot '.nuget\v3-cache'
+    $env:NUGET_PLUGINS_CACHE_PATH = Join-Path $script:BuildCacheRoot '.nuget\plugins-cache'
     $env:DOTNET_CLI_HOME = Join-Path $script:BuildCacheRoot '.dotnet'
     $env:TEMP = Join-Path $script:BuildCacheRoot 'tmp'
     $env:TMP = $env:TEMP
     $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
     $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
-    foreach ($path in @($env:NUGET_PACKAGES, $env:NUGET_HTTP_CACHE_PATH, $env:DOTNET_CLI_HOME, $env:TEMP)) {
+    foreach ($path in @(
+        $env:NUGET_PACKAGES,
+        $env:NUGET_HTTP_CACHE_PATH,
+        $env:NUGET_PLUGINS_CACHE_PATH,
+        $env:DOTNET_CLI_HOME,
+        $env:TEMP
+    )) {
         New-Item -ItemType Directory -Path $path -Force | Out-Null
     }
 }
@@ -344,7 +397,11 @@ try {
     }
 
     if (-not $SkipBuild) {
-        & (Join-Path $PSScriptRoot 'publish.ps1') -Configuration $Configuration -Version $PackageVersion -NoArchive
+        & (Join-Path $PSScriptRoot 'publish.ps1') `
+            -Configuration $Configuration `
+            -Version $PackageVersion `
+            -BuildCacheRoot $script:BuildCacheRoot `
+            -NoArchive
     }
     if (-not (Test-Path -LiteralPath $portableRoot -PathType Container)) {
         throw "Portable publish layout was not found: $portableRoot"
@@ -455,6 +512,8 @@ try {
         certificateNotAfterUtc = $certificate.NotAfter.ToUniversalTime().ToString('O')
         developmentCertificate = [bool]$DevelopmentCertificate
         timestampUri = $TimestampUri
+        makeAppxVersion = (Get-Item -LiteralPath $MakeAppxPath).VersionInfo.ProductVersion
+        signToolVersion = (Get-Item -LiteralPath $SignToolPath).VersionInfo.ProductVersion
         createdAtUtc = [DateTime]::UtcNow.ToString('O')
     }
     [System.IO.File]::WriteAllText(
@@ -462,7 +521,12 @@ try {
         ($metadata | ConvertTo-Json -Depth 4) + "`r`n",
         (New-Object System.Text.UTF8Encoding($false)))
 
-    Write-Host "Signed MSIX: $msixPath"
+    if ($DevelopmentCertificate) {
+        Write-Host "Development-signed MSIX (untrusted): $msixPath"
+    }
+    else {
+        Write-Host "Production-signed MSIX: $msixPath"
+    }
     Write-Host "AppInstaller metadata: $appInstallerPath"
     Write-Host "Publisher: $Publisher"
     Write-Host "Certificate SHA-256: $certificateSha256"

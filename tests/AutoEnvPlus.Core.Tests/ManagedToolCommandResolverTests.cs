@@ -79,14 +79,77 @@ public sealed class ManagedToolCommandResolverTests : IDisposable
         Assert.Contains("jar.exe", Assert.Single(jar.Errors), StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData(RuntimeKind.Llvm, "clang++", "bin\\clang.exe", "bin\\clang++.exe")]
+    [InlineData(RuntimeKind.Mingw, "g++", "bin\\gcc.exe", "bin\\g++.exe")]
+    public async Task ResolveAsync_CppDriverAliasUsesSelectedToolchainBinary(
+        RuntimeKind kind,
+        string alias,
+        string primaryExecutable,
+        string driverExecutable)
+    {
+        await Register(
+            kind,
+            "20.1.0",
+            primaryExecutable,
+            [driverExecutable]);
+        await new GlobalRuntimeProfileStore(_root).SetAsync(
+            kind,
+            VersionSelector.Parse("20.1.0"));
+
+        ManagedToolCommandResult result = await new ManagedToolCommandResolver(_root).ResolveAsync(
+            alias,
+            _root,
+            architecture: RuntimeArchitecture.X64);
+
+        Assert.True(result.Success);
+        Assert.EndsWith(
+            driverExecutable,
+            result.Command!.ExecutablePath,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ResolveAsync_RejectsDistinctProvidersAtTheSelectedVersion()
+    {
+        await Register(
+            RuntimeKind.Python,
+            "3.13.5",
+            "python.exe",
+            [],
+            "python-org",
+            "python-3.13.5-x64");
+        await Register(
+            RuntimeKind.Python,
+            "3.13.5",
+            "python.exe",
+            [],
+            "plugin:community-python",
+            "plugin-community-python-3.13.5-x64");
+        await new GlobalRuntimeProfileStore(_root).SetAsync(
+            RuntimeKind.Python,
+            VersionSelector.Parse("3.13"));
+
+        ManagedToolCommandResult result = await new ManagedToolCommandResolver(_root).ResolveAsync(
+            "pip",
+            _root,
+            architecture: RuntimeArchitecture.X64);
+
+        Assert.False(result.Success);
+        Assert.Contains("Multiple Providers", Assert.Single(result.Errors), StringComparison.Ordinal);
+    }
+
     private async Task<ManagedRuntimeEntry> Register(
         RuntimeKind kind,
         string version,
         string executable,
-        IReadOnlyList<string> extraFiles)
+        IReadOnlyList<string> extraFiles,
+        string providerId = "test-provider",
+        string? runtimeId = null)
     {
         RuntimeVersion parsed = RuntimeVersion.Parse(version);
-        string installRoot = Path.Combine(_root, "runtimes", kind.ToString(), parsed.ToString(), "x64");
+        runtimeId ??= $"{kind}-{parsed}-x64";
+        string installRoot = Path.Combine(_root, "runtimes", kind.ToString(), runtimeId);
         string executablePath = Path.Combine(installRoot, executable);
         Directory.CreateDirectory(Path.GetDirectoryName(executablePath)!);
         File.WriteAllText(executablePath, string.Empty);
@@ -98,8 +161,8 @@ public sealed class ManagedToolCommandResolverTests : IDisposable
         }
 
         ManagedRuntimeEntry entry = new(
-            $"{kind}-{parsed}-x64",
-            "test-provider",
+            runtimeId,
+            providerId,
             kind,
             parsed,
             RuntimeArchitecture.X64,

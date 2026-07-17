@@ -378,10 +378,6 @@ public sealed class ProjectEnvironmentImportService
         return false;
     }
 
-    private static string ToolName(RuntimeKind kind) => kind switch
-    {
-        RuntimeKind.NodeJs => "node",
-        RuntimeKind.DotNet => "dotnet",
-        _ => kind.ToString().ToLowerInvariant(),
-    };
+    private static string ToolName(RuntimeKind kind) =>
+        ProjectManifestService.GetCanonicalToolName(kind);
 }

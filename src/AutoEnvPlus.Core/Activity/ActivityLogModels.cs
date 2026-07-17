@@ -16,6 +16,12 @@ public enum ActivityOperationType
     DiagnosticExport,
     CMakePreset,
     SettingsChange,
+    PackageDownload,
+    PackageImport,
+    PackageInstall,
+    ProviderPluginImport,
+    ProviderPluginStateChange,
+    ProviderPluginDelete,
     Other,
 }
 

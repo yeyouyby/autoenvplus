@@ -22,13 +22,14 @@ public sealed record RuntimePackageAsset(
     RuntimeRelease Release,
     Uri DownloadUri,
     string FileName,
-    string Sha256,
+    string PackageHash,
     RuntimePackageFormat Format,
     string? ArchiveRootDirectory,
     IReadOnlyCollection<PackageVerification> Verifications,
     IReadOnlyCollection<PackageSignatureVerification> SignatureVerifications,
     PackageAuthenticityRequirement AuthenticityRequirement,
-    PackageSignatureRequirement? SignatureRequirement = null);
+    PackageSignatureRequirement? SignatureRequirement = null,
+    PackageHashAlgorithm HashAlgorithm = PackageHashAlgorithm.Sha256);
 
 public enum PackageAuthenticityRequirement
 {

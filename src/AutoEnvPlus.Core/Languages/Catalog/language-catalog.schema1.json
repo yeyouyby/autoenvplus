@@ -1,0 +1,7002 @@
+{
+  "schemaVersion": 1,
+  "languages": [
+    {
+      "id": "python",
+      "displayName": "Python",
+      "aliases": [
+        "py"
+      ],
+      "fileExtensions": [
+        ".py",
+        ".pyw"
+      ],
+      "defaultEnabled": true,
+      "homepage": "https://www.python.org/"
+    },
+    {
+      "id": "javascript",
+      "displayName": "JavaScript",
+      "aliases": [
+        "js",
+        "ecmascript"
+      ],
+      "fileExtensions": [
+        ".js",
+        ".mjs",
+        ".cjs",
+        ".jsx"
+      ],
+      "defaultEnabled": true,
+      "homepage": "https://developer.mozilla.org/docs/Web/JavaScript"
+    },
+    {
+      "id": "typescript",
+      "displayName": "TypeScript",
+      "aliases": [
+        "ts"
+      ],
+      "fileExtensions": [
+        ".ts",
+        ".mts",
+        ".cts",
+        ".tsx"
+      ],
+      "defaultEnabled": true,
+      "homepage": "https://www.typescriptlang.org/"
+    },
+    {
+      "id": "java",
+      "displayName": "Java",
+      "aliases": [],
+      "fileExtensions": [
+        ".java"
+      ],
+      "defaultEnabled": true,
+      "homepage": "https://www.java.com/"
+    },
+    {
+      "id": "c",
+      "displayName": "C",
+      "aliases": [],
+      "fileExtensions": [
+        ".c",
+        ".h"
+      ],
+      "defaultEnabled": true,
+      "homepage": "https://www.open-std.org/jtc1/sc22/wg14/"
+    },
+    {
+      "id": "cpp",
+      "displayName": "C++",
+      "aliases": [
+        "cxx",
+        "cplusplus"
+      ],
+      "fileExtensions": [
+        ".cpp",
+        ".cc",
+        ".cxx",
+        ".hpp",
+        ".hh",
+        ".hxx"
+      ],
+      "defaultEnabled": true,
+      "homepage": "https://isocpp.org/"
+    },
+    {
+      "id": "csharp",
+      "displayName": "C#",
+      "aliases": [
+        "c-sharp",
+        "cs"
+      ],
+      "fileExtensions": [
+        ".cs",
+        ".csx"
+      ],
+      "defaultEnabled": true,
+      "homepage": "https://learn.microsoft.com/dotnet/csharp/"
+    },
+    {
+      "id": "go",
+      "displayName": "Go",
+      "aliases": [
+        "golang"
+      ],
+      "fileExtensions": [
+        ".go"
+      ],
+      "defaultEnabled": true,
+      "homepage": "https://go.dev/"
+    },
+    {
+      "id": "rust",
+      "displayName": "Rust",
+      "aliases": [],
+      "fileExtensions": [
+        ".rs"
+      ],
+      "defaultEnabled": true,
+      "homepage": "https://www.rust-lang.org/"
+    },
+    {
+      "id": "php",
+      "displayName": "PHP",
+      "aliases": [],
+      "fileExtensions": [
+        ".php",
+        ".phtml"
+      ],
+      "defaultEnabled": true,
+      "homepage": "https://www.php.net/"
+    },
+    {
+      "id": "ruby",
+      "displayName": "Ruby",
+      "aliases": [],
+      "fileExtensions": [
+        ".rb",
+        ".rake",
+        ".gemspec"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.ruby-lang.org/"
+    },
+    {
+      "id": "kotlin",
+      "displayName": "Kotlin",
+      "aliases": [
+        "kt"
+      ],
+      "fileExtensions": [
+        ".kt",
+        ".kts"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://kotlinlang.org/"
+    },
+    {
+      "id": "swift",
+      "displayName": "Swift",
+      "aliases": [],
+      "fileExtensions": [
+        ".swift"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.swift.org/"
+    },
+    {
+      "id": "dart",
+      "displayName": "Dart",
+      "aliases": [],
+      "fileExtensions": [
+        ".dart"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://dart.dev/"
+    },
+    {
+      "id": "scala",
+      "displayName": "Scala",
+      "aliases": [],
+      "fileExtensions": [
+        ".scala",
+        ".sc"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.scala-lang.org/"
+    },
+    {
+      "id": "r",
+      "displayName": "R",
+      "aliases": [
+        "r-lang"
+      ],
+      "fileExtensions": [
+        ".r",
+        ".rmd"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.r-project.org/"
+    },
+    {
+      "id": "julia",
+      "displayName": "Julia",
+      "aliases": [],
+      "fileExtensions": [
+        ".jl"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://julialang.org/"
+    },
+    {
+      "id": "lua",
+      "displayName": "Lua",
+      "aliases": [],
+      "fileExtensions": [
+        ".lua"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.lua.org/"
+    },
+    {
+      "id": "perl",
+      "displayName": "Perl",
+      "aliases": [],
+      "fileExtensions": [
+        ".pl",
+        ".pm",
+        ".t"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.perl.org/"
+    },
+    {
+      "id": "shell",
+      "displayName": "Shell",
+      "aliases": [
+        "bash",
+        "sh"
+      ],
+      "fileExtensions": [
+        ".sh",
+        ".bash"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.gnu.org/software/bash/"
+    },
+    {
+      "id": "powershell",
+      "displayName": "PowerShell",
+      "aliases": [
+        "pwsh"
+      ],
+      "fileExtensions": [
+        ".ps1",
+        ".psm1",
+        ".psd1"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://learn.microsoft.com/powershell/"
+    },
+    {
+      "id": "objective-c",
+      "displayName": "Objective-C",
+      "aliases": [
+        "objc"
+      ],
+      "fileExtensions": [
+        ".m",
+        ".mm"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://clang.llvm.org/"
+    },
+    {
+      "id": "groovy",
+      "displayName": "Groovy",
+      "aliases": [],
+      "fileExtensions": [
+        ".groovy",
+        ".gvy",
+        ".gy",
+        ".gsh"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://groovy-lang.org/"
+    },
+    {
+      "id": "clojure",
+      "displayName": "Clojure",
+      "aliases": [
+        "clj"
+      ],
+      "fileExtensions": [
+        ".clj",
+        ".cljs",
+        ".cljc",
+        ".edn"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://clojure.org/"
+    },
+    {
+      "id": "elixir",
+      "displayName": "Elixir",
+      "aliases": [
+        "ex"
+      ],
+      "fileExtensions": [
+        ".ex",
+        ".exs"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://elixir-lang.org/"
+    },
+    {
+      "id": "erlang",
+      "displayName": "Erlang",
+      "aliases": [
+        "erl"
+      ],
+      "fileExtensions": [
+        ".erl",
+        ".hrl"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.erlang.org/"
+    },
+    {
+      "id": "haskell",
+      "displayName": "Haskell",
+      "aliases": [
+        "hs"
+      ],
+      "fileExtensions": [
+        ".hs",
+        ".lhs"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.haskell.org/"
+    },
+    {
+      "id": "fsharp",
+      "displayName": "F#",
+      "aliases": [
+        "f-sharp",
+        "fs"
+      ],
+      "fileExtensions": [
+        ".fs",
+        ".fsi",
+        ".fsx"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://fsharp.org/"
+    },
+    {
+      "id": "visual-basic",
+      "displayName": "Visual Basic",
+      "aliases": [
+        "vb",
+        "vbnet"
+      ],
+      "fileExtensions": [
+        ".vb"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://learn.microsoft.com/dotnet/visual-basic/"
+    },
+    {
+      "id": "assembly",
+      "displayName": "Assembly",
+      "aliases": [
+        "asm"
+      ],
+      "fileExtensions": [
+        ".asm",
+        ".s"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.nasm.us/"
+    },
+    {
+      "id": "fortran",
+      "displayName": "Fortran",
+      "aliases": [],
+      "fileExtensions": [
+        ".f",
+        ".for",
+        ".f90",
+        ".f95",
+        ".f03",
+        ".f08"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://fortran-lang.org/"
+    },
+    {
+      "id": "cobol",
+      "displayName": "COBOL",
+      "aliases": [],
+      "fileExtensions": [
+        ".cob",
+        ".cbl",
+        ".cpy"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://gnucobol.sourceforge.io/"
+    },
+    {
+      "id": "pascal",
+      "displayName": "Pascal",
+      "aliases": [
+        "object-pascal"
+      ],
+      "fileExtensions": [
+        ".pas",
+        ".pp",
+        ".inc"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.freepascal.org/"
+    },
+    {
+      "id": "ada",
+      "displayName": "Ada",
+      "aliases": [],
+      "fileExtensions": [
+        ".adb",
+        ".ads"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.adaic.org/"
+    },
+    {
+      "id": "ocaml",
+      "displayName": "OCaml",
+      "aliases": [],
+      "fileExtensions": [
+        ".ml",
+        ".mli"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://ocaml.org/"
+    },
+    {
+      "id": "common-lisp",
+      "displayName": "Common Lisp",
+      "aliases": [
+        "lisp",
+        "cl"
+      ],
+      "fileExtensions": [
+        ".lisp",
+        ".lsp",
+        ".cl"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://lisp-lang.org/"
+    },
+    {
+      "id": "scheme",
+      "displayName": "Scheme",
+      "aliases": [],
+      "fileExtensions": [
+        ".scm",
+        ".ss"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.scheme.org/"
+    },
+    {
+      "id": "racket",
+      "displayName": "Racket",
+      "aliases": [],
+      "fileExtensions": [
+        ".rkt",
+        ".rktl"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://racket-lang.org/"
+    },
+    {
+      "id": "solidity",
+      "displayName": "Solidity",
+      "aliases": [
+        "sol"
+      ],
+      "fileExtensions": [
+        ".sol"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://soliditylang.org/"
+    },
+    {
+      "id": "zig",
+      "displayName": "Zig",
+      "aliases": [],
+      "fileExtensions": [
+        ".zig"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://ziglang.org/"
+    },
+    {
+      "id": "nim",
+      "displayName": "Nim",
+      "aliases": [],
+      "fileExtensions": [
+        ".nim",
+        ".nims"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://nim-lang.org/"
+    },
+    {
+      "id": "crystal",
+      "displayName": "Crystal",
+      "aliases": [],
+      "fileExtensions": [
+        ".cr"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://crystal-lang.org/"
+    },
+    {
+      "id": "d",
+      "displayName": "D",
+      "aliases": [
+        "dlang"
+      ],
+      "fileExtensions": [
+        ".d",
+        ".di"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://dlang.org/"
+    },
+    {
+      "id": "sql",
+      "displayName": "SQL",
+      "aliases": [],
+      "fileExtensions": [
+        ".sql"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://www.iso.org/standard/76583.html"
+    },
+    {
+      "id": "webassembly",
+      "displayName": "WebAssembly",
+      "aliases": [
+        "wasm"
+      ],
+      "fileExtensions": [
+        ".wat",
+        ".wasm"
+      ],
+      "defaultEnabled": false,
+      "homepage": "https://webassembly.org/"
+    }
+  ],
+  "tools": [
+    {
+      "id": "cpython",
+      "displayName": "CPython",
+      "vendor": "Python Software Foundation",
+      "homepage": "https://www.python.org/",
+      "license": "PSF-2.0",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "interpreter",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "python",
+        "py"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": true,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-archive",
+          "displayName": "Official managed archive",
+          "distributionKind": "managed-archive",
+          "managedInstallSupported": true,
+          "mirrorSlots": [
+            {
+              "id": "python-package-index",
+              "displayName": "Python Package Index",
+              "defaultEndpoint": "https://pypi.org/simple",
+              "endpointKind": "pypi",
+              "purpose": "Python package metadata and artifacts",
+              "userOverridable": true
+            },
+            {
+              "id": "python-downloads",
+              "displayName": "Python.org Downloads API",
+              "defaultEndpoint": "https://www.python.org/api/v2/downloads/",
+              "endpointKind": "generic-download",
+              "purpose": "Provider-compatible release metadata and distribution asset discovery",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pypy",
+      "displayName": "PyPy",
+      "vendor": "PyPy Team",
+      "homepage": "https://www.pypy.org/",
+      "license": "MIT",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "interpreter",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "pypy",
+        "pypy3"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-archive",
+          "displayName": "Official archive metadata",
+          "distributionKind": "managed-archive",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "python-package-index",
+              "displayName": "Python Package Index",
+              "defaultEndpoint": "https://pypi.org/simple",
+              "endpointKind": "pypi",
+              "purpose": "Python package metadata and artifacts",
+              "userOverridable": true
+            },
+            {
+              "id": "pypy-downloads",
+              "displayName": "PyPy Downloads",
+              "defaultEndpoint": "https://downloads.python.org/pypy/",
+              "endpointKind": "generic-download",
+              "purpose": "Distribution archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pip",
+      "displayName": "pip",
+      "vendor": "Python Packaging Authority",
+      "homepage": "https://pip.pypa.io/",
+      "license": "MIT",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "pip",
+        "pip3"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "bundled",
+          "displayName": "Bundled or existing installation",
+          "distributionKind": "system",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "python-package-index",
+              "displayName": "Python Package Index",
+              "defaultEndpoint": "https://pypi.org/simple",
+              "endpointKind": "pypi",
+              "purpose": "Python package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "uv",
+      "displayName": "uv",
+      "vendor": "Astral Software",
+      "homepage": "https://docs.astral.sh/uv/",
+      "license": "Apache-2.0 OR MIT",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "package-manager",
+        "version-manager",
+        "virtual-env"
+      ],
+      "discoveryCommands": [
+        "uv"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": true,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "python-package-index",
+              "displayName": "Python Package Index",
+              "defaultEndpoint": "https://pypi.org/simple",
+              "endpointKind": "pypi",
+              "purpose": "Python package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pipx",
+      "displayName": "pipx",
+      "vendor": "Python Packaging Authority",
+      "homepage": "https://pipx.pypa.io/",
+      "license": "MIT",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "package-manager",
+        "virtual-env"
+      ],
+      "discoveryCommands": [
+        "pipx"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": true,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "python-package-index",
+              "displayName": "Python Package Index",
+              "defaultEndpoint": "https://pypi.org/simple",
+              "endpointKind": "pypi",
+              "purpose": "Python package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "poetry",
+      "displayName": "Poetry",
+      "vendor": "Python Poetry",
+      "homepage": "https://python-poetry.org/",
+      "license": "MIT",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "package-manager",
+        "build",
+        "virtual-env"
+      ],
+      "discoveryCommands": [
+        "poetry"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": true,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "python-package-index",
+              "displayName": "Python Package Index",
+              "defaultEndpoint": "https://pypi.org/simple",
+              "endpointKind": "pypi",
+              "purpose": "Python package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pdm",
+      "displayName": "PDM",
+      "vendor": "PDM Project",
+      "homepage": "https://pdm-project.org/",
+      "license": "MIT",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "package-manager",
+        "build",
+        "virtual-env"
+      ],
+      "discoveryCommands": [
+        "pdm"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": true,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "python-package-index",
+              "displayName": "Python Package Index",
+              "defaultEndpoint": "https://pypi.org/simple",
+              "endpointKind": "pypi",
+              "purpose": "Python package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "conda",
+      "displayName": "conda",
+      "vendor": "Anaconda, Inc.",
+      "homepage": "https://docs.conda.io/",
+      "license": "BSD-3-Clause",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "package-manager",
+        "version-manager",
+        "virtual-env"
+      ],
+      "discoveryCommands": [
+        "conda"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": true,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "conda-channels",
+              "displayName": "Anaconda Repository",
+              "defaultEndpoint": "https://repo.anaconda.com/pkgs/",
+              "endpointKind": "generic-download",
+              "purpose": "Conda package channels",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mamba",
+      "displayName": "Mamba",
+      "vendor": "QuantStack",
+      "homepage": "https://mamba.readthedocs.io/",
+      "license": "BSD-3-Clause",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "package-manager",
+        "virtual-env"
+      ],
+      "discoveryCommands": [
+        "mamba"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": true,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "conda-forge",
+              "displayName": "conda-forge",
+              "defaultEndpoint": "https://conda.anaconda.org/conda-forge/",
+              "endpointKind": "generic-download",
+              "purpose": "Conda package channel",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "virtualenv",
+      "displayName": "virtualenv",
+      "vendor": "Python Packaging Authority",
+      "homepage": "https://virtualenv.pypa.io/",
+      "license": "MIT",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "virtual-env"
+      ],
+      "discoveryCommands": [
+        "virtualenv"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": true,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "ruff",
+      "displayName": "Ruff",
+      "vendor": "Astral Software",
+      "homepage": "https://docs.astral.sh/ruff/",
+      "license": "MIT",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "formatter",
+        "linter"
+      ],
+      "discoveryCommands": [
+        "ruff"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": true,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "black",
+      "displayName": "Black",
+      "vendor": "Python Software Foundation",
+      "homepage": "https://black.readthedocs.io/",
+      "license": "MIT",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "formatter"
+      ],
+      "discoveryCommands": [
+        "black"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": true,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "pyright",
+      "displayName": "Pyright",
+      "vendor": "Microsoft",
+      "homepage": "https://microsoft.github.io/pyright/",
+      "license": "MIT",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "linter",
+        "language-server"
+      ],
+      "discoveryCommands": [
+        "pyright",
+        "pyright-langserver"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "pytest",
+      "displayName": "pytest",
+      "vendor": "pytest Development Team",
+      "homepage": "https://docs.pytest.org/",
+      "license": "MIT",
+      "languageIds": [
+        "python"
+      ],
+      "roles": [
+        "test-runner"
+      ],
+      "discoveryCommands": [
+        "pytest"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "nodejs",
+      "displayName": "Node.js",
+      "vendor": "OpenJS Foundation",
+      "homepage": "https://nodejs.org/",
+      "license": "MIT",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "interpreter",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "node"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": true,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-archive",
+          "displayName": "Official managed archive",
+          "distributionKind": "managed-archive",
+          "managedInstallSupported": true,
+          "mirrorSlots": [
+            {
+              "id": "npm-registry",
+              "displayName": "npm Registry",
+              "defaultEndpoint": "https://registry.npmjs.org",
+              "endpointKind": "npm",
+              "purpose": "JavaScript package metadata and artifacts",
+              "userOverridable": true
+            },
+            {
+              "id": "nodejs-downloads",
+              "displayName": "Node.js Distributions",
+              "defaultEndpoint": "https://nodejs.org/dist/",
+              "endpointKind": "generic-download",
+              "purpose": "Distribution archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deno",
+      "displayName": "Deno",
+      "vendor": "Deno Land Inc.",
+      "homepage": "https://deno.com/",
+      "license": "MIT",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "interpreter",
+        "runtime",
+        "package-manager",
+        "formatter",
+        "linter",
+        "test-runner",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "deno"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": true,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "deno-downloads",
+              "displayName": "Deno Releases",
+              "defaultEndpoint": "https://github.com/denoland/deno/releases/",
+              "endpointKind": "generic-download",
+              "purpose": "Distribution archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bun",
+      "displayName": "Bun",
+      "vendor": "Oven",
+      "homepage": "https://bun.sh/",
+      "license": "MIT",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "interpreter",
+        "runtime",
+        "package-manager",
+        "build",
+        "test-runner"
+      ],
+      "discoveryCommands": [
+        "bun"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "npm-registry",
+              "displayName": "npm Registry",
+              "defaultEndpoint": "https://registry.npmjs.org",
+              "endpointKind": "npm",
+              "purpose": "JavaScript package metadata and artifacts",
+              "userOverridable": true
+            },
+            {
+              "id": "bun-downloads",
+              "displayName": "Bun Releases",
+              "defaultEndpoint": "https://github.com/oven-sh/bun/releases/",
+              "endpointKind": "generic-download",
+              "purpose": "Distribution archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "npm",
+      "displayName": "npm CLI",
+      "vendor": "GitHub, Inc.",
+      "homepage": "https://www.npmjs.com/",
+      "license": "Artistic-2.0",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "npm"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "bundled",
+          "displayName": "Bundled or existing installation",
+          "distributionKind": "system",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "npm-registry",
+              "displayName": "npm Registry",
+              "defaultEndpoint": "https://registry.npmjs.org",
+              "endpointKind": "npm",
+              "purpose": "JavaScript package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pnpm",
+      "displayName": "pnpm",
+      "vendor": "pnpm contributors",
+      "homepage": "https://pnpm.io/",
+      "license": "MIT",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "pnpm"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "npm-registry",
+              "displayName": "npm Registry",
+              "defaultEndpoint": "https://registry.npmjs.org",
+              "endpointKind": "npm",
+              "purpose": "JavaScript package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "yarn",
+      "displayName": "Yarn",
+      "vendor": "Yarn Contributors",
+      "homepage": "https://yarnpkg.com/",
+      "license": "BSD-2-Clause",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "yarn"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "npm-registry",
+              "displayName": "npm Registry",
+              "defaultEndpoint": "https://registry.npmjs.org",
+              "endpointKind": "npm",
+              "purpose": "JavaScript package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "corepack",
+      "displayName": "Corepack",
+      "vendor": "OpenJS Foundation",
+      "homepage": "https://nodejs.org/api/corepack.html",
+      "license": "MIT",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "package-manager",
+        "version-manager"
+      ],
+      "discoveryCommands": [
+        "corepack"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "bundled",
+          "displayName": "Bundled or existing installation",
+          "distributionKind": "system",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "npm-registry",
+              "displayName": "npm Registry",
+              "defaultEndpoint": "https://registry.npmjs.org",
+              "endpointKind": "npm",
+              "purpose": "JavaScript package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "typescript-compiler",
+      "displayName": "TypeScript Compiler",
+      "vendor": "Microsoft",
+      "homepage": "https://www.typescriptlang.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "typescript"
+      ],
+      "roles": [
+        "compiler"
+      ],
+      "discoveryCommands": [
+        "tsc"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "eslint",
+      "displayName": "ESLint",
+      "vendor": "OpenJS Foundation",
+      "homepage": "https://eslint.org/",
+      "license": "MIT",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "linter"
+      ],
+      "discoveryCommands": [
+        "eslint"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "prettier",
+      "displayName": "Prettier",
+      "vendor": "Prettier contributors",
+      "homepage": "https://prettier.io/",
+      "license": "MIT",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "formatter"
+      ],
+      "discoveryCommands": [
+        "prettier"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": true,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "biome",
+      "displayName": "Biome",
+      "vendor": "Biome Developers",
+      "homepage": "https://biomejs.dev/",
+      "license": "MIT OR Apache-2.0",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "formatter",
+        "linter"
+      ],
+      "discoveryCommands": [
+        "biome"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": true,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "vite",
+      "displayName": "Vite",
+      "vendor": "VoidZero Inc.",
+      "homepage": "https://vite.dev/",
+      "license": "MIT",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "build"
+      ],
+      "discoveryCommands": [
+        "vite"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "webpack",
+      "displayName": "webpack",
+      "vendor": "OpenJS Foundation",
+      "homepage": "https://webpack.js.org/",
+      "license": "MIT",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "build"
+      ],
+      "discoveryCommands": [
+        "webpack"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "vitest",
+      "displayName": "Vitest",
+      "vendor": "VoidZero Inc.",
+      "homepage": "https://vitest.dev/",
+      "license": "MIT",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "test-runner"
+      ],
+      "discoveryCommands": [
+        "vitest"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "jest",
+      "displayName": "Jest",
+      "vendor": "OpenJS Foundation",
+      "homepage": "https://jestjs.io/",
+      "license": "MIT",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "test-runner"
+      ],
+      "discoveryCommands": [
+        "jest"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "fnm",
+      "displayName": "Fast Node Manager",
+      "vendor": "Schniz",
+      "homepage": "https://github.com/Schniz/fnm",
+      "license": "GPL-3.0-only",
+      "languageIds": [
+        "javascript",
+        "typescript"
+      ],
+      "roles": [
+        "version-manager"
+      ],
+      "discoveryCommands": [
+        "fnm"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "eclipse-temurin",
+      "displayName": "Eclipse Temurin JDK",
+      "vendor": "Eclipse Adoptium",
+      "homepage": "https://adoptium.net/",
+      "license": "GPL-2.0-only WITH Classpath-exception-2.0",
+      "languageIds": [
+        "java"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "sdk",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "java",
+        "javac",
+        "jshell"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": true,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-archive",
+          "displayName": "Official managed archive",
+          "distributionKind": "managed-archive",
+          "managedInstallSupported": true,
+          "mirrorSlots": [
+            {
+              "id": "maven-central",
+              "displayName": "Maven Central",
+              "defaultEndpoint": "https://repo1.maven.org/maven2",
+              "endpointKind": "maven",
+              "purpose": "JVM dependency metadata and artifacts",
+              "userOverridable": true
+            },
+            {
+              "id": "adoptium-downloads",
+              "displayName": "Adoptium API",
+              "defaultEndpoint": "https://api.adoptium.net/v3/",
+              "endpointKind": "generic-download",
+              "purpose": "Distribution archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "microsoft-openjdk",
+      "displayName": "Microsoft Build of OpenJDK",
+      "vendor": "Microsoft",
+      "homepage": "https://www.microsoft.com/openjdk",
+      "license": "GPL-2.0-only WITH Classpath-exception-2.0",
+      "languageIds": [
+        "java"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "sdk",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "java",
+        "javac"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-archive",
+          "displayName": "Official archive metadata",
+          "distributionKind": "managed-archive",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "maven-central",
+              "displayName": "Maven Central",
+              "defaultEndpoint": "https://repo1.maven.org/maven2",
+              "endpointKind": "maven",
+              "purpose": "JVM dependency metadata and artifacts",
+              "userOverridable": true
+            },
+            {
+              "id": "microsoft-openjdk-downloads",
+              "displayName": "Microsoft OpenJDK Downloads",
+              "defaultEndpoint": "https://aka.ms/download-jdk/",
+              "endpointKind": "generic-download",
+              "purpose": "Distribution archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "graalvm",
+      "displayName": "GraalVM",
+      "vendor": "Oracle and GraalVM Community",
+      "homepage": "https://www.graalvm.org/",
+      "license": "GFTC OR GPL-2.0-only WITH Classpath-exception-2.0",
+      "languageIds": [
+        "java"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "sdk"
+      ],
+      "discoveryCommands": [
+        "java",
+        "native-image"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "maven-central",
+              "displayName": "Maven Central",
+              "defaultEndpoint": "https://repo1.maven.org/maven2",
+              "endpointKind": "maven",
+              "purpose": "JVM dependency metadata and artifacts",
+              "userOverridable": true
+            },
+            {
+              "id": "graalvm-downloads",
+              "displayName": "GraalVM Releases",
+              "defaultEndpoint": "https://github.com/graalvm/graalvm-ce-builds/releases/",
+              "endpointKind": "generic-download",
+              "purpose": "Distribution archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "apache-maven",
+      "displayName": "Apache Maven",
+      "vendor": "Apache Software Foundation",
+      "homepage": "https://maven.apache.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "java",
+        "kotlin",
+        "scala",
+        "groovy",
+        "clojure"
+      ],
+      "roles": [
+        "package-manager",
+        "build"
+      ],
+      "discoveryCommands": [
+        "mvn"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "maven-central",
+              "displayName": "Maven Central",
+              "defaultEndpoint": "https://repo1.maven.org/maven2",
+              "endpointKind": "maven",
+              "purpose": "JVM dependency metadata and artifacts",
+              "userOverridable": true
+            },
+            {
+              "id": "maven-downloads",
+              "displayName": "Apache Maven Downloads",
+              "defaultEndpoint": "https://dlcdn.apache.org/maven/",
+              "endpointKind": "generic-download",
+              "purpose": "Distribution archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gradle",
+      "displayName": "Gradle",
+      "vendor": "Gradle Inc.",
+      "homepage": "https://gradle.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "java",
+        "kotlin",
+        "groovy",
+        "scala"
+      ],
+      "roles": [
+        "package-manager",
+        "build"
+      ],
+      "discoveryCommands": [
+        "gradle"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "maven-central",
+              "displayName": "Maven Central",
+              "defaultEndpoint": "https://repo1.maven.org/maven2",
+              "endpointKind": "maven",
+              "purpose": "JVM dependency metadata and artifacts",
+              "userOverridable": true
+            },
+            {
+              "id": "gradle-distributions",
+              "displayName": "Gradle Distributions",
+              "defaultEndpoint": "https://services.gradle.org/distributions",
+              "endpointKind": "gradle",
+              "purpose": "Gradle distribution archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "apache-ant",
+      "displayName": "Apache Ant",
+      "vendor": "Apache Software Foundation",
+      "homepage": "https://ant.apache.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "java"
+      ],
+      "roles": [
+        "build"
+      ],
+      "discoveryCommands": [
+        "ant"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "eclipse-jdt-ls",
+      "displayName": "Eclipse JDT Language Server",
+      "vendor": "Eclipse Foundation",
+      "homepage": "https://github.com/eclipse-jdtls/eclipse.jdt.ls",
+      "license": "EPL-2.0",
+      "languageIds": [
+        "java"
+      ],
+      "roles": [
+        "language-server"
+      ],
+      "discoveryCommands": [
+        "jdtls"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "checkstyle",
+      "displayName": "Checkstyle",
+      "vendor": "Checkstyle contributors",
+      "homepage": "https://checkstyle.org/",
+      "license": "LGPL-2.1-or-later",
+      "languageIds": [
+        "java"
+      ],
+      "roles": [
+        "linter"
+      ],
+      "discoveryCommands": [
+        "checkstyle"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "maven-central",
+              "displayName": "Maven Central",
+              "defaultEndpoint": "https://repo1.maven.org/maven2",
+              "endpointKind": "maven",
+              "purpose": "JVM dependency metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "msvc-build-tools",
+      "displayName": "MSVC Build Tools",
+      "vendor": "Microsoft",
+      "homepage": "https://visualstudio.microsoft.com/visual-cpp-build-tools/",
+      "license": "LicenseRef-Microsoft-Visual-Studio",
+      "languageIds": [
+        "c",
+        "cpp"
+      ],
+      "roles": [
+        "compiler",
+        "sdk",
+        "build",
+        "debugger"
+      ],
+      "discoveryCommands": [
+        "cl",
+        "msbuild"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": true,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": true,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "winget",
+          "displayName": "Windows Package Manager",
+          "distributionKind": "winget",
+          "managedInstallSupported": true,
+          "mirrorSlots": [
+            {
+              "id": "visual-studio-installer",
+              "displayName": "Visual Studio Build Tools",
+              "defaultEndpoint": "https://aka.ms/vs/17/release/vs_buildtools.exe",
+              "endpointKind": "generic-download",
+              "purpose": "Installer bootstrapper",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gcc",
+      "displayName": "GNU Compiler Collection",
+      "vendor": "Free Software Foundation",
+      "homepage": "https://gcc.gnu.org/",
+      "license": "GPL-3.0-or-later WITH GCC-exception-3.1",
+      "languageIds": [
+        "c",
+        "cpp",
+        "objective-c",
+        "fortran",
+        "ada"
+      ],
+      "roles": [
+        "compiler"
+      ],
+      "discoveryCommands": [
+        "gcc",
+        "g++"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": true,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "gcc-packages",
+              "displayName": "MSYS2 Packages",
+              "defaultEndpoint": "https://repo.msys2.org/",
+              "endpointKind": "generic-download",
+              "purpose": "Compiler packages and archives",
+              "userOverridable": true
+            }
+          ]
+        },
+        {
+          "id": "winget",
+          "displayName": "Windows Package Manager - WinLibs",
+          "distributionKind": "winget",
+          "managedInstallSupported": true,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "clang",
+      "displayName": "Clang",
+      "vendor": "LLVM Project",
+      "homepage": "https://clang.llvm.org/",
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "languageIds": [
+        "c",
+        "cpp",
+        "objective-c"
+      ],
+      "roles": [
+        "compiler"
+      ],
+      "discoveryCommands": [
+        "clang",
+        "clang-cl"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": true,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "clang-downloads",
+              "displayName": "LLVM Releases",
+              "defaultEndpoint": "https://github.com/llvm/llvm-project/releases/",
+              "endpointKind": "generic-download",
+              "purpose": "Distribution archives",
+              "userOverridable": true
+            }
+          ]
+        },
+        {
+          "id": "winget",
+          "displayName": "Windows Package Manager - LLVM",
+          "distributionKind": "winget",
+          "managedInstallSupported": true,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "cmake",
+      "displayName": "CMake",
+      "vendor": "Kitware",
+      "homepage": "https://cmake.org/",
+      "license": "BSD-3-Clause",
+      "languageIds": [
+        "c",
+        "cpp"
+      ],
+      "roles": [
+        "build"
+      ],
+      "discoveryCommands": [
+        "cmake"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": true,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "cmake-downloads",
+              "displayName": "CMake Downloads",
+              "defaultEndpoint": "https://cmake.org/files/",
+              "endpointKind": "generic-download",
+              "purpose": "Distribution archives",
+              "userOverridable": true
+            }
+          ]
+        },
+        {
+          "id": "winget",
+          "displayName": "Windows Package Manager - CMake",
+          "distributionKind": "winget",
+          "managedInstallSupported": true,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "ninja",
+      "displayName": "Ninja",
+      "vendor": "Ninja contributors",
+      "homepage": "https://ninja-build.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "c",
+        "cpp"
+      ],
+      "roles": [
+        "build"
+      ],
+      "discoveryCommands": [
+        "ninja"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": true,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "ninja-downloads",
+              "displayName": "Ninja Releases",
+              "defaultEndpoint": "https://github.com/ninja-build/ninja/releases/",
+              "endpointKind": "generic-download",
+              "purpose": "Distribution archives",
+              "userOverridable": true
+            }
+          ]
+        },
+        {
+          "id": "winget",
+          "displayName": "Windows Package Manager - Ninja",
+          "distributionKind": "winget",
+          "managedInstallSupported": true,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "windows-sdk",
+      "displayName": "Windows SDK",
+      "vendor": "Microsoft",
+      "homepage": "https://developer.microsoft.com/windows/downloads/windows-sdk/",
+      "license": "LicenseRef-Microsoft-Windows-SDK",
+      "languageIds": [
+        "c",
+        "cpp"
+      ],
+      "roles": [
+        "sdk",
+        "build"
+      ],
+      "discoveryCommands": [
+        "rc",
+        "mt",
+        "signtool"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "windows-kits",
+          "displayName": "Windows Kits installation",
+          "distributionKind": "system",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "meson",
+      "displayName": "Meson",
+      "vendor": "Meson Team",
+      "homepage": "https://mesonbuild.com/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "c",
+        "cpp"
+      ],
+      "roles": [
+        "build"
+      ],
+      "discoveryCommands": [
+        "meson"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "gnu-make",
+      "displayName": "GNU Make",
+      "vendor": "Free Software Foundation",
+      "homepage": "https://www.gnu.org/software/make/",
+      "license": "GPL-3.0-or-later",
+      "languageIds": [
+        "c",
+        "cpp"
+      ],
+      "roles": [
+        "build"
+      ],
+      "discoveryCommands": [
+        "make"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "vcpkg",
+      "displayName": "vcpkg",
+      "vendor": "Microsoft",
+      "homepage": "https://vcpkg.io/",
+      "license": "MIT",
+      "languageIds": [
+        "c",
+        "cpp"
+      ],
+      "roles": [
+        "package-manager",
+        "build"
+      ],
+      "discoveryCommands": [
+        "vcpkg"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "vcpkg-registry",
+              "displayName": "vcpkg Registry",
+              "defaultEndpoint": "https://github.com/microsoft/vcpkg/",
+              "endpointKind": "generic-download",
+              "purpose": "C and C++ port metadata",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "conan",
+      "displayName": "Conan",
+      "vendor": "JFrog",
+      "homepage": "https://conan.io/",
+      "license": "MIT",
+      "languageIds": [
+        "c",
+        "cpp"
+      ],
+      "roles": [
+        "package-manager",
+        "build"
+      ],
+      "discoveryCommands": [
+        "conan"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "conan-center",
+              "displayName": "Conan Center",
+              "defaultEndpoint": "https://center2.conan.io/",
+              "endpointKind": "generic-download",
+              "purpose": "C and C++ package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gdb",
+      "displayName": "GNU Debugger",
+      "vendor": "Free Software Foundation",
+      "homepage": "https://www.sourceware.org/gdb/",
+      "license": "GPL-3.0-or-later",
+      "languageIds": [
+        "c",
+        "cpp",
+        "assembly",
+        "fortran",
+        "ada"
+      ],
+      "roles": [
+        "debugger"
+      ],
+      "discoveryCommands": [
+        "gdb"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": true,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "lldb",
+      "displayName": "LLDB",
+      "vendor": "LLVM Project",
+      "homepage": "https://lldb.llvm.org/",
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "languageIds": [
+        "c",
+        "cpp",
+        "objective-c",
+        "swift",
+        "rust"
+      ],
+      "roles": [
+        "debugger"
+      ],
+      "discoveryCommands": [
+        "lldb"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": true,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "clangd",
+      "displayName": "clangd",
+      "vendor": "LLVM Project",
+      "homepage": "https://clangd.llvm.org/",
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "languageIds": [
+        "c",
+        "cpp",
+        "objective-c"
+      ],
+      "roles": [
+        "language-server"
+      ],
+      "discoveryCommands": [
+        "clangd"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "clang-format",
+      "displayName": "clang-format",
+      "vendor": "LLVM Project",
+      "homepage": "https://clang.llvm.org/docs/ClangFormat.html",
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "languageIds": [
+        "c",
+        "cpp",
+        "objective-c"
+      ],
+      "roles": [
+        "formatter"
+      ],
+      "discoveryCommands": [
+        "clang-format"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": true,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "cppcheck",
+      "displayName": "Cppcheck",
+      "vendor": "Cppcheck Solutions",
+      "homepage": "https://cppcheck.sourceforge.io/",
+      "license": "GPL-3.0-or-later",
+      "languageIds": [
+        "c",
+        "cpp"
+      ],
+      "roles": [
+        "linter"
+      ],
+      "discoveryCommands": [
+        "cppcheck"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "dotnet-sdk",
+      "displayName": ".NET SDK",
+      "vendor": "Microsoft",
+      "homepage": "https://dotnet.microsoft.com/",
+      "license": "MIT",
+      "languageIds": [
+        "csharp",
+        "fsharp",
+        "visual-basic"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "sdk",
+        "package-manager",
+        "build",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "dotnet"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": true,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-archive",
+          "displayName": "Official managed archive",
+          "distributionKind": "managed-archive",
+          "managedInstallSupported": true,
+          "mirrorSlots": [
+            {
+              "id": "nuget-v3",
+              "displayName": "NuGet v3 Feed",
+              "defaultEndpoint": "https://api.nuget.org/v3/index.json",
+              "endpointKind": "nuget",
+              "purpose": ".NET package metadata and artifacts",
+              "userOverridable": true
+            },
+            {
+              "id": "dotnet-downloads",
+              "displayName": ".NET release index",
+              "defaultEndpoint": "https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json",
+              "endpointKind": "generic-download",
+              "purpose": "Provider-compatible SDK release metadata and distribution asset discovery",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "roslyn",
+      "displayName": "Roslyn",
+      "vendor": "Microsoft",
+      "homepage": "https://github.com/dotnet/roslyn",
+      "license": "MIT",
+      "languageIds": [
+        "csharp",
+        "visual-basic"
+      ],
+      "roles": [
+        "compiler",
+        "language-server"
+      ],
+      "discoveryCommands": [
+        "csc",
+        "vbc"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "bundled",
+          "displayName": "Bundled or existing installation",
+          "distributionKind": "system",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "nuget-v3",
+              "displayName": "NuGet v3 Feed",
+              "defaultEndpoint": "https://api.nuget.org/v3/index.json",
+              "endpointKind": "nuget",
+              "purpose": ".NET package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nuget-cli",
+      "displayName": "NuGet CLI",
+      "vendor": "Microsoft",
+      "homepage": "https://www.nuget.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "csharp",
+        "fsharp",
+        "visual-basic"
+      ],
+      "roles": [
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "nuget"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "nuget-v3",
+              "displayName": "NuGet v3 Feed",
+              "defaultEndpoint": "https://api.nuget.org/v3/index.json",
+              "endpointKind": "nuget",
+              "purpose": ".NET package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dotnet-format",
+      "displayName": "dotnet format",
+      "vendor": "Microsoft",
+      "homepage": "https://github.com/dotnet/format",
+      "license": "MIT",
+      "languageIds": [
+        "csharp",
+        "fsharp",
+        "visual-basic"
+      ],
+      "roles": [
+        "formatter"
+      ],
+      "discoveryCommands": [
+        "dotnet"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": true,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "nuget-v3",
+              "displayName": "NuGet v3 Feed",
+              "defaultEndpoint": "https://api.nuget.org/v3/index.json",
+              "endpointKind": "nuget",
+              "purpose": ".NET package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "omnisharp",
+      "displayName": "OmniSharp",
+      "vendor": "OmniSharp contributors",
+      "homepage": "https://www.omnisharp.net/",
+      "license": "MIT",
+      "languageIds": [
+        "csharp"
+      ],
+      "roles": [
+        "language-server"
+      ],
+      "discoveryCommands": [
+        "omnisharp"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "netcoredbg",
+      "displayName": "netcoredbg",
+      "vendor": "Samsung",
+      "homepage": "https://github.com/Samsung/netcoredbg",
+      "license": "MIT",
+      "languageIds": [
+        "csharp",
+        "fsharp",
+        "visual-basic"
+      ],
+      "roles": [
+        "debugger"
+      ],
+      "discoveryCommands": [
+        "netcoredbg"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": true,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "go-toolchain",
+      "displayName": "Go Toolchain",
+      "vendor": "The Go Authors",
+      "homepage": "https://go.dev/",
+      "license": "BSD-3-Clause",
+      "languageIds": [
+        "go"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "sdk",
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "go"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "go-module-proxy",
+              "displayName": "Go Module Proxy",
+              "defaultEndpoint": "https://proxy.golang.org",
+              "endpointKind": "go-proxy",
+              "purpose": "Go module metadata and archives",
+              "userOverridable": true
+            },
+            {
+              "id": "go-downloads",
+              "displayName": "Go Downloads",
+              "defaultEndpoint": "https://go.dev/dl/",
+              "endpointKind": "generic-download",
+              "purpose": "Distribution archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gopls",
+      "displayName": "gopls",
+      "vendor": "The Go Authors",
+      "homepage": "https://pkg.go.dev/golang.org/x/tools/gopls",
+      "license": "BSD-3-Clause",
+      "languageIds": [
+        "go"
+      ],
+      "roles": [
+        "language-server"
+      ],
+      "discoveryCommands": [
+        "gopls"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "go-module-proxy",
+              "displayName": "Go Module Proxy",
+              "defaultEndpoint": "https://proxy.golang.org",
+              "endpointKind": "go-proxy",
+              "purpose": "Go module metadata and archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "delve",
+      "displayName": "Delve",
+      "vendor": "Delve contributors",
+      "homepage": "https://github.com/go-delve/delve",
+      "license": "MIT",
+      "languageIds": [
+        "go"
+      ],
+      "roles": [
+        "debugger"
+      ],
+      "discoveryCommands": [
+        "dlv"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": true,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "go-module-proxy",
+              "displayName": "Go Module Proxy",
+              "defaultEndpoint": "https://proxy.golang.org",
+              "endpointKind": "go-proxy",
+              "purpose": "Go module metadata and archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "golangci-lint",
+      "displayName": "golangci-lint",
+      "vendor": "golangci-lint contributors",
+      "homepage": "https://golangci-lint.run/",
+      "license": "GPL-3.0-only",
+      "languageIds": [
+        "go"
+      ],
+      "roles": [
+        "linter"
+      ],
+      "discoveryCommands": [
+        "golangci-lint"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "gofumpt",
+      "displayName": "gofumpt",
+      "vendor": "mvdan",
+      "homepage": "https://github.com/mvdan/gofumpt",
+      "license": "BSD-3-Clause",
+      "languageIds": [
+        "go"
+      ],
+      "roles": [
+        "formatter"
+      ],
+      "discoveryCommands": [
+        "gofumpt"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": true,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "go-module-proxy",
+              "displayName": "Go Module Proxy",
+              "defaultEndpoint": "https://proxy.golang.org",
+              "endpointKind": "go-proxy",
+              "purpose": "Go module metadata and archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gotestsum",
+      "displayName": "gotestsum",
+      "vendor": "gotestyourself",
+      "homepage": "https://github.com/gotestyourself/gotestsum",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "go"
+      ],
+      "roles": [
+        "test-runner"
+      ],
+      "discoveryCommands": [
+        "gotestsum"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "go-module-proxy",
+              "displayName": "Go Module Proxy",
+              "defaultEndpoint": "https://proxy.golang.org",
+              "endpointKind": "go-proxy",
+              "purpose": "Go module metadata and archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rustup",
+      "displayName": "rustup",
+      "vendor": "Rust Project",
+      "homepage": "https://rustup.rs/",
+      "license": "Apache-2.0 OR MIT",
+      "languageIds": [
+        "rust"
+      ],
+      "roles": [
+        "version-manager",
+        "sdk"
+      ],
+      "discoveryCommands": [
+        "rustup"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "crates-index",
+              "displayName": "crates.io Index",
+              "defaultEndpoint": "https://index.crates.io",
+              "endpointKind": "crates",
+              "purpose": "Rust crate metadata",
+              "userOverridable": true
+            },
+            {
+              "id": "rust-distributions",
+              "displayName": "Rust Distribution Server",
+              "defaultEndpoint": "https://static.rust-lang.org/",
+              "endpointKind": "generic-download",
+              "purpose": "Distribution archives",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rustc",
+      "displayName": "rustc",
+      "vendor": "Rust Project",
+      "homepage": "https://www.rust-lang.org/",
+      "license": "Apache-2.0 OR MIT",
+      "languageIds": [
+        "rust"
+      ],
+      "roles": [
+        "compiler"
+      ],
+      "discoveryCommands": [
+        "rustc"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "cargo",
+      "displayName": "Cargo",
+      "vendor": "Rust Project",
+      "homepage": "https://doc.rust-lang.org/cargo/",
+      "license": "Apache-2.0 OR MIT",
+      "languageIds": [
+        "rust"
+      ],
+      "roles": [
+        "package-manager",
+        "build",
+        "test-runner"
+      ],
+      "discoveryCommands": [
+        "cargo"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "crates-index",
+              "displayName": "crates.io Index",
+              "defaultEndpoint": "https://index.crates.io",
+              "endpointKind": "crates",
+              "purpose": "Rust crate metadata",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rust-analyzer",
+      "displayName": "rust-analyzer",
+      "vendor": "Rust Project",
+      "homepage": "https://rust-analyzer.github.io/",
+      "license": "Apache-2.0 OR MIT",
+      "languageIds": [
+        "rust"
+      ],
+      "roles": [
+        "language-server"
+      ],
+      "discoveryCommands": [
+        "rust-analyzer"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "clippy",
+      "displayName": "Clippy",
+      "vendor": "Rust Project",
+      "homepage": "https://doc.rust-lang.org/clippy/",
+      "license": "Apache-2.0 OR MIT",
+      "languageIds": [
+        "rust"
+      ],
+      "roles": [
+        "linter"
+      ],
+      "discoveryCommands": [
+        "cargo-clippy"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "rustfmt",
+      "displayName": "rustfmt",
+      "vendor": "Rust Project",
+      "homepage": "https://github.com/rust-lang/rustfmt",
+      "license": "Apache-2.0 OR MIT",
+      "languageIds": [
+        "rust"
+      ],
+      "roles": [
+        "formatter"
+      ],
+      "discoveryCommands": [
+        "rustfmt"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": true,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "cargo-nextest",
+      "displayName": "cargo-nextest",
+      "vendor": "nextest contributors",
+      "homepage": "https://nexte.st/",
+      "license": "Apache-2.0 OR MIT",
+      "languageIds": [
+        "rust"
+      ],
+      "roles": [
+        "test-runner"
+      ],
+      "discoveryCommands": [
+        "cargo-nextest"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "crates-index",
+              "displayName": "crates.io Index",
+              "defaultEndpoint": "https://index.crates.io",
+              "endpointKind": "crates",
+              "purpose": "Rust crate metadata",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "php-runtime",
+      "displayName": "PHP",
+      "vendor": "The PHP Group",
+      "homepage": "https://www.php.net/",
+      "license": "PHP-3.01",
+      "languageIds": [
+        "php"
+      ],
+      "roles": [
+        "interpreter",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "php"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "composer",
+      "displayName": "Composer",
+      "vendor": "Composer contributors",
+      "homepage": "https://getcomposer.org/",
+      "license": "MIT",
+      "languageIds": [
+        "php"
+      ],
+      "roles": [
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "composer"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "composer-repository",
+              "displayName": "Packagist",
+              "defaultEndpoint": "https://repo.packagist.org",
+              "endpointKind": "composer",
+              "purpose": "Composer package metadata",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "xdebug",
+      "displayName": "Xdebug",
+      "vendor": "Derick Rethans",
+      "homepage": "https://xdebug.org/",
+      "license": "Xdebug-1.03",
+      "languageIds": [
+        "php"
+      ],
+      "roles": [
+        "debugger"
+      ],
+      "discoveryCommands": [
+        "php"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": true,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "phpunit",
+      "displayName": "PHPUnit",
+      "vendor": "Sebastian Bergmann",
+      "homepage": "https://phpunit.de/",
+      "license": "BSD-3-Clause",
+      "languageIds": [
+        "php"
+      ],
+      "roles": [
+        "test-runner"
+      ],
+      "discoveryCommands": [
+        "phpunit"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "phpstan",
+      "displayName": "PHPStan",
+      "vendor": "Ondrej Mirtes",
+      "homepage": "https://phpstan.org/",
+      "license": "MIT",
+      "languageIds": [
+        "php"
+      ],
+      "roles": [
+        "linter"
+      ],
+      "discoveryCommands": [
+        "phpstan"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "composer-repository",
+              "displayName": "Packagist",
+              "defaultEndpoint": "https://repo.packagist.org",
+              "endpointKind": "composer",
+              "purpose": "Composer package metadata",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "php-cs-fixer",
+      "displayName": "PHP CS Fixer",
+      "vendor": "FriendsOfPHP",
+      "homepage": "https://cs.symfony.com/",
+      "license": "MIT",
+      "languageIds": [
+        "php"
+      ],
+      "roles": [
+        "formatter"
+      ],
+      "discoveryCommands": [
+        "php-cs-fixer"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": true,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "composer-repository",
+              "displayName": "Packagist",
+              "defaultEndpoint": "https://repo.packagist.org",
+              "endpointKind": "composer",
+              "purpose": "Composer package metadata",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ruby-mri",
+      "displayName": "Ruby MRI",
+      "vendor": "Ruby Core Team",
+      "homepage": "https://www.ruby-lang.org/",
+      "license": "Ruby",
+      "languageIds": [
+        "ruby"
+      ],
+      "roles": [
+        "interpreter",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "ruby",
+        "irb"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "jruby",
+      "displayName": "JRuby",
+      "vendor": "JRuby Team",
+      "homepage": "https://www.jruby.org/",
+      "license": "EPL-2.0 OR GPL-2.0-only OR LGPL-2.1-only",
+      "languageIds": [
+        "ruby"
+      ],
+      "roles": [
+        "interpreter",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "jruby"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "rubygems",
+      "displayName": "RubyGems",
+      "vendor": "Ruby Central",
+      "homepage": "https://rubygems.org/",
+      "license": "MIT",
+      "languageIds": [
+        "ruby"
+      ],
+      "roles": [
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "gem"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "rubygems-source",
+              "displayName": "RubyGems",
+              "defaultEndpoint": "https://rubygems.org",
+              "endpointKind": "rubygems",
+              "purpose": "Ruby gem metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bundler",
+      "displayName": "Bundler",
+      "vendor": "Ruby Central",
+      "homepage": "https://bundler.io/",
+      "license": "MIT",
+      "languageIds": [
+        "ruby"
+      ],
+      "roles": [
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "bundle"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "rubygems-source",
+              "displayName": "RubyGems",
+              "defaultEndpoint": "https://rubygems.org",
+              "endpointKind": "rubygems",
+              "purpose": "Ruby gem metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rubocop",
+      "displayName": "RuboCop",
+      "vendor": "RuboCop Headquarters",
+      "homepage": "https://rubocop.org/",
+      "license": "MIT",
+      "languageIds": [
+        "ruby"
+      ],
+      "roles": [
+        "formatter",
+        "linter"
+      ],
+      "discoveryCommands": [
+        "rubocop"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": true,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "rubygems-source",
+              "displayName": "RubyGems",
+              "defaultEndpoint": "https://rubygems.org",
+              "endpointKind": "rubygems",
+              "purpose": "Ruby gem metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kotlin-compiler",
+      "displayName": "Kotlin Compiler",
+      "vendor": "JetBrains",
+      "homepage": "https://kotlinlang.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "kotlin"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "kotlinc",
+        "kotlin"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "maven-central",
+              "displayName": "Maven Central",
+              "defaultEndpoint": "https://repo1.maven.org/maven2",
+              "endpointKind": "maven",
+              "purpose": "JVM dependency metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "detekt",
+      "displayName": "detekt",
+      "vendor": "detekt contributors",
+      "homepage": "https://detekt.dev/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "kotlin"
+      ],
+      "roles": [
+        "linter"
+      ],
+      "discoveryCommands": [
+        "detekt"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "maven-central",
+              "displayName": "Maven Central",
+              "defaultEndpoint": "https://repo1.maven.org/maven2",
+              "endpointKind": "maven",
+              "purpose": "JVM dependency metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ktlint",
+      "displayName": "ktlint",
+      "vendor": "Pinterest",
+      "homepage": "https://pinterest.github.io/ktlint/",
+      "license": "MIT",
+      "languageIds": [
+        "kotlin"
+      ],
+      "roles": [
+        "formatter",
+        "linter"
+      ],
+      "discoveryCommands": [
+        "ktlint"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": true,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "maven-central",
+              "displayName": "Maven Central",
+              "defaultEndpoint": "https://repo1.maven.org/maven2",
+              "endpointKind": "maven",
+              "purpose": "JVM dependency metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "swift-toolchain",
+      "displayName": "Swift Toolchain",
+      "vendor": "Swift Project",
+      "homepage": "https://www.swift.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "swift"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "sdk",
+        "package-manager",
+        "build",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "swift",
+        "swiftc"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "swift-format",
+      "displayName": "swift-format",
+      "vendor": "Swift Project",
+      "homepage": "https://github.com/swiftlang/swift-format",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "swift"
+      ],
+      "roles": [
+        "formatter"
+      ],
+      "discoveryCommands": [
+        "swift-format"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": true,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "dart-sdk",
+      "displayName": "Dart SDK",
+      "vendor": "Google",
+      "homepage": "https://dart.dev/",
+      "license": "BSD-3-Clause",
+      "languageIds": [
+        "dart"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "sdk",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "dart"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "flutter-sdk",
+      "displayName": "Flutter SDK",
+      "vendor": "Google",
+      "homepage": "https://flutter.dev/",
+      "license": "BSD-3-Clause",
+      "languageIds": [
+        "dart"
+      ],
+      "roles": [
+        "sdk",
+        "build",
+        "test-runner"
+      ],
+      "discoveryCommands": [
+        "flutter"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "dart-pub",
+      "displayName": "Dart pub",
+      "vendor": "Google",
+      "homepage": "https://dart.dev/tools/pub/cmd",
+      "license": "BSD-3-Clause",
+      "languageIds": [
+        "dart"
+      ],
+      "roles": [
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "dart"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "bundled",
+          "displayName": "Bundled or existing installation",
+          "distributionKind": "system",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "pub-repository",
+              "displayName": "pub.dev",
+              "defaultEndpoint": "https://pub.dev/",
+              "endpointKind": "generic-download",
+              "purpose": "Dart package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dart-analyzer",
+      "displayName": "Dart Analyzer",
+      "vendor": "Google",
+      "homepage": "https://dart.dev/tools/dart-analyze",
+      "license": "BSD-3-Clause",
+      "languageIds": [
+        "dart"
+      ],
+      "roles": [
+        "linter"
+      ],
+      "discoveryCommands": [
+        "dart"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "bundled",
+          "displayName": "Bundled or existing installation",
+          "distributionKind": "system",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "scala-compiler",
+      "displayName": "Scala 3 Compiler",
+      "vendor": "Scala Center",
+      "homepage": "https://www.scala-lang.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "scala"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "scala",
+        "scalac"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "sbt",
+      "displayName": "sbt",
+      "vendor": "Scala Center",
+      "homepage": "https://www.scala-sbt.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "scala"
+      ],
+      "roles": [
+        "package-manager",
+        "build"
+      ],
+      "discoveryCommands": [
+        "sbt"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "maven-central",
+              "displayName": "Maven Central",
+              "defaultEndpoint": "https://repo1.maven.org/maven2",
+              "endpointKind": "maven",
+              "purpose": "JVM dependency metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scala-cli",
+      "displayName": "Scala CLI",
+      "vendor": "VirtusLab",
+      "homepage": "https://scala-cli.virtuslab.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "scala"
+      ],
+      "roles": [
+        "compiler",
+        "package-manager",
+        "build",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "scala-cli"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "maven-central",
+              "displayName": "Maven Central",
+              "defaultEndpoint": "https://repo1.maven.org/maven2",
+              "endpointKind": "maven",
+              "purpose": "JVM dependency metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "metals",
+      "displayName": "Metals",
+      "vendor": "Scala Center",
+      "homepage": "https://scalameta.org/metals/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "scala"
+      ],
+      "roles": [
+        "language-server"
+      ],
+      "discoveryCommands": [
+        "metals"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "maven-central",
+              "displayName": "Maven Central",
+              "defaultEndpoint": "https://repo1.maven.org/maven2",
+              "endpointKind": "maven",
+              "purpose": "JVM dependency metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "r-runtime",
+      "displayName": "R",
+      "vendor": "R Foundation",
+      "homepage": "https://www.r-project.org/",
+      "license": "GPL-2.0-or-later",
+      "languageIds": [
+        "r"
+      ],
+      "roles": [
+        "interpreter",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "R",
+        "Rscript"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "renv",
+      "displayName": "renv",
+      "vendor": "Posit",
+      "homepage": "https://rstudio.github.io/renv/",
+      "license": "MIT",
+      "languageIds": [
+        "r"
+      ],
+      "roles": [
+        "package-manager",
+        "virtual-env"
+      ],
+      "discoveryCommands": [
+        "Rscript"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": true,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "cran",
+              "displayName": "CRAN",
+              "defaultEndpoint": "https://cloud.r-project.org/",
+              "endpointKind": "generic-download",
+              "purpose": "R package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pak",
+      "displayName": "pak",
+      "vendor": "r-lib",
+      "homepage": "https://pak.r-lib.org/",
+      "license": "GPL-3.0-only",
+      "languageIds": [
+        "r"
+      ],
+      "roles": [
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "Rscript"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "cran",
+              "displayName": "CRAN",
+              "defaultEndpoint": "https://cloud.r-project.org/",
+              "endpointKind": "generic-download",
+              "purpose": "R package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lintr",
+      "displayName": "lintr",
+      "vendor": "r-lib",
+      "homepage": "https://lintr.r-lib.org/",
+      "license": "MIT",
+      "languageIds": [
+        "r"
+      ],
+      "roles": [
+        "linter"
+      ],
+      "discoveryCommands": [
+        "Rscript"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "r-languageserver",
+      "displayName": "languageserver",
+      "vendor": "REditorSupport",
+      "homepage": "https://github.com/REditorSupport/languageserver",
+      "license": "MIT",
+      "languageIds": [
+        "r"
+      ],
+      "roles": [
+        "language-server"
+      ],
+      "discoveryCommands": [
+        "Rscript"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "julia-runtime",
+      "displayName": "Julia",
+      "vendor": "Julia Project",
+      "homepage": "https://julialang.org/",
+      "license": "MIT",
+      "languageIds": [
+        "julia"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "julia"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "julia-pkg",
+      "displayName": "Julia Pkg",
+      "vendor": "Julia Project",
+      "homepage": "https://pkgdocs.julialang.org/",
+      "license": "MIT",
+      "languageIds": [
+        "julia"
+      ],
+      "roles": [
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "julia"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "bundled",
+          "displayName": "Bundled or existing installation",
+          "distributionKind": "system",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "julia-package-server",
+              "displayName": "Julia Package Server",
+              "defaultEndpoint": "https://pkg.julialang.org/",
+              "endpointKind": "generic-download",
+              "purpose": "Julia package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "julia-formatter",
+      "displayName": "JuliaFormatter.jl",
+      "vendor": "JuliaFormatter contributors",
+      "homepage": "https://domluna.github.io/JuliaFormatter.jl/",
+      "license": "MIT",
+      "languageIds": [
+        "julia"
+      ],
+      "roles": [
+        "formatter"
+      ],
+      "discoveryCommands": [
+        "julia"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": true,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "lua-runtime",
+      "displayName": "Lua",
+      "vendor": "Lua.org",
+      "homepage": "https://www.lua.org/",
+      "license": "MIT",
+      "languageIds": [
+        "lua"
+      ],
+      "roles": [
+        "interpreter",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "lua"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "luarocks",
+      "displayName": "LuaRocks",
+      "vendor": "LuaRocks contributors",
+      "homepage": "https://luarocks.org/",
+      "license": "MIT",
+      "languageIds": [
+        "lua"
+      ],
+      "roles": [
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "luarocks"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "luarocks-server",
+              "displayName": "LuaRocks Server",
+              "defaultEndpoint": "https://luarocks.org/",
+              "endpointKind": "generic-download",
+              "purpose": "Lua rock metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "strawberry-perl",
+      "displayName": "Strawberry Perl",
+      "vendor": "Strawberry Perl Project",
+      "homepage": "https://strawberryperl.com/",
+      "license": "Artistic-1.0-Perl OR GPL-1.0-or-later",
+      "languageIds": [
+        "perl"
+      ],
+      "roles": [
+        "interpreter",
+        "runtime",
+        "package-manager",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "perl",
+        "cpan"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "metacpan",
+              "displayName": "MetaCPAN",
+              "defaultEndpoint": "https://cpan.metacpan.org/",
+              "endpointKind": "generic-download",
+              "purpose": "Perl module metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cpanminus",
+      "displayName": "cpanminus",
+      "vendor": "Tatsuhiko Miyagawa",
+      "homepage": "https://metacpan.org/pod/App::cpanminus",
+      "license": "Artistic-1.0-Perl OR GPL-1.0-or-later",
+      "languageIds": [
+        "perl"
+      ],
+      "roles": [
+        "package-manager"
+      ],
+      "discoveryCommands": [
+        "cpanm"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": true,
+        "sessionActivation": false,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "metacpan",
+              "displayName": "MetaCPAN",
+              "defaultEndpoint": "https://cpan.metacpan.org/",
+              "endpointKind": "generic-download",
+              "purpose": "Perl module metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "git-bash",
+      "displayName": "Git Bash",
+      "vendor": "Git for Windows Project",
+      "homepage": "https://gitforwindows.org/",
+      "license": "GPL-2.0-only",
+      "languageIds": [
+        "shell"
+      ],
+      "roles": [
+        "interpreter",
+        "runtime"
+      ],
+      "discoveryCommands": [
+        "bash"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "shellcheck",
+      "displayName": "ShellCheck",
+      "vendor": "ShellCheck contributors",
+      "homepage": "https://www.shellcheck.net/",
+      "license": "GPL-3.0-only",
+      "languageIds": [
+        "shell"
+      ],
+      "roles": [
+        "linter"
+      ],
+      "discoveryCommands": [
+        "shellcheck"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "powershell",
+      "displayName": "PowerShell",
+      "vendor": "Microsoft",
+      "homepage": "https://learn.microsoft.com/powershell/",
+      "license": "MIT",
+      "languageIds": [
+        "powershell"
+      ],
+      "roles": [
+        "interpreter",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "pwsh"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "pester",
+      "displayName": "Pester",
+      "vendor": "Pester contributors",
+      "homepage": "https://pester.dev/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "powershell"
+      ],
+      "roles": [
+        "test-runner"
+      ],
+      "discoveryCommands": [
+        "pwsh"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "powershell-gallery",
+              "displayName": "PowerShell Gallery",
+              "defaultEndpoint": "https://www.powershellgallery.com/api/v2",
+              "endpointKind": "generic-download",
+              "purpose": "PowerShell module metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "psscriptanalyzer",
+      "displayName": "PSScriptAnalyzer",
+      "vendor": "Microsoft",
+      "homepage": "https://github.com/PowerShell/PSScriptAnalyzer",
+      "license": "MIT",
+      "languageIds": [
+        "powershell"
+      ],
+      "roles": [
+        "formatter",
+        "linter"
+      ],
+      "discoveryCommands": [
+        "pwsh"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": true,
+        "lint": true
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "powershell-gallery",
+              "displayName": "PowerShell Gallery",
+              "defaultEndpoint": "https://www.powershellgallery.com/api/v2",
+              "endpointKind": "generic-download",
+              "purpose": "PowerShell module metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "groovy-runtime",
+      "displayName": "Apache Groovy",
+      "vendor": "Apache Software Foundation",
+      "homepage": "https://groovy-lang.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "groovy"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "groovy",
+        "groovyc"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "clojure-cli",
+      "displayName": "Clojure CLI",
+      "vendor": "Nubank and Clojure contributors",
+      "homepage": "https://clojure.org/",
+      "license": "EPL-1.0",
+      "languageIds": [
+        "clojure"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "package-manager",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "clojure"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "maven-central",
+              "displayName": "Maven Central",
+              "defaultEndpoint": "https://repo1.maven.org/maven2",
+              "endpointKind": "maven",
+              "purpose": "JVM dependency metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elixir-runtime",
+      "displayName": "Elixir",
+      "vendor": "Elixir Core Team",
+      "homepage": "https://elixir-lang.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "elixir"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "package-manager",
+        "build",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "elixir",
+        "mix"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "hex-repository",
+              "displayName": "Hex",
+              "defaultEndpoint": "https://repo.hex.pm/",
+              "endpointKind": "generic-download",
+              "purpose": "Elixir package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "erlang-otp",
+      "displayName": "Erlang/OTP",
+      "vendor": "Ericsson and Erlang/OTP contributors",
+      "homepage": "https://www.erlang.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "erlang"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "sdk",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "erl",
+        "erlc"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "ghcup",
+      "displayName": "GHCup",
+      "vendor": "Haskell Foundation",
+      "homepage": "https://www.haskell.org/ghcup/",
+      "license": "LGPL-3.0-only",
+      "languageIds": [
+        "haskell"
+      ],
+      "roles": [
+        "compiler",
+        "sdk",
+        "version-manager",
+        "package-manager",
+        "build",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "ghcup",
+        "ghc",
+        "cabal"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "hackage",
+              "displayName": "Hackage",
+              "defaultEndpoint": "https://hackage.haskell.org/",
+              "endpointKind": "generic-download",
+              "purpose": "Haskell package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dotnet-fsharp",
+      "displayName": "F# Toolchain",
+      "vendor": "Microsoft and F# Software Foundation",
+      "homepage": "https://fsharp.org/",
+      "license": "MIT",
+      "languageIds": [
+        "fsharp"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "dotnet"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "bundled",
+          "displayName": "Bundled or existing installation",
+          "distributionKind": "system",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "nuget-v3",
+              "displayName": "NuGet v3 Feed",
+              "defaultEndpoint": "https://api.nuget.org/v3/index.json",
+              "endpointKind": "nuget",
+              "purpose": ".NET package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dotnet-visual-basic",
+      "displayName": "Visual Basic Toolchain",
+      "vendor": "Microsoft",
+      "homepage": "https://learn.microsoft.com/dotnet/visual-basic/",
+      "license": "MIT",
+      "languageIds": [
+        "visual-basic"
+      ],
+      "roles": [
+        "compiler",
+        "runtime"
+      ],
+      "discoveryCommands": [
+        "vbc",
+        "dotnet"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "bundled",
+          "displayName": "Bundled or existing installation",
+          "distributionKind": "system",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "nuget-v3",
+              "displayName": "NuGet v3 Feed",
+              "defaultEndpoint": "https://api.nuget.org/v3/index.json",
+              "endpointKind": "nuget",
+              "purpose": ".NET package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nasm",
+      "displayName": "Netwide Assembler",
+      "vendor": "NASM Project",
+      "homepage": "https://www.nasm.us/",
+      "license": "BSD-2-Clause",
+      "languageIds": [
+        "assembly"
+      ],
+      "roles": [
+        "compiler"
+      ],
+      "discoveryCommands": [
+        "nasm"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "gfortran",
+      "displayName": "GNU Fortran",
+      "vendor": "Free Software Foundation",
+      "homepage": "https://gcc.gnu.org/fortran/",
+      "license": "GPL-3.0-or-later WITH GCC-exception-3.1",
+      "languageIds": [
+        "fortran"
+      ],
+      "roles": [
+        "compiler"
+      ],
+      "discoveryCommands": [
+        "gfortran"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "gnucobol",
+      "displayName": "GnuCOBOL",
+      "vendor": "GnuCOBOL Project",
+      "homepage": "https://gnucobol.sourceforge.io/",
+      "license": "GPL-3.0-or-later",
+      "languageIds": [
+        "cobol"
+      ],
+      "roles": [
+        "compiler",
+        "runtime"
+      ],
+      "discoveryCommands": [
+        "cobc"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "free-pascal",
+      "displayName": "Free Pascal",
+      "vendor": "Free Pascal Team",
+      "homepage": "https://www.freepascal.org/",
+      "license": "GPL-2.0-or-later AND LGPL-2.1-or-later",
+      "languageIds": [
+        "pascal"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "sdk"
+      ],
+      "discoveryCommands": [
+        "fpc"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "gnat",
+      "displayName": "GNAT",
+      "vendor": "AdaCore",
+      "homepage": "https://www.adacore.com/about-ada",
+      "license": "GPL-3.0-or-later WITH GCC-exception-3.1",
+      "languageIds": [
+        "ada"
+      ],
+      "roles": [
+        "compiler",
+        "sdk",
+        "build"
+      ],
+      "discoveryCommands": [
+        "gnat",
+        "gprbuild"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "opam",
+      "displayName": "opam",
+      "vendor": "OCamlPro",
+      "homepage": "https://opam.ocaml.org/",
+      "license": "LGPL-2.1-only WITH OCaml-LGPL-linking-exception",
+      "languageIds": [
+        "ocaml"
+      ],
+      "roles": [
+        "package-manager",
+        "version-manager",
+        "virtual-env"
+      ],
+      "discoveryCommands": [
+        "opam",
+        "ocaml"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": true,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "opam-repository",
+              "displayName": "opam Repository",
+              "defaultEndpoint": "https://opam.ocaml.org/",
+              "endpointKind": "generic-download",
+              "purpose": "OCaml package metadata and artifacts",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sbcl",
+      "displayName": "Steel Bank Common Lisp",
+      "vendor": "SBCL contributors",
+      "homepage": "https://www.sbcl.org/",
+      "license": "BSD-2-Clause",
+      "languageIds": [
+        "common-lisp"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "sbcl"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "chez-scheme",
+      "displayName": "Chez Scheme",
+      "vendor": "Cisco Systems",
+      "homepage": "https://cisco.github.io/ChezScheme/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "scheme"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "scheme"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "racket-runtime",
+      "displayName": "Racket",
+      "vendor": "Racket contributors",
+      "homepage": "https://racket-lang.org/",
+      "license": "Apache-2.0 OR MIT",
+      "languageIds": [
+        "racket",
+        "scheme"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "package-manager",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "racket",
+        "raco"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "racket-catalog",
+              "displayName": "Racket Package Catalog",
+              "defaultEndpoint": "https://pkgs.racket-lang.org/",
+              "endpointKind": "generic-download",
+              "purpose": "Racket package metadata",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "solc",
+      "displayName": "Solidity Compiler",
+      "vendor": "Ethereum Foundation",
+      "homepage": "https://soliditylang.org/",
+      "license": "GPL-3.0-only",
+      "languageIds": [
+        "solidity"
+      ],
+      "roles": [
+        "compiler"
+      ],
+      "discoveryCommands": [
+        "solc"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "zig-toolchain",
+      "displayName": "Zig Toolchain",
+      "vendor": "Zig Software Foundation",
+      "homepage": "https://ziglang.org/",
+      "license": "MIT",
+      "languageIds": [
+        "zig",
+        "c",
+        "cpp"
+      ],
+      "roles": [
+        "compiler",
+        "sdk",
+        "build"
+      ],
+      "discoveryCommands": [
+        "zig"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "nim-toolchain",
+      "displayName": "Nim Toolchain",
+      "vendor": "Nim contributors",
+      "homepage": "https://nim-lang.org/",
+      "license": "MIT",
+      "languageIds": [
+        "nim"
+      ],
+      "roles": [
+        "compiler",
+        "package-manager",
+        "build"
+      ],
+      "discoveryCommands": [
+        "nim",
+        "nimble"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "nimble-packages",
+              "displayName": "Nimble Packages",
+              "defaultEndpoint": "https://nimble.directory/",
+              "endpointKind": "generic-download",
+              "purpose": "Nim package metadata",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crystal-compiler",
+      "displayName": "Crystal Compiler",
+      "vendor": "Crystal Language",
+      "homepage": "https://crystal-lang.org/",
+      "license": "Apache-2.0",
+      "languageIds": [
+        "crystal"
+      ],
+      "roles": [
+        "compiler",
+        "runtime",
+        "package-manager",
+        "build"
+      ],
+      "discoveryCommands": [
+        "crystal",
+        "shards"
+      ],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": true,
+        "virtualEnvironment": false,
+        "cacheManagement": true,
+        "mirrorConfiguration": true,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": [
+            {
+              "id": "shards-registry",
+              "displayName": "Shardbox",
+              "defaultEndpoint": "https://shardbox.org/",
+              "endpointKind": "generic-download",
+              "purpose": "Crystal shard metadata",
+              "userOverridable": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ldc",
+      "displayName": "LDC D Compiler",
+      "vendor": "LDC Developers",
+      "homepage": "https://wiki.dlang.org/LDC",
+      "license": "BSD-3-Clause",
+      "languageIds": [
+        "d"
+      ],
+      "roles": [
+        "compiler"
+      ],
+      "discoveryCommands": [
+        "ldc2"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "sqlite",
+      "displayName": "SQLite",
+      "vendor": "Hwaci",
+      "homepage": "https://www.sqlite.org/",
+      "license": "blessing",
+      "languageIds": [
+        "sql"
+      ],
+      "roles": [
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "sqlite3"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    },
+    {
+      "id": "wasmtime",
+      "displayName": "Wasmtime",
+      "vendor": "Bytecode Alliance",
+      "homepage": "https://wasmtime.dev/",
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "languageIds": [
+        "webassembly"
+      ],
+      "roles": [
+        "runtime",
+        "repl"
+      ],
+      "discoveryCommands": [
+        "wasmtime"
+      ],
+      "windowsSupport": "native",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": true,
+        "projectPin": true,
+        "sessionActivation": true,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "official-distribution",
+          "displayName": "Official or ecosystem distribution",
+          "distributionKind": "external",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    }
+  ]
+}

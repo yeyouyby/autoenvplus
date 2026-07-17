@@ -37,16 +37,153 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
     }
 
     [Fact]
-    public async Task InstallAsync_ChecksumMismatchLeavesNoInstallation()
+    public async Task InstallAsync_ExistingDestinationMustMatchManagedReceiptAndPackageHash()
+    {
+        byte[] originalArchive = CreateZip(($"{ArchiveRoot}/node.exe", "original-node"));
+        ArchiveInstallPlan originalPlan = CreatePlan(originalArchive);
+        using HttpClient originalClient = new(new StubHttpMessageHandler(_ =>
+            StubHttpMessageHandler.Bytes(originalArchive)));
+        InstallResult installed = await new ManagedArchiveInstaller(originalClient)
+            .InstallAsync(originalPlan);
+        Assert.Equal(InstallOutcome.Installed, installed.Outcome);
+
+        byte[] replacementArchive = CreateZip(($"{ArchiveRoot}/node.exe", "replacement"));
+        ArchiveInstallPlan replacementPlan = CreatePlan(replacementArchive);
+        int requests = 0;
+        using HttpClient replacementClient = new(new StubHttpMessageHandler(_ =>
+        {
+            requests++;
+            return StubHttpMessageHandler.Bytes(replacementArchive);
+        }));
+
+        InstallResult replacement = await new ManagedArchiveInstaller(replacementClient)
+            .InstallAsync(replacementPlan);
+
+        Assert.Equal(InstallOutcome.Failed, replacement.Outcome);
+        Assert.Contains("different or unverified", replacement.Error, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, requests);
+        Assert.Equal(
+            "original-node",
+            File.ReadAllText(Path.Combine(originalPlan.DestinationRoot, "node.exe")));
+        InstallResult originalAgain = await new ManagedArchiveInstaller(originalClient)
+            .InstallAsync(originalPlan);
+        Assert.Equal(InstallOutcome.AlreadyInstalled, originalAgain.Outcome);
+    }
+
+    [Fact]
+    public async Task InstallAsync_ExistingExecutableWithoutReceiptIsNotTrustedAsInstalled()
+    {
+        byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "reviewed-node"));
+        ArchiveInstallPlan plan = CreatePlan(archive);
+        Directory.CreateDirectory(plan.DestinationRoot);
+        await File.WriteAllTextAsync(
+            Path.Combine(plan.DestinationRoot, "node.exe"),
+            "unreceipted-node");
+        int requests = 0;
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+        {
+            requests++;
+            return StubHttpMessageHandler.Bytes(archive);
+        }));
+
+        InstallResult result = await new ManagedArchiveInstaller(client).InstallAsync(plan);
+
+        Assert.Equal(InstallOutcome.Failed, result.Outcome);
+        Assert.Contains("receipt", result.Error, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, requests);
+        Assert.Equal(
+            "unreceipted-node",
+            File.ReadAllText(Path.Combine(plan.DestinationRoot, "node.exe")));
+    }
+
+    [Fact]
+    public async Task InstallAsync_ReceiptDoesNotHideEntryPointContentTampering()
+    {
+        byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "reviewed-node"));
+        ArchiveInstallPlan plan = CreatePlan(archive);
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+            StubHttpMessageHandler.Bytes(archive)));
+        InstallResult installed = await new ManagedArchiveInstaller(client).InstallAsync(plan);
+        Assert.Equal(InstallOutcome.Installed, installed.Outcome);
+        await File.WriteAllTextAsync(
+            Path.Combine(plan.DestinationRoot, "node.exe"),
+            "tampered-node");
+
+        InstallResult repeated = await new ManagedArchiveInstaller(client).InstallAsync(plan);
+
+        Assert.Equal(InstallOutcome.Failed, repeated.Outcome);
+        Assert.Contains("changed", repeated.Error, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task InstallAsync_VerifiesSha512AndPartitionsDownloadCacheByAlgorithm()
     {
         byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "node-binary"));
-        ArchiveInstallPlan validPlan = CreatePlan(archive);
-        RuntimePackageAsset invalidAsset = validPlan.Asset with { Sha256 = new string('0', 64) };
+        ArchiveInstallPlan plan = CreatePlan(archive, PackageHashAlgorithm.Sha512);
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+            StubHttpMessageHandler.Bytes(archive)));
+
+        InstallResult result = await new ManagedArchiveInstaller(client).InstallAsync(plan);
+
+        Assert.Equal(InstallOutcome.Installed, result.Outcome);
+        Assert.True(File.Exists(Path.Combine(plan.DestinationRoot, "node.exe")));
+        Assert.True(File.Exists(Path.Combine(
+            _root,
+            "downloads",
+            "sha512",
+            plan.Asset.PackageHash,
+            plan.Asset.FileName)));
+        AssertStagingIsEmpty();
+    }
+
+    [Fact]
+    public async Task InstallAsync_Sha512MismatchDeletesPackageAndLeavesNoInstallation()
+    {
+        byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "node-binary"));
+        ArchiveInstallPlan validPlan = CreatePlan(archive, PackageHashAlgorithm.Sha512);
+        RuntimePackageAsset invalidAsset = validPlan.Asset with
+        {
+            PackageHash = new string('0', 128),
+        };
         invalidAsset = invalidAsset with
         {
             Verifications =
             [
-                CreateVerification(invalidAsset.FileName, invalidAsset.Sha256),
+                CreateVerification(
+                    invalidAsset.FileName,
+                    invalidAsset.PackageHash,
+                    PackageHashAlgorithm.Sha512),
+            ],
+        };
+        ArchiveInstallPlan plan = validPlan with { Asset = invalidAsset };
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+            StubHttpMessageHandler.Bytes(archive)));
+
+        InstallResult result = await new ManagedArchiveInstaller(client).InstallAsync(plan);
+
+        Assert.Equal(InstallOutcome.Failed, result.Outcome);
+        Assert.Contains("SHA-512 mismatch", result.Error);
+        Assert.False(Directory.Exists(plan.DestinationRoot));
+        Assert.False(File.Exists(Path.Combine(
+            _root,
+            "downloads",
+            "sha512",
+            invalidAsset.PackageHash,
+            invalidAsset.FileName)));
+        AssertStagingIsEmpty();
+    }
+
+    [Fact]
+    public async Task InstallAsync_ChecksumMismatchLeavesNoInstallation()
+    {
+        byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "node-binary"));
+        ArchiveInstallPlan validPlan = CreatePlan(archive);
+        RuntimePackageAsset invalidAsset = validPlan.Asset with { PackageHash = new string('0', 64) };
+        invalidAsset = invalidAsset with
+        {
+            Verifications =
+            [
+                CreateVerification(invalidAsset.FileName, invalidAsset.PackageHash),
             ],
         };
         ArchiveInstallPlan plan = validPlan with { Asset = invalidAsset };
@@ -58,6 +195,23 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         Assert.Contains("SHA-256 mismatch", result.Error);
         Assert.False(Directory.Exists(plan.DestinationRoot));
         AssertStagingIsEmpty();
+    }
+
+    [Fact]
+    public async Task InstallAsync_DoesNotExposeSignedUrlFromTransportException()
+    {
+        byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "node-binary"));
+        ArchiveInstallPlan plan = CreatePlan(archive);
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+            throw new HttpRequestException(
+                "Failed https://example.test/node.zip?token=do-not-log")));
+
+        InstallResult result = await new ManagedArchiveInstaller(client).InstallAsync(plan);
+
+        Assert.Equal(InstallOutcome.Failed, result.Outcome);
+        Assert.DoesNotContain("do-not-log", result.Error, StringComparison.Ordinal);
+        Assert.DoesNotContain("?token", result.Error, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("transport", result.Error, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -141,7 +295,7 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         {
             Verifications =
             [
-                CreateVerification(asset.FileName, asset.Sha256) with
+                CreateVerification(asset.FileName, asset.PackageHash) with
                 {
                     SourceUri = new Uri("http://example.test/SHASUMS256.txt"),
                 },
@@ -156,7 +310,7 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         {
             Verifications =
             [
-                CreateVerification(asset.FileName, asset.Sha256) with
+                CreateVerification(asset.FileName, asset.PackageHash) with
                 {
                     SourceUri = new Uri("SHASUMS256.txt", UriKind.Relative),
                 },
@@ -171,7 +325,7 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         {
             Verifications =
             [
-                CreateVerification(asset.FileName, asset.Sha256) with
+                CreateVerification(asset.FileName, asset.PackageHash) with
                 {
                     Algorithm = "SHA-1",
                 },
@@ -186,7 +340,7 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         {
             Verifications =
             [
-                CreateVerification(asset.FileName, asset.Sha256) with
+                CreateVerification(asset.FileName, asset.PackageHash) with
                 {
                     Value = "not-a-sha256",
                 },
@@ -201,7 +355,7 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         {
             Verifications =
             [
-                CreateVerification(asset.FileName, asset.Sha256) with
+                CreateVerification(asset.FileName, asset.PackageHash) with
                 {
                     Subject = " ",
                 },
@@ -331,7 +485,8 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         Assert.False(File.Exists(Path.Combine(
             _root,
             "downloads",
-            plan.Asset.Sha256,
+            "sha256",
+            plan.Asset.PackageHash,
             plan.Asset.FileName)));
         AssertStagingIsEmpty();
     }
@@ -345,7 +500,9 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         });
     }
 
-    private ArchiveInstallPlan CreatePlan(byte[] archive)
+    private ArchiveInstallPlan CreatePlan(
+        byte[] archive,
+        PackageHashAlgorithm hashAlgorithm = PackageHashAlgorithm.Sha256)
     {
         RuntimeRelease release = new(
             "nodejs-official",
@@ -357,7 +514,12 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
             new DateOnly(2025, 6, 24),
             ["lts"],
             false);
-        string hash = Convert.ToHexString(SHA256.HashData(archive)).ToLowerInvariant();
+        string hash = Convert.ToHexString(hashAlgorithm switch
+        {
+            PackageHashAlgorithm.Sha256 => SHA256.HashData(archive),
+            PackageHashAlgorithm.Sha512 => SHA512.HashData(archive),
+            _ => throw new ArgumentOutOfRangeException(nameof(hashAlgorithm)),
+        }).ToLowerInvariant();
         RuntimePackageAsset asset = new(
             release,
             new Uri("https://example.test/node.zip"),
@@ -366,20 +528,24 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
             RuntimePackageFormat.Zip,
             ArchiveRoot,
             [
-                CreateVerification("node.zip", hash),
+                CreateVerification("node.zip", hash, hashAlgorithm),
             ],
             [],
-            PackageAuthenticityRequirement.ChecksumEvidence);
+            PackageAuthenticityRequirement.ChecksumEvidence,
+            HashAlgorithm: hashAlgorithm);
         string destination = Path.Combine(_root, "runtimes", "node", "22.17.0", "x64");
         return new ArchiveInstallPlan(asset, _root, destination, "node.exe");
     }
 
-    private static PackageVerification CreateVerification(string subject, string value) =>
+    private static PackageVerification CreateVerification(
+        string subject,
+        string value,
+        PackageHashAlgorithm hashAlgorithm = PackageHashAlgorithm.Sha256) =>
         new(
             PackageVerificationKind.ProviderChecksum,
             new Uri("https://example.test/SHASUMS256.txt"),
             subject,
-            "SHA-256",
+            hashAlgorithm.DisplayName(),
             value);
 
     private static PackageSignatureVerification CreateSignature(Uri signatureUri) =>

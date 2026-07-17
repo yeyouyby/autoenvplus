@@ -20,7 +20,7 @@
                 <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="活动记录" />
                 <TextBlock
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="查看 AutoEnvPlus 的安装、切换、PATH、缓存和工具链操作审计。记录仅保存脱敏摘要。"
+                    Text="查看 AutoEnvPlus 的语言工具安装、版本切换、PATH、缓存和项目操作审计。记录仅保存脱敏摘要。"
                     TextWrapping="Wrap" />
             </StackPanel>
             <Button

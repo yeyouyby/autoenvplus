@@ -84,7 +84,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msix.ps1 `
 
 `.appinstaller` 是 Windows App Installer 消费的 XML 元数据；当前 Windows SDK 的 SignTool 不把它识别为可 Authenticode 签名的文件格式。更新链因此依赖 GitHub HTTPS 传输和每次下载的 MSIX 代码签名：AppInstaller 声明的 Name、Publisher、版本和架构必须与已签包完全一致，攻击者即使改写 URI，也不能在没有同一 Publisher 私钥的情况下替换为可安装更新。`.appinstaller.sha256` 供发布审计和人工校验，不应被描述为 Windows 自动执行的元数据签名。
 
-在当前 D 盘工作区，脚本默认把 `NUGET_PACKAGES`、NuGet HTTP cache、`DOTNET_CLI_HOME`、`TEMP` 和 `TMP` 固定到 `D:\codex`。其他克隆位置默认使用仓库内被忽略的 `.build-cache`，也可通过 `-BuildCacheRoot` 或 `AUTOENVPLUS_BUILD_CACHE_ROOT` 显式指定非系统盘。
+在当前 D 盘工作区，两个发布脚本都会把 `NUGET_PACKAGES`、NuGet HTTP cache、NuGet 插件 cache、`DOTNET_CLI_HOME`、`TEMP` 和 `TMP` 固定到 `D:\codex`；MSIX 调用 portable 发布时会继续沿用同一缓存根。其他克隆位置默认使用仓库内被忽略的 `.build-cache`，也可通过 `-BuildCacheRoot` 或 `AUTOENVPLUS_BUILD_CACHE_ROOT` 显式指定非系统盘。
 
 ## 运行
 

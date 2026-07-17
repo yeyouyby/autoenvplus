@@ -22,6 +22,12 @@ public sealed class CommandShimManager
             ["python3.cmd"] = "python",
             ["node.cmd"] = "node",
             ["java.cmd"] = "java",
+            ["dotnet.cmd"] = "dotnet",
+            ["cl.cmd"] = "msvc",
+            ["clang.cmd"] = "llvm",
+            ["gcc.cmd"] = "mingw",
+            ["cmake.cmd"] = "cmake",
+            ["ninja.cmd"] = "ninja",
         };
 
     private static readonly IReadOnlyDictionary<string, string> ToolCommands =
@@ -33,6 +39,8 @@ public sealed class CommandShimManager
             ["npx.cmd"] = "npx",
             ["javac.cmd"] = "javac",
             ["jar.cmd"] = "jar",
+            ["clang++.cmd"] = "clang++",
+            ["g++.cmd"] = "g++",
         };
 
     public async Task<CommandShimInstallResult> InstallAsync(

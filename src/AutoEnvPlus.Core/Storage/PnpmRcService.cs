@@ -23,13 +23,15 @@ public sealed partial class PnpmRcService
         ArgumentException.ThrowIfNullOrWhiteSpace(configPath);
         ArgumentNullException.ThrowIfNull(environment);
         string fullPath = Path.GetFullPath(configPath);
-        if (!File.Exists(fullPath))
-        {
-            return new PnpmRcReadResult(fullPath, false, null, null, null);
-        }
-
         try
         {
+            if (!StorageFileSafety.EnsureOrdinaryFileOrMissing(
+                fullPath,
+                "pnpm global config"))
+            {
+                return new PnpmRcReadResult(fullPath, false, null, null, null);
+            }
+
             string content = File.ReadAllText(fullPath);
             IReadOnlyList<ConfigEntry> entries = FindStoreEntries(content);
             if (entries.Count > 1)
@@ -62,7 +64,9 @@ public sealed partial class PnpmRcService
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
         string fullPath = Path.GetFullPath(configPath);
         string destination = Path.GetFullPath(destinationPath);
-        bool existed = File.Exists(fullPath);
+        bool existed = StorageFileSafety.EnsureOrdinaryFileOrMissing(
+            fullPath,
+            "pnpm global config");
         string? before = existed ? File.ReadAllText(fullPath) : null;
         string newLine = DetectNewLine(before);
         IReadOnlyList<ConfigEntry> entries = FindStoreEntries(before ?? string.Empty);
@@ -105,9 +109,9 @@ public sealed partial class PnpmRcService
         ArgumentException.ThrowIfNullOrWhiteSpace(configPath);
         ArgumentNullException.ThrowIfNull(content);
         string fullPath = Path.GetFullPath(configPath);
-        string directory = Path.GetDirectoryName(fullPath)
-            ?? throw new InvalidOperationException("The pnpm config requires a parent directory.");
-        Directory.CreateDirectory(directory);
+        string directory = StorageFileSafety.PrepareOrdinaryParentForWrite(
+            fullPath,
+            "pnpm global config");
         string temporary = Path.Combine(
             directory,
             $".{Path.GetFileName(fullPath)}.{Guid.NewGuid():N}.tmp");
@@ -118,6 +122,12 @@ public sealed partial class PnpmRcService
                 content,
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
                 cancellationToken).ConfigureAwait(false);
+            _ = StorageFileSafety.EnsureOrdinaryFileOrMissing(
+                temporary,
+                "pnpm global config temporary file");
+            _ = StorageFileSafety.EnsureOrdinaryFileOrMissing(
+                fullPath,
+                "pnpm global config");
             File.Move(temporary, fullPath, overwrite: true);
         }
         finally

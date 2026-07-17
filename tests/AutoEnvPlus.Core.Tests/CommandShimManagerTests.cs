@@ -17,19 +17,25 @@ public sealed class CommandShimManagerTests : IDisposable
             _root,
             executable);
 
-        Assert.Equal(10, result.ShimFiles.Count);
+        Assert.Equal(18, result.ShimFiles.Count);
         Assert.Equal(CommandShimImplementation.CmdFallback, result.Implementation);
         string python = File.ReadAllText(Path.Combine(result.ShimDirectory, "python.cmd"));
         Assert.Contains($"\"{executable}\" exec python -- %*", python);
         Assert.Contains("exit /b %errorlevel%", python, StringComparison.OrdinalIgnoreCase);
         string node = File.ReadAllText(Path.Combine(result.ShimDirectory, "node.cmd"));
         Assert.Contains("exec node -- %*", node);
+        string dotnet = File.ReadAllText(Path.Combine(result.ShimDirectory, "dotnet.cmd"));
+        Assert.Contains("exec dotnet -- %*", dotnet);
         string npm = File.ReadAllText(Path.Combine(result.ShimDirectory, "npm.cmd"));
         Assert.Contains("tool npm -- %*", npm);
+        string clang = File.ReadAllText(Path.Combine(result.ShimDirectory, "clang.cmd"));
+        Assert.Contains("exec llvm -- %*", clang);
+        string clangCpp = File.ReadAllText(Path.Combine(result.ShimDirectory, "clang++.cmd"));
+        Assert.Contains("tool clang++ -- %*", clangCpp);
     }
 
     [Fact]
-    public async Task InstallAsync_PrefersNativeExecutableAndCreatesTenExeAliases()
+    public async Task InstallAsync_PrefersNativeExecutableAndCreatesAllExeAliases()
     {
         Directory.CreateDirectory(_root);
         string executable = Path.Combine(_root, "autoenvplus.exe");
@@ -44,7 +50,7 @@ public sealed class CommandShimManagerTests : IDisposable
             native);
 
         Assert.Equal(CommandShimImplementation.NativeWin32, result.Implementation);
-        Assert.Equal(10, result.ShimFiles.Count);
+        Assert.Equal(18, result.ShimFiles.Count);
         Assert.All(result.ShimFiles, path =>
         {
             Assert.EndsWith(".exe", path, StringComparison.OrdinalIgnoreCase);
@@ -56,6 +62,18 @@ public sealed class CommandShimManagerTests : IDisposable
             StringComparer.OrdinalIgnoreCase);
         Assert.Contains(
             Path.Combine(result.ShimDirectory, "npm.exe"),
+            result.ShimFiles,
+            StringComparer.OrdinalIgnoreCase);
+        Assert.Contains(
+            Path.Combine(result.ShimDirectory, "dotnet.exe"),
+            result.ShimFiles,
+            StringComparer.OrdinalIgnoreCase);
+        Assert.Contains(
+            Path.Combine(result.ShimDirectory, "clang++.exe"),
+            result.ShimFiles,
+            StringComparer.OrdinalIgnoreCase);
+        Assert.Contains(
+            Path.Combine(result.ShimDirectory, "ninja.exe"),
             result.ShimFiles,
             StringComparer.OrdinalIgnoreCase);
         Assert.Empty(Directory.EnumerateFiles(result.ShimDirectory, "*.cmd"));
@@ -83,8 +101,10 @@ public sealed class CommandShimManagerTests : IDisposable
         Assert.Equal(CommandShimImplementation.CmdFallback, fallback.Implementation);
         Assert.False(File.Exists(Path.Combine(fallback.ShimDirectory, "python.exe")));
         Assert.False(File.Exists(Path.Combine(fallback.ShimDirectory, "npm.exe")));
+        Assert.False(File.Exists(Path.Combine(fallback.ShimDirectory, "dotnet.exe")));
         Assert.True(File.Exists(Path.Combine(fallback.ShimDirectory, "python.cmd")));
         Assert.True(File.Exists(Path.Combine(fallback.ShimDirectory, "npm.cmd")));
+        Assert.True(File.Exists(Path.Combine(fallback.ShimDirectory, "dotnet.cmd")));
         Assert.Equal("keep", File.ReadAllText(unrelated));
     }
 

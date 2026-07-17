@@ -10,8 +10,14 @@
     <PackageReference Include="Sigstore.Net" Version="1.0.3" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="AutoEnvPlus.Core.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource
       Include="Providers\Python\Trust\sigstore-trusted-root-2026-07-14.json"
       LogicalName="AutoEnvPlus.Core.Providers.Python.Trust.sigstore-trusted-root.json" />
+    <EmbeddedResource
+      Include="Languages\Catalog\language-catalog.schema1.json"
+      LogicalName="AutoEnvPlus.Core.Languages.Catalog.language-catalog.schema1.json" />
   </ItemGroup>
 </Project>

@@ -3,6 +3,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using AutoEnvPlus.Core.Settings;
 using Windows.UI.ViewManagement;
 
 namespace AutoEnvPlus.App.Appearance;
@@ -25,13 +26,18 @@ internal sealed class WindowBackdropManager : IDisposable
     private bool _uiEventsSubscribed;
     private bool? _lastHighContrast;
     private bool? _lastTransparencyEffectsEnabled;
+    private BackdropPreference _preference;
     private bool _disposed;
 
-    public WindowBackdropManager(Window window, Panel rootSurface)
+    public WindowBackdropManager(
+        Window window,
+        Panel rootSurface,
+        BackdropPreference preference = BackdropPreference.Automatic)
     {
         _window = window;
         _rootSurface = rootSurface;
         _solidBackground = rootSurface.Background;
+        _preference = preference;
         CurrentStatus = CreateStatus(BackdropSelection.SolidUnsupported);
 
         _rootSurface.ActualThemeChanged += OnActualThemeChanged;
@@ -43,6 +49,22 @@ internal sealed class WindowBackdropManager : IDisposable
     public event EventHandler? StatusChanged;
 
     public WindowBackdropStatus CurrentStatus { get; private set; }
+
+    public void SetPreference(BackdropPreference preference)
+    {
+        if (!Enum.IsDefined(preference))
+        {
+            throw new ArgumentOutOfRangeException(nameof(preference));
+        }
+
+        if (_preference == preference)
+        {
+            return;
+        }
+
+        _preference = preference;
+        ApplyCurrentPolicy();
+    }
 
     public void Dispose()
     {
@@ -160,7 +182,8 @@ internal sealed class WindowBackdropManager : IDisposable
                 highContrast,
                 transparencyEffectsEnabled,
                 IsMicaSupported(),
-                IsDesktopAcrylicSupported());
+                IsDesktopAcrylicSupported(),
+                _preference);
         }
         catch (Exception)
         {
@@ -202,6 +225,7 @@ internal sealed class WindowBackdropManager : IDisposable
                 return;
             case BackdropSelection.SolidHighContrast:
             case BackdropSelection.SolidTransparencyDisabled:
+            case BackdropSelection.SolidPreferred:
             case BackdropSelection.SolidUnsupported:
                 ApplySolidFallback(selection);
                 return;
@@ -347,6 +371,11 @@ internal sealed class WindowBackdropManager : IDisposable
             selection,
             "纯色（透明效果已关闭）",
             "遵循 Windows“透明效果”设置，背景材料已停用。",
+            false),
+        BackdropSelection.SolidPreferred => new(
+            selection,
+            "纯色（用户设置）",
+            "已按 AutoEnvPlus 外观设置停用背景材料。",
             false),
         BackdropSelection.SolidUnsupported => new(
             selection,

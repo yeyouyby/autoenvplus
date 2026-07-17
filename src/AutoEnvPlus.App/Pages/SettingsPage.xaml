@@ -5,13 +5,45 @@
 
     <ScrollViewer>
         <StackPanel Padding="{StaticResource PagePadding}" Spacing="20">
-            <StackPanel Spacing="4">
-                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="设置" />
-                <TextBlock
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="Shell 集成、下载源与应用行为"
-                    TextWrapping="Wrap" />
-            </StackPanel>
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Spacing="4">
+                    <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="设置" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="启动与快照、语言可见性、下载、代理、外观、日志与受管数据"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Column="1"
+                    VerticalAlignment="Bottom"
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <ProgressRing
+                        x:Name="SettingsProgress"
+                        Width="20"
+                        Height="20"
+                        IsActive="False" />
+                    <Button
+                        x:Name="SaveSettingsButton"
+                        AutomationProperties.Name="保存应用设置"
+                        Click="OnSaveSettingsClicked"
+                        Style="{StaticResource AccentButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="Save" />
+                            <TextBlock Text="保存设置" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <InfoBar
+                x:Name="SettingsInfo"
+                IsClosable="False"
+                IsOpen="False" />
 
             <Border
                 BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
@@ -51,9 +83,159 @@
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             IsTextSelectionEnabled="True"
                             TextWrapping="Wrap" />
+                        <Grid Margin="0,10,0,0" ColumnSpacing="12" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="主题" />
+                                <ComboBox
+                                    x:Name="ThemePicker"
+                                    HorizontalAlignment="Stretch"
+                                    DisplayMemberPath="Label" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBlock Text="窗口材质" />
+                                <ComboBox
+                                    x:Name="BackdropPicker"
+                                    HorizontalAlignment="Stretch"
+                                    DisplayMemberPath="Label" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Spacing="4">
+                                <TextBlock Text="界面密度" />
+                                <ComboBox
+                                    x:Name="DensityPicker"
+                                    HorizontalAlignment="Stretch"
+                                    DisplayMemberPath="Label" />
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
                 </Grid>
             </Border>
+
+            <Expander Header="启动与快照" IsExpanded="True">
+                <StackPanel Padding="0,12,0,6" Spacing="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="启动页面" />
+                        <ComboBox
+                            x:Name="StartupDestinationPicker"
+                            HorizontalAlignment="Stretch"
+                            DisplayMemberPath="Label" />
+                    </StackPanel>
+                    <InfoBar
+                        IsClosable="False"
+                        IsOpen="True"
+                        Message="概览和语言页面打开时只读取快照。PATH、版本命令、缓存遍历和网络检测只能由用户在对应页面显式启动。"
+                        Severity="Informational"
+                        Title="页面加载不扫描环境" />
+                </StackPanel>
+            </Expander>
+
+            <Expander Header="语言目录与实验工具">
+                <StackPanel Padding="0,12,0,6" Spacing="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="默认语言可见性" />
+                        <ComboBox
+                            x:Name="LanguageVisibilityPicker"
+                            HorizontalAlignment="Stretch"
+                            DisplayMemberPath="Label" />
+                    </StackPanel>
+                    <ToggleSwitch
+                        x:Name="ExperimentalToolsToggle"
+                        Header="显示实验性语言工具"
+                        OffContent="隐藏"
+                        OnContent="显示" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="语言包和工具 Provider 仍需单独导入、审核并启用；此设置不会绕过安全检查。"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Expander>
+
+            <Expander Header="下载默认值">
+                <StackPanel Padding="0,12,0,6" Spacing="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="默认并发连接数" />
+                        <ComboBox
+                            x:Name="DefaultConnectionsPicker"
+                            HorizontalAlignment="Stretch"
+                            DisplayMemberPath="Label" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="单文件默认上限（GB）" />
+                        <NumberBox
+                            x:Name="MaxDownloadGbNumber"
+                            Minimum="1"
+                            Maximum="1024"
+                            SpinButtonPlacementMode="Compact" />
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
+
+            <Expander Header="网络与代理">
+                <StackPanel Padding="0,12,0,6" Spacing="12">
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="这里只配置通用代理。镜像由每个语言工具 Provider 声明和管理，用户可在对应语言子页添加自定义镜像。"
+                        TextWrapping="Wrap" />
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="HTTP 代理" />
+                        <TextBox
+                            x:Name="HttpProxyTextBox"
+                            PlaceholderText="http://proxy.example:8080" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="HTTPS 代理" />
+                        <TextBox
+                            x:Name="HttpsProxyTextBox"
+                            PlaceholderText="http://proxy.example:8080" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="不使用代理" />
+                        <TextBox
+                            x:Name="NoProxyTextBox"
+                            AcceptsReturn="True"
+                            MinHeight="72"
+                            PlaceholderText="localhost, 127.0.0.1, *.internal"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button
+                        x:Name="SaveProxyButton"
+                        AutomationProperties.Name="保存全局代理设置"
+                        Click="OnSaveProxyClicked"
+                        HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="Globe" />
+                            <TextBlock Text="保存代理" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Expander>
+
+            <Expander Header="日志与安全策略">
+                <StackPanel Padding="0,12,0,6" Spacing="12">
+                    <InfoBar
+                        IsClosable="False"
+                        IsOpen="True"
+                        Message="删除、卸载和永久清理始终要求显式确认；Shim 是版本路由的固定基础设施。语言包与 Provider 更新只由用户手动导入，不执行后台目录更新。"
+                        Severity="Informational"
+                        Title="安全合同不可关闭" />
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="活动日志保留天数" />
+                        <NumberBox
+                            x:Name="LogRetentionNumber"
+                            Minimum="1"
+                            Maximum="365"
+                            SpinButtonPlacementMode="Compact" />
+                    </StackPanel>
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="新活动写入时会在同一受管锁和原子重写事务中清理过期记录；日志仍同时受 1000 条和 2 MiB 上限约束。"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Expander>
 
             <Border
                 BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
@@ -72,7 +254,7 @@
                             Text="受管数据根" />
                         <TextBlock
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="运行时、Shim、注册表、项目状态和诊断快照都保存在这里。不会自动迁移或删除旧目录。"
+                            Text="语言工具、Shim、注册表、项目状态和诊断快照都保存在这里。不会自动迁移或删除旧目录。"
                             TextWrapping="Wrap" />
                         <TextBlock
                             x:Name="ManagedRootText"

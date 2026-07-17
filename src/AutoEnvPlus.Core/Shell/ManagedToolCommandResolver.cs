@@ -28,6 +28,8 @@ public sealed class ManagedToolCommandResolver
             ["npx"] = new(RuntimeKind.NodeJs, ToolLaunchMode.RuntimeExecutable, @"node_modules\npm\bin\npx-cli.js", []),
             ["javac"] = new(RuntimeKind.Java, ToolLaunchMode.RelativeExecutable, @"bin\javac.exe", []),
             ["jar"] = new(RuntimeKind.Java, ToolLaunchMode.RelativeExecutable, @"bin\jar.exe", []),
+            ["clang++"] = new(RuntimeKind.Llvm, ToolLaunchMode.RelativeExecutable, @"bin\clang++.exe", []),
+            ["g++"] = new(RuntimeKind.Mingw, ToolLaunchMode.RelativeExecutable, @"bin\g++.exe", []),
         };
 
     private readonly string _managedRoot;
@@ -56,6 +58,9 @@ public sealed class ManagedToolCommandResolver
         string alias,
         string startPath,
         RuntimeProfile? sessionProfile = null,
+        string? sessionRuntimeId = null,
+        string? sessionProviderId = null,
+        RuntimeArchitecture architecture = RuntimeArchitecture.Any,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(alias);
@@ -68,6 +73,9 @@ public sealed class ManagedToolCommandResolver
             definition.RuntimeKind,
             startPath,
             sessionProfile,
+            architecture,
+            sessionRuntimeId,
+            sessionProviderId,
             cancellationToken: cancellationToken).ConfigureAwait(false);
         if (!resolved.Success)
         {

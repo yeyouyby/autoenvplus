@@ -11,6 +11,9 @@ public sealed class ActivityLogStore
 {
     public const int DefaultMaxEntries = 1_000;
     public const long DefaultMaxBytes = 2 * 1024 * 1024;
+    public const int DefaultRetentionDays = 30;
+    public const int MinimumRetentionDays = 1;
+    public const int MaximumRetentionDays = 365;
     public const int MaxSummaryLength = 1_024;
     public const int MaxPathLength = 2_048;
     public const int MaxAffectedPathCount = 32;
@@ -60,13 +63,15 @@ public sealed class ActivityLogStore
     private readonly string _logPath;
     private readonly int _maxEntries;
     private readonly long _maxBytes;
+    private readonly TimeSpan _retention;
     private readonly SemaphoreSlim _gate;
 
     public ActivityLogStore(
         string managedRoot,
         string? logPath = null,
         int maxEntries = DefaultMaxEntries,
-        long maxBytes = DefaultMaxBytes)
+        long maxBytes = DefaultMaxBytes,
+        int retentionDays = DefaultRetentionDays)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(managedRoot);
         if (!Path.IsPathRooted(managedRoot))
@@ -84,18 +89,26 @@ public sealed class ActivityLogStore
             throw new ArgumentOutOfRangeException(nameof(maxBytes));
         }
 
+        if (retentionDays is < MinimumRetentionDays or > MaximumRetentionDays)
+        {
+            throw new ArgumentOutOfRangeException(nameof(retentionDays));
+        }
+
         _managedRoot = Path.GetFullPath(managedRoot);
         _logPath = Path.GetFullPath(
             logPath ?? Path.Combine(_managedRoot, "state", "activity.jsonl"));
         EnsureChildPath(_managedRoot, _logPath, "activity log");
         _maxEntries = maxEntries;
         _maxBytes = maxBytes;
+        _retention = TimeSpan.FromDays(retentionDays);
         _gate = Gates.GetOrAdd(_logPath, static _ => new SemaphoreSlim(1, 1));
     }
 
     public string ManagedRoot => _managedRoot;
 
     public string LogPath => _logPath;
+
+    public int RetentionDays => checked((int)_retention.TotalDays);
 
     public async Task<ActivityLogEntry> AppendAsync(
         ActivityOperationType operationType,
@@ -178,6 +191,7 @@ public sealed class ActivityLogStore
                 ActivityLogLoadResult loaded = await LoadCoreAsync(cancellationToken).ConfigureAwait(false);
                 return new ActivityLogLoadResult(
                     loaded.Entries
+                        .Where(entry => entry.TimestampUtc >= DateTimeOffset.UtcNow - _retention)
                         .OrderByDescending(entry => entry.TimestampUtc)
                         .ThenByDescending(entry => entry.Id)
                         .ToArray(),
@@ -336,7 +350,10 @@ public sealed class ActivityLogStore
 
     private List<ActivityLogEntry> TrimToLimits(IEnumerable<ActivityLogEntry> source)
     {
-        List<ActivityLogEntry> entries = source.ToList();
+        DateTimeOffset retentionCutoff = DateTimeOffset.UtcNow - _retention;
+        List<ActivityLogEntry> entries = source
+            .Where(entry => entry.TimestampUtc >= retentionCutoff)
+            .ToList();
         while (entries.Count > _maxEntries)
         {
             entries.RemoveAt(0);

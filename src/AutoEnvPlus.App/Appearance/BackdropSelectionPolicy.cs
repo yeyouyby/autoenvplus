@@ -1,3 +1,5 @@
+using AutoEnvPlus.Core.Settings;
+
 namespace AutoEnvPlus.App.Appearance;
 
 internal enum BackdropSelection
@@ -6,6 +8,7 @@ internal enum BackdropSelection
     DesktopAcrylic,
     SolidHighContrast,
     SolidTransparencyDisabled,
+    SolidPreferred,
     SolidUnsupported,
 }
 
@@ -15,7 +18,8 @@ internal static class BackdropSelectionPolicy
         bool highContrast,
         bool transparencyEffectsEnabled,
         bool micaSupported,
-        bool desktopAcrylicSupported)
+        bool desktopAcrylicSupported,
+        BackdropPreference preference = BackdropPreference.Automatic)
     {
         if (highContrast)
         {
@@ -25,6 +29,29 @@ internal static class BackdropSelectionPolicy
         if (!transparencyEffectsEnabled)
         {
             return BackdropSelection.SolidTransparencyDisabled;
+        }
+
+        if (preference == BackdropPreference.Solid)
+        {
+            return BackdropSelection.SolidPreferred;
+        }
+
+        if (preference == BackdropPreference.Mica)
+        {
+            return micaSupported
+                ? BackdropSelection.Mica
+                : desktopAcrylicSupported
+                    ? BackdropSelection.DesktopAcrylic
+                    : BackdropSelection.SolidUnsupported;
+        }
+
+        if (preference == BackdropPreference.Acrylic)
+        {
+            return desktopAcrylicSupported
+                ? BackdropSelection.DesktopAcrylic
+                : micaSupported
+                    ? BackdropSelection.Mica
+                    : BackdropSelection.SolidUnsupported;
         }
 
         if (micaSupported)

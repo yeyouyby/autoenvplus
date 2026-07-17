@@ -61,6 +61,56 @@ public sealed class ProjectManifestServiceTests : IDisposable
         Assert.Single(result.Manifest.Tools);
     }
 
+    [Fact]
+    public void Load_ParsesExactToolIdentityAlongsideSelector()
+    {
+        string manifest = Path.Combine(_root, ProjectManifestService.ManifestFileName);
+        File.WriteAllText(
+            manifest,
+            "[tools]\npython = \"3.13.5\"\n\n[tool-identities]\npython.runtime-id = \"python-vendor-x64\"\npython.provider-id = \"vendor-python\"\n");
+
+        ProjectManifestLoadResult result = new ProjectManifestService().Load(manifest);
+
+        Assert.True(result.Success);
+        RuntimeSelectionIdentity identity = result.Manifest.ExactSelections[RuntimeKind.Python];
+        Assert.Equal("python-vendor-x64", identity.RuntimeId);
+        Assert.Equal("vendor-python", identity.ProviderId);
+        RuntimeProfile profile = result.Manifest.ToRuntimeProfile();
+        Assert.Equal(identity, profile.ExactSelections[RuntimeKind.Python]);
+    }
+
+    [Theory]
+    [InlineData("python.runtime-id = \"python-vendor-x64\"")]
+    [InlineData("python.provider-id = \"vendor-python\"")]
+    public void Load_RejectsUnpairedToolIdentity(string identityLine)
+    {
+        string manifest = Path.Combine(_root, ProjectManifestService.ManifestFileName);
+        File.WriteAllText(
+            manifest,
+            $"[tools]\npython = \"3.13.5\"\n\n[tool-identities]\n{identityLine}\n");
+
+        ProjectManifestLoadResult result = new ProjectManifestService().Load(manifest);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Errors, error =>
+            error.Message.Contains("both runtime-id and provider-id", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Load_RejectsToolIdentityWithoutMatchingSelector()
+    {
+        string manifest = Path.Combine(_root, ProjectManifestService.ManifestFileName);
+        File.WriteAllText(
+            manifest,
+            "[tool-identities]\npython.runtime-id = \"python-vendor-x64\"\npython.provider-id = \"vendor-python\"\n");
+
+        ProjectManifestLoadResult result = new ProjectManifestService().Load(manifest);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Errors, error =>
+            error.Message.Contains("matching [tools] selector", StringComparison.Ordinal));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
