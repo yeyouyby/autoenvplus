@@ -74,6 +74,123 @@
                     </StackPanel>
                 </StackPanel>
             </Border>
+
+            <Border
+                Padding="18"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource CardCornerRadius}">
+                <StackPanel Spacing="12">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="3">
+                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="项目虚拟环境" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="只读解析项目内已有环境、包管理器锁、工具清单和 Wrapper，不执行任何外部命令。"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <Button
+                            x:Name="DiscoverVirtualEnvironmentsButton"
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Click="OnDiscoverVirtualEnvironmentsClicked"
+                            IsEnabled="False"
+                            ToolTipService.ToolTip="扫描当前项目的虚拟环境证据">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="Find" />
+                                <TextBlock Text="解析虚拟环境" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <InfoBar
+                        x:Name="VirtualEnvironmentInfo"
+                        IsClosable="False"
+                        IsOpen="False" />
+
+                    <StackPanel
+                        x:Name="VirtualEnvironmentProgress"
+                        HorizontalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="10"
+                        Visibility="Collapsed">
+                        <ProgressRing Width="20" Height="20" IsActive="True" />
+                        <TextBlock VerticalAlignment="Center" Text="正在读取有界候选路径…" />
+                    </StackPanel>
+
+                    <TextBlock
+                        x:Name="VirtualEnvironmentEmptyText"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="选择项目后，可按需解析项目内已有虚拟环境。"
+                        TextWrapping="Wrap" />
+
+                    <ItemsControl
+                        x:Name="VirtualEnvironmentList"
+                        Visibility="Collapsed">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="4,12" RowSpacing="5">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextWrapping="Wrap" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="{Binding HealthText}" />
+                                    </Grid>
+                                    <TextBlock
+                                        Grid.Row="1"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{Binding VersionText}"
+                                        Visibility="{Binding VersionVisibility}" />
+                                    <TextBlock
+                                        Grid.Row="2"
+                                        FontFamily="Consolas"
+                                        IsTextSelectionEnabled="True"
+                                        Text="{Binding Root}"
+                                        TextWrapping="WrapWholeWords" />
+                                    <TextBlock
+                                        Grid.Row="3"
+                                        FontFamily="Consolas"
+                                        IsTextSelectionEnabled="True"
+                                        Text="{Binding ExecutableText}"
+                                        TextWrapping="WrapWholeWords"
+                                        Visibility="{Binding ExecutableVisibility}" />
+                                    <TextBlock
+                                        Grid.Row="4"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        IsTextSelectionEnabled="True"
+                                        Text="{Binding EvidenceText}"
+                                        TextWrapping="WrapWholeWords" />
+                                    <TextBlock
+                                        Grid.Row="5"
+                                        Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                        IsTextSelectionEnabled="True"
+                                        Text="{Binding WarningText}"
+                                        TextWrapping="Wrap"
+                                        Visibility="{Binding WarningVisibility}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </Page>

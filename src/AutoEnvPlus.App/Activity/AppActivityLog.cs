@@ -1,14 +1,11 @@
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Environment;
+using Microsoft.UI.Xaml;
 
 namespace AutoEnvPlus.App.Activity;
 
 internal static class AppActivityLog
 {
-    private static readonly Lazy<ActivityLogStore?> Store = new(
-        CreateStore,
-        LazyThreadSafetyMode.ExecutionAndPublication);
-
     public static async Task TryWriteAsync(
         ActivityOperationType operationType,
         ActivityStatus status,
@@ -17,7 +14,7 @@ internal static class AppActivityLog
         string? snapshotPath = null,
         string? rollbackPath = null)
     {
-        ActivityLogStore? store = Store.Value;
+        ActivityLogStore? store = CreateStore();
         if (store is null)
         {
             return;
@@ -56,7 +53,10 @@ internal static class AppActivityLog
 
         try
         {
-            return new ActivityLogStore(managedRoot);
+            int retentionDays = Application.Current is App app
+                ? app.CurrentSettings.LogRetentionDays
+                : ActivityLogStore.DefaultRetentionDays;
+            return new ActivityLogStore(managedRoot, retentionDays: retentionDays);
         }
         catch (Exception exception) when (exception is ArgumentException
             or IOException

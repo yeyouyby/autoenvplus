@@ -26,6 +26,17 @@ public sealed class StagingDirectoryReclaimer
             return new StagingCleanupResult(0, 0, []);
         }
 
+        FileAttributes stagingAttributes = File.GetAttributes(stagingRoot);
+        if ((stagingAttributes & FileAttributes.Directory) == 0
+            || (stagingAttributes & (FileAttributes.Device
+                | FileAttributes.ReparsePoint)) != 0)
+        {
+            return new StagingCleanupResult(
+                0,
+                0,
+                ["The managed staging root is not a regular directory or is a reparse point."]);
+        }
+
         DateTimeOffset currentTime = now ?? DateTimeOffset.UtcNow;
         int deleted = 0;
         int retained = 0;
@@ -36,6 +47,14 @@ public sealed class StagingDirectoryReclaimer
             try
             {
                 EnsureChildPath(stagingRoot, directory);
+                FileAttributes attributes = File.GetAttributes(directory);
+                if ((attributes & FileAttributes.ReparsePoint) != 0)
+                {
+                    retained++;
+                    errors.Add("A staging entry is a reparse point and was retained.");
+                    continue;
+                }
+
                 DateTimeOffset lastWrite = new(Directory.GetLastWriteTimeUtc(directory), TimeSpan.Zero);
                 if (currentTime - lastWrite < minimumAge)
                 {

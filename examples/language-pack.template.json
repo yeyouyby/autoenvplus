@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "id": "example-roc-language",
+  "displayName": "Example Roc language pack",
+  "publisher": "Example publisher",
+  "homepage": "https://www.roc-lang.org/",
+  "license": "UPL-1.0",
+  "languages": [
+    {
+      "id": "roc",
+      "displayName": "Roc",
+      "aliases": ["Roc"],
+      "fileExtensions": [".roc"],
+      "defaultEnabled": false,
+      "homepage": "https://www.roc-lang.org/"
+    }
+  ],
+  "tools": [
+    {
+      "id": "roc-cli",
+      "displayName": "Roc CLI",
+      "vendor": "Roc contributors",
+      "homepage": "https://www.roc-lang.org/",
+      "license": "UPL-1.0",
+      "languageIds": ["roc"],
+      "roles": ["compiler", "build", "repl"],
+      "discoveryCommands": ["roc"],
+      "windowsSupport": "conditional",
+      "capabilities": {
+        "discover": true,
+        "install": false,
+        "versionSwitch": false,
+        "projectPin": false,
+        "sessionActivation": false,
+        "packageManagement": false,
+        "virtualEnvironment": false,
+        "cacheManagement": false,
+        "mirrorConfiguration": false,
+        "debug": false,
+        "format": false,
+        "lint": false
+      },
+      "providers": [
+        {
+          "id": "roc-official-manual",
+          "displayName": "Official manual distribution",
+          "distributionKind": "manual",
+          "managedInstallSupported": false,
+          "mirrorSlots": []
+        }
+      ]
+    }
+  ]
+}

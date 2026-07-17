@@ -1,0 +1,558 @@
+<Page
+    x:Class="AutoEnvPlus.App.Pages.LanguageDetailPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid x:Name="DetailRoot">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="CompactDetailLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="HeaderActionColumn.Width" Value="0" />
+                        <Setter Target="HeaderActionRow.Height" Value="Auto" />
+                        <Setter Target="DetailHeaderActions.(Grid.Row)" Value="1" />
+                        <Setter Target="DetailHeaderActions.(Grid.Column)" Value="1" />
+                        <Setter Target="DetailHeaderActions.Margin" Value="0,8,0,0" />
+                        <Setter Target="OverviewDetectedColumn.Width" Value="0" />
+                        <Setter Target="OverviewManagedColumn.Width" Value="0" />
+                        <Setter Target="OverviewDetectedRow.Height" Value="Auto" />
+                        <Setter Target="OverviewManagedRow.Height" Value="Auto" />
+                        <Setter Target="OverviewDetectedCard.(Grid.Row)" Value="1" />
+                        <Setter Target="OverviewDetectedCard.(Grid.Column)" Value="0" />
+                        <Setter Target="OverviewManagedCard.(Grid.Row)" Value="2" />
+                        <Setter Target="OverviewManagedCard.(Grid.Column)" Value="0" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideDetailLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="760" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="HeaderActionColumn.Width" Value="Auto" />
+                        <Setter Target="HeaderActionRow.Height" Value="0" />
+                        <Setter Target="DetailHeaderActions.(Grid.Row)" Value="0" />
+                        <Setter Target="DetailHeaderActions.(Grid.Column)" Value="2" />
+                        <Setter Target="DetailHeaderActions.Margin" Value="0" />
+                        <Setter Target="OverviewDetectedColumn.Width" Value="*" />
+                        <Setter Target="OverviewManagedColumn.Width" Value="*" />
+                        <Setter Target="OverviewDetectedRow.Height" Value="0" />
+                        <Setter Target="OverviewManagedRow.Height" Value="0" />
+                        <Setter Target="OverviewDetectedCard.(Grid.Row)" Value="0" />
+                        <Setter Target="OverviewDetectedCard.(Grid.Column)" Value="1" />
+                        <Setter Target="OverviewManagedCard.(Grid.Row)" Value="0" />
+                        <Setter Target="OverviewManagedCard.(Grid.Column)" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <Grid Padding="32,20,32,12" ColumnSpacing="12" RowSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+                <ColumnDefinition x:Name="HeaderActionColumn" Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition x:Name="HeaderActionRow" Height="0" />
+            </Grid.RowDefinitions>
+            <Button
+                AutomationProperties.Name="返回语言列表"
+                Click="OnBackClicked"
+                ToolTipService.ToolTip="返回语言列表">
+                <SymbolIcon Symbol="Back" />
+            </Button>
+            <StackPanel Grid.Column="1" Spacing="3">
+                <TextBlock x:Name="LanguageTitle" Style="{StaticResource TitleTextBlockStyle}" Text="语言" />
+                <TextBlock
+                    x:Name="LanguageSubtitle"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="编译器工具与运行时"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel
+                x:Name="DetailHeaderActions"
+                Grid.Column="2"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="8">
+                <ProgressRing
+                    x:Name="OperationProgress"
+                    Width="20"
+                    Height="20"
+                    IsActive="False" />
+                <Button
+                    x:Name="ScanLanguageButton"
+                    AutomationProperties.Name="扫描当前语言"
+                    Click="OnScanLanguageClicked"
+                    ToolTipService.ToolTip="显式扫描当前语言的 PATH 与专用工具">
+                    <SymbolIcon Symbol="Refresh" />
+                </Button>
+                <Button
+                    x:Name="CancelOperationButton"
+                    AutomationProperties.Name="取消当前操作"
+                    Click="OnCancelOperationClicked"
+                    IsEnabled="False"
+                    ToolTipService.ToolTip="取消当前操作">
+                    <SymbolIcon Symbol="Cancel" />
+                </Button>
+                <HyperlinkButton
+                    x:Name="HomepageButton"
+                    Content="官方主页" />
+            </StackPanel>
+        </Grid>
+
+        <InfoBar
+            x:Name="DetailStatusInfo"
+            Grid.Row="1"
+            Margin="32,0,32,8"
+            IsClosable="False"
+            IsOpen="False" />
+
+        <Pivot x:Name="DetailPivot" Grid.Row="2">
+            <PivotItem Header="概览">
+                <ScrollViewer>
+                    <StackPanel Padding="32,12,32,32" Spacing="18">
+                        <Grid ColumnSpacing="12" RowSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition x:Name="OverviewDetectedColumn" />
+                                <ColumnDefinition x:Name="OverviewManagedColumn" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition x:Name="OverviewDetectedRow" Height="0" />
+                                <RowDefinition x:Name="OverviewManagedRow" Height="0" />
+                            </Grid.RowDefinitions>
+                            <Border
+                                Padding="16"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource CardCornerRadius}">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="语言工具" />
+                                    <TextBlock x:Name="OverviewToolCount" FontSize="26" FontWeight="SemiBold" Text="—" />
+                                </StackPanel>
+                            </Border>
+                            <Border
+                                x:Name="OverviewDetectedCard"
+                                Grid.Column="1"
+                                Padding="16"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource CardCornerRadius}">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="PATH 已检测" />
+                                    <TextBlock x:Name="OverviewDetectedCount" FontSize="26" FontWeight="SemiBold" Text="—" />
+                                </StackPanel>
+                            </Border>
+                            <Border
+                                x:Name="OverviewManagedCard"
+                                Grid.Column="2"
+                                Padding="16"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource CardCornerRadius}">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="可管理安装" />
+                                    <TextBlock x:Name="OverviewManagedCount" FontSize="26" FontWeight="SemiBold" Text="—" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <StackPanel Spacing="8">
+                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="语言定义" />
+                            <Border
+                                Padding="16"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="{StaticResource CardCornerRadius}">
+                                <StackPanel Spacing="10">
+                                    <TextBlock x:Name="LanguageIdText" IsTextSelectionEnabled="True" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="LanguageAliasesText" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="LanguageExtensionsText" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="LanguageVisibilityText" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <InfoBar
+                            IsClosable="False"
+                            IsOpen="True"
+                            Message="语言是稳定的配置容器；CPython、PyPy、Node.js、MSVC、GCC 和 Clang 等都是语言工具，不会再作为语言并列显示。"
+                            Severity="Informational"
+                            Title="语言与工具分层" />
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+
+            <PivotItem Header="工具与版本">
+                <ScrollViewer>
+                    <StackPanel Padding="32,12,32,32" Spacing="14">
+                        <InfoBar
+                            IsClosable="False"
+                            IsOpen="True"
+                            Message="安装按钮仅对当前已接通的官方归档或固定 WinGet 白名单显示；其他目录项只提供发现证据和外部来源，不会伪装成受管安装。"
+                            Severity="Informational"
+                            Title="能力以实际实现为准" />
+                        <ListView
+                            x:Name="ToolList"
+                            IsItemClickEnabled="False"
+                            SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0,0,0,8" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Padding="16"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="{StaticResource CardCornerRadius}">
+                                        <Grid ColumnSpacing="14">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Spacing="6">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock FontSize="17" FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                                                    <Border
+                                                        Padding="6,2"
+                                                        Background="{ThemeResource AccentFillColorTertiaryBrush}"
+                                                        CornerRadius="4"
+                                                        Visibility="{Binding DetectedVisibility}">
+                                                        <TextBlock FontSize="12" Text="已检测" />
+                                                    </Border>
+                                                    <Border
+                                                        Padding="6,2"
+                                                        Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
+                                                        CornerRadius="4"
+                                                        Visibility="{Binding ManagedVisibility}">
+                                                        <TextBlock FontSize="12" Text="可管理" />
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Text="{Binding RoleSummary}"
+                                                    TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding VersionSummary}" TextWrapping="Wrap" />
+                                                <TextBlock
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Text="{Binding CapabilitySummary}"
+                                                    TextWrapping="Wrap" />
+                                                <TextBlock
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Text="{Binding ProviderSummary}"
+                                                    TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                VerticalAlignment="Center"
+                                                Orientation="Horizontal"
+                                                Spacing="8">
+                                                <Button
+                                                    Width="36"
+                                                    Height="36"
+                                                    Padding="0"
+                                                    AutomationProperties.Name="选择版本与生效范围"
+                                                    Click="OnSwitchGlobalVersionClicked"
+                                                    Tag="{Binding}"
+                                                    ToolTipService.ToolTip="全局、项目或新终端会话"
+                                                    Visibility="{Binding SwitchActionVisibility}">
+                                                    <FontIcon FontSize="16" Glyph="&#xE895;" />
+                                                </Button>
+                                                <Button
+                                                    VerticalAlignment="Center"
+                                                    Click="OnManageToolClicked"
+                                                    Content="{Binding ManageActionText}"
+                                                    Tag="{Binding}"
+                                                    Visibility="{Binding ManageActionVisibility}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+
+            <PivotItem Header="包与来源">
+                <ScrollViewer>
+                    <StackPanel Padding="32,12,32,32" Spacing="14">
+                        <InfoBar
+                            x:Name="MirrorInfo"
+                            IsClosable="False"
+                            IsOpen="True"
+                            Message="每个来源槽都属于具体语言工具的具体 Provider。HTTP/HTTPS 代理和 NO_PROXY 仍是设置中的通用传输策略。"
+                            Severity="Informational"
+                            Title="Provider 来源归属" />
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="4">
+                                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="包管理工具与源" />
+                                <TextBlock
+                                    x:Name="PackageManagerSummary"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Button
+                                Grid.Column="1"
+                                Click="OnAddCustomSourceClicked">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <SymbolIcon Symbol="Add" />
+                                    <TextBlock Text="添加自定义源" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <ListView
+                            x:Name="MirrorList"
+                            IsItemClickEnabled="False"
+                            SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0,0,0,8" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Padding="16"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="{StaticResource CardCornerRadius}">
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Spacing="5">
+                                                <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                                                <TextBlock Text="{Binding Ownership}" TextWrapping="Wrap" />
+                                                <TextBlock
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    IsTextSelectionEnabled="True"
+                                                    Text="{Binding Endpoint}"
+                                                    TextWrapping="Wrap" />
+                                                <TextBlock
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Text="{Binding Purpose}"
+                                                    TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" Spacing="6">
+                                                <Button
+                                                    Click="OnEditMirrorClicked"
+                                                    Content="{Binding PrimaryActionText}"
+                                                    IsEnabled="{Binding CanEdit}"
+                                                    Tag="{Binding}" />
+                                                <Button
+                                                    AutomationProperties.Name="{Binding SecondaryActionText}"
+                                                    Click="OnResetMirrorClicked"
+                                                    Tag="{Binding}"
+                                                    ToolTipService.ToolTip="{Binding SecondaryActionText}"
+                                                    Visibility="{Binding SecondaryActionVisibility}">
+                                                    <FontIcon Glyph="{Binding SecondaryGlyph}" />
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <TextBlock
+                            x:Name="EmptyMirrorText"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="此语言的 Provider 暂未声明来源槽。"
+                            Visibility="Collapsed" />
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+
+            <PivotItem Header="项目环境">
+                <ScrollViewer>
+                    <StackPanel Padding="32,12,32,32" Spacing="14">
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox
+                                x:Name="ProjectPathBox"
+                                AutomationProperties.Name="项目目录"
+                                Header="项目目录"
+                                PlaceholderText="选择一个项目目录" />
+                            <Button
+                                Grid.Column="1"
+                                VerticalAlignment="Bottom"
+                                AutomationProperties.Name="选择项目目录"
+                                Click="OnChooseProjectFolderClicked"
+                                ToolTipService.ToolTip="选择项目目录">
+                                <SymbolIcon Symbol="Folder" />
+                            </Button>
+                        </Grid>
+                        <Button
+                            x:Name="ParseProjectButton"
+                            HorizontalAlignment="Left"
+                            Click="OnParseProjectClicked">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="Find" />
+                                <TextBlock Text="解析虚拟环境" />
+                            </StackPanel>
+                        </Button>
+                        <InfoBar
+                            x:Name="ProjectInfo"
+                            IsClosable="False"
+                            IsOpen="True"
+                            Message="只读取固定候选路径和项目元数据，不递归扫描、不跟随重解析点，也不执行外部命令。"
+                            Severity="Informational"
+                            Title="等待选择项目" />
+                        <ListView
+                            x:Name="ProjectEnvironmentList"
+                            IsItemClickEnabled="False"
+                            SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0,0,0,8" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Padding="14"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="{StaticResource CardCornerRadius}">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock FontWeight="SemiBold" Text="{Binding Title}" />
+                                            <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                IsTextSelectionEnabled="True"
+                                                Text="{Binding Root}"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+
+            <PivotItem Header="语言与扩展">
+                <ScrollViewer>
+                    <StackPanel Padding="32,12,32,32" Spacing="14">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="3">
+                                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="此语言的 Provider 插件" />
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="只显示桥接到当前语言工具类型的插件；导入、启用和停用均留在此语言上下文。"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Button
+                                Grid.Column="1"
+                                Click="OnImportProviderPluginClicked">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <SymbolIcon Symbol="OpenFile" />
+                                    <TextBlock Text="导入 Provider" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <InfoBar
+                            IsClosable="False"
+                            IsOpen="True"
+                            Message="语言工具 Provider 插件仍是受限声明式 ZIP 目录：不能加载 DLL、脚本、任意命令、注册表或环境钩子。第三方 checksum 不等于官方签名。"
+                            Severity="Warning"
+                            Title="插件信任边界" />
+                        <ListView
+                            x:Name="ProviderPluginList"
+                            IsItemClickEnabled="False"
+                            SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0,0,0,8" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Padding="14"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="{StaticResource CardCornerRadius}">
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                                                <TextBlock
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Text="{Binding Detail}"
+                                                    TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                                <Button
+                                                    Click="OnToggleProviderPluginClicked"
+                                                    Content="{Binding ToggleText}"
+                                                    Tag="{Binding}" />
+                                                <Button
+                                                    AutomationProperties.Name="删除 Provider 插件"
+                                                    Click="OnDeleteProviderPluginClicked"
+                                                    Tag="{Binding}"
+                                                    ToolTipService.ToolTip="删除 Provider 插件">
+                                                    <SymbolIcon Symbol="Delete" />
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <TextBlock
+                            x:Name="EmptyProviderPluginText"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="此语言当前没有可桥接的语言工具 Provider 插件。" />
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+        </Pivot>
+    </Grid>
+</Page>

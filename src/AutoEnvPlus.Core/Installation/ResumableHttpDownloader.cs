@@ -19,6 +19,7 @@ public sealed record ResumableDownloadResult(
 public sealed class ResumableHttpDownloader
 {
     private const int BufferSize = 81_920;
+    private const int MaximumMetadataBytes = 32 * 1024;
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> PathLocks =
         new(StringComparer.OrdinalIgnoreCase);
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -43,9 +44,13 @@ public sealed class ResumableHttpDownloader
     {
         ArgumentNullException.ThrowIfNull(sourceUri);
         ArgumentException.ThrowIfNullOrWhiteSpace(completedPath);
-        if (!sourceUri.IsAbsoluteUri || sourceUri.Scheme != Uri.UriSchemeHttps)
+        if (!sourceUri.IsAbsoluteUri
+            || sourceUri.Scheme != Uri.UriSchemeHttps
+            || !string.IsNullOrEmpty(sourceUri.UserInfo))
         {
-            throw new ArgumentException("Runtime downloads require an absolute HTTPS URI.", nameof(sourceUri));
+            throw new ArgumentException(
+                "Runtime downloads require an absolute HTTPS URI without embedded credentials.",
+                nameof(sourceUri));
         }
 
         if (maximumBytes <= 0)
@@ -54,13 +59,18 @@ public sealed class ResumableHttpDownloader
         }
 
         string finalPath = Path.GetFullPath(completedPath);
-        Directory.CreateDirectory(Path.GetDirectoryName(finalPath)!);
+        string cacheDirectory = Path.GetDirectoryName(finalPath)!;
+        EnsureNoReparsePointInPath(cacheDirectory);
+        DirectoryInfo createdDirectory = Directory.CreateDirectory(cacheDirectory);
+        EnsureRegularDirectory(createdDirectory.FullName, "runtime download cache directory");
+        EnsureSafeCacheFilePath(finalPath, "completed runtime package");
         SemaphoreSlim pathLock = PathLocks.GetOrAdd(finalPath, _ => new SemaphoreSlim(1, 1));
         await pathLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (File.Exists(finalPath))
             {
+                EnsureSafeCacheFilePath(finalPath, "completed runtime package");
                 long cachedLength = new FileInfo(finalPath).Length;
                 if (cachedLength > maximumBytes)
                 {
@@ -94,11 +104,18 @@ public sealed class ResumableHttpDownloader
     {
         string partialPath = finalPath + ".partial";
         string metadataPath = partialPath + ".json";
+        EnsureSafeCacheFilePath(finalPath, "completed runtime package");
+        EnsureSafeCacheFilePath(partialPath, "partial runtime package");
+        EnsureSafeCacheFilePath(metadataPath, "partial runtime metadata");
         DownloadMetadata? metadata = await ReadMetadataAsync(
             metadataPath,
             cancellationToken).ConfigureAwait(false);
+        string safeSourceEndpoint = GetSafeSourceEndpoint(sourceUri);
         if (metadata is null
-            || !metadata.SourceUri.Equals(sourceUri.AbsoluteUri, StringComparison.Ordinal)
+            || !string.Equals(
+                metadata.SourceEndpoint,
+                safeSourceEndpoint,
+                StringComparison.Ordinal)
             || !File.Exists(partialPath))
         {
             ResetPartial(partialPath, metadataPath);
@@ -108,6 +125,7 @@ public sealed class ResumableHttpDownloader
         for (int attempt = 0; attempt < 2; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            EnsureSafeCacheFilePath(partialPath, "partial runtime package");
             long existingLength = File.Exists(partialPath)
                 ? new FileInfo(partialPath).Length
                 : 0;
@@ -171,7 +189,7 @@ public sealed class ResumableHttpDownloader
             }
 
             DownloadMetadata updatedMetadata = new(
-                sourceUri.AbsoluteUri,
+                safeSourceEndpoint,
                 response.Headers.ETag?.ToString(),
                 response.Content.Headers.LastModified,
                 totalLength);
@@ -181,6 +199,7 @@ public sealed class ResumableHttpDownloader
                 cancellationToken).ConfigureAwait(false);
 
             FileMode mode = acceptedResume ? FileMode.Append : FileMode.Create;
+            EnsureSafeCacheFilePath(partialPath, "partial runtime package");
             await using Stream source = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             await using FileStream target = new(
                 partialPath,
@@ -219,6 +238,8 @@ public sealed class ResumableHttpDownloader
             }
 
             target.Close();
+            EnsureSafeCacheFilePath(finalPath, "completed runtime package");
+            EnsureSafeCacheFilePath(partialPath, "partial runtime package");
             File.Move(partialPath, finalPath, overwrite: true);
             if (File.Exists(metadataPath))
             {
@@ -260,6 +281,12 @@ public sealed class ResumableHttpDownloader
 
         try
         {
+            EnsureSafeCacheFilePath(metadataPath, "partial runtime metadata");
+            if (new FileInfo(metadataPath).Length is <= 0 or > MaximumMetadataBytes)
+            {
+                return null;
+            }
+
             await using FileStream stream = new(
                 metadataPath,
                 FileMode.Open,
@@ -283,6 +310,7 @@ public sealed class ResumableHttpDownloader
         DownloadMetadata metadata,
         CancellationToken cancellationToken)
     {
+        EnsureSafeCacheFilePath(metadataPath, "partial runtime metadata");
         string temporary = metadataPath + $".{Guid.NewGuid():N}.tmp";
         try
         {
@@ -302,7 +330,9 @@ public sealed class ResumableHttpDownloader
                 await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
             }
 
+            EnsureSafeCacheFilePath(metadataPath, "partial runtime metadata");
             File.Move(temporary, metadataPath, overwrite: true);
+            EnsureSafeCacheFilePath(metadataPath, "partial runtime metadata");
         }
         finally
         {
@@ -326,8 +356,69 @@ public sealed class ResumableHttpDownloader
         }
     }
 
+    private static string GetSafeSourceEndpoint(Uri sourceUri) => sourceUri.GetComponents(
+        UriComponents.SchemeAndServer | UriComponents.Path,
+        UriFormat.UriEscaped);
+
+    private static void EnsureSafeCacheFilePath(string path, string description)
+    {
+        EnsureNoReparsePointInPath(path);
+        FileAttributes? attributes = TryGetAttributes(path);
+        if (attributes is FileAttributes value
+            && (value & (FileAttributes.Directory
+                | FileAttributes.Device
+                | FileAttributes.ReparsePoint)) != 0)
+        {
+            throw new InvalidDataException(
+                $"The {description} must be a regular file and cannot be a reparse point.");
+        }
+    }
+
+    private static void EnsureRegularDirectory(string path, string description)
+    {
+        EnsureNoReparsePointInPath(path);
+        FileAttributes attributes = File.GetAttributes(path);
+        if ((attributes & FileAttributes.Directory) == 0
+            || (attributes & (FileAttributes.Device
+                | FileAttributes.ReparsePoint)) != 0)
+        {
+            throw new InvalidDataException(
+                $"The {description} must be a regular directory and cannot be a reparse point.");
+        }
+    }
+
+    private static void EnsureNoReparsePointInPath(string path)
+    {
+        DirectoryInfo? current = new(Path.GetFullPath(path));
+        while (current is not null)
+        {
+            FileAttributes? attributes = TryGetAttributes(current.FullName);
+            if (attributes is FileAttributes value
+                && (value & FileAttributes.ReparsePoint) != 0)
+            {
+                throw new InvalidDataException(
+                    "A runtime download cache path cannot traverse a reparse point.");
+            }
+
+            current = current.Parent;
+        }
+    }
+
+    private static FileAttributes? TryGetAttributes(string path)
+    {
+        try
+        {
+            return File.GetAttributes(path);
+        }
+        catch (Exception exception) when (exception is FileNotFoundException
+            or DirectoryNotFoundException)
+        {
+            return null;
+        }
+    }
+
     private sealed record DownloadMetadata(
-        string SourceUri,
+        string SourceEndpoint,
         string? EntityTag,
         DateTimeOffset? LastModifiedUtc,
         long? TotalLength);

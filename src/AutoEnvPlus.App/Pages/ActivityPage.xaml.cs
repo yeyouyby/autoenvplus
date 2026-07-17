@@ -49,7 +49,10 @@ public sealed partial class ActivityPage : Page
         {
             try
             {
-                _store = new ActivityLogStore(managedRoot);
+                int retentionDays = Application.Current is App app
+                    ? app.CurrentSettings.LogRetentionDays
+                    : ActivityLogStore.DefaultRetentionDays;
+                _store = new ActivityLogStore(managedRoot, retentionDays: retentionDays);
             }
             catch (Exception exception) when (exception is ArgumentException
                 or IOException
@@ -194,20 +197,26 @@ public sealed partial class ActivityPage : Page
 
     private static string GetOperationText(ActivityOperationType type) => type switch
     {
-        ActivityOperationType.RuntimeInstall => "运行时安装",
-        ActivityOperationType.RuntimeUninstall => "运行时卸载",
-        ActivityOperationType.RuntimeSwitch => "运行时切换",
+        ActivityOperationType.RuntimeInstall => "语言工具安装",
+        ActivityOperationType.RuntimeUninstall => "语言工具卸载",
+        ActivityOperationType.RuntimeSwitch => "语言工具切换",
         ActivityOperationType.PathChange => "PATH 修改",
         ActivityOperationType.PathRollback => "PATH 回滚",
         ActivityOperationType.CacheMigration => "缓存迁移",
         ActivityOperationType.CacheRollback => "缓存回滚",
         ActivityOperationType.CacheCleanup => "缓存清理",
-        ActivityOperationType.ToolchainInstall => "工具链安装",
+        ActivityOperationType.ToolchainInstall => "编译与构建工具安装",
         ActivityOperationType.PowerShellIntegration => "PowerShell 集成",
         ActivityOperationType.ProjectImport => "项目导入",
         ActivityOperationType.DiagnosticExport => "诊断导出",
         ActivityOperationType.CMakePreset => "CMake Preset",
         ActivityOperationType.SettingsChange => "设置变更",
+        ActivityOperationType.PackageDownload => "包下载",
+        ActivityOperationType.PackageImport => "包导入",
+        ActivityOperationType.PackageInstall => "包安装",
+        ActivityOperationType.ProviderPluginImport => "Provider 插件导入",
+        ActivityOperationType.ProviderPluginStateChange => "Provider 插件状态",
+        ActivityOperationType.ProviderPluginDelete => "Provider 插件删除",
         _ => "其他操作",
     };
 

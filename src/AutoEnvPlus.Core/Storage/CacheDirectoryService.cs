@@ -1,3 +1,6 @@
+using System.Security;
+using AutoEnvPlus.Core.State;
+
 namespace AutoEnvPlus.Core.Storage;
 
 public sealed class CacheDirectoryService
@@ -126,7 +129,31 @@ public sealed class CacheDirectoryService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(location);
-        return Task.Run(() => Measure(location, cancellationToken), cancellationToken);
+        return Task.Run(
+            () => Measure(location, null, null, cancellationToken),
+            cancellationToken);
+    }
+
+    public Task<CacheDirectoryMeasurement> MeasureBoundedAsync(
+        CacheDirectoryLocation location,
+        int maximumEntries,
+        int maximumDepth,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(location);
+        if (maximumEntries < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maximumEntries));
+        }
+
+        if (maximumDepth < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maximumDepth));
+        }
+
+        return Task.Run(
+            () => Measure(location, maximumEntries, maximumDepth, cancellationToken),
+            cancellationToken);
     }
 
     private static CacheDirectoryLocation Resolve(
@@ -222,42 +249,121 @@ public sealed class CacheDirectoryService
 
     private static CacheDirectoryMeasurement Measure(
         CacheDirectoryLocation location,
+        int? maximumEntries,
+        int? maximumDepth,
         CancellationToken cancellationToken)
     {
-        if (!Directory.Exists(location.DirectoryPath))
+        string root = Path.GetFullPath(location.DirectoryPath);
+        List<string> errors = [];
+        FileAttributes? rootAttributes;
+        try
         {
-            return new CacheDirectoryMeasurement(location with { Exists = false }, 0, 0, []);
+            ManagedPathSafety.EnsureNoReparsePointInPath(root);
+            rootAttributes = TryGetExistingAttributes(root);
+            if (rootAttributes is null)
+            {
+                return new CacheDirectoryMeasurement(location with { Exists = false }, 0, 0, []);
+            }
+
+            if ((rootAttributes.Value & FileAttributes.Directory) == 0
+                || (rootAttributes.Value & (FileAttributes.Device | FileAttributes.ReparsePoint)) != 0)
+            {
+                throw new InvalidDataException(
+                    "The cache root must be an ordinary directory without reparse points or device entries.");
+            }
+
+            ManagedPathSafety.EnsureNoReparsePointInPath(root);
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidDataException)
+        {
+            errors.Add($"{root}: {exception.Message}");
+            return new CacheDirectoryMeasurement(location with { Exists = true }, 0, 0, errors);
         }
 
         EnumerationOptions options = new()
         {
-            RecurseSubdirectories = true,
-            IgnoreInaccessible = true,
-            AttributesToSkip = FileAttributes.ReparsePoint,
+            RecurseSubdirectories = false,
+            IgnoreInaccessible = false,
+            AttributesToSkip = 0,
             ReturnSpecialDirectories = false,
         };
         long fileCount = 0;
         long totalBytes = 0;
-        List<string> errors = [];
-        try
+        long inspectedEntries = 0;
+        bool depthLimitReported = false;
+        Stack<(string Path, int Depth)> pending = [];
+        pending.Push((root, 0));
+        while (pending.TryPop(out (string Path, int Depth) current))
         {
-            foreach (string file in Directory.EnumerateFiles(location.DirectoryPath, "*", options))
+            cancellationToken.ThrowIfCancellationRequested();
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                try
+                ManagedPathSafety.EnsureNoReparsePointInPath(current.Path);
+                foreach (string entry in Directory.EnumerateFileSystemEntries(
+                    current.Path,
+                    "*",
+                    options))
                 {
-                    totalBytes = checked(totalBytes + new FileInfo(file).Length);
-                    fileCount++;
-                }
-                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-                {
-                    errors.Add($"{file}: {exception.Message}");
+                    cancellationToken.ThrowIfCancellationRequested();
+                    inspectedEntries++;
+                    if (maximumEntries is int entryLimit && inspectedEntries > entryLimit)
+                    {
+                        errors.Add(
+                            $"{root}: measurement stopped after reaching the {entryLimit} entry safety limit.");
+                        return new CacheDirectoryMeasurement(
+                            location with { Exists = true },
+                            fileCount,
+                            totalBytes,
+                            errors);
+                    }
+
+                    try
+                    {
+                        FileAttributes attributes = File.GetAttributes(entry);
+                        if ((attributes & (FileAttributes.Device | FileAttributes.ReparsePoint)) != 0)
+                        {
+                            errors.Add($"{entry}: reparse point or device entry was not followed.");
+                            continue;
+                        }
+
+                        if ((attributes & FileAttributes.Directory) != 0)
+                        {
+                            if (maximumDepth is int depthLimit && current.Depth >= depthLimit)
+                            {
+                                if (!depthLimitReported)
+                                {
+                                    errors.Add(
+                                        $"{root}: measurement stopped descending at the {depthLimit} level safety limit.");
+                                    depthLimitReported = true;
+                                }
+
+                                continue;
+                            }
+
+                            pending.Push((entry, current.Depth + 1));
+                            continue;
+                        }
+
+                        ManagedPathSafety.EnsureNoReparsePointInPath(entry);
+                        totalBytes = checked(totalBytes + new FileInfo(entry).Length);
+                        fileCount++;
+                    }
+                    catch (Exception exception) when (exception is IOException
+                        or UnauthorizedAccessException
+                        or InvalidDataException)
+                    {
+                        errors.Add($"{entry}: {exception.Message}");
+                    }
                 }
             }
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            errors.Add($"{location.DirectoryPath}: {exception.Message}");
+            catch (Exception exception) when (exception is IOException
+                or UnauthorizedAccessException
+                or InvalidDataException)
+            {
+                errors.Add($"{current.Path}: {exception.Message}");
+            }
         }
 
         return new CacheDirectoryMeasurement(
@@ -265,5 +371,28 @@ public sealed class CacheDirectoryService
             fileCount,
             totalBytes,
             errors);
+    }
+
+    private static FileAttributes? TryGetExistingAttributes(string path)
+    {
+        try
+        {
+            return File.GetAttributes(path);
+        }
+        catch (FileNotFoundException)
+        {
+            return null;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return null;
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException
+            or SecurityException
+            or NotSupportedException
+            or PathTooLongException)
+        {
+            throw new IOException("The cache path could not be inspected safely.", exception);
+        }
     }
 }

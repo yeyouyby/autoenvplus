@@ -32,17 +32,31 @@ public sealed class RuntimeReferenceScanner
 
         if (globalProfile.Selections.TryGetValue(runtime.Kind, out VersionSelector? globalSelector))
         {
-            RuntimeResolutionResult resolvedGlobal = new RuntimeResolver().Resolve(
-                runtime.Kind,
-                new RuntimeResolutionContext(Global: globalProfile),
-                installedRuntimes.Select(entry => entry.ToRuntimeInstallation()),
-                runtime.Architecture);
-            if (resolvedGlobal.Installation?.Id.Equals(runtime.Id, StringComparison.OrdinalIgnoreCase) == true)
+            bool exactMatch = globalProfile.ExactSelections.TryGetValue(
+                    runtime.Kind,
+                    out RuntimeSelectionIdentity? identity)
+                && identity.RuntimeId.Equals(runtime.Id, StringComparison.OrdinalIgnoreCase)
+                && identity.ProviderId.Equals(
+                    runtime.ProviderId,
+                    StringComparison.OrdinalIgnoreCase);
+            RuntimeResolutionResult? resolvedGlobal = identity is null
+                ? new RuntimeResolver().Resolve(
+                    runtime.Kind,
+                    new RuntimeResolutionContext(Global: globalProfile),
+                    installedRuntimes.Select(entry => entry.ToRuntimeInstallation()),
+                    runtime.Architecture)
+                : null;
+            if (exactMatch
+                || resolvedGlobal?.Installation?.Id.Equals(
+                    runtime.Id,
+                    StringComparison.OrdinalIgnoreCase) == true)
             {
                 references.Add(new RuntimeReference(
                     RuntimeReferenceKind.GlobalProfile,
                     "Global profile",
-                    $"{runtime.Kind} = {globalSelector}"));
+                    exactMatch
+                        ? $"{runtime.Kind} = {globalSelector} ({runtime.Id} / {runtime.ProviderId})"
+                        : $"{runtime.Kind} = {globalSelector}"));
             }
         }
 
@@ -56,16 +70,16 @@ public sealed class RuntimeReferenceScanner
                 if (manifest.Success
                     && manifest.Manifest.Tools.TryGetValue(runtime.Kind, out VersionSelector? selector))
                 {
-                    RuntimeProfile projectProfile = new(new Dictionary<RuntimeKind, VersionSelector>
-                    {
-                        [runtime.Kind] = selector,
-                    });
-                    RuntimeResolutionResult resolvedProject = new RuntimeResolver().Resolve(
+                    ManagedRuntimeResolutionResult resolvedProject =
+                        ManagedRuntimeResolutionService.ResolveRegistered(
                         runtime.Kind,
-                        new RuntimeResolutionContext(Project: projectProfile),
-                        installedRuntimes.Select(entry => entry.ToRuntimeInstallation()),
+                        new RuntimeResolutionContext(
+                            Project: manifest.Manifest.ToRuntimeProfile()),
+                        installedRuntimes,
                         runtime.Architecture);
-                    if (resolvedProject.Installation?.Id.Equals(runtime.Id, StringComparison.OrdinalIgnoreCase) == true)
+                    if (resolvedProject.Entry?.Id.Equals(
+                        runtime.Id,
+                        StringComparison.OrdinalIgnoreCase) == true)
                     {
                         references.Add(new RuntimeReference(
                             RuntimeReferenceKind.ProjectManifest,

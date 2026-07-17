@@ -4,6 +4,8 @@ using AutoEnvPlus.App.Activity;
 using AutoEnvPlus.App.Appearance;
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Environment;
+using AutoEnvPlus.Core.Networking;
+using AutoEnvPlus.Core.Settings;
 using AutoEnvPlus.Core.Shell;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -21,7 +23,11 @@ public sealed partial class SettingsPage : Page
     private readonly string _cliPath;
     private readonly string _profilePath;
     private readonly string _nativeShimPath;
+    private readonly AutoEnvPlusApplicationSettingsStore? _settingsStore;
+    private AutoEnvPlusApplicationSettings _loadedApplicationSettings =
+        AutoEnvPlusApplicationSettings.Default;
     private string? _lastSnapshotPath;
+    private bool _applicationSettingsBusy;
 
     internal SettingsPage(WindowBackdropManager backdropManager)
     {
@@ -36,10 +42,14 @@ public sealed partial class SettingsPage : Page
         }
 
         _managedRoot = managedRoot;
+        _settingsStore = managedRoot is null
+            ? null
+            : new AutoEnvPlusApplicationSettingsStore(managedRoot);
         _cliPath = Path.Combine(AppContext.BaseDirectory, "cli", "autoenvplus.exe");
         _nativeShimPath = Path.Combine(AppContext.BaseDirectory, "cli", "autoenvplus-shim.exe");
         _profilePath = PowerShellIntegrationManager.GetDefaultWindowsPowerShellProfilePath();
         ProfilePathText.Text = _profilePath;
+        InitializeApplicationSettingsChoices();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         UpdateBackdropStatus();
@@ -47,11 +57,13 @@ public sealed partial class SettingsPage : Page
         SetBusy(false);
     }
 
-    private void OnLoaded(object sender, RoutedEventArgs args)
+    private async void OnLoaded(object sender, RoutedEventArgs args)
     {
         _backdropManager.StatusChanged -= OnBackdropStatusChanged;
         _backdropManager.StatusChanged += OnBackdropStatusChanged;
         UpdateBackdropStatus();
+        await LoadApplicationSettingsAsync();
+        await LoadProxySettingsAsync();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs args) =>
@@ -65,6 +77,237 @@ public sealed partial class SettingsPage : Page
         WindowBackdropStatus status = _backdropManager.CurrentStatus;
         EffectiveBackdropText.Text = status.DisplayName;
         BackdropDescriptionText.Text = status.Description;
+    }
+
+    private void InitializeApplicationSettingsChoices()
+    {
+        StartupDestinationPicker.ItemsSource = new SettingChoice<StartupDestination>[]
+        {
+            new("概览", StartupDestination.Overview),
+            new("语言", StartupDestination.Languages),
+            new("项目环境", StartupDestination.Projects),
+            new("环境诊断", StartupDestination.Diagnostics),
+        };
+        LanguageVisibilityPicker.ItemsSource = new SettingChoice<LanguageVisibilityPolicy>[]
+        {
+            new("Top 10 与本机已发现（推荐）", LanguageVisibilityPolicy.TopTenAndDetected),
+            new("只显示手动启用", LanguageVisibilityPolicy.EnabledOnly),
+            new("显示全部内置语言", LanguageVisibilityPolicy.AllBuiltIn),
+        };
+        DefaultConnectionsPicker.ItemsSource = new[] { 1, 2, 4, 8, 16 }
+            .Select(value => new SettingChoice<int>($"{value} 个连接", value))
+            .ToArray();
+        ThemePicker.ItemsSource = new SettingChoice<ApplicationThemePreference>[]
+        {
+            new("跟随系统", ApplicationThemePreference.System),
+            new("浅色", ApplicationThemePreference.Light),
+            new("深色", ApplicationThemePreference.Dark),
+        };
+        BackdropPicker.ItemsSource = new SettingChoice<BackdropPreference>[]
+        {
+            new("自动选择", BackdropPreference.Automatic),
+            new("优先 Mica", BackdropPreference.Mica),
+            new("优先 Acrylic", BackdropPreference.Acrylic),
+            new("纯色", BackdropPreference.Solid),
+        };
+        DensityPicker.ItemsSource = new SettingChoice<InterfaceDensity>[]
+        {
+            new("舒适", InterfaceDensity.Comfortable),
+            new("紧凑", InterfaceDensity.Compact),
+        };
+    }
+
+    private async Task LoadApplicationSettingsAsync()
+    {
+        if (_settingsStore is null)
+        {
+            SaveSettingsButton.IsEnabled = false;
+            SaveProxyButton.IsEnabled = false;
+            return;
+        }
+
+        SetApplicationSettingsBusy(true);
+        try
+        {
+            AutoEnvPlusApplicationSettings settings = await _settingsStore.LoadAsync();
+            _loadedApplicationSettings = settings;
+            SelectChoice(StartupDestinationPicker, settings.StartupDestination);
+            SelectChoice(LanguageVisibilityPicker, settings.LanguageVisibilityPolicy);
+            SelectChoice(DefaultConnectionsPicker, settings.DefaultDownloadConnections);
+            SelectChoice(ThemePicker, settings.Theme);
+            SelectChoice(BackdropPicker, settings.Backdrop);
+            SelectChoice(DensityPicker, settings.Density);
+            MaxDownloadGbNumber.Value = settings.DefaultDownloadMaximumBytes
+                / (double)(1024L * 1024 * 1024);
+            LogRetentionNumber.Value = settings.LogRetentionDays;
+            ExperimentalToolsToggle.IsOn = settings.ShowExperimentalTools;
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidDataException
+            or InvalidOperationException)
+        {
+            SetSettingsInfo(
+                InfoBarSeverity.Error,
+                "无法读取应用设置",
+                exception.Message);
+        }
+        finally
+        {
+            SetApplicationSettingsBusy(false);
+        }
+    }
+
+    private async void OnSaveSettingsClicked(object sender, RoutedEventArgs args)
+    {
+        if (_settingsStore is null || _applicationSettingsBusy)
+        {
+            return;
+        }
+
+        SetApplicationSettingsBusy(true);
+        try
+        {
+            long maximumBytes = checked(
+                (long)Math.Round(RequiredNumber(MaxDownloadGbNumber, "单文件默认上限"))
+                * 1024 * 1024 * 1024);
+            AutoEnvPlusApplicationSettings settings = _loadedApplicationSettings with
+            {
+                StartupDestination = SelectedChoice<StartupDestination>(
+                    StartupDestinationPicker),
+                OverviewRefreshPolicy = OverviewRefreshPolicy.CachedOnly,
+                LanguageVisibilityPolicy = SelectedChoice<LanguageVisibilityPolicy>(
+                    LanguageVisibilityPicker),
+                DefaultDownloadConnections = SelectedChoice<int>(DefaultConnectionsPicker),
+                DefaultDownloadMaximumBytes = maximumBytes,
+                Theme = SelectedChoice<ApplicationThemePreference>(ThemePicker),
+                Backdrop = SelectedChoice<BackdropPreference>(BackdropPicker),
+                Density = SelectedChoice<InterfaceDensity>(DensityPicker),
+                LogRetentionDays = checked((int)Math.Round(RequiredNumber(
+                    LogRetentionNumber,
+                    "日志保留天数"))),
+                ShowExperimentalTools = ExperimentalToolsToggle.IsOn,
+            };
+            await _settingsStore.SaveAsync(settings);
+            _loadedApplicationSettings = settings;
+            ((App)Application.Current).UpdateCurrentSettings(settings);
+            if (((App)Application.Current).MainWindowInstance is MainWindow mainWindow)
+            {
+                mainWindow.ApplyApplicationSettings(settings);
+            }
+
+            SetSettingsInfo(
+                InfoBarSeverity.Success,
+                "应用设置已保存",
+                "主题、背景材质和界面密度已应用；启动页、语言、下载默认值和日志保留策略将在对应功能中生效。首页始终只读快照。");
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.SettingsChange,
+                ActivityStatus.Succeeded,
+                "已更新启动页、语言可见性、下载、外观和日志保留设置。",
+                [_settingsStore.SettingsPath]);
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidDataException
+            or InvalidOperationException
+            or OverflowException)
+        {
+            SetSettingsInfo(InfoBarSeverity.Error, "无法保存应用设置", exception.Message);
+        }
+        finally
+        {
+            SetApplicationSettingsBusy(false);
+        }
+    }
+
+    private async Task LoadProxySettingsAsync()
+    {
+        if (_managedRoot is null)
+        {
+            return;
+        }
+
+        try
+        {
+            NetworkSettingsLoadResult result = await new NetworkSettingsStore(_managedRoot)
+                .LoadAsync();
+            if (!result.Success || result.Settings is null)
+            {
+                SetSettingsInfo(
+                    InfoBarSeverity.Warning,
+                    "代理设置不可用",
+                    string.Join("；", result.Errors.Select(error => error.Message)));
+                return;
+            }
+
+            GlobalNetworkSettings global = result.Settings.Global ?? new GlobalNetworkSettings();
+            HttpProxyTextBox.Text = global.HttpProxy ?? string.Empty;
+            HttpsProxyTextBox.Text = global.HttpsProxy ?? string.Empty;
+            NoProxyTextBox.Text = string.Join(", ", global.NoProxy ?? []);
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidDataException)
+        {
+            SetSettingsInfo(InfoBarSeverity.Warning, "代理设置不可用", exception.Message);
+        }
+    }
+
+    private async void OnSaveProxyClicked(object sender, RoutedEventArgs args)
+    {
+        if (_managedRoot is null || _applicationSettingsBusy)
+        {
+            return;
+        }
+
+        SetApplicationSettingsBusy(true);
+        try
+        {
+            NetworkSettingsStore store = new(_managedRoot);
+            NetworkSettingsLoadResult loaded = await store.LoadAsync();
+            if (!loaded.Success || loaded.Settings is null)
+            {
+                throw new InvalidDataException(string.Join(
+                    "; ",
+                    loaded.Errors.Select(error => error.Message)));
+            }
+
+            string[] noProxy = NoProxyTextBox.Text.Split(
+                [',', ';', '\r', '\n'],
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            GlobalNetworkSettings previous = loaded.Settings.Global
+                ?? new GlobalNetworkSettings();
+            NetworkSettings updated = new(
+                new GlobalNetworkSettings(
+                    EmptyToNull(HttpProxyTextBox.Text),
+                    EmptyToNull(HttpsProxyTextBox.Text),
+                    noProxy,
+                    previous.Mirror),
+                loaded.Settings.Tools);
+            NetworkSettingsSaveResult saved = await store.SaveAsync(updated);
+            if (!saved.Success)
+            {
+                throw new InvalidDataException(string.Join(
+                    "; ",
+                    saved.Errors.Select(error => error.Message)));
+            }
+
+            SetSettingsInfo(
+                InfoBarSeverity.Success,
+                "全局代理已保存",
+                "语言工具镜像仍由对应 Provider 单独管理；这里没有修改任何镜像地址。");
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidDataException
+            or InvalidOperationException)
+        {
+            SetSettingsInfo(InfoBarSeverity.Error, "无法保存代理", exception.Message);
+        }
+        finally
+        {
+            SetApplicationSettingsBusy(false);
+        }
     }
 
     private void UpdateManagedRootStatus()
@@ -174,7 +417,7 @@ public sealed partial class SettingsPage : Page
     private string BuildManagedRootChangeText(string selectedRoot)
     {
         string currentRoot = _managedRoot ?? "当前配置无效";
-        return $"当前目录\n{currentRoot}\n\n新目录\n{selectedRoot}\n\nAutoEnvPlus 只会写入用户级 {ManagedRootResolver.EnvironmentVariableName}。不会自动迁移运行时、缓存、快照或删除旧目录；请重启应用后使新目录生效。";
+        return $"当前目录\n{currentRoot}\n\n新目录\n{selectedRoot}\n\nAutoEnvPlus 只会写入用户级 {ManagedRootResolver.EnvironmentVariableName}。不会自动迁移语言工具、缓存、快照或删除旧目录；请重启应用后使新目录生效。";
     }
 
     private void SetManagedRootInfo(InfoBarSeverity severity, string title, string message)
@@ -419,6 +662,50 @@ public sealed partial class SettingsPage : Page
         PowerShellProgress.IsActive = isBusy;
     }
 
+    private void SetApplicationSettingsBusy(bool busy)
+    {
+        _applicationSettingsBusy = busy;
+        SettingsProgress.IsActive = busy;
+        SaveSettingsButton.IsEnabled = !busy && _settingsStore is not null;
+        SaveProxyButton.IsEnabled = !busy && _managedRoot is not null;
+    }
+
+    private void SetSettingsInfo(InfoBarSeverity severity, string title, string message)
+    {
+        SettingsInfo.Severity = severity;
+        SettingsInfo.Title = title;
+        SettingsInfo.Message = message;
+        SettingsInfo.IsOpen = true;
+    }
+
+    private static void SelectChoice<T>(ComboBox picker, T value)
+    {
+        if (picker.ItemsSource is not IEnumerable<SettingChoice<T>> choices)
+        {
+            throw new InvalidOperationException("A settings picker has no compatible choices.");
+        }
+
+        picker.SelectedItem = choices.FirstOrDefault(choice =>
+            EqualityComparer<T>.Default.Equals(choice.Value, value))
+            ?? throw new InvalidDataException("A saved setting is not available in this build.");
+    }
+
+    private static T SelectedChoice<T>(ComboBox picker) =>
+        picker.SelectedItem is SettingChoice<T> choice
+            ? choice.Value
+            : throw new InvalidDataException("Select a value for every application setting.");
+
+    private static double RequiredNumber(NumberBox input, string description) =>
+        double.IsNaN(input.Value) || double.IsInfinity(input.Value)
+            ? throw new InvalidDataException($"{description}必须是有效数字。")
+            : input.Value;
+
+    private static string? EmptyToNull(string value)
+    {
+        string trimmed = value.Trim();
+        return trimmed.Length == 0 ? null : trimmed;
+    }
+
     private string RequireManagedRoot() => _managedRoot
         ?? throw new InvalidOperationException(
             _managedRootError ?? "AutoEnvPlus could not resolve its managed root.");
@@ -437,6 +724,8 @@ public sealed partial class SettingsPage : Page
         or InvalidDataException
         or ArgumentException
         or NotSupportedException;
+
+    private sealed record SettingChoice<T>(string Label, T Value);
 
     private const nint HwndBroadcast = 0xFFFF;
     private const uint WmSettingChange = 0x001A;

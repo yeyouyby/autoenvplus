@@ -15,6 +15,8 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <VisualStateManager.VisualStateGroups>
@@ -34,6 +36,23 @@
                             <Setter Target="DetailsSecondary.Margin" Value="0,16,0,0" />
                             <Setter Target="DetailsSecondaryColumn.Width" Value="0" />
                             <Setter Target="DetailsSecondaryRow.Height" Value="Auto" />
+                            <Setter Target="QuickActionThirdColumn.Width" Value="0" />
+                            <Setter Target="QuickActionFourthColumn.Width" Value="0" />
+                            <Setter Target="QuickActionRow0.Height" Value="44" />
+                            <Setter Target="QuickActionRow1.Height" Value="44" />
+                            <Setter Target="QuickActionRow2.Height" Value="44" />
+                            <Setter Target="QuickActionRow3.Height" Value="44" />
+                            <Setter Target="QuickActionRow4.Height" Value="44" />
+                            <Setter Target="NetworkDownloadSecondaryColumn.Width" Value="0" />
+                            <Setter Target="NetworkDownloadActionsColumn.Width" Value="0" />
+                            <Setter Target="NetworkDownloadSecondaryRow.Height" Value="Auto" />
+                            <Setter Target="NetworkDownloadActionsRow.Height" Value="Auto" />
+                            <Setter Target="NetworkDownloadPanel.(Grid.Row)" Value="1" />
+                            <Setter Target="NetworkDownloadPanel.(Grid.Column)" Value="1" />
+                            <Setter Target="NetworkDownloadPanel.Margin" Value="0,12,0,0" />
+                            <Setter Target="NetworkDownloadActions.(Grid.Row)" Value="2" />
+                            <Setter Target="NetworkDownloadActions.(Grid.Column)" Value="1" />
+                            <Setter Target="NetworkDownloadActions.Margin" Value="0,12,0,0" />
                         </VisualState.Setters>
                     </VisualState>
                     <VisualState x:Name="WideLayout">
@@ -51,6 +70,41 @@
                             <Setter Target="DetailsSecondary.Margin" Value="16,0,0,0" />
                             <Setter Target="DetailsSecondaryColumn.Width" Value="*" />
                             <Setter Target="DetailsSecondaryRow.Height" Value="0" />
+                            <Setter Target="QuickActionThirdColumn.Width" Value="*" />
+                            <Setter Target="QuickActionFourthColumn.Width" Value="*" />
+                            <Setter Target="RuntimeQuickAction.(Grid.Row)" Value="0" />
+                            <Setter Target="RuntimeQuickAction.(Grid.Column)" Value="0" />
+                            <Setter Target="ProjectsQuickAction.(Grid.Row)" Value="0" />
+                            <Setter Target="ProjectsQuickAction.(Grid.Column)" Value="1" />
+                            <Setter Target="NetworkQuickAction.(Grid.Row)" Value="0" />
+                            <Setter Target="NetworkQuickAction.(Grid.Column)" Value="2" />
+                            <Setter Target="DownloadsQuickAction.(Grid.Row)" Value="0" />
+                            <Setter Target="DownloadsQuickAction.(Grid.Column)" Value="3" />
+                            <Setter Target="PathQuickAction.(Grid.Row)" Value="1" />
+                            <Setter Target="PathQuickAction.(Grid.Column)" Value="0" />
+                            <Setter Target="StorageQuickAction.(Grid.Row)" Value="1" />
+                            <Setter Target="StorageQuickAction.(Grid.Column)" Value="1" />
+                            <Setter Target="DoctorQuickAction.(Grid.Row)" Value="1" />
+                            <Setter Target="DoctorQuickAction.(Grid.Column)" Value="2" />
+                            <Setter Target="ActivityQuickAction.(Grid.Row)" Value="1" />
+                            <Setter Target="ActivityQuickAction.(Grid.Column)" Value="3" />
+                            <Setter Target="PluginsQuickAction.(Grid.Row)" Value="2" />
+                            <Setter Target="PluginsQuickAction.(Grid.Column)" Value="0" />
+                            <Setter Target="QuickActionRow0.Height" Value="44" />
+                            <Setter Target="QuickActionRow1.Height" Value="44" />
+                            <Setter Target="QuickActionRow2.Height" Value="44" />
+                            <Setter Target="QuickActionRow3.Height" Value="0" />
+                            <Setter Target="QuickActionRow4.Height" Value="0" />
+                            <Setter Target="NetworkDownloadSecondaryColumn.Width" Value="*" />
+                            <Setter Target="NetworkDownloadActionsColumn.Width" Value="Auto" />
+                            <Setter Target="NetworkDownloadSecondaryRow.Height" Value="0" />
+                            <Setter Target="NetworkDownloadActionsRow.Height" Value="0" />
+                            <Setter Target="NetworkDownloadPanel.(Grid.Row)" Value="0" />
+                            <Setter Target="NetworkDownloadPanel.(Grid.Column)" Value="2" />
+                            <Setter Target="NetworkDownloadPanel.Margin" Value="0" />
+                            <Setter Target="NetworkDownloadActions.(Grid.Row)" Value="0" />
+                            <Setter Target="NetworkDownloadActions.(Grid.Column)" Value="3" />
+                            <Setter Target="NetworkDownloadActions.Margin" Value="0" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -62,10 +116,10 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel Spacing="4">
-                    <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="开发环境概览" />
+                    <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="概览" />
                     <TextBlock
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="运行时选择、项目、PATH、缓存和活动记录的统一工作台"
+                        Text="语言工具、项目环境、命令路由、下载和存储状态"
                         TextWrapping="Wrap" />
                 </StackPanel>
                 <StackPanel
@@ -79,13 +133,22 @@
                         Height="20"
                         IsActive="False" />
                     <Button
-                        x:Name="RefreshButton"
+                        x:Name="QuickRefreshButton"
                         Width="40"
                         Height="40"
-                        AutomationProperties.Name="刷新开发环境概览"
-                        Click="OnRefreshClicked"
-                        ToolTipService.ToolTip="刷新开发环境概览">
+                        AutomationProperties.Name="快速刷新概览"
+                        Click="OnQuickRefreshClicked"
+                        ToolTipService.ToolTip="只读取 AutoEnvPlus 受管状态">
                         <FontIcon FontSize="16" Glyph="&#xE72C;" />
+                    </Button>
+                    <Button
+                        x:Name="FullScanButton"
+                        Width="40"
+                        Height="40"
+                        AutomationProperties.Name="完整扫描环境"
+                        Click="OnFullScanClicked"
+                        ToolTipService.ToolTip="检查 PATH、命令版本和缓存体积">
+                        <FontIcon FontSize="16" Glyph="&#xE721;" />
                     </Button>
                 </StackPanel>
             </Grid>
@@ -96,29 +159,35 @@
                 IsClosable="False"
                 IsOpen="True"
                 Severity="Informational"
-                Title="正在读取开发环境" />
+                Title="正在载入概览快照" />
 
             <Grid Grid.Row="2" ColumnSpacing="8" RowSpacing="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
                     <ColumnDefinition />
-                    <ColumnDefinition />
+                    <ColumnDefinition x:Name="QuickActionThirdColumn" Width="0" />
+                    <ColumnDefinition x:Name="QuickActionFourthColumn" Width="0" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="44" />
-                    <RowDefinition Height="44" />
+                    <RowDefinition x:Name="QuickActionRow0" Height="44" />
+                    <RowDefinition x:Name="QuickActionRow1" Height="44" />
+                    <RowDefinition x:Name="QuickActionRow2" Height="44" />
+                    <RowDefinition x:Name="QuickActionRow3" Height="44" />
+                    <RowDefinition x:Name="QuickActionRow4" Height="44" />
                 </Grid.RowDefinitions>
                 <Button
-                    AutomationProperties.Name="管理运行时"
+                    x:Name="RuntimeQuickAction"
+                    AutomationProperties.Name="管理语言工具"
                     Click="OnNavigateClicked"
                     HorizontalAlignment="Stretch"
-                    Tag="runtimes">
+                    Tag="languages">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE950;" />
-                        <TextBlock Text="管理运行时" />
+                        <TextBlock Text="语言工具" />
                     </StackPanel>
                 </Button>
                 <Button
+                    x:Name="ProjectsQuickAction"
                     Grid.Column="1"
                     AutomationProperties.Name="打开项目环境"
                     Click="OnNavigateClicked"
@@ -130,7 +199,33 @@
                     </StackPanel>
                 </Button>
                 <Button
-                    Grid.Column="2"
+                    x:Name="NetworkQuickAction"
+                    Grid.Row="1"
+                    AutomationProperties.Name="配置命令版本"
+                    Click="OnNavigateClicked"
+                    HorizontalAlignment="Stretch"
+                    Tag="path">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8A5;" />
+                        <TextBlock Text="命令版本" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    x:Name="DownloadsQuickAction"
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    AutomationProperties.Name="打开下载中心"
+                    Click="OnNavigateClicked"
+                    HorizontalAlignment="Stretch"
+                    Tag="downloads">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE896;" />
+                        <TextBlock Text="下载中心" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    x:Name="PathQuickAction"
+                    Grid.Row="2"
                     AutomationProperties.Name="检查 PATH"
                     Click="OnNavigateClicked"
                     HorizontalAlignment="Stretch"
@@ -141,7 +236,9 @@
                     </StackPanel>
                 </Button>
                 <Button
-                    Grid.Row="1"
+                    x:Name="StorageQuickAction"
+                    Grid.Row="2"
+                    Grid.Column="1"
                     AutomationProperties.Name="管理缓存和存储"
                     Click="OnNavigateClicked"
                     HorizontalAlignment="Stretch"
@@ -152,8 +249,8 @@
                     </StackPanel>
                 </Button>
                 <Button
-                    Grid.Row="1"
-                    Grid.Column="1"
+                    x:Name="DoctorQuickAction"
+                    Grid.Row="3"
                     AutomationProperties.Name="运行环境诊断"
                     Click="OnNavigateClicked"
                     HorizontalAlignment="Stretch"
@@ -164,8 +261,9 @@
                     </StackPanel>
                 </Button>
                 <Button
-                    Grid.Row="1"
-                    Grid.Column="2"
+                    x:Name="ActivityQuickAction"
+                    Grid.Row="3"
+                    Grid.Column="1"
                     AutomationProperties.Name="查看活动记录"
                     Click="OnNavigateClicked"
                     HorizontalAlignment="Stretch"
@@ -173,6 +271,18 @@
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE823;" />
                         <TextBlock Text="活动记录" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    x:Name="PluginsQuickAction"
+                    Grid.Row="4"
+                    AutomationProperties.Name="管理语言包与 Provider"
+                    Click="OnNavigateClicked"
+                    HorizontalAlignment="Stretch"
+                    Tag="languages">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE943;" />
+                        <TextBlock Text="语言包与 Provider" />
                     </StackPanel>
                 </Button>
             </Grid>
@@ -204,18 +314,18 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Spacing="2">
-                                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="版本选择" />
+                                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="语言工具状态" />
                                 <TextBlock
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="托管版本、全局选择与当前 PATH"
+                                    Text="托管版本、全局选择与发现状态"
                                     TextWrapping="Wrap" />
                             </StackPanel>
                             <Button
                                 Grid.Column="1"
-                                AutomationProperties.Name="打开运行时页面"
+                                AutomationProperties.Name="打开语言工具页面"
                                 Click="OnNavigateClicked"
-                                Tag="runtimes"
-                                ToolTipService.ToolTip="打开运行时页面">
+                                Tag="languages"
+                                ToolTipService.ToolTip="打开语言工具页面">
                                 <SymbolIcon Symbol="Forward" />
                             </Button>
                         </Grid>
@@ -354,7 +464,123 @@
                 </Grid>
             </Border>
 
-            <Grid Grid.Row="5">
+            <Border
+                Grid.Row="5"
+                Padding="18"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource CardCornerRadius}">
+                <Grid x:Name="NetworkDownloadLayout" ColumnSpacing="18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                        <ColumnDefinition x:Name="NetworkDownloadSecondaryColumn" />
+                        <ColumnDefinition x:Name="NetworkDownloadActionsColumn" Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition x:Name="NetworkDownloadSecondaryRow" Height="0" />
+                        <RowDefinition x:Name="NetworkDownloadActionsRow" Height="0" />
+                    </Grid.RowDefinitions>
+                    <FontIcon
+                        VerticalAlignment="Center"
+                        FontSize="26"
+                        Glyph="&#xE774;" />
+                    <StackPanel Grid.Column="1" Spacing="3">
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="全局代理" />
+                        <TextBlock
+                            x:Name="NetworkProfileText"
+                            FontWeight="SemiBold"
+                            Text="正在读取…"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Name="NetworkDetailText"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel
+                        x:Name="NetworkDownloadPanel"
+                        Grid.Column="2"
+                        Spacing="3">
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="受管传输" />
+                        <TextBlock
+                            x:Name="DownloadLibraryText"
+                            FontWeight="SemiBold"
+                            Text="正在读取…"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Name="DownloadTransferText"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel
+                        x:Name="NetworkDownloadActions"
+                        Grid.Column="3"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button
+                            AutomationProperties.Name="打开代理设置"
+                            Click="OnNavigateClicked"
+                            Tag="settings"
+                            ToolTipService.ToolTip="打开代理设置">
+                            <FontIcon Glyph="&#xE774;" />
+                        </Button>
+                        <Button
+                            AutomationProperties.Name="打开下载中心页面"
+                            Click="OnNavigateClicked"
+                            Tag="downloads"
+                            ToolTipService.ToolTip="打开下载中心页面">
+                            <FontIcon Glyph="&#xE896;" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border
+                Grid.Row="6"
+                Padding="18"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource CardCornerRadius}">
+                <Grid ColumnSpacing="18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <FontIcon
+                        VerticalAlignment="Center"
+                        FontSize="26"
+                        Glyph="&#xE943;" />
+                    <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="语言包与 Provider" />
+                        <TextBlock
+                            x:Name="PluginSummaryText"
+                            FontWeight="SemiBold"
+                            Text="正在读取…"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Name="PluginDetailText"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Provider 归属于语言工具，镜像槽随 Provider 一起配置。"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button
+                        Grid.Column="2"
+                        VerticalAlignment="Center"
+                        AutomationProperties.Name="打开语言包与 Provider"
+                        Click="OnNavigateClicked"
+                        Tag="languages"
+                        ToolTipService.ToolTip="打开语言包与 Provider">
+                        <SymbolIcon Symbol="Forward" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="7">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
                     <ColumnDefinition x:Name="DetailsSecondaryColumn" Width="*" />

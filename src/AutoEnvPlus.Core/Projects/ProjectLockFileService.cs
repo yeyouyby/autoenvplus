@@ -63,23 +63,20 @@ public sealed class ProjectLockFileService
         List<string> errors = [];
         foreach ((RuntimeKind kind, VersionSelector selector) in manifest.Manifest.Tools.OrderBy(pair => pair.Key))
         {
-            RuntimeProfile projectProfile = new(new Dictionary<RuntimeKind, VersionSelector>
-            {
-                [kind] = selector,
-            });
-            RuntimeResolutionResult resolution = new RuntimeResolver().Resolve(
+            RuntimeProfile projectProfile = manifest.Manifest.ToRuntimeProfile();
+            ManagedRuntimeResolutionResult resolution =
+                ManagedRuntimeResolutionService.ResolveRegistered(
                 kind,
                 new RuntimeResolutionContext(Project: projectProfile),
-                installedRuntimes.Select(entry => entry.ToRuntimeInstallation()),
+                installedRuntimes,
                 architecture);
             if (!resolution.Success)
             {
-                errors.Add(resolution.Error ?? $"No installed {kind} runtime matches {selector}.");
+                errors.AddRange(resolution.Errors);
                 continue;
             }
 
-            ManagedRuntimeEntry? installed = installedRuntimes.FirstOrDefault(entry =>
-                entry.Id.Equals(resolution.Installation!.Id, StringComparison.OrdinalIgnoreCase));
+            ManagedRuntimeEntry? installed = resolution.Entry;
             if (installed is null || !File.Exists(installed.ExecutablePath))
             {
                 errors.Add($"The resolved {kind} runtime is missing from disk.");

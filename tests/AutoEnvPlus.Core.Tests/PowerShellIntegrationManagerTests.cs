@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using AutoEnvPlus.Core.Shell;
 
@@ -27,8 +28,13 @@ public sealed class PowerShellIntegrationManagerTests : IDisposable
         Assert.Contains("AUTOENVPLUS_NODE_VERSION", plan.ModuleContent, StringComparison.Ordinal);
         Assert.Contains("AUTOENVPLUS_JAVA_VERSION", plan.ModuleContent, StringComparison.Ordinal);
         Assert.Contains("AUTOENVPLUS_DOTNET_VERSION", plan.ModuleContent, StringComparison.Ordinal);
+        Assert.Contains("AUTOENVPLUS_PYTHON_RUNTIME_ID", plan.ModuleContent, StringComparison.Ordinal);
+        Assert.Contains("AUTOENVPLUS_NODE_RUNTIME_ID", plan.ModuleContent, StringComparison.Ordinal);
+        Assert.Contains("AUTOENVPLUS_JAVA_RUNTIME_PROVIDER_ID", plan.ModuleContent, StringComparison.Ordinal);
+        Assert.Contains("$previousRuntimeId", plan.ModuleContent, StringComparison.Ordinal);
+        Assert.Contains("$previousProviderId", plan.ModuleContent, StringComparison.Ordinal);
         Assert.Contains(
-            "[ValidateSet('python', 'node', 'java', 'dotnet')]",
+            "[ValidateSet('python', 'node', 'java', 'dotnet', 'msvc', 'llvm', 'mingw', 'cmake', 'ninja')]",
             plan.ModuleContent,
             StringComparison.Ordinal);
         Assert.Contains("autoenvplus''s cli.exe'", plan.ModuleContent, StringComparison.Ordinal);
@@ -38,6 +44,81 @@ public sealed class PowerShellIntegrationManagerTests : IDisposable
         Assert.Contains("managed root''s files", plan.After, StringComparison.Ordinal);
         Assert.True(plan.ProfileChanged);
         Assert.True(plan.ModuleChanged);
+    }
+
+    [Fact]
+    public async Task GeneratedModule_ExactPinsRestoreOnFailureAndClearOnSelectorSuccess()
+    {
+        string managedRoot = Directory.CreateDirectory(Path.Combine(_root, "managed-session")).FullName;
+        string fakeCli = Path.Combine(_root, "fake-autoenvplus.cmd");
+        await File.WriteAllTextAsync(
+            fakeCli,
+            "@echo off\r\n"
+            + "if /I \"%AUTOENVPLUS_PYTHON_VERSION%\"==\"fail\" exit /b 7\r\n"
+            + "if defined AUTOENVPLUS_PYTHON_RUNTIME_ID if /I not \"%AUTOENVPLUS_PYTHON_RUNTIME_ID%\"==\"chosen-id\" exit /b 8\r\n"
+            + "if defined AUTOENVPLUS_PYTHON_RUNTIME_PROVIDER_ID if /I not \"%AUTOENVPLUS_PYTHON_RUNTIME_PROVIDER_ID%\"==\"chosen-provider\" exit /b 9\r\n"
+            + "exit /b 0\r\n");
+        PowerShellIntegrationPlan plan = new PowerShellIntegrationManager(
+            managedRoot,
+            fakeCli).PlanInstall(Path.Combine(_root, "unused-profile.ps1"));
+        Directory.CreateDirectory(Path.GetDirectoryName(plan.ModulePath)!);
+        await File.WriteAllTextAsync(plan.ModulePath, plan.ModuleContent);
+        string modulePath = plan.ModulePath.Replace("'", "''", StringComparison.Ordinal);
+        string script = $$"""
+            Import-Module -Name '{{modulePath}}' -Force -ErrorAction Stop
+            $env:AUTOENVPLUS_PYTHON_VERSION = 'old'
+            $env:AUTOENVPLUS_PYTHON_RUNTIME_ID = 'old-id'
+            $env:AUTOENVPLUS_PYTHON_RUNTIME_PROVIDER_ID = 'old-provider'
+            try {
+                Use-AutoEnvPlusRuntime python fail -RuntimeId chosen-id -ProviderId chosen-provider
+            } catch { }
+            Write-Output ('FAIL=' + $env:AUTOENVPLUS_PYTHON_VERSION + '|' + $env:AUTOENVPLUS_PYTHON_RUNTIME_ID + '|' + $env:AUTOENVPLUS_PYTHON_RUNTIME_PROVIDER_ID)
+            Use-AutoEnvPlusRuntime python ok
+            Write-Output ('SUCCESS=' + $env:AUTOENVPLUS_PYTHON_VERSION + '|' + $env:AUTOENVPLUS_PYTHON_RUNTIME_ID + '|' + $env:AUTOENVPLUS_PYTHON_RUNTIME_PROVIDER_ID)
+            Use-AutoEnvPlusRuntime python ok -RuntimeId chosen-id -ProviderId chosen-provider
+            Write-Output ('PIN=' + $env:AUTOENVPLUS_PYTHON_VERSION + '|' + $env:AUTOENVPLUS_PYTHON_RUNTIME_ID + '|' + $env:AUTOENVPLUS_PYTHON_RUNTIME_PROVIDER_ID)
+            """;
+        string powershell = Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.System),
+            "WindowsPowerShell",
+            "v1.0",
+            "powershell.exe");
+        ProcessStartInfo startInfo = new()
+        {
+            FileName = powershell,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+        foreach (string argument in new[]
+        {
+            "-NoLogo",
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            script,
+        })
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        using Process process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Unable to start Windows PowerShell.");
+        Task<string> standardOutput = process.StandardOutput.ReadToEndAsync();
+        Task<string> standardError = process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+
+        string output = await standardOutput;
+        Assert.Equal(0, process.ExitCode);
+        Assert.Contains("FAIL=old|old-id|old-provider", output, StringComparison.Ordinal);
+        Assert.Contains("SUCCESS=ok||", output, StringComparison.Ordinal);
+        Assert.Contains("PIN=ok|chosen-id|chosen-provider", output, StringComparison.Ordinal);
+        Assert.True(
+            string.IsNullOrWhiteSpace(await standardError),
+            $"PowerShell integration wrote an unexpected error: {await standardError}");
     }
 
     [Fact]

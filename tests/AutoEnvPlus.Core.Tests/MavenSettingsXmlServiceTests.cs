@@ -102,6 +102,54 @@ public sealed class MavenSettingsXmlServiceTests : IDisposable
         Assert.Contains("more than one", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void ReadAndMutation_RejectSymbolicLinkWithoutReadingTarget()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(_root);
+        string target = Path.Combine(_root, "external-settings.xml");
+        const string targetContent = "<settings><localRepository>C:\\external</localRepository></settings>";
+        File.WriteAllText(target, targetContent);
+        string link = Path.Combine(_root, "settings-link.xml");
+        try
+        {
+            try
+            {
+                File.CreateSymbolicLink(link, target);
+            }
+            catch (Exception linkException) when (linkException is IOException
+                or UnauthorizedAccessException
+                or PlatformNotSupportedException)
+            {
+                return;
+            }
+
+            CacheEnvironment environment = new(
+                Path.Combine(_root, "local"),
+                Path.Combine(_root, "profile"),
+                new Dictionary<string, string?>());
+
+            MavenSettingsReadResult read = new MavenSettingsXmlService().Read(link, environment);
+            IOException mutationError = Assert.Throws<IOException>(() =>
+                new MavenSettingsXmlService().CreateMutation(link, Path.Combine(_root, "new")));
+
+            Assert.Contains("reparse", read.Error, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("reparse", mutationError.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(targetContent, File.ReadAllText(target));
+        }
+        finally
+        {
+            if (File.Exists(link))
+            {
+                File.Delete(link);
+            }
+        }
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))

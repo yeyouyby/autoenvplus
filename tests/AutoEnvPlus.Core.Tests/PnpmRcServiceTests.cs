@@ -73,6 +73,54 @@ public sealed class PnpmRcServiceTests : IDisposable
             Path.Combine(_root, "new")));
     }
 
+    [Fact]
+    public void ReadAndMutation_RejectSymbolicLinkWithoutReadingTarget()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(_root);
+        string target = Path.Combine(_root, "external.rc");
+        const string targetContent = "store-dir=C:\\external\n";
+        File.WriteAllText(target, targetContent);
+        string link = Path.Combine(_root, "config-link.rc");
+        try
+        {
+            try
+            {
+                File.CreateSymbolicLink(link, target);
+            }
+            catch (Exception linkException) when (linkException is IOException
+                or UnauthorizedAccessException
+                or PlatformNotSupportedException)
+            {
+                return;
+            }
+
+            CacheEnvironment environment = new(
+                Path.Combine(_root, "local"),
+                Path.Combine(_root, "profile"),
+                new Dictionary<string, string?>());
+
+            PnpmRcReadResult read = new PnpmRcService().Read(link, environment);
+            IOException mutationError = Assert.Throws<IOException>(() =>
+                new PnpmRcService().CreateMutation(link, Path.Combine(_root, "new")));
+
+            Assert.Contains("reparse", read.Error, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("reparse", mutationError.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(targetContent, File.ReadAllText(target));
+        }
+        finally
+        {
+            if (File.Exists(link))
+            {
+                File.Delete(link);
+            }
+        }
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))

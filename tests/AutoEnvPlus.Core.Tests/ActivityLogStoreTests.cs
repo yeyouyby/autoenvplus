@@ -129,6 +129,40 @@ public sealed class ActivityLogStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task AppendAsync_PrunesRecordsOlderThanConfiguredRetention()
+    {
+        ActivityLogStore longRetention = new(_root, retentionDays: 365);
+        await longRetention.AppendAsync(
+            ActivityOperationType.Other,
+            ActivityStatus.Succeeded,
+            "expired activity",
+            timestampUtc: DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(45)));
+        ActivityLogStore configured = new(_root, retentionDays: 30);
+
+        ActivityLogEntry current = await configured.AppendAsync(
+            ActivityOperationType.SettingsChange,
+            ActivityStatus.Succeeded,
+            "current activity",
+            timestampUtc: DateTimeOffset.UtcNow);
+
+        ActivityLogLoadResult loaded = await configured.LoadAsync();
+        Assert.Equal(current.Id, Assert.Single(loaded.Entries).Id);
+        Assert.DoesNotContain(
+            "expired activity",
+            await File.ReadAllTextAsync(configured.LogPath),
+            StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(366)]
+    public void Constructor_RejectsInvalidRetentionDays(int retentionDays)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new ActivityLogStore(_root, retentionDays: retentionDays));
+    }
+
+    [Fact]
     public async Task LoadAsync_SkipsMalformedAndUnsafeLines()
     {
         ActivityLogStore store = new(_root);

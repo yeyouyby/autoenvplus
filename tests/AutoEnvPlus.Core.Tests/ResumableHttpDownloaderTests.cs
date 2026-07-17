@@ -42,14 +42,17 @@ public sealed class ResumableHttpDownloaderTests : IDisposable
         ResumableHttpDownloader downloader = new(client);
 
         await Assert.ThrowsAsync<IOException>(() => downloader.DownloadAsync(
-            new Uri("https://example.test/asset.zip"),
+            new Uri("https://example.test/asset.zip?token=first-secret"),
             target,
             100));
         Assert.True(File.Exists(target + ".partial"));
         Assert.True(File.Exists(target + ".partial.json"));
+        string metadata = await File.ReadAllTextAsync(target + ".partial.json");
+        Assert.DoesNotContain("first-secret", metadata, StringComparison.Ordinal);
+        Assert.DoesNotContain("?token", metadata, StringComparison.OrdinalIgnoreCase);
 
         ResumableDownloadResult result = await downloader.DownloadAsync(
-            new Uri("https://example.test/asset.zip"),
+            new Uri("https://example.test/asset.zip?token=rotated-secret"),
             target,
             100);
 
@@ -96,6 +99,45 @@ public sealed class ResumableHttpDownloaderTests : IDisposable
 
         Assert.False(result.WasResumed);
         Assert.Equal(payload, File.ReadAllBytes(target));
+    }
+
+    [Fact]
+    public async Task DownloadAsync_RejectsPartialFileReparsePointWithoutTouchingTarget()
+    {
+        string target = Path.Combine(_root, "cache", "asset.zip");
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+        string external = Path.Combine(_root, "outside-partial.bin");
+        byte[] evidence = [9, 8, 7, 6];
+        await File.WriteAllBytesAsync(external, evidence);
+        string partial = target + ".partial";
+        try
+        {
+            File.CreateSymbolicLink(partial, external);
+        }
+        catch (Exception linkException) when (linkException is IOException
+            or UnauthorizedAccessException
+            or PlatformNotSupportedException)
+        {
+            return;
+        }
+
+        int requests = 0;
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+        {
+            requests++;
+            return StubHttpMessageHandler.Bytes([1, 2, 3]);
+        }));
+
+        InvalidDataException validationException = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            new ResumableHttpDownloader(client).DownloadAsync(
+                new Uri("https://example.test/asset.zip"),
+                target,
+                100));
+
+        Assert.Contains("reparse", validationException.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, requests);
+        Assert.Equal(evidence, await File.ReadAllBytesAsync(external));
+        File.Delete(partial);
     }
 
     [Fact]

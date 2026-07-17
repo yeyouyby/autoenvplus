@@ -55,6 +55,40 @@ public sealed class ProjectLockFileServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CreateAsync_UsesExactProjectProviderIdentity()
+    {
+        Directory.CreateDirectory(_root);
+        ManagedRuntimeEntry official = CreateEntry(
+            RuntimeKind.Python,
+            "3.13.5",
+            "python.exe",
+            ["stable"],
+            providerId: "python-org",
+            runtimeId: "python-official-x64");
+        ManagedRuntimeEntry community = CreateEntry(
+            RuntimeKind.Python,
+            "3.13.5",
+            "python.exe",
+            ["stable"],
+            providerId: "plugin:community-python",
+            runtimeId: "python-community-x64");
+        string manifest = Path.Combine(_root, "autoenvplus.toml");
+        File.WriteAllText(
+            manifest,
+            $"[tools]\npython = \"3.13.5\"\n\n[tool-identities]\npython.runtime-id = \"{community.Id}\"\npython.provider-id = \"{community.ProviderId}\"\n");
+
+        ProjectLockResult result = await new ProjectLockFileService().CreateAsync(
+            manifest,
+            [official, community],
+            RuntimeArchitecture.X64);
+
+        Assert.True(result.Success);
+        ProjectLockEntry locked = Assert.Single(result.Document!.Runtimes);
+        Assert.Equal(community.ProviderId, locked.ProviderId);
+        Assert.Equal(community.PackageHash, locked.PackageHash);
+    }
+
+    [Fact]
     public async Task CreateAsync_PersistsSha512IdentityInSchemaTwo()
     {
         Directory.CreateDirectory(_root);
@@ -194,15 +228,17 @@ public sealed class ProjectLockFileServiceTests : IDisposable
         string version,
         string executable,
         IReadOnlyCollection<string> channels,
-        PackageHashAlgorithm hashAlgorithm = PackageHashAlgorithm.Sha256)
+        PackageHashAlgorithm hashAlgorithm = PackageHashAlgorithm.Sha256,
+        string providerId = "test-provider",
+        string? runtimeId = null)
     {
         RuntimeVersion parsed = RuntimeVersion.Parse(version);
         string installRoot = Path.Combine(_root, "managed", kind.ToString(), parsed.ToString(), "x64");
         Directory.CreateDirectory(installRoot);
         File.WriteAllText(Path.Combine(installRoot, executable), string.Empty);
         return new ManagedRuntimeEntry(
-            $"{kind}-{parsed}-x64",
-            "test-provider",
+            runtimeId ?? $"{kind}-{parsed}-x64",
+            providerId,
             kind,
             parsed,
             RuntimeArchitecture.X64,

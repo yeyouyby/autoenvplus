@@ -17,7 +17,7 @@ public sealed class CommandShimManagerTests : IDisposable
             _root,
             executable);
 
-        Assert.Equal(11, result.ShimFiles.Count);
+        Assert.Equal(18, result.ShimFiles.Count);
         Assert.Equal(CommandShimImplementation.CmdFallback, result.Implementation);
         string python = File.ReadAllText(Path.Combine(result.ShimDirectory, "python.cmd"));
         Assert.Contains($"\"{executable}\" exec python -- %*", python);
@@ -28,10 +28,14 @@ public sealed class CommandShimManagerTests : IDisposable
         Assert.Contains("exec dotnet -- %*", dotnet);
         string npm = File.ReadAllText(Path.Combine(result.ShimDirectory, "npm.cmd"));
         Assert.Contains("tool npm -- %*", npm);
+        string clang = File.ReadAllText(Path.Combine(result.ShimDirectory, "clang.cmd"));
+        Assert.Contains("exec llvm -- %*", clang);
+        string clangCpp = File.ReadAllText(Path.Combine(result.ShimDirectory, "clang++.cmd"));
+        Assert.Contains("tool clang++ -- %*", clangCpp);
     }
 
     [Fact]
-    public async Task InstallAsync_PrefersNativeExecutableAndCreatesElevenExeAliases()
+    public async Task InstallAsync_PrefersNativeExecutableAndCreatesAllExeAliases()
     {
         Directory.CreateDirectory(_root);
         string executable = Path.Combine(_root, "autoenvplus.exe");
@@ -46,7 +50,7 @@ public sealed class CommandShimManagerTests : IDisposable
             native);
 
         Assert.Equal(CommandShimImplementation.NativeWin32, result.Implementation);
-        Assert.Equal(11, result.ShimFiles.Count);
+        Assert.Equal(18, result.ShimFiles.Count);
         Assert.All(result.ShimFiles, path =>
         {
             Assert.EndsWith(".exe", path, StringComparison.OrdinalIgnoreCase);
@@ -62,6 +66,14 @@ public sealed class CommandShimManagerTests : IDisposable
             StringComparer.OrdinalIgnoreCase);
         Assert.Contains(
             Path.Combine(result.ShimDirectory, "dotnet.exe"),
+            result.ShimFiles,
+            StringComparer.OrdinalIgnoreCase);
+        Assert.Contains(
+            Path.Combine(result.ShimDirectory, "clang++.exe"),
+            result.ShimFiles,
+            StringComparer.OrdinalIgnoreCase);
+        Assert.Contains(
+            Path.Combine(result.ShimDirectory, "ninja.exe"),
             result.ShimFiles,
             StringComparer.OrdinalIgnoreCase);
         Assert.Empty(Directory.EnumerateFiles(result.ShimDirectory, "*.cmd"));

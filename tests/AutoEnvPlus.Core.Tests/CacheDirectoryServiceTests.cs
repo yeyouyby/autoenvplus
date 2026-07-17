@@ -129,6 +129,72 @@ public sealed class CacheDirectoryServiceTests : IDisposable
         Assert.Empty(measurement.Errors);
     }
 
+    [Fact]
+    public async Task MeasureBoundedAsync_StopsAtEntryLimit()
+    {
+        string cache = Directory.CreateDirectory(Path.Combine(_root, "bounded")).FullName;
+        File.WriteAllText(Path.Combine(cache, "one.bin"), "1");
+        File.WriteAllText(Path.Combine(cache, "two.bin"), "22");
+        File.WriteAllText(Path.Combine(cache, "three.bin"), "333");
+        CacheDirectoryDefinition definition = CacheDirectoryService.Definitions.Single(
+            item => item.Id == "pip");
+        CacheDirectoryLocation location = new(definition, cache, "test", true);
+
+        CacheDirectoryMeasurement measurement = await new CacheDirectoryService()
+            .MeasureBoundedAsync(location, maximumEntries: 2, maximumDepth: 4);
+
+        Assert.Equal(2, measurement.FileCount);
+        Assert.Contains(measurement.Errors, error =>
+            error.Contains("entry safety limit", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task MeasureBoundedAsync_DoesNotFollowReparsePointRoot()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(_root);
+        string external = Directory.CreateDirectory(Path.Combine(_root, "external-cache")).FullName;
+        string sentinel = Path.Combine(external, "sentinel.bin");
+        File.WriteAllText(sentinel, "external");
+        string link = Path.Combine(_root, "cache-link");
+        try
+        {
+            try
+            {
+                Directory.CreateSymbolicLink(link, external);
+            }
+            catch (Exception linkException) when (linkException is IOException
+                or UnauthorizedAccessException
+                or PlatformNotSupportedException)
+            {
+                return;
+            }
+
+            CacheDirectoryDefinition definition = CacheDirectoryService.Definitions.Single(
+                item => item.Id == "pip");
+            CacheDirectoryLocation location = new(definition, link, "test", true);
+
+            CacheDirectoryMeasurement measurement = await new CacheDirectoryService()
+                .MeasureBoundedAsync(location, maximumEntries: 100, maximumDepth: 4);
+
+            Assert.Equal(0, measurement.FileCount);
+            Assert.Contains(measurement.Errors, error =>
+                error.Contains("reparse", StringComparison.OrdinalIgnoreCase));
+            Assert.Equal("external", File.ReadAllText(sentinel));
+        }
+        finally
+        {
+            if (Directory.Exists(link))
+            {
+                Directory.Delete(link);
+            }
+        }
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))

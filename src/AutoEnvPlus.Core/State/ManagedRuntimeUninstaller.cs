@@ -23,6 +23,7 @@ public sealed class ManagedRuntimeUninstaller
     private readonly ManagedRuntimeRegistry _registry;
     private readonly GlobalRuntimeProfileStore _globalProfile;
     private readonly KnownProjectStore _knownProjects;
+    private readonly ManagedStateLock _stateTransactionLock;
 
     public ManagedRuntimeUninstaller(string managedRoot)
     {
@@ -31,6 +32,7 @@ public sealed class ManagedRuntimeUninstaller
         _registry = new ManagedRuntimeRegistry(_managedRoot);
         _globalProfile = new GlobalRuntimeProfileStore(_managedRoot);
         _knownProjects = new KnownProjectStore(_managedRoot);
+        _stateTransactionLock = ManagedStateLock.CreateRuntimeTransaction(_managedRoot);
     }
 
     public async Task<ManagedRuntimeUninstallPlan> CreatePlanAsync(
@@ -38,16 +40,27 @@ public sealed class ManagedRuntimeUninstaller
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(runtimeId);
-        RegistryLoadResult registry = await _registry.LoadAsync(cancellationToken).ConfigureAwait(false);
-        if (registry.Errors.Count > 0)
+        RegistryLoadResult registry;
+        ManagedRuntimeEntry runtime;
+        RuntimeProfile global;
         {
-            throw new InvalidDataException(string.Join("; ", registry.Errors));
+            using ManagedStateLock.Lease transactionLock =
+                await _stateTransactionLock.AcquireAsync(
+                    cancellationToken).ConfigureAwait(false);
+            registry = await _registry.LoadWithinTransactionAsync(
+                cancellationToken).ConfigureAwait(false);
+            if (registry.Errors.Count > 0)
+            {
+                throw new InvalidDataException(string.Join("; ", registry.Errors));
+            }
+
+            runtime = registry.Entries.FirstOrDefault(entry =>
+                entry.Id.Equals(runtimeId, StringComparison.OrdinalIgnoreCase))
+                ?? throw new KeyNotFoundException($"Managed runtime '{runtimeId}' is not registered.");
+            global = await _globalProfile.LoadWithinTransactionAsync(
+                cancellationToken).ConfigureAwait(false);
         }
 
-        ManagedRuntimeEntry runtime = registry.Entries.FirstOrDefault(entry =>
-            entry.Id.Equals(runtimeId, StringComparison.OrdinalIgnoreCase))
-            ?? throw new KeyNotFoundException($"Managed runtime '{runtimeId}' is not registered.");
-        RuntimeProfile global = await _globalProfile.LoadAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<KnownProject> projects = await _knownProjects.LoadAsync(cancellationToken).ConfigureAwait(false);
         IReadOnlyList<RuntimeReference> references = await new RuntimeReferenceScanner().ScanAsync(
             runtime,
@@ -71,16 +84,13 @@ public sealed class ManagedRuntimeUninstaller
         ArgumentNullException.ThrowIfNull(plan);
         if (plan.IsReferenced && !force)
         {
-            return new ManagedRuntimeUninstallResult(
-                false,
-                false,
-                false,
-                "The runtime is still referenced: "
-                + string.Join("; ", plan.References.Select(reference =>
-                    $"{reference.Kind} {reference.Owner} ({reference.Detail})")));
+            return ReferencedFailure(plan.References);
         }
 
-        RegistryLoadResult currentRegistry = await _registry.LoadAsync(cancellationToken).ConfigureAwait(false);
+        using ManagedStateLock.Lease transactionLock = await _stateTransactionLock.AcquireAsync(
+            cancellationToken).ConfigureAwait(false);
+        RegistryLoadResult currentRegistry = await _registry.LoadWithinTransactionAsync(
+            cancellationToken).ConfigureAwait(false);
         if (currentRegistry.Errors.Count > 0)
         {
             return new ManagedRuntimeUninstallResult(
@@ -101,6 +111,25 @@ public sealed class ManagedRuntimeUninstaller
                 "The managed runtime changed after the uninstall plan was created; refresh the plan.");
         }
 
+        if (!force)
+        {
+            RuntimeProfile currentGlobal = await _globalProfile.LoadWithinTransactionAsync(
+                cancellationToken).ConfigureAwait(false);
+            IReadOnlyList<KnownProject> currentProjects = await _knownProjects.LoadAsync(
+                cancellationToken).ConfigureAwait(false);
+            IReadOnlyList<RuntimeReference> currentReferences =
+                await new RuntimeReferenceScanner().ScanAsync(
+                    current,
+                    currentRegistry.Entries,
+                    currentGlobal,
+                    currentProjects,
+                    cancellationToken).ConfigureAwait(false);
+            if (currentReferences.Count > 0)
+            {
+                return ReferencedFailure(currentReferences);
+            }
+        }
+
         string installRoot = Path.GetFullPath(current.InstallRoot);
         EnsureChildPath(_managedRoot, installRoot, "runtime install root");
         string trashPath = Path.GetFullPath(plan.TrashPath);
@@ -109,14 +138,28 @@ public sealed class ManagedRuntimeUninstaller
         bool registryRemoved = false;
         try
         {
+            ManagedPathSafety.EnsureOrdinaryDirectoryTree(
+                _managedRoot,
+                installRoot,
+                "runtime install root",
+                allowMissing: true);
             if (Directory.Exists(installRoot))
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(trashPath)!);
+                ManagedPathSafety.CreateOrdinaryDirectoryPath(
+                    _managedRoot,
+                    Path.GetDirectoryName(trashPath)!,
+                    "runtime trash directory");
+                ManagedPathSafety.EnsureNoReparsePointInPath(trashPath);
                 Directory.Move(installRoot, trashPath);
                 moved = true;
+                ManagedPathSafety.EnsureOrdinaryDirectoryTree(
+                    _managedRoot,
+                    trashPath,
+                    "quarantined runtime",
+                    allowMissing: false);
             }
 
-            RegistryLoadResult updated = await _registry.RemoveAsync(
+            RegistryLoadResult updated = await _registry.RemoveWithinTransactionAsync(
                 current.Id,
                 cancellationToken).ConfigureAwait(false);
             if (updated.Errors.Count > 0)
@@ -126,34 +169,49 @@ public sealed class ManagedRuntimeUninstaller
 
             registryRemoved = true;
         }
+        catch (OperationCanceledException exception)
+        {
+            if (!TryRestoreMovedRuntime(
+                    _managedRoot,
+                    installRoot,
+                    trashPath,
+                    moved,
+                    out string? restoreError))
+            {
+                throw new IOException(restoreError, exception);
+            }
+
+            throw;
+        }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
             or InvalidDataException)
         {
-            if (moved && !Directory.Exists(installRoot) && Directory.Exists(trashPath))
-            {
-                try
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(installRoot)!);
-                    Directory.Move(trashPath, installRoot);
-                }
-                catch
-                {
-                }
-            }
+            bool restored = TryRestoreMovedRuntime(
+                _managedRoot,
+                installRoot,
+                trashPath,
+                moved,
+                out string? restoreError);
 
             return new ManagedRuntimeUninstallResult(
                 false,
                 registryRemoved,
                 Directory.Exists(trashPath),
-                exception.Message);
+                restored ? exception.Message : $"{exception.Message} {restoreError}");
         }
 
+        transactionLock.Dispose();
         bool pendingCleanup = false;
         if (moved && Directory.Exists(trashPath))
         {
             try
             {
+                ManagedPathSafety.EnsureOrdinaryDirectoryTree(
+                    _managedRoot,
+                    trashPath,
+                    "quarantined runtime cleanup",
+                    allowMissing: false);
                 Directory.Delete(trashPath, recursive: true);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
@@ -164,6 +222,60 @@ public sealed class ManagedRuntimeUninstaller
 
         return new ManagedRuntimeUninstallResult(true, true, pendingCleanup, null);
     }
+
+    private static ManagedRuntimeUninstallResult ReferencedFailure(
+        IReadOnlyList<RuntimeReference> references) => new(
+        false,
+        false,
+        false,
+        "The runtime is still referenced: "
+        + string.Join("; ", references.Select(reference =>
+            $"{reference.Kind} {reference.Owner} ({reference.Detail})")));
+
+    private static bool TryRestoreMovedRuntime(
+        string managedRoot,
+        string installRoot,
+        string trashPath,
+        bool moved,
+        out string? error)
+    {
+        error = null;
+        if (!moved)
+        {
+            return true;
+        }
+
+        if (Directory.Exists(installRoot) || !Directory.Exists(trashPath))
+        {
+            error = RestoreFailure(trashPath);
+            return false;
+        }
+
+        try
+        {
+            ManagedPathSafety.EnsureOrdinaryDirectoryTree(
+                managedRoot,
+                trashPath,
+                "quarantined runtime restore source",
+                allowMissing: false);
+            ManagedPathSafety.CreateOrdinaryDirectoryPath(
+                managedRoot,
+                Path.GetDirectoryName(installRoot)!,
+                "runtime restore parent");
+            ManagedPathSafety.EnsureNoReparsePointInPath(installRoot);
+            Directory.Move(trashPath, installRoot);
+            return true;
+        }
+        catch
+        {
+            error = RestoreFailure(trashPath);
+            return false;
+        }
+    }
+
+    private static string RestoreFailure(string trashPath) =>
+        "The runtime could not be restored safely; its quarantined files remain at the managed "
+        + $"trash path '{trashPath}'. Resolve the path conflict before retrying.";
 
     private static string SanitizeFileName(string value)
     {

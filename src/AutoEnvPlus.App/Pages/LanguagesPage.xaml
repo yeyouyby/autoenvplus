@@ -1,0 +1,374 @@
+<Page
+    x:Class="AutoEnvPlus.App.Pages.LanguagesPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <ScrollViewer x:Name="ListSurface">
+            <StackPanel
+                x:Name="LayoutRoot"
+                Padding="{StaticResource PagePadding}"
+                Spacing="18">
+                <VisualStateManager.VisualStateGroups>
+                    <VisualStateGroup>
+                        <VisualState x:Name="CompactLayout">
+                            <VisualState.StateTriggers>
+                                <AdaptiveTrigger MinWindowWidth="0" />
+                            </VisualState.StateTriggers>
+                            <VisualState.Setters>
+                                <Setter Target="HeaderActions.(Grid.Row)" Value="1" />
+                                <Setter Target="HeaderActions.(Grid.Column)" Value="0" />
+                                <Setter Target="HeaderActions.Margin" Value="0,12,0,0" />
+                                <Setter Target="FilterPanel.Orientation" Value="Vertical" />
+                                <Setter Target="SearchBox.Width" Value="NaN" />
+                                <Setter Target="FilterCombo.Width" Value="NaN" />
+                            </VisualState.Setters>
+                        </VisualState>
+                        <VisualState x:Name="WideLayout">
+                            <VisualState.StateTriggers>
+                                <AdaptiveTrigger MinWindowWidth="760" />
+                            </VisualState.StateTriggers>
+                            <VisualState.Setters>
+                                <Setter Target="HeaderActions.(Grid.Row)" Value="0" />
+                                <Setter Target="HeaderActions.(Grid.Column)" Value="1" />
+                                <Setter Target="HeaderActions.Margin" Value="12,0,0,0" />
+                                <Setter Target="FilterPanel.Orientation" Value="Horizontal" />
+                                <Setter Target="SearchBox.Width" Value="320" />
+                                <Setter Target="FilterCombo.Width" Value="190" />
+                            </VisualState.Setters>
+                        </VisualState>
+                    </VisualStateGroup>
+                </VisualStateManager.VisualStateGroups>
+
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="语言" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="按语言组织编译器、解释器、运行时、SDK、包管理器和开发工具。"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel
+                        x:Name="HeaderActions"
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <ProgressRing
+                            x:Name="RefreshProgress"
+                            Width="20"
+                            Height="20"
+                            IsActive="False" />
+                        <Button
+                            x:Name="RefreshButton"
+                            AutomationProperties.Name="扫描语言工具"
+                            Click="OnRefreshClicked"
+                            ToolTipService.ToolTip="显式扫描 PATH 中的语言工具">
+                            <SymbolIcon Symbol="Refresh" />
+                        </Button>
+                        <Button
+                            x:Name="ImportPackButton"
+                            AutomationProperties.Name="导入语言包"
+                            Click="OnImportLanguagePackClicked">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="OpenFile" />
+                                <TextBlock Text="导入语言包" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <InfoBar
+                    x:Name="StatusInfo"
+                    IsClosable="False"
+                    IsOpen="True"
+                    Severity="Informational"
+                    Title="正在读取语言目录" />
+
+                <InfoBar
+                    IsClosable="False"
+                    IsOpen="True"
+                    Message="打开此页只读取上次库存快照。只有点击扫描按钮后才检查 PATH；不会运行版本命令或访问网络。"
+                    Severity="Informational"
+                    Title="按需检测" />
+
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource CardCornerRadius}">
+                    <StackPanel x:Name="FilterPanel" Spacing="10">
+                        <AutoSuggestBox
+                            x:Name="SearchBox"
+                            AutomationProperties.Name="搜索语言"
+                            PlaceholderText="搜索语言、别名或扩展名"
+                            QueryIcon="Find"
+                            TextChanged="OnSearchTextChanged" />
+                        <ComboBox
+                            x:Name="FilterCombo"
+                            AutomationProperties.Name="语言筛选"
+                            DisplayMemberPath="Label"
+                            SelectionChanged="OnFilterChanged" />
+                        <ToggleSwitch
+                            x:Name="ShowAllToggle"
+                            AutomationProperties.Name="显示所有语言"
+                            Header="显示所有语言"
+                            OffContent="有效集合"
+                            OnContent="全部目录"
+                            Toggled="OnShowAllToggled" />
+                    </StackPanel>
+                </Border>
+
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="2">
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="编译器工具与运行时（语言工具）" />
+                        <TextBlock
+                            x:Name="LanguageSummaryText"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="正在计算有效语言集合…"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button
+                        Grid.Column="1"
+                        AutomationProperties.Name="重置语言显示偏好"
+                        Click="OnResetVisibilityClicked"
+                        ToolTipService.ToolTip="清除所有显式启用和隐藏状态">
+                        <FontIcon Glyph="&#xE777;" />
+                    </Button>
+                </Grid>
+
+                <Grid MinHeight="120">
+                    <ListView
+                        x:Name="LanguageList"
+                        IsItemClickEnabled="False"
+                        SelectionMode="None">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,0,0,8" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Border
+                                    Padding="16"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="{StaticResource CardCornerRadius}">
+                                    <Grid ColumnSpacing="14" RowSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="44" />
+                                            <ColumnDefinition />
+                                            <ColumnDefinition x:Name="LanguageActionsColumn" Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition />
+                                            <RowDefinition x:Name="LanguageActionsRow" Height="0" />
+                                        </Grid.RowDefinitions>
+                                        <VisualStateManager.VisualStateGroups>
+                                            <VisualStateGroup>
+                                                <VisualState x:Name="CompactLanguageItem">
+                                                    <VisualState.StateTriggers>
+                                                        <AdaptiveTrigger MinWindowWidth="0" />
+                                                    </VisualState.StateTriggers>
+                                                    <VisualState.Setters>
+                                                        <Setter Target="LanguageActionsColumn.Width" Value="0" />
+                                                        <Setter Target="LanguageActionsRow.Height" Value="Auto" />
+                                                        <Setter Target="LanguageActions.(Grid.Row)" Value="1" />
+                                                        <Setter Target="LanguageActions.(Grid.Column)" Value="1" />
+                                                        <Setter Target="LanguageActions.Margin" Value="0,4,0,0" />
+                                                        <Setter Target="LanguageActions.HorizontalAlignment" Value="Left" />
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                                <VisualState x:Name="WideLanguageItem">
+                                                    <VisualState.StateTriggers>
+                                                        <AdaptiveTrigger MinWindowWidth="700" />
+                                                    </VisualState.StateTriggers>
+                                                    <VisualState.Setters>
+                                                        <Setter Target="LanguageActionsColumn.Width" Value="Auto" />
+                                                        <Setter Target="LanguageActionsRow.Height" Value="0" />
+                                                        <Setter Target="LanguageActions.(Grid.Row)" Value="0" />
+                                                        <Setter Target="LanguageActions.(Grid.Column)" Value="2" />
+                                                        <Setter Target="LanguageActions.Margin" Value="0" />
+                                                        <Setter Target="LanguageActions.HorizontalAlignment" Value="Stretch" />
+                                                    </VisualState.Setters>
+                                                </VisualState>
+                                            </VisualStateGroup>
+                                        </VisualStateManager.VisualStateGroups>
+                                        <Border
+                                            Width="40"
+                                            Height="40"
+                                            VerticalAlignment="Top"
+                                            Background="{ThemeResource AccentFillColorSecondaryBrush}"
+                                            CornerRadius="6">
+                                            <TextBlock
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                FontSize="16"
+                                                FontWeight="SemiBold"
+                                                Text="{Binding Monogram}" />
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Spacing="5">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock FontSize="17" FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                                                <Border
+                                                    Padding="6,2"
+                                                    Background="{ThemeResource AccentFillColorTertiaryBrush}"
+                                                    CornerRadius="4"
+                                                    Visibility="{Binding DetectedVisibility}">
+                                                    <TextBlock FontSize="12" Text="已检测" />
+                                                </Border>
+                                                <Border
+                                                    Padding="6,2"
+                                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                    CornerRadius="4"
+                                                    Visibility="{Binding DefaultVisibility}">
+                                                    <TextBlock FontSize="12" Text="默认" />
+                                                </Border>
+                                                <Border
+                                                    Padding="6,2"
+                                                    Background="{ThemeResource SystemFillColorCautionBackgroundBrush}"
+                                                    CornerRadius="4"
+                                                    Visibility="{Binding HiddenVisibility}">
+                                                    <TextBlock FontSize="12" Text="已隐藏" />
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Text="{Binding ToolSummary}"
+                                                TextWrapping="Wrap" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Text="{Binding IdentitySummary}"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <StackPanel
+                                            x:Name="LanguageActions"
+                                            Grid.Column="2"
+                                            VerticalAlignment="Center"
+                                            Orientation="Horizontal"
+                                            Spacing="6">
+                                            <Button
+                                                AutomationProperties.Name="{Binding VisibilityActionText}"
+                                                Click="OnToggleLanguageVisibilityClicked"
+                                                Tag="{Binding}"
+                                                ToolTipService.ToolTip="{Binding VisibilityActionText}">
+                                                <FontIcon Glyph="{Binding VisibilityGlyph}" />
+                                            </Button>
+                                            <Button
+                                                AutomationProperties.Name="打开语言详情"
+                                                Click="OnOpenLanguageClicked"
+                                                Tag="{Binding}"
+                                                ToolTipService.ToolTip="打开语言详情">
+                                                <SymbolIcon Symbol="Forward" />
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                    <TextBlock
+                        x:Name="EmptyLanguageText"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="没有符合当前条件的语言。"
+                        Visibility="Collapsed" />
+                </Grid>
+
+                <Expander IsExpanded="False">
+                    <Expander.Header>
+                        <StackPanel Spacing="2">
+                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="语言包" />
+                            <TextBlock
+                                x:Name="LanguagePackSummaryText"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="读取已导入语言包…" />
+                        </StackPanel>
+                    </Expander.Header>
+                    <StackPanel Padding="0,12,0,0" Spacing="10">
+                        <InfoBar
+                            IsClosable="False"
+                            IsOpen="True"
+                            Message="语言包只能添加声明式语言和工具元数据；不能加载 DLL、脚本、任意命令或安装钩子。导入后默认停用。"
+                            Severity="Informational"
+                            Title="Data-only schema 1" />
+                        <ListView
+                            x:Name="LanguagePackList"
+                            IsItemClickEnabled="False"
+                            SelectionMode="None">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0,0,0,8" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Padding="14"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="{StaticResource CardCornerRadius}">
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                                                <TextBlock
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Text="{Binding Detail}"
+                                                    TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                                <Button
+                                                    Click="OnToggleLanguagePackClicked"
+                                                    Content="{Binding ToggleText}"
+                                                    Tag="{Binding}" />
+                                                <Button
+                                                    AutomationProperties.Name="删除语言包"
+                                                    Click="OnDeleteLanguagePackClicked"
+                                                    Tag="{Binding}"
+                                                    ToolTipService.ToolTip="删除语言包">
+                                                    <SymbolIcon Symbol="Delete" />
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <TextBlock
+                            x:Name="EmptyPackText"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="尚未导入语言包。" />
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
+        </ScrollViewer>
+
+        <ContentControl
+            x:Name="DetailSurface"
+            Visibility="Collapsed" />
+    </Grid>
+</Page>

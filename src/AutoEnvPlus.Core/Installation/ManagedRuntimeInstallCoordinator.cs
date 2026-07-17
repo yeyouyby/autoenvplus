@@ -23,6 +23,7 @@ public sealed class ManagedRuntimeInstallCoordinator
     private readonly IArchiveInstaller _installer;
     private readonly IManagedRuntimeRegistryStore _registry;
     private readonly IGlobalRuntimeProfileStore _globalProfile;
+    private readonly ManagedStateLock _stateTransactionLock;
 
     public ManagedRuntimeInstallCoordinator(string managedRoot, HttpClient httpClient)
         : this(
@@ -44,6 +45,7 @@ public sealed class ManagedRuntimeInstallCoordinator
         _installer = installer ?? throw new ArgumentNullException(nameof(installer));
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _globalProfile = globalProfile ?? throw new ArgumentNullException(nameof(globalProfile));
+        _stateTransactionLock = ManagedStateLock.CreateRuntimeTransaction(_managedRoot);
     }
 
     public async Task<ManagedRuntimeInstallTransactionResult> InstallAsync(
@@ -53,7 +55,10 @@ public sealed class ManagedRuntimeInstallCoordinator
     {
         ArgumentNullException.ThrowIfNull(request);
         ValidateRequest(request);
-        RegistryLoadResult registryBefore = await _registry.LoadAsync(
+        using ManagedStateLock.Lease transactionLock = await _stateTransactionLock.AcquireAsync(
+            cancellationToken).ConfigureAwait(false);
+
+        RegistryLoadResult registryBefore = await LoadRegistryAsync(
             cancellationToken).ConfigureAwait(false);
         if (registryBefore.Errors.Count > 0)
         {
@@ -65,7 +70,7 @@ public sealed class ManagedRuntimeInstallCoordinator
         ManagedRuntimeEntry? previousEntry = registryBefore.Entries.FirstOrDefault(entry =>
             entry.Id.Equals(request.Entry.Id, StringComparison.OrdinalIgnoreCase));
         RuntimeProfile profileBefore = request.SetGlobalDefault
-            ? await _globalProfile.LoadAsync(cancellationToken).ConfigureAwait(false)
+            ? await LoadGlobalProfileAsync(cancellationToken).ConfigureAwait(false)
             : RuntimeProfile.Empty;
         InstallResult install = await _installer.InstallAsync(
             request.Plan,
@@ -80,7 +85,7 @@ public sealed class ManagedRuntimeInstallCoordinator
         bool profileAttempted = false;
         try
         {
-            RegistryLoadResult registered = await _registry.UpsertAsync(
+            RegistryLoadResult registered = await UpsertRegistryAsync(
                 request.Entry,
                 cancellationToken).ConfigureAwait(false);
             if (registered.Errors.Count > 0)
@@ -92,8 +97,8 @@ public sealed class ManagedRuntimeInstallCoordinator
             if (request.SetGlobalDefault)
             {
                 profileAttempted = true;
-                await _globalProfile.SetAsync(
-                    request.Entry.Kind,
+                await SetGlobalProfileAsync(
+                    request.Entry,
                     new VersionSelector(
                         VersionSelectorKind.Exact,
                         request.Entry.Version),
@@ -111,13 +116,25 @@ public sealed class ManagedRuntimeInstallCoordinator
         }
         catch (OperationCanceledException)
         {
-            await CompensateAsync(
+            bool pendingCleanup = await CompensateAsync(
                 request,
                 previousEntry,
                 profileBefore,
                 registryChanged,
                 profileAttempted,
                 install.Outcome).ConfigureAwait(false);
+            if (pendingCleanup)
+            {
+                return new ManagedRuntimeInstallTransactionResult(
+                    false,
+                    install.Outcome,
+                    false,
+                    false,
+                    true,
+                    install.InstallRoot,
+                    "The runtime install was cancelled, but its state or files could not be fully restored. Manual recovery is required.");
+            }
+
             throw;
         }
         catch (Exception exception) when (exception is IOException
@@ -157,7 +174,7 @@ public sealed class ManagedRuntimeInstallCoordinator
         {
             try
             {
-                await _globalProfile.ReplaceAsync(
+                await ReplaceGlobalProfileAsync(
                     profileBefore,
                     CancellationToken.None).ConfigureAwait(false);
             }
@@ -173,7 +190,7 @@ public sealed class ManagedRuntimeInstallCoordinator
             {
                 if (previousEntry is null)
                 {
-                    RegistryLoadResult removed = await _registry.RemoveAsync(
+                    RegistryLoadResult removed = await RemoveRegistryAsync(
                         request.Entry.Id,
                         CancellationToken.None).ConfigureAwait(false);
                     if (removed.Errors.Count > 0)
@@ -183,7 +200,7 @@ public sealed class ManagedRuntimeInstallCoordinator
                 }
                 else
                 {
-                    RegistryLoadResult restored = await _registry.UpsertAsync(
+                    RegistryLoadResult restored = await UpsertRegistryAsync(
                         previousEntry,
                         CancellationToken.None).ConfigureAwait(false);
                     if (restored.Errors.Count > 0)
@@ -198,19 +215,73 @@ public sealed class ManagedRuntimeInstallCoordinator
             }
         }
 
-        if (installOutcome != InstallOutcome.Installed || !stateRestored)
+        if (!stateRestored)
         {
-            return installOutcome == InstallOutcome.Installed && !stateRestored;
+            return true;
+        }
+
+        if (installOutcome != InstallOutcome.Installed)
+        {
+            return false;
         }
 
         return !TryDeleteNewInstall(request.Plan.DestinationRoot);
     }
+
+    private Task<RegistryLoadResult> LoadRegistryAsync(CancellationToken cancellationToken) =>
+        _registry is ManagedRuntimeRegistry registry
+            ? registry.LoadWithinTransactionAsync(cancellationToken)
+            : _registry.LoadAsync(cancellationToken);
+
+    private Task<RegistryLoadResult> UpsertRegistryAsync(
+        ManagedRuntimeEntry entry,
+        CancellationToken cancellationToken) =>
+        _registry is ManagedRuntimeRegistry registry
+            ? registry.UpsertWithinTransactionAsync(entry, cancellationToken)
+            : _registry.UpsertAsync(entry, cancellationToken);
+
+    private Task<RegistryLoadResult> RemoveRegistryAsync(
+        string id,
+        CancellationToken cancellationToken) =>
+        _registry is ManagedRuntimeRegistry registry
+            ? registry.RemoveWithinTransactionAsync(id, cancellationToken)
+            : _registry.RemoveAsync(id, cancellationToken);
+
+    private Task<RuntimeProfile> LoadGlobalProfileAsync(CancellationToken cancellationToken) =>
+        _globalProfile is GlobalRuntimeProfileStore profile
+            ? profile.LoadWithinTransactionAsync(cancellationToken)
+            : _globalProfile.LoadAsync(cancellationToken);
+
+    private Task<RuntimeProfile> SetGlobalProfileAsync(
+        ManagedRuntimeEntry entry,
+        VersionSelector selector,
+        CancellationToken cancellationToken) =>
+        _globalProfile is GlobalRuntimeProfileStore profile
+            ? profile.SetExactWithinTransactionAsync(
+                entry.Kind,
+                selector,
+                entry.Id,
+                entry.ProviderId,
+                cancellationToken)
+            : _globalProfile.SetAsync(entry.Kind, selector, cancellationToken);
+
+    private Task<RuntimeProfile> ReplaceGlobalProfileAsync(
+        RuntimeProfile profile,
+        CancellationToken cancellationToken) =>
+        _globalProfile is GlobalRuntimeProfileStore concreteProfile
+            ? concreteProfile.ReplaceWithinTransactionAsync(profile, cancellationToken)
+            : _globalProfile.ReplaceAsync(profile, cancellationToken);
 
     private bool TryDeleteNewInstall(string installRoot)
     {
         try
         {
             EnsureChildPath(_managedRoot, installRoot, "install cleanup root");
+            ManagedPathSafety.EnsureOrdinaryDirectoryTree(
+                _managedRoot,
+                installRoot,
+                "install cleanup root",
+                allowMissing: true);
             if (Directory.Exists(installRoot))
             {
                 Directory.Delete(installRoot, recursive: true);

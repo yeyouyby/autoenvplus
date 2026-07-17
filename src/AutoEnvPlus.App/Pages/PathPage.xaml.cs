@@ -11,6 +11,28 @@ namespace AutoEnvPlus.App.Pages;
 
 public sealed partial class PathPage : Page
 {
+    private static readonly string[] KnownCommands =
+    [
+        "python",
+        "python3",
+        "pip",
+        "pip3",
+        "node",
+        "npm",
+        "npx",
+        "java",
+        "javac",
+        "jar",
+        "dotnet",
+        "cl",
+        "clang",
+        "clang++",
+        "gcc",
+        "g++",
+        "cmake",
+        "ninja",
+    ];
+
     private readonly string _managedRoot;
     private readonly string _cliPath;
     private readonly string _nativeShimPath;
@@ -26,6 +48,12 @@ public sealed partial class PathPage : Page
             _managedRoot,
             new WindowsUserEnvironmentVariableStore());
         InitializeComponent();
+        SwitchScopeRepeater.ItemsSource = new[]
+        {
+            new SwitchScopeRow("会话临时", "优先级 1", "只影响当前终端，不写入持久选择。"),
+            new SwitchScopeRow("项目锁定", "优先级 2", "项目目录内按 autoenvplus.toml 解析。"),
+            new SwitchScopeRow("全局默认", "优先级 3", "没有会话或项目选择时使用。"),
+        };
         Loaded += OnPageLoaded;
         LoadReport();
     }
@@ -46,7 +74,7 @@ public sealed partial class PathPage : Page
     private void LoadReport()
     {
         PathInspectionReport report = new PathInspector().InspectCurrent(
-            ["python", "node", "npm", "java", "javac", "dotnet", "cl", "clang", "cmake"]);
+            KnownCommands);
 
         PathList.ItemsSource = report.Entries.Select(entry => new PathEntryRow(
             (entry.Index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -54,10 +82,38 @@ public sealed partial class PathPage : Page
             entry.ExpandedValue,
             StatusLabel(entry))).ToArray();
 
-        SummaryInfo.Severity = report.IsHealthy ? InfoBarSeverity.Success : InfoBarSeverity.Warning;
-        SummaryInfo.Title = report.IsHealthy ? "PATH 状态正常" : "发现需要处理的 PATH 项";
+        string shimDirectory = Path.Combine(_managedRoot, "shims");
+        CommandRouteList.ItemsSource = report.CommandResolutions
+            .Select(resolution => new CommandRouteRow(
+                resolution.Command,
+                resolution.Winner?.ExecutablePath ?? "未找到",
+                RouteState(resolution, shimDirectory)))
+            .ToArray();
+        ShimRouteState shim = InspectShimState(report, shimDirectory);
+        ShimStateText.Text = shim.Message;
+        bool isHealthy = report.IsHealthy && shim.IsHealthy;
+        SummaryInfo.Severity = isHealthy
+            ? InfoBarSeverity.Success
+            : InfoBarSeverity.Warning;
+        SummaryInfo.Title = isHealthy
+            ? "PATH 与命令路由正常"
+            : "PATH 或命令路由需要检查";
         SummaryInfo.Message = $"失效 {report.MissingCount} · 重复 {report.DuplicateCount} · "
-            + $"已知命令冲突 {report.Conflicts.Count}";
+            + $"命令冲突 {report.Conflicts.Count} · Shim 接管 {shim.ManagedCommandCount}/{KnownCommands.Length}";
+    }
+
+    private async void OnRefreshPathClicked(object sender, RoutedEventArgs args)
+    {
+        SetBusy(true);
+        try
+        {
+            LoadReport();
+            await LoadSnapshotsAsync();
+        }
+        finally
+        {
+            SetBusy(false);
+        }
     }
 
     private async void OnActivateShimClicked(object sender, RoutedEventArgs args)
@@ -79,7 +135,7 @@ public sealed partial class PathPage : Page
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"将生成命令\npython、python3、pip、pip3、node、npm、npx、java、javac、jar、dotnet\n\nShim 目录\n{shimDirectory}\n\nPATH 变化\n{(plan.Changed ? "添加到用户 PATH 第一位，并保存回滚快照" : "Shim 已位于用户 PATH 第一位")}\n\n系统 PATH 不会修改。",
+                Text = $"将生成命令\npython、python3、pip、pip3、node、npm、npx、java、javac、jar、dotnet、cl、clang、clang++、gcc、g++、cmake、ninja\n\nShim 目录\n{shimDirectory}\n\nPATH 变化\n{(plan.Changed ? "添加到用户 PATH 第一位，并保存回滚快照" : "Shim 已位于用户 PATH 第一位")}\n\n系统 PATH 不会修改。",
                 TextWrapping = TextWrapping.Wrap,
             },
             PrimaryButtonText = "生成 Shim 并应用",
@@ -291,7 +347,10 @@ public sealed partial class PathPage : Page
     {
         _isBusy = isBusy;
         ActivateShimButton.IsEnabled = !isBusy;
+        RefreshPathButton.IsEnabled = !isBusy;
         RefreshSnapshotsButton.IsEnabled = !isBusy;
+        CommandRouteList.IsEnabled = !isBusy;
+        PathList.IsEnabled = !isBusy;
         SnapshotList.IsEnabled = !isBusy;
         UpdateRollbackButton();
     }
@@ -327,7 +386,127 @@ public sealed partial class PathPage : Page
         _ => "PATH 已变化",
     };
 
+    private static string RouteState(
+        CommandResolution resolution,
+        string shimDirectory)
+    {
+        if (resolution.Winner is null)
+        {
+            return "未找到";
+        }
+
+        if (PathsEqual(
+            Path.GetDirectoryName(resolution.Winner.ExecutablePath),
+            shimDirectory))
+        {
+            return resolution.Candidates.Count > 1
+                ? $"AutoEnvPlus Shim · {resolution.Candidates.Count} 个候选"
+                : "AutoEnvPlus Shim";
+        }
+
+        return resolution.Candidates.Count > 1
+            ? $"直接命令 · {resolution.Candidates.Count} 个候选"
+            : "直接命令";
+    }
+
+    private ShimRouteState InspectShimState(
+        PathInspectionReport report,
+        string shimDirectory)
+    {
+        bool persisted = (System.Environment.GetEnvironmentVariable(
+                "PATH",
+                EnvironmentVariableTarget.User) ?? string.Empty)
+            .Split(
+                ';',
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(entry => PathsEqual(
+                System.Environment.ExpandEnvironmentVariables(entry.Trim().Trim('"')),
+                shimDirectory));
+        if (!Directory.Exists(shimDirectory))
+        {
+            return new ShimRouteState(
+                !persisted,
+                0,
+                persisted
+                    ? "用户 PATH 仍引用 Shim，但受管目录不存在。"
+                    : "Shim 尚未配置；当前命令继续使用系统 PATH。");
+        }
+
+        string[] missing = KnownCommands.Where(command =>
+                !File.Exists(Path.Combine(shimDirectory, command + ".exe"))
+                && !File.Exists(Path.Combine(shimDirectory, command + ".cmd")))
+            .ToArray();
+        int managedCount = report.CommandResolutions.Count(resolution =>
+            resolution.Winner is not null
+            && PathsEqual(
+                Path.GetDirectoryName(resolution.Winner.ExecutablePath),
+                shimDirectory));
+        if (missing.Length > 0)
+        {
+            return new ShimRouteState(
+                false,
+                managedCount,
+                $"Shim 不完整，缺少：{string.Join("、", missing)}。");
+        }
+
+        if (!persisted)
+        {
+            return new ShimRouteState(
+                false,
+                managedCount,
+                "Shim 文件完整，但尚未写入持久用户 PATH。");
+        }
+
+        if (managedCount == KnownCommands.Length)
+        {
+            return new ShimRouteState(
+                true,
+                managedCount,
+                "一次性 Shim 已生效；命令切换不需要再次修改 PATH。");
+        }
+
+        return new ShimRouteState(
+            true,
+            managedCount,
+            "Shim 已写入持久用户 PATH；当前进程可能仍需在新终端中刷新。");
+    }
+
+    private static bool PathsEqual(string? left, string? right)
+    {
+        if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
+        {
+            return false;
+        }
+
+        try
+        {
+            return Path.GetFullPath(left).TrimEnd(
+                    Path.DirectorySeparatorChar,
+                    Path.AltDirectorySeparatorChar)
+                .Equals(
+                    Path.GetFullPath(right).TrimEnd(
+                        Path.DirectorySeparatorChar,
+                        Path.AltDirectorySeparatorChar),
+                    StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception exception) when (exception is ArgumentException
+            or NotSupportedException
+            or PathTooLongException)
+        {
+            return false;
+        }
+    }
+
     private sealed record PathEntryRow(string Index, string Scope, string Path, string Status);
+
+    private sealed record CommandRouteRow(string Command, string Winner, string State);
+
+    private sealed record SwitchScopeRow(string Scope, string Priority, string Detail);
+
+    private sealed record ShimRouteState(
+        bool IsHealthy,
+        int ManagedCommandCount,
+        string Message);
 
     private sealed record PathSnapshotRow(
         UserPathSnapshotInfo Snapshot,

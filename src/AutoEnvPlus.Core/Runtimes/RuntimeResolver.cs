@@ -8,8 +8,18 @@ public enum ResolutionScope
     Session,
 }
 
+public sealed record RuntimeSelectionIdentity(
+    string RuntimeId,
+    string ProviderId);
+
 public sealed record RuntimeProfile(IReadOnlyDictionary<RuntimeKind, VersionSelector> Selections)
 {
+    public IReadOnlyDictionary<RuntimeKind, RuntimeSelectionIdentity> ExactSelections
+    {
+        get;
+        init;
+    } = new Dictionary<RuntimeKind, RuntimeSelectionIdentity>();
+
     public static RuntimeProfile Empty { get; } = new(
         new Dictionary<RuntimeKind, VersionSelector>());
 }

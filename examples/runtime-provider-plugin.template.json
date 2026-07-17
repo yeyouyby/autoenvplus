@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 2,
+  "id": "example-python-build",
+  "displayName": "Example Python-compatible build",
+  "vendor": "Replace with the actual vendor",
+  "homepage": "https://vendor.example.invalid/runtime/",
+  "license": "Replace with the exact runtime license identifier",
+  "languageToolId": "cpython",
+  "releases": [
+    {
+      "version": "3.13.0",
+      "channels": [
+        "stable",
+        "third-party"
+      ],
+      "releaseDate": "2026-01-01",
+      "assets": [
+        {
+          "architecture": "x64",
+          "fileName": "example-python-3.13.0-x64.zip",
+          "downloadUri": "https://downloads.example.invalid/example-python-3.13.0-x64.zip",
+          "checksumSourceUri": "https://downloads.example.invalid/checksums-3.13.0.txt",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "archiveRoot": "example-python-3.13.0",
+          "expectedExecutableRelativePath": "python.exe"
+        }
+      ]
+    }
+  ]
+}

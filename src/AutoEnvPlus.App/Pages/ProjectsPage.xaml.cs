@@ -19,6 +19,7 @@ public sealed partial class ProjectsPage : Page
     private string? _manifestPath;
     private ProjectEnvironmentImportResult? _import;
     private string? _lastCMakePresetSnapshot;
+    private CancellationTokenSource? _virtualEnvironmentScanCancellation;
 
     public ProjectsPage()
         : this(null)
@@ -32,6 +33,7 @@ public sealed partial class ProjectsPage : Page
             : Path.GetFullPath(initialProjectRoot);
         InitializeComponent();
         Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
@@ -41,6 +43,13 @@ public sealed partial class ProjectsPage : Page
         {
             await TryLoadProjectAsync(_initialProjectRoot);
         }
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs args)
+    {
+        _virtualEnvironmentScanCancellation?.Cancel();
+        _virtualEnvironmentScanCancellation?.Dispose();
+        _virtualEnvironmentScanCancellation = null;
     }
 
     private async void OnChooseProjectClicked(object sender, RoutedEventArgs args)
@@ -92,6 +101,9 @@ public sealed partial class ProjectsPage : Page
 
     private async Task LoadProjectAsync(string startPath)
     {
+        _virtualEnvironmentScanCancellation?.Cancel();
+        _virtualEnvironmentScanCancellation?.Dispose();
+        _virtualEnvironmentScanCancellation = null;
         _manifestPath = new ProjectManifestService().FindManifest(startPath);
         _import = new ProjectEnvironmentImportService().Discover(startPath);
         _projectRoot = _manifestPath is not null
@@ -138,13 +150,159 @@ public sealed partial class ProjectsPage : Page
         CreateLockButton.IsEnabled = _manifestPath is not null;
         CreateCMakePresetButton.IsEnabled = File.Exists(
             Path.Combine(_projectRoot!, "CMakeLists.txt"));
+        ResetVirtualEnvironmentDiscovery();
         await new KnownProjectStore(GetManagedRoot()).AddAsync(_projectRoot!);
         ProjectInfo.Severity = InfoBarSeverity.Success;
         ProjectInfo.Title = "项目环境已读取";
         ProjectInfo.Message = _manifestPath is not null
-            ? "可以使用已安装运行时生成精确锁文件。"
+            ? "可以使用已安装语言工具生成精确锁文件。"
             : "确认导入来源后可生成 autoenvplus.toml。";
     }
+
+    private async void OnDiscoverVirtualEnvironmentsClicked(object sender, RoutedEventArgs args)
+    {
+        if (_projectRoot is null)
+        {
+            return;
+        }
+
+        string scannedRoot = _projectRoot;
+        _virtualEnvironmentScanCancellation?.Cancel();
+        _virtualEnvironmentScanCancellation?.Dispose();
+        CancellationTokenSource scanCancellation = new();
+        _virtualEnvironmentScanCancellation = scanCancellation;
+        CancellationToken cancellationToken = scanCancellation.Token;
+        SetVirtualEnvironmentBusy(true);
+        VirtualEnvironmentList.ItemsSource = null;
+        VirtualEnvironmentList.Visibility = Visibility.Collapsed;
+        VirtualEnvironmentEmptyText.Visibility = Visibility.Collapsed;
+        VirtualEnvironmentInfo.IsOpen = true;
+        VirtualEnvironmentInfo.Severity = InfoBarSeverity.Informational;
+        VirtualEnvironmentInfo.Title = "正在解析项目虚拟环境";
+        VirtualEnvironmentInfo.Message = "只读取固定候选路径和受大小限制的配置文件。";
+        try
+        {
+            ProjectVirtualEnvironmentDiscoveryResult result = await Task.Run(
+                () => new ProjectVirtualEnvironmentDiscoveryService().Discover(
+                    scannedRoot,
+                    cancellationToken: cancellationToken),
+                cancellationToken);
+            if (!IsCurrentVirtualEnvironmentScan(scanCancellation, scannedRoot))
+            {
+                return;
+            }
+
+            ShowVirtualEnvironmentDiscovery(result);
+        }
+        catch (OperationCanceledException)
+        {
+            if (IsCurrentVirtualEnvironmentScan(scanCancellation, scannedRoot))
+            {
+                VirtualEnvironmentInfo.IsOpen = true;
+                VirtualEnvironmentInfo.Severity = InfoBarSeverity.Informational;
+                VirtualEnvironmentInfo.Title = "解析已取消";
+                VirtualEnvironmentInfo.Message = "没有修改项目文件或环境设置。";
+                VirtualEnvironmentEmptyText.Text = "可再次点击“解析虚拟环境”。";
+                VirtualEnvironmentEmptyText.Visibility = Visibility.Visible;
+            }
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidDataException
+            or InvalidOperationException
+            or ArgumentException)
+        {
+            if (IsCurrentVirtualEnvironmentScan(scanCancellation, scannedRoot))
+            {
+                VirtualEnvironmentInfo.IsOpen = true;
+                VirtualEnvironmentInfo.Severity = InfoBarSeverity.Error;
+                VirtualEnvironmentInfo.Title = "无法解析虚拟环境";
+                VirtualEnvironmentInfo.Message = exception.Message;
+                VirtualEnvironmentEmptyText.Text = "扫描失败；项目内容未被修改。";
+                VirtualEnvironmentEmptyText.Visibility = Visibility.Visible;
+            }
+        }
+        finally
+        {
+            if (IsCurrentVirtualEnvironmentScan(scanCancellation, scannedRoot))
+            {
+                SetVirtualEnvironmentBusy(false);
+                scanCancellation.Dispose();
+                _virtualEnvironmentScanCancellation = null;
+            }
+        }
+    }
+
+    private void ResetVirtualEnvironmentDiscovery()
+    {
+        VirtualEnvironmentList.ItemsSource = null;
+        VirtualEnvironmentList.Visibility = Visibility.Collapsed;
+        VirtualEnvironmentInfo.IsOpen = false;
+        VirtualEnvironmentEmptyText.Text = "点击“解析虚拟环境”读取当前项目的本地证据。";
+        VirtualEnvironmentEmptyText.Visibility = Visibility.Visible;
+        VirtualEnvironmentProgress.Visibility = Visibility.Collapsed;
+        DiscoverVirtualEnvironmentsButton.IsEnabled = _projectRoot is not null;
+    }
+
+    private void ShowVirtualEnvironmentDiscovery(ProjectVirtualEnvironmentDiscoveryResult result)
+    {
+        VirtualEnvironmentRow[] rows = result.Environments
+            .Select(environment => new VirtualEnvironmentRow(environment))
+            .ToArray();
+        int invalidCount = result.Environments.Count(environment =>
+            environment.Health == ProjectVirtualEnvironmentHealth.Invalid);
+        int attentionCount = result.Environments.Count(environment =>
+            environment.Health == ProjectVirtualEnvironmentHealth.NeedsAttention);
+
+        VirtualEnvironmentInfo.IsOpen = true;
+        VirtualEnvironmentInfo.Severity = invalidCount > 0
+            || attentionCount > 0
+            || result.Warnings.Count > 0
+                ? InfoBarSeverity.Warning
+                : InfoBarSeverity.Success;
+        VirtualEnvironmentInfo.Title = rows.Length == 0
+            ? "未发现项目虚拟环境"
+            : $"发现 {rows.Length} 项本地环境证据";
+        VirtualEnvironmentInfo.Message = rows.Length == 0
+            ? result.Warnings.Count == 0
+                ? $"已检查 {result.InspectedPathCount} 个固定候选路径；没有执行外部命令。"
+                : string.Join("；", result.Warnings.Take(3))
+            : $"需注意 {attentionCount} 项 · 无效 {invalidCount} 项 · "
+                + $"检查路径 {result.InspectedPathCount} 个"
+                + (result.ScanLimitReached ? " · 已达到扫描上限" : string.Empty);
+
+        if (rows.Length == 0)
+        {
+            VirtualEnvironmentList.ItemsSource = null;
+            VirtualEnvironmentList.Visibility = Visibility.Collapsed;
+            VirtualEnvironmentEmptyText.Text = "没有发现 .venv/Conda、Node 依赖环境、.NET 工具清单、Java Wrapper、Rust 或 Go 工作区。";
+            VirtualEnvironmentEmptyText.Visibility = Visibility.Visible;
+            return;
+        }
+
+        VirtualEnvironmentList.ItemsSource = rows;
+        VirtualEnvironmentList.Visibility = Visibility.Visible;
+        VirtualEnvironmentEmptyText.Visibility = Visibility.Collapsed;
+    }
+
+    private void SetVirtualEnvironmentBusy(bool busy)
+    {
+        DiscoverVirtualEnvironmentsButton.IsEnabled = !busy && _projectRoot is not null;
+        VirtualEnvironmentProgress.Visibility = busy
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    private static bool PathsEqual(string left, string? right) => right is not null
+        && string.Equals(
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(left)),
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(right)),
+            StringComparison.OrdinalIgnoreCase);
+
+    private bool IsCurrentVirtualEnvironmentScan(
+        CancellationTokenSource scanCancellation,
+        string scannedRoot) => ReferenceEquals(_virtualEnvironmentScanCancellation, scanCancellation)
+        && PathsEqual(scannedRoot, _projectRoot);
 
     private async void OnCreateManifestClicked(object sender, RoutedEventArgs args)
     {
@@ -305,10 +463,10 @@ public sealed partial class ProjectsPage : Page
         preview.AppendLine($"\n终端主机\n{TerminalHostDisplayName(plan.EffectiveHost)}");
         preview.AppendLine($"\nShell\n{plan.ShellExecutable} {string.Join(' ', plan.ShellArguments)}");
         preview.AppendLine($"\nShim\n{plan.ShimDirectory}");
-        preview.AppendLine("\n精确运行时");
+        preview.AppendLine("\n精确语言工具");
         if (plan.Selections.Count == 0)
         {
-            preview.AppendLine("（没有可由 AutoEnvPlus Shim 激活的运行时）");
+            preview.AppendLine("（没有可由 AutoEnvPlus Shim 激活的语言工具）");
         }
         else
         {
@@ -317,6 +475,33 @@ public sealed partial class ProjectsPage : Page
                 preview.AppendLine(
                     $"{selection.Kind}: {selection.RequestedSelector} → {selection.ResolvedVersion} ({selection.RuntimeId})");
                 preview.AppendLine($"  {selection.EnvironmentVariable}={selection.ResolvedVersion}");
+            }
+        }
+
+        ProjectTerminalNetworkSummary network = plan.NetworkSummary;
+        preview.AppendLine("\n网络环境");
+        if (!network.Applied)
+        {
+            preview.AppendLine("项目没有 Python 或 Node.js 网络工具，未注入包源环境。");
+        }
+        else
+        {
+            preview.AppendLine($"代理来源：{ProxySourceText(network.ProxySource)}");
+            preview.AppendLine(
+                $"HTTP：{ConfiguredText(network.HttpProxyConfigured)} · HTTPS：{ConfiguredText(network.HttpsProxyConfigured)} · 绕过项：{network.NoProxyEntryCount}");
+            if (network.PipEnvironmentApplied)
+            {
+                preview.AppendLine($"pip 镜像：{MirrorText(network.PipMirrorConfigured)}");
+            }
+
+            if (network.NpmEnvironmentApplied)
+            {
+                preview.AppendLine($"npm registry：{MirrorText(network.NpmMirrorConfigured)}");
+            }
+
+            if (plan.EnvironmentRemovals.Count > 0)
+            {
+                preview.AppendLine($"将清除 {plan.EnvironmentRemovals.Count} 个不应继承的网络环境变量。");
             }
         }
 
@@ -340,6 +525,19 @@ public sealed partial class ProjectsPage : Page
         _ => host.ToString(),
     };
 
+    private static string ProxySourceText(ProjectTerminalProxySource source) => source switch
+    {
+        ProjectTerminalProxySource.Pip => "pip 工具覆盖",
+        ProjectTerminalProxySource.Npm => "npm 工具覆盖",
+        ProjectTerminalProxySource.MatchingPackageTools => "pip 与 npm 一致配置",
+        ProjectTerminalProxySource.Downloads => "下载中心回退配置",
+        _ => "直连",
+    };
+
+    private static string ConfiguredText(bool configured) => configured ? "已配置代理" : "直连";
+
+    private static string MirrorText(bool configured) => configured ? "已配置" : "官方源";
+
     private async void OnCreateLockClicked(object sender, RoutedEventArgs args)
     {
         if (_manifestPath is null)
@@ -361,7 +559,7 @@ public sealed partial class ProjectsPage : Page
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.ProjectImport,
                     ActivityStatus.Failed,
-                    "项目精确锁文件未生成；运行时解析存在未满足项。",
+                    "项目精确锁文件未生成；语言工具解析存在未满足项。",
                     [_manifestPath]);
                 return;
             }
@@ -371,11 +569,11 @@ public sealed partial class ProjectsPage : Page
                 ProjectLockFileService.LockFileName);
             ProjectInfo.Severity = InfoBarSeverity.Success;
             ProjectInfo.Title = "项目锁文件已生成";
-            ProjectInfo.Message = $"{lockPath} · {result.Document!.Runtimes.Count} 个精确运行时";
+            ProjectInfo.Message = $"{lockPath} · {result.Document!.Runtimes.Count} 个精确语言工具";
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.ProjectImport,
                 ActivityStatus.Succeeded,
-                $"已生成包含 {result.Document.Runtimes.Count} 个精确运行时的项目锁文件。",
+                $"已生成包含 {result.Document.Runtimes.Count} 个精确语言工具的项目锁文件。",
                 [_manifestPath, lockPath]);
         }
         catch (Exception exception) when (exception is IOException
@@ -600,6 +798,72 @@ public sealed partial class ProjectsPage : Page
     }
 
     private static string GetManagedRoot() => ManagedRootResolver.ResolveOrThrow();
+
+    private sealed record VirtualEnvironmentRow(ProjectVirtualEnvironment Environment)
+    {
+        public string Title => $"{LanguageName(Environment.LanguageId)} · "
+            + $"{Environment.Manager} · {KindName(Environment.Kind)}";
+
+        public string HealthText => Environment.Health switch
+        {
+            ProjectVirtualEnvironmentHealth.Healthy => "正常",
+            ProjectVirtualEnvironmentHealth.NeedsAttention => "需要检查",
+            _ => "不可用",
+        };
+
+        public string VersionText => Environment.Version is null
+            ? string.Empty
+            : $"版本：{Environment.Version}";
+
+        public Visibility VersionVisibility => Environment.Version is null
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+
+        public string Root => Environment.Root;
+
+        public string ExecutableText => Environment.Executable is null
+            ? string.Empty
+            : $"入口：{Environment.Executable}";
+
+        public Visibility ExecutableVisibility => Environment.Executable is null
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+
+        public string EvidenceText => "证据：" + string.Join(" · ", Environment.Evidence);
+
+        public string WarningText => Environment.Warnings.Count == 0
+            ? string.Empty
+            : "注意：" + string.Join("；", Environment.Warnings);
+
+        public Visibility WarningVisibility => Environment.Warnings.Count == 0
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+
+        private static string LanguageName(string languageId) => languageId switch
+        {
+            "python" => "Python",
+            "nodejs" => "Node.js",
+            "dotnet" => ".NET",
+            "java" => "Java",
+            "rust" => "Rust",
+            "go" => "Go",
+            _ => languageId,
+        };
+
+        private static string KindName(string kind) => kind switch
+        {
+            "virtual-environment" => "虚拟环境",
+            "conda-environment" => "Conda 环境",
+            "environment-definition" => "环境管理声明",
+            "dependency-environment" => "依赖环境",
+            "local-tool-manifest" => "本地工具清单",
+            "build-wrapper" => "构建 Wrapper",
+            "toolchain-selection" => "编译工具选择",
+            "build-output" => "构建输出",
+            "workspace" => "工作区",
+            _ => kind,
+        };
+    }
 
     private sealed record TerminalHostChoice(ProjectTerminalHost Host, string Label);
 

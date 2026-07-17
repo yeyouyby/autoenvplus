@@ -37,6 +37,85 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
     }
 
     [Fact]
+    public async Task InstallAsync_ExistingDestinationMustMatchManagedReceiptAndPackageHash()
+    {
+        byte[] originalArchive = CreateZip(($"{ArchiveRoot}/node.exe", "original-node"));
+        ArchiveInstallPlan originalPlan = CreatePlan(originalArchive);
+        using HttpClient originalClient = new(new StubHttpMessageHandler(_ =>
+            StubHttpMessageHandler.Bytes(originalArchive)));
+        InstallResult installed = await new ManagedArchiveInstaller(originalClient)
+            .InstallAsync(originalPlan);
+        Assert.Equal(InstallOutcome.Installed, installed.Outcome);
+
+        byte[] replacementArchive = CreateZip(($"{ArchiveRoot}/node.exe", "replacement"));
+        ArchiveInstallPlan replacementPlan = CreatePlan(replacementArchive);
+        int requests = 0;
+        using HttpClient replacementClient = new(new StubHttpMessageHandler(_ =>
+        {
+            requests++;
+            return StubHttpMessageHandler.Bytes(replacementArchive);
+        }));
+
+        InstallResult replacement = await new ManagedArchiveInstaller(replacementClient)
+            .InstallAsync(replacementPlan);
+
+        Assert.Equal(InstallOutcome.Failed, replacement.Outcome);
+        Assert.Contains("different or unverified", replacement.Error, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, requests);
+        Assert.Equal(
+            "original-node",
+            File.ReadAllText(Path.Combine(originalPlan.DestinationRoot, "node.exe")));
+        InstallResult originalAgain = await new ManagedArchiveInstaller(originalClient)
+            .InstallAsync(originalPlan);
+        Assert.Equal(InstallOutcome.AlreadyInstalled, originalAgain.Outcome);
+    }
+
+    [Fact]
+    public async Task InstallAsync_ExistingExecutableWithoutReceiptIsNotTrustedAsInstalled()
+    {
+        byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "reviewed-node"));
+        ArchiveInstallPlan plan = CreatePlan(archive);
+        Directory.CreateDirectory(plan.DestinationRoot);
+        await File.WriteAllTextAsync(
+            Path.Combine(plan.DestinationRoot, "node.exe"),
+            "unreceipted-node");
+        int requests = 0;
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+        {
+            requests++;
+            return StubHttpMessageHandler.Bytes(archive);
+        }));
+
+        InstallResult result = await new ManagedArchiveInstaller(client).InstallAsync(plan);
+
+        Assert.Equal(InstallOutcome.Failed, result.Outcome);
+        Assert.Contains("receipt", result.Error, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, requests);
+        Assert.Equal(
+            "unreceipted-node",
+            File.ReadAllText(Path.Combine(plan.DestinationRoot, "node.exe")));
+    }
+
+    [Fact]
+    public async Task InstallAsync_ReceiptDoesNotHideEntryPointContentTampering()
+    {
+        byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "reviewed-node"));
+        ArchiveInstallPlan plan = CreatePlan(archive);
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+            StubHttpMessageHandler.Bytes(archive)));
+        InstallResult installed = await new ManagedArchiveInstaller(client).InstallAsync(plan);
+        Assert.Equal(InstallOutcome.Installed, installed.Outcome);
+        await File.WriteAllTextAsync(
+            Path.Combine(plan.DestinationRoot, "node.exe"),
+            "tampered-node");
+
+        InstallResult repeated = await new ManagedArchiveInstaller(client).InstallAsync(plan);
+
+        Assert.Equal(InstallOutcome.Failed, repeated.Outcome);
+        Assert.Contains("changed", repeated.Error, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task InstallAsync_VerifiesSha512AndPartitionsDownloadCacheByAlgorithm()
     {
         byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "node-binary"));
@@ -116,6 +195,23 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
         Assert.Contains("SHA-256 mismatch", result.Error);
         Assert.False(Directory.Exists(plan.DestinationRoot));
         AssertStagingIsEmpty();
+    }
+
+    [Fact]
+    public async Task InstallAsync_DoesNotExposeSignedUrlFromTransportException()
+    {
+        byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "node-binary"));
+        ArchiveInstallPlan plan = CreatePlan(archive);
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+            throw new HttpRequestException(
+                "Failed https://example.test/node.zip?token=do-not-log")));
+
+        InstallResult result = await new ManagedArchiveInstaller(client).InstallAsync(plan);
+
+        Assert.Equal(InstallOutcome.Failed, result.Outcome);
+        Assert.DoesNotContain("do-not-log", result.Error, StringComparison.Ordinal);
+        Assert.DoesNotContain("?token", result.Error, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("transport", result.Error, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

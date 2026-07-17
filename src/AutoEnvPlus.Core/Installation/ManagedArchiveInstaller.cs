@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Text.Json;
 using AutoEnvPlus.Core.Providers;
 
 namespace AutoEnvPlus.Core.Installation;
@@ -13,6 +14,14 @@ public interface IArchiveInstaller
 
 public sealed class ManagedArchiveInstaller : IArchiveInstaller
 {
+    private const string InstallReceiptFileName = ".autoenvplus-install.json";
+    private const int MaximumInstallReceiptBytes = 32 * 1024;
+    private static readonly JsonSerializerOptions ReceiptJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+    };
+
     private readonly HttpClient _httpClient;
     private readonly IDetachedPackageSignatureVerifier _signatureVerifier;
 
@@ -35,21 +44,22 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
 
         if (Directory.Exists(paths.DestinationRoot))
         {
-            return File.Exists(paths.ExpectedExecutable)
-                ? new InstallResult(InstallOutcome.AlreadyInstalled, paths.DestinationRoot, null)
-                : new InstallResult(
-                    InstallOutcome.Failed,
-                    null,
-                    "The destination already exists but does not contain the expected executable.");
+            return await ValidateExistingInstallationAsync(
+                plan,
+                paths,
+                cancellationToken).ConfigureAwait(false);
         }
 
-        Directory.CreateDirectory(paths.ManagedRoot);
+        CreateRegularDirectoryPath(paths.ManagedRoot, "managed root");
+        string stagingContainer = Path.Combine(paths.ManagedRoot, ".staging");
+        EnsureChildPath(paths.ManagedRoot, stagingContainer, "staging root");
+        CreateRegularDirectoryPath(stagingContainer, "staging root");
         _ = new StagingDirectoryReclaimer().Reclaim(
             paths.ManagedRoot,
             TimeSpan.FromHours(24));
-        string stagingRoot = Path.Combine(paths.ManagedRoot, ".staging", Guid.NewGuid().ToString("N"));
+        string stagingRoot = Path.Combine(stagingContainer, Guid.NewGuid().ToString("N"));
         EnsureChildPath(paths.ManagedRoot, stagingRoot, "staging directory");
-        Directory.CreateDirectory(stagingRoot);
+        CreateRegularDirectoryPath(stagingRoot, "operation staging directory");
 
         string downloadDirectory = Path.Combine(
             paths.ManagedRoot,
@@ -57,7 +67,7 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
             plan.Asset.HashAlgorithm.DisplayName().ToLowerInvariant().Replace("-", string.Empty),
             plan.Asset.PackageHash.ToLowerInvariant());
         EnsureChildPath(paths.ManagedRoot, downloadDirectory, "download cache directory");
-        Directory.CreateDirectory(downloadDirectory);
+        CreateRegularDirectoryPath(downloadDirectory, "download cache directory");
         string packagePath = Path.Combine(downloadDirectory, plan.Asset.FileName);
         string extractionRoot = Path.Combine(stagingRoot, "extracted");
         bool promoted = false;
@@ -128,14 +138,47 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
                     $"The archive does not contain '{plan.ExpectedExecutableRelativePath}' in its payload root.");
             }
 
+            EnsureRegularFile(payloadExecutable, "archive entry point");
+            string expectedExecutableSha256 = await PackageHashAlgorithm.Sha256
+                .ComputeFileHashAsync(payloadExecutable, cancellationToken)
+                .ConfigureAwait(false);
+            InstallReceipt installReceipt = CreateInstallReceipt(
+                plan,
+                expectedExecutableSha256);
+            WriteInstallReceipt(payloadRoot, installReceipt);
+
             progress?.Report(new InstallProgress("commit"));
-            Directory.CreateDirectory(Path.GetDirectoryName(paths.DestinationRoot)!);
+            CreateRegularDirectoryPath(
+                Path.GetDirectoryName(paths.DestinationRoot)!,
+                "runtime destination parent");
+            EnsureNoReparsePointInPath(paths.DestinationRoot);
             Directory.Move(payloadRoot, paths.DestinationRoot);
             promoted = true;
+            EnsureNoReparsePointInPath(paths.DestinationRoot);
 
             if (!File.Exists(paths.ExpectedExecutable))
             {
                 throw new InvalidDataException("Post-install validation could not find the expected executable.");
+            }
+
+            EnsureRegularFile(paths.ExpectedExecutable, "installed entry point");
+            if (!InstallReceiptMatches(
+                    ReadInstallReceipt(paths.DestinationRoot),
+                    installReceipt))
+            {
+                throw new InvalidDataException(
+                    "Post-install validation could not verify the managed installation receipt.");
+            }
+
+            string installedExecutableSha256 = await PackageHashAlgorithm.Sha256
+                .ComputeFileHashAsync(paths.ExpectedExecutable, cancellationToken)
+                .ConfigureAwait(false);
+            if (!installedExecutableSha256.Equals(
+                    installReceipt.ExpectedExecutableSha256,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException(
+                    "Post-install validation detected an entry-point content change.");
             }
 
             progress?.Report(new InstallProgress("complete"));
@@ -157,7 +200,10 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
                 TryDeleteDirectory(paths.ManagedRoot, paths.DestinationRoot);
             }
 
-            return new InstallResult(InstallOutcome.Failed, null, exception.Message);
+            return new InstallResult(
+                InstallOutcome.Failed,
+                null,
+                DescribeSafeInstallFailure(exception));
         }
         finally
         {
@@ -286,12 +332,242 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
         string managedRoot = Path.GetFullPath(plan.ManagedRoot);
         string destinationRoot = Path.GetFullPath(plan.DestinationRoot);
         EnsureChildPath(managedRoot, destinationRoot, "install destination");
+        EnsureNoReparsePointInPath(managedRoot);
+        EnsureNoReparsePointInPath(destinationRoot);
         string expectedExecutable = ResolveRelativePath(
             destinationRoot,
             plan.ExpectedExecutableRelativePath,
             "expected executable");
 
         return new ValidatedPlan(managedRoot, destinationRoot, expectedExecutable);
+    }
+
+    private static async Task<InstallResult> ValidateExistingInstallationAsync(
+        ArchiveInstallPlan plan,
+        ValidatedPlan paths,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            EnsureNoReparsePointInPath(paths.DestinationRoot);
+            if (!File.Exists(paths.ExpectedExecutable))
+            {
+                return new InstallResult(
+                    InstallOutcome.Failed,
+                    null,
+                    "The destination already exists but does not contain the expected executable.");
+            }
+
+            EnsureRegularFile(paths.ExpectedExecutable, "installed entry point");
+            InstallReceipt actual = ReadInstallReceipt(paths.DestinationRoot);
+            if (!PackageHashAlgorithm.Sha256.IsValidHash(actual.ExpectedExecutableSha256))
+            {
+                return new InstallResult(
+                    InstallOutcome.Failed,
+                    null,
+                    "The existing destination installation receipt has no valid entry-point hash.");
+            }
+
+            InstallReceipt expected = CreateInstallReceipt(
+                plan,
+                actual.ExpectedExecutableSha256);
+            if (!InstallReceiptMatches(actual, expected))
+            {
+                return new InstallResult(
+                    InstallOutcome.Failed,
+                    null,
+                    "The destination belongs to a different or unverified package plan. "
+                    + "Uninstall it explicitly before installing this provider asset.");
+            }
+
+            string executableSha256 = await PackageHashAlgorithm.Sha256
+                .ComputeFileHashAsync(paths.ExpectedExecutable, cancellationToken)
+                .ConfigureAwait(false);
+            if (!executableSha256.Equals(
+                    actual.ExpectedExecutableSha256,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return new InstallResult(
+                    InstallOutcome.Failed,
+                    null,
+                    "The existing destination entry point changed after its reviewed installation.");
+            }
+
+            return new InstallResult(
+                InstallOutcome.AlreadyInstalled,
+                paths.DestinationRoot,
+                null);
+        }
+        catch (Exception exception) when (exception is IOException
+            or InvalidDataException
+            or UnauthorizedAccessException)
+        {
+            return new InstallResult(
+                InstallOutcome.Failed,
+                null,
+                $"The existing destination could not be verified: {exception.Message}");
+        }
+    }
+
+    private static InstallReceipt CreateInstallReceipt(
+        ArchiveInstallPlan plan,
+        string expectedExecutableSha256) => new(
+        1,
+        plan.Asset.Release.ProviderId,
+        plan.Asset.Release.ProviderVersion,
+        plan.Asset.Release.Kind.ToString(),
+        plan.Asset.Release.Version.ToString(),
+        plan.Asset.Release.Architecture.ToString(),
+        plan.Asset.FileName,
+        plan.Asset.HashAlgorithm.ToString(),
+        plan.Asset.PackageHash.ToLowerInvariant(),
+        NormalizeReceiptRelativePath(plan.ExpectedExecutableRelativePath),
+        expectedExecutableSha256.ToLowerInvariant());
+
+    private static void WriteInstallReceipt(string payloadRoot, InstallReceipt receipt)
+    {
+        string receiptPath = Path.Combine(payloadRoot, InstallReceiptFileName);
+        if (File.Exists(receiptPath) || Directory.Exists(receiptPath))
+        {
+            throw new InvalidDataException(
+                $"The archive payload reserves '{InstallReceiptFileName}' for AutoEnvPlus metadata.");
+        }
+
+        byte[] json = JsonSerializer.SerializeToUtf8Bytes(receipt, ReceiptJsonOptions);
+        using FileStream stream = new(
+            receiptPath,
+            FileMode.CreateNew,
+            FileAccess.Write,
+            FileShare.None,
+            8_192,
+            FileOptions.WriteThrough);
+        stream.Write(json);
+        stream.Flush(flushToDisk: true);
+    }
+
+    private static InstallReceipt ReadInstallReceipt(string destinationRoot)
+    {
+        string receiptPath = Path.Combine(destinationRoot, InstallReceiptFileName);
+        EnsureNoReparsePointInPath(receiptPath);
+        FileAttributes attributes;
+        try
+        {
+            attributes = File.GetAttributes(receiptPath);
+        }
+        catch (Exception exception) when (exception is FileNotFoundException
+            or DirectoryNotFoundException)
+        {
+            throw new InvalidDataException(
+                "The existing destination has no AutoEnvPlus installation receipt.",
+                exception);
+        }
+
+        if ((attributes & (FileAttributes.Directory
+            | FileAttributes.Device
+            | FileAttributes.ReparsePoint)) != 0)
+        {
+            throw new InvalidDataException(
+                "The AutoEnvPlus installation receipt is not a regular file.");
+        }
+
+        FileInfo receiptFile = new(receiptPath);
+        if (receiptFile.Length is <= 0 or > MaximumInstallReceiptBytes)
+        {
+            throw new InvalidDataException(
+                "The AutoEnvPlus installation receipt has an invalid size.");
+        }
+
+        try
+        {
+            using FileStream stream = new(
+                receiptPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                8_192,
+                FileOptions.SequentialScan);
+            return JsonSerializer.Deserialize<InstallReceipt>(stream, ReceiptJsonOptions)
+                ?? throw new InvalidDataException(
+                    "The AutoEnvPlus installation receipt is empty.");
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidDataException(
+                "The AutoEnvPlus installation receipt is invalid JSON.",
+                exception);
+        }
+    }
+
+    private static bool InstallReceiptMatches(InstallReceipt actual, InstallReceipt expected) =>
+        actual.SchemaVersion == expected.SchemaVersion
+        && string.Equals(actual.ProviderId, expected.ProviderId, StringComparison.Ordinal)
+        && string.Equals(actual.ProviderVersion, expected.ProviderVersion, StringComparison.Ordinal)
+        && string.Equals(actual.RuntimeKind, expected.RuntimeKind, StringComparison.Ordinal)
+        && string.Equals(actual.Version, expected.Version, StringComparison.Ordinal)
+        && string.Equals(actual.Architecture, expected.Architecture, StringComparison.Ordinal)
+        && string.Equals(actual.FileName, expected.FileName, StringComparison.Ordinal)
+        && string.Equals(actual.HashAlgorithm, expected.HashAlgorithm, StringComparison.Ordinal)
+        && string.Equals(actual.PackageHash, expected.PackageHash, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(
+            actual.ExpectedExecutableRelativePath,
+            expected.ExpectedExecutableRelativePath,
+            StringComparison.OrdinalIgnoreCase)
+        && PackageHashAlgorithm.Sha256.IsValidHash(actual.ExpectedExecutableSha256)
+        && string.Equals(
+            actual.ExpectedExecutableSha256,
+            expected.ExpectedExecutableSha256,
+            StringComparison.OrdinalIgnoreCase);
+
+    private static string NormalizeReceiptRelativePath(string path) =>
+        path.Replace('\\', '/');
+
+    private static void EnsureRegularFile(string path, string description)
+    {
+        EnsureNoReparsePointInPath(path);
+        FileAttributes attributes = File.GetAttributes(path);
+        if ((attributes & (FileAttributes.Directory
+            | FileAttributes.Device
+            | FileAttributes.ReparsePoint)) != 0)
+        {
+            throw new InvalidDataException($"The {description} must be a regular file.");
+        }
+    }
+
+    private static void CreateRegularDirectoryPath(string path, string description)
+    {
+        EnsureNoReparsePointInPath(path);
+        DirectoryInfo directory = Directory.CreateDirectory(path);
+        EnsureNoReparsePointInPath(directory.FullName);
+        if ((directory.Attributes & FileAttributes.Directory) == 0
+            || (directory.Attributes & (FileAttributes.Device
+                | FileAttributes.ReparsePoint)) != 0)
+        {
+            throw new InvalidDataException(
+                $"The {description} must be a regular directory and cannot be a reparse point.");
+        }
+    }
+
+    private static void EnsureNoReparsePointInPath(string path)
+    {
+        DirectoryInfo? current = new(Path.GetFullPath(path));
+        while (current is not null)
+        {
+            try
+            {
+                if ((File.GetAttributes(current.FullName) & FileAttributes.ReparsePoint) != 0)
+                {
+                    throw new InvalidDataException(
+                        "A managed installation path cannot traverse a reparse point.");
+                }
+            }
+            catch (Exception exception) when (exception is FileNotFoundException
+                or DirectoryNotFoundException)
+            {
+                // Missing tail components are created only after all existing ancestors pass.
+            }
+
+            current = current.Parent;
+        }
     }
 
     private static void ValidatePackageVerifications(RuntimePackageAsset asset)
@@ -565,6 +841,15 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
             or NotSupportedException
             or OverflowException;
 
+    private static string DescribeSafeInstallFailure(Exception exception) => exception switch
+    {
+        HttpRequestException httpException when httpException.StatusCode is { } statusCode =>
+            $"The runtime endpoint returned HTTP {(int)statusCode}.",
+        HttpRequestException =>
+            "The runtime download transport failed; endpoint query parameters were not retained.",
+        _ => exception.Message,
+    };
+
     private static void TryDeleteDirectory(string managedRoot, string path)
     {
         try
@@ -599,4 +884,17 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
         string ManagedRoot,
         string DestinationRoot,
         string ExpectedExecutable);
+
+    private sealed record InstallReceipt(
+        int SchemaVersion,
+        string ProviderId,
+        string ProviderVersion,
+        string RuntimeKind,
+        string Version,
+        string Architecture,
+        string FileName,
+        string HashAlgorithm,
+        string PackageHash,
+        string ExpectedExecutableRelativePath,
+        string ExpectedExecutableSha256);
 }

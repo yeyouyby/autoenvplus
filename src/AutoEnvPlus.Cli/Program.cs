@@ -1,10 +1,14 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AutoEnvPlus.Core.Discovery;
 using AutoEnvPlus.Core.Diagnostics;
+using AutoEnvPlus.Core.Downloads;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Installation;
+using AutoEnvPlus.Core.Networking;
+using AutoEnvPlus.Core.Plugins;
 using AutoEnvPlus.Core.Projects;
 using AutoEnvPlus.Core.Providers;
 using AutoEnvPlus.Core.Providers.DotNet;
@@ -34,9 +38,17 @@ catch (OperationCanceledException)
     Console.Error.WriteLine("Operation cancelled.");
     return 130;
 }
+catch (HttpRequestException exception)
+{
+    string status = exception.StatusCode is null
+        ? "transport failure"
+        : $"HTTP {(int)exception.StatusCode.Value}";
+    Console.Error.WriteLine(
+        $"Error: network request failed ({status}); URI query and credentials were not logged.");
+    return 1;
+}
 catch (Exception exception) when (exception is IOException
     or InvalidDataException
-    or HttpRequestException
     or UnauthorizedAccessException)
 {
     Console.Error.WriteLine($"Error: {exception.Message}");
@@ -66,6 +78,10 @@ static async Task<int> DispatchAsync(string[] args, CancellationToken cancellati
         "which" => await RunWhichAsync(commandArgs, cancellationToken),
         "exec" => await RunExecAsync(commandArgs, cancellationToken),
         "tool" => await RunToolAsync(commandArgs, cancellationToken),
+        "network" => await RunNetworkAsync(commandArgs, cancellationToken),
+        "download" => await RunDownloadAsync(commandArgs, cancellationToken),
+        "provider" => await RunProviderAsync(commandArgs, pluginsOnly: false, cancellationToken),
+        "plugin" or "plugins" => await RunProviderAsync(commandArgs, pluginsOnly: true, cancellationToken),
         "shim" => await RunShimAsync(commandArgs, cancellationToken),
         "shell" => await RunShellAsync(commandArgs, cancellationToken),
         "storage" => await RunStorageAsync(commandArgs, cancellationToken),
@@ -197,13 +213,10 @@ static async Task<int> RunListAsync(string[] args, CancellationToken cancellatio
 static async Task<int> RunCatalogAsync(string[] args, CancellationToken cancellationToken)
 {
     if (args.Length == 0
-        || (!args[0].Equals("python", StringComparison.OrdinalIgnoreCase)
-            && !args[0].Equals("node", StringComparison.OrdinalIgnoreCase)
-            && !args[0].Equals("java", StringComparison.OrdinalIgnoreCase)
-            && !args[0].Equals("dotnet", StringComparison.OrdinalIgnoreCase)))
+        || !TryParseCatalogRuntimeKind(args[0], out RuntimeKind catalogKind))
     {
         Console.Error.WriteLine(
-            "Usage: autoenvplus catalog <python|node|java|dotnet> [--feature java-major] [--lts] [--arch x64|x86|arm64] [--limit count] [--asset version] [--json]");
+            "Usage: autoenvplus catalog <python|node|java|dotnet|msvc|llvm|mingw|cmake|ninja> [--provider official-id|plugin:id] [--feature java-major] [--lts] [--arch x64|x86|arm64] [--limit count] [--asset version] [--root directory] [--json]");
         return 1;
     }
 
@@ -223,13 +236,47 @@ static async Task<int> RunCatalogAsync(string[] args, CancellationToken cancella
         return 1;
     }
 
-    using HttpClient client = CreateHttpClient(TimeSpan.FromSeconds(30));
-    IRuntimeCatalogProvider? provider = CreateProvider(args[0], client, architecture, args, null, out string? error);
-    if (provider is null)
+    if (!TryGetManagedRoot(args, out string? managedRoot, out string? rootError))
     {
-        Console.Error.WriteLine(error);
+        Console.Error.WriteLine(rootError);
         return 1;
     }
+
+    NetworkSettings? networkSettings = await LoadNetworkSettingsAsync(
+        managedRoot!,
+        cancellationToken);
+    if (networkSettings is null
+        || !TryResolveRuntimeNetworkSettings(
+            networkSettings,
+            args[0],
+            out EffectiveNetworkSettings? effectiveNetworkSettings))
+    {
+        return 2;
+    }
+
+    EffectiveNetworkSettings catalogNetwork =
+        ToolchainRuntimeProviderPolicy.RequiresExplicitPlugin(catalogKind)
+            ? effectiveNetworkSettings! with { Mirror = null }
+            : effectiveNetworkSettings!;
+    using HttpClient client = NetworkHttpClientFactory.Create(
+        catalogNetwork,
+        TimeSpan.FromSeconds(30));
+    CliProviderResolution providerResolution = await ResolveCatalogProviderAsync(
+        args[0],
+        client,
+        architecture,
+        args,
+        null,
+        catalogNetwork.Mirror,
+        managedRoot!,
+        cancellationToken);
+    if (providerResolution.Selection is not CliProviderSelection selection)
+    {
+        Console.Error.WriteLine(providerResolution.Error);
+        return 1;
+    }
+
+    IRuntimeCatalogProvider provider = selection.Provider;
 
     IReadOnlyList<RuntimeRelease> catalog = await provider.GetReleasesAsync(cancellationToken);
     IEnumerable<RuntimeRelease> query = catalog.Where(release => release.Architecture == architecture);
@@ -248,7 +295,7 @@ static async Task<int> RunCatalogAsync(string[] args, CancellationToken cancella
         }
 
         RuntimeRelease? selected = query.FirstOrDefault(release =>
-            release.Version.CompareTo(requestedVersion) == 0);
+            release.Version == requestedVersion);
         if (selected is null)
         {
             Console.Error.WriteLine(
@@ -259,12 +306,21 @@ static async Task<int> RunCatalogAsync(string[] args, CancellationToken cancella
         RuntimePackageAsset asset = await provider.GetAssetAsync(selected, cancellationToken);
         if (args.Contains("--json", StringComparer.OrdinalIgnoreCase))
         {
-            Console.WriteLine(JsonSerializer.Serialize(asset, CreateJsonOptions()));
+            object output = selection.IsThirdParty
+                ? new
+                {
+                    provider = selection.Provider.Id,
+                    thirdParty = true,
+                    authenticityNotice = DeclarativeRuntimeCatalogProvider.AuthenticityNotice,
+                    asset,
+                }
+                : asset;
+            Console.WriteLine(JsonSerializer.Serialize(output, CreateJsonOptions()));
         }
         else
         {
             Console.WriteLine($"Asset:   {asset.FileName}");
-            Console.WriteLine($"URL:     {asset.DownloadUri}");
+            Console.WriteLine($"URL:     {FormatProviderUri(asset.DownloadUri, selection.IsThirdParty)}");
             Console.WriteLine($"{asset.HashAlgorithm.DisplayName()}: {asset.PackageHash}");
             Console.WriteLine($"Root:    {asset.ArchiveRootDirectory}");
             foreach (PackageSignatureVerification signature in asset.SignatureVerifications)
@@ -296,6 +352,11 @@ static async Task<int> RunCatalogAsync(string[] args, CancellationToken cancella
                 Console.WriteLine($"Signature: {requirement.SignatureUri}");
                 Console.WriteLine($"Key:       {requirement.KeySourceUri}");
             }
+
+            if (selection.IsThirdParty)
+            {
+                Console.WriteLine($"Trust:   {DeclarativeRuntimeCatalogProvider.AuthenticityNotice}");
+            }
         }
 
         return 0;
@@ -304,11 +365,25 @@ static async Task<int> RunCatalogAsync(string[] args, CancellationToken cancella
     RuntimeRelease[] releases = query.Take(limit).ToArray();
     if (args.Contains("--json", StringComparer.OrdinalIgnoreCase))
     {
-        Console.WriteLine(JsonSerializer.Serialize(releases, CreateJsonOptions()));
+        object output = selection.IsThirdParty
+            ? new
+            {
+                provider = selection.Provider.Id,
+                thirdParty = true,
+                authenticityNotice = DeclarativeRuntimeCatalogProvider.AuthenticityNotice,
+                releases,
+            }
+            : releases;
+        Console.WriteLine(JsonSerializer.Serialize(output, CreateJsonOptions()));
         return 0;
     }
 
     Console.WriteLine($"{provider.Id} releases ({architecture})");
+    if (selection.IsThirdParty)
+    {
+        Console.WriteLine($"  Trust: {DeclarativeRuntimeCatalogProvider.AuthenticityNotice}");
+    }
+
     foreach (RuntimeRelease release in releases)
     {
         string channels = string.Join(", ", release.Channels);
@@ -323,10 +398,11 @@ static async Task<int> RunCatalogAsync(string[] args, CancellationToken cancella
 static async Task<int> RunInstallAsync(string[] args, CancellationToken cancellationToken)
 {
     if (args.Length < 2
+        || !TryParseCatalogRuntimeKind(args[0], out RuntimeKind catalogKind)
         || !RuntimeVersion.TryParse(args[1], out RuntimeVersion? requestedVersion))
     {
         Console.Error.WriteLine(
-            "Usage: autoenvplus install <python|node|java|dotnet> <exact-version> [--arch x64|x86|arm64] [--root directory] [--yes]");
+            "Usage: autoenvplus install <python|node|java|dotnet|msvc|llvm|mingw|cmake|ninja> <exact-version> [--provider official-id|plugin:id] [--arch x64|x86|arm64] [--root directory] [--yes]");
         return 1;
     }
 
@@ -342,24 +418,46 @@ static async Task<int> RunInstallAsync(string[] args, CancellationToken cancella
         return 1;
     }
 
-    using HttpClient client = CreateHttpClient(TimeSpan.FromMinutes(10));
-    IRuntimeCatalogProvider? catalogProvider = CreateProvider(
+    NetworkSettings? networkSettings = await LoadNetworkSettingsAsync(
+        managedRoot!,
+        cancellationToken);
+    if (networkSettings is null
+        || !TryResolveRuntimeNetworkSettings(
+            networkSettings,
+            args[0],
+            out EffectiveNetworkSettings? effectiveNetworkSettings))
+    {
+        return 2;
+    }
+
+    EffectiveNetworkSettings installNetwork =
+        ToolchainRuntimeProviderPolicy.RequiresExplicitPlugin(catalogKind)
+            ? effectiveNetworkSettings! with { Mirror = null }
+            : effectiveNetworkSettings!;
+    using HttpClient client = NetworkHttpClientFactory.Create(
+        installNetwork,
+        TimeSpan.FromMinutes(10));
+    CliProviderResolution providerResolution = await ResolveCatalogProviderAsync(
         args[0],
         client,
         architecture,
         args,
         requestedVersion,
-        out string? providerError);
-    if (catalogProvider is not IArchiveRuntimeProvider provider)
+        installNetwork.Mirror,
+        managedRoot!,
+        cancellationToken);
+    if (providerResolution.Selection is not CliProviderSelection selection
+        || selection.Provider is not IArchiveRuntimeProvider provider)
     {
-        Console.Error.WriteLine(providerError ?? "No archive provider is available.");
+        Console.Error.WriteLine(
+            providerResolution.Error ?? "No archive provider is available.");
         return 1;
     }
 
     IReadOnlyList<RuntimeRelease> catalog = await provider.GetReleasesAsync(cancellationToken);
     RuntimeRelease? release = catalog.FirstOrDefault(item =>
         item.Architecture == architecture
-        && item.Version.CompareTo(requestedVersion) == 0);
+        && item.Version == requestedVersion);
     if (release is null)
     {
         Console.Error.WriteLine(
@@ -368,16 +466,30 @@ static async Task<int> RunInstallAsync(string[] args, CancellationToken cancella
     }
 
     RuntimePackageAsset asset = await provider.GetAssetAsync(release, cancellationToken);
-    ArchiveInstallPlan plan = provider.CreateInstallPlan(asset, managedRoot!);
+    ArchiveInstallPlan plan;
+    try
+    {
+        plan = provider.CreateInstallPlan(asset, managedRoot!);
+    }
+    catch (Exception exception) when (exception is ArgumentException
+        or RuntimeProviderPluginException)
+    {
+        Console.Error.WriteLine($"The install plan is unsafe or invalid: {exception.Message}");
+        return 2;
+    }
+
     Console.WriteLine("Install plan");
     Console.WriteLine($"  Runtime:     {release.Kind} {release.Version} ({release.Architecture})");
     Console.WriteLine($"  Provider:    {release.ProviderId}");
-    Console.WriteLine($"  Download:    {asset.DownloadUri}");
+    Console.WriteLine($"  Download:    {FormatProviderUri(asset.DownloadUri, selection.IsThirdParty)}");
     Console.WriteLine($"  {asset.HashAlgorithm.DisplayName()}:     {asset.PackageHash}");
     foreach (PackageVerification verification in asset.Verifications)
     {
+        string evidenceLabel = selection.IsThirdParty
+            ? "Declared reference"
+            : "Verified by";
         Console.WriteLine(
-            $"  Verified by: {verification.Kind} {verification.Algorithm} from {verification.SourceUri}");
+            $"  {evidenceLabel}: {verification.Kind} {verification.Algorithm} from {verification.SourceUri}");
     }
 
     foreach (PackageSignatureVerification signature in asset.SignatureVerifications)
@@ -414,6 +526,12 @@ static async Task<int> RunInstallAsync(string[] args, CancellationToken cancella
         Console.WriteLine($"  Key source:        {signatureRequirement.KeySourceUri}");
     }
 
+    if (selection.IsThirdParty)
+    {
+        Console.WriteLine(
+            $"  Trust:       {DeclarativeRuntimeCatalogProvider.AuthenticityNotice}");
+    }
+
     Console.WriteLine($"  Destination: {plan.DestinationRoot}");
     if (!args.Contains("--yes", StringComparer.OrdinalIgnoreCase))
     {
@@ -421,8 +539,11 @@ static async Task<int> RunInstallAsync(string[] args, CancellationToken cancella
         return 0;
     }
 
+    string managedRuntimeId = provider is DeclarativeRuntimeCatalogProvider declarativeProvider
+        ? declarativeProvider.CreateManagedRuntimeId(release)
+        : $"{release.Kind.ToString().ToLowerInvariant()}-{release.Version}-{release.Architecture.ToString().ToLowerInvariant()}";
     ManagedRuntimeEntry entry = new(
-        $"{release.Kind.ToString().ToLowerInvariant()}-{release.Version}-{release.Architecture.ToString().ToLowerInvariant()}",
+        managedRuntimeId,
         release.ProviderId,
         release.Kind,
         release.Version,
@@ -535,13 +656,23 @@ static async Task<int> RunUninstallAsync(string[] args, CancellationToken cancel
 
 static async Task<int> RunUseAsync(string[] args, CancellationToken cancellationToken)
 {
-    if (args.Length < 3
-        || !TryParseRuntimeKind(args[0], out RuntimeKind kind)
-        || !VersionSelector.TryParse(args[1], out VersionSelector? selector)
-        || !args.Contains("--global", StringComparer.OrdinalIgnoreCase))
+    if (args.Length < 2
+        || string.IsNullOrWhiteSpace(args[1])
+        || !TryParseUseRuntimeKind(args[0], out RuntimeKind kind)
+        || !VersionSelector.TryParse(args[1], out VersionSelector? selector))
     {
-        Console.Error.WriteLine(
-            "Usage: autoenvplus use <runtime> <selector> --global [--root directory]");
+        PrintUseUsage(Console.Error);
+        return 1;
+    }
+
+    if (!TryParseUseOptions(
+            args,
+            out string? runtimeId,
+            out string? providerId,
+            out string? optionError))
+    {
+        Console.Error.WriteLine(optionError);
+        PrintUseUsage(Console.Error);
         return 1;
     }
 
@@ -551,40 +682,223 @@ static async Task<int> RunUseAsync(string[] args, CancellationToken cancellation
         return 1;
     }
 
-    RegistryLoadResult registry = await new ManagedRuntimeRegistry(managedRoot!).LoadAsync(cancellationToken);
-    if (registry.Errors.Count > 0)
+    ManagedRuntimeEntry? expectedEntry = null;
+    if (runtimeId is not null)
     {
-        foreach (string error in registry.Errors)
+        RegistryLoadResult registry = await new ManagedRuntimeRegistry(managedRoot!).LoadAsync(
+            cancellationToken);
+        if (registry.Errors.Count > 0)
+        {
+            foreach (string error in registry.Errors)
+            {
+                Console.Error.WriteLine(error);
+            }
+
+            return 2;
+        }
+
+        ManagedRuntimeEntry[] matches = registry.Entries.Where(entry =>
+                entry.Id.Equals(runtimeId, StringComparison.OrdinalIgnoreCase)
+                && entry.ProviderId.Equals(providerId, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            Console.Error.WriteLine(
+                "The requested runtime ID and Provider do not identify exactly one registered installation; no global selection was changed.");
+            return 2;
+        }
+
+        expectedEntry = matches[0];
+        if (expectedEntry.Kind != kind)
+        {
+            Console.Error.WriteLine(
+                $"The requested runtime ID and Provider belong to {expectedEntry.Kind}, not {kind}; no global selection was changed.");
+            return 2;
+        }
+    }
+
+    RuntimeArchitecture selectionArchitecture = CurrentRuntimeArchitecture();
+    if (expectedEntry is not null
+        && expectedEntry.Architecture != selectionArchitecture)
+    {
+        Console.Error.WriteLine(
+            $"The requested runtime is {expectedEntry.Architecture}, but 'use' selects registrations for the current CLI process architecture ({selectionArchitecture}); no global selection was changed.");
+        return 2;
+    }
+
+    ManagedGlobalRuntimeSelectionResult selection =
+        await new ManagedGlobalRuntimeSelectionService(managedRoot!).SetAsync(
+            kind,
+            selector!,
+            selectionArchitecture,
+            expectedEntry,
+            cancellationToken: cancellationToken);
+    if (!selection.Success)
+    {
+        foreach (string error in selection.Errors)
         {
             Console.Error.WriteLine(error);
         }
 
+        if (selection.Errors.Any(error => error.Contains(
+                "Multiple Providers",
+                StringComparison.Ordinal)))
+        {
+            Console.Error.WriteLine(
+                "Choose an exact candidate with --runtime-id and --provider; no global selection was changed.");
+        }
+
+        Console.Error.WriteLine(
+            $"Selection was limited to the current CLI process architecture ({selectionArchitecture}); no global selection was changed.");
+
         return 2;
     }
 
-    RuntimeProfile requested = new(new Dictionary<RuntimeKind, VersionSelector> { [kind] = selector! });
-    RuntimeResolutionResult resolution = new RuntimeResolver().Resolve(
-        kind,
-        new RuntimeResolutionContext(Global: requested),
-        registry.Entries.Select(entry => entry.ToRuntimeInstallation()));
-    if (!resolution.Success)
-    {
-        Console.Error.WriteLine(resolution.Error);
-        return 2;
-    }
-
-    ManagedRuntimeEntry entry = registry.Entries.Single(candidate =>
-        candidate.Id.Equals(resolution.Installation!.Id, StringComparison.OrdinalIgnoreCase));
-    if (!File.Exists(entry.ExecutablePath))
-    {
-        Console.Error.WriteLine($"The selected runtime is missing: {entry.ExecutablePath}");
-        return 2;
-    }
-
-    await new GlobalRuntimeProfileStore(managedRoot!).SetAsync(kind, selector!, cancellationToken);
+    ManagedRuntimeEntry entry = selection.Entry!;
     Console.WriteLine($"Global {kind} selection: {selector} -> {entry.Version}");
+    Console.WriteLine($"Runtime ID: {entry.Id}");
+    Console.WriteLine($"Provider: {entry.ProviderId}");
     Console.WriteLine($"Executable: {entry.ExecutablePath}");
     return 0;
+}
+
+static bool TryParseUseOptions(
+    string[] args,
+    out string? runtimeId,
+    out string? providerId,
+    out string? error)
+{
+    runtimeId = null;
+    providerId = null;
+    error = null;
+    bool globalSeen = false;
+    bool runtimeIdSeen = false;
+    bool providerSeen = false;
+    bool rootSeen = false;
+
+    for (int index = 2; index < args.Length; index++)
+    {
+        string argument = args[index];
+        if (argument.Equals("--global", StringComparison.OrdinalIgnoreCase))
+        {
+            if (globalSeen)
+            {
+                error = "--global can be specified only once; no global selection was changed.";
+                return false;
+            }
+
+            globalSeen = true;
+            continue;
+        }
+
+        bool isRuntimeId = argument.Equals("--runtime-id", StringComparison.OrdinalIgnoreCase);
+        bool isProvider = argument.Equals("--provider", StringComparison.OrdinalIgnoreCase);
+        bool isRoot = argument.Equals("--root", StringComparison.OrdinalIgnoreCase);
+        if (!isRuntimeId && !isProvider && !isRoot)
+        {
+            error = argument.StartsWith("-", StringComparison.Ordinal)
+                ? $"Unknown use option '{argument}'; no global selection was changed."
+                : $"Unexpected use argument '{argument}'; no global selection was changed.";
+            return false;
+        }
+
+        bool alreadySeen = isRuntimeId
+            ? runtimeIdSeen
+            : isProvider
+                ? providerSeen
+                : rootSeen;
+        if (alreadySeen)
+        {
+            error = $"{argument} can be specified only once; no global selection was changed.";
+            return false;
+        }
+
+        if (index + 1 >= args.Length
+            || string.IsNullOrWhiteSpace(args[index + 1])
+            || args[index + 1].StartsWith("--", StringComparison.Ordinal))
+        {
+            error = $"{argument} requires a value; no global selection was changed.";
+            return false;
+        }
+
+        string value = args[++index];
+        if (isRuntimeId)
+        {
+            runtimeIdSeen = true;
+            runtimeId = value;
+        }
+        else if (isProvider)
+        {
+            providerSeen = true;
+            providerId = value;
+        }
+        else
+        {
+            rootSeen = true;
+        }
+    }
+
+    if (!globalSeen)
+    {
+        error = "--global is required; no global selection was changed.";
+        return false;
+    }
+
+    if (runtimeIdSeen != providerSeen)
+    {
+        error = "A global exact selection requires both --runtime-id and --provider; no global selection was changed.";
+        return false;
+    }
+
+    if (runtimeId is not null
+        && (!TryValidateUseIdentity("--runtime-id", runtimeId, out error)
+            || !TryValidateUseIdentity("--provider", providerId!, out error)))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+static bool TryParseUseRuntimeKind(string value, out RuntimeKind kind)
+{
+    if (value.Equals("node", StringComparison.OrdinalIgnoreCase))
+    {
+        kind = RuntimeKind.NodeJs;
+        return true;
+    }
+
+    bool isNamedKind = Enum.GetNames<RuntimeKind>().Any(
+        name => name.Equals(value, StringComparison.OrdinalIgnoreCase));
+    if (!isNamedKind)
+    {
+        kind = default;
+        return false;
+    }
+
+    return TryParseRuntimeKind(value, out kind);
+}
+
+static bool TryValidateUseIdentity(string option, string value, out string? error)
+{
+    if (value.Length > 256
+        || !value.Equals(value.Trim(), StringComparison.Ordinal)
+        || value.Any(char.IsControl))
+    {
+        error = $"{option} contains an invalid global selection identity; no global selection was changed.";
+        return false;
+    }
+
+    error = null;
+    return true;
+}
+
+static void PrintUseUsage(TextWriter output)
+{
+    output.WriteLine(
+        "Usage: autoenvplus use <python|node|java|dotnet|msvc|llvm|mingw|cmake|ninja> <selector> --global [--runtime-id id --provider id] [--root directory]");
+    output.WriteLine(
+        "  Exact identity options must be supplied together; selection is limited to the current CLI process architecture.");
 }
 
 static async Task<int> RunWhichAsync(string[] args, CancellationToken cancellationToken)
@@ -592,7 +906,7 @@ static async Task<int> RunWhichAsync(string[] args, CancellationToken cancellati
     if (args.Length == 0 || !TryParseRuntimeKind(args[0], out RuntimeKind kind))
     {
         Console.Error.WriteLine(
-            "Usage: autoenvplus which <runtime> [--project directory] [--root directory]");
+            "Usage: autoenvplus which <runtime> [--runtime-id id] [--provider id] [--project directory] [--root directory]");
         return 1;
     }
 
@@ -609,16 +923,33 @@ static async Task<int> RunWhichAsync(string[] args, CancellationToken cancellati
     }
 
     projectPath ??= Directory.GetCurrentDirectory();
-    if (!TryCreateSessionProfile(kind, out RuntimeProfile? session, out string? sessionError))
+    if (!TryCreateSessionProfile(
+            kind,
+            out RuntimeProfile? session,
+            out string? sessionRuntimeId,
+            out string? sessionProviderId,
+            out string? sessionError))
     {
         Console.Error.WriteLine(sessionError);
         return 2;
+    }
+    if (!TryApplySessionIdentityOptions(
+            args,
+            ref sessionRuntimeId,
+            ref sessionProviderId,
+            out sessionError))
+    {
+        Console.Error.WriteLine(sessionError);
+        return 1;
     }
 
     ManagedRuntimeResolutionResult result = await new ManagedRuntimeResolutionService(managedRoot!).ResolveAsync(
         kind,
         projectPath,
         session,
+        CurrentRuntimeArchitecture(),
+        sessionRuntimeId,
+        sessionProviderId,
         cancellationToken: cancellationToken);
     if (!result.Success)
     {
@@ -633,6 +964,8 @@ static async Task<int> RunWhichAsync(string[] args, CancellationToken cancellati
     Console.WriteLine($"Runtime:    {result.Entry!.Kind} {result.Entry.Version} ({result.Entry.Architecture})");
     Console.WriteLine($"Scope:      {result.Resolution!.Scope}");
     Console.WriteLine($"Selector:   {result.Resolution.Selector}");
+    Console.WriteLine($"Runtime ID: {result.Entry.Id}");
+    Console.WriteLine($"Provider:   {result.Entry.ProviderId}");
     Console.WriteLine($"Executable: {result.Entry.ExecutablePath}");
     return 0;
 }
@@ -642,7 +975,7 @@ static async Task<int> RunExecAsync(string[] args, CancellationToken cancellatio
     if (args.Length == 0 || !TryParseRuntimeKind(args[0], out RuntimeKind kind))
     {
         Console.Error.WriteLine(
-            "Usage: autoenvplus exec <runtime> [--project directory] [--root directory] -- [arguments]");
+            "Usage: autoenvplus exec <runtime> [--runtime-id id] [--provider id] [--project directory] [--root directory] -- [arguments]");
         return 1;
     }
 
@@ -668,16 +1001,33 @@ static async Task<int> RunExecAsync(string[] args, CancellationToken cancellatio
         return 1;
     }
 
-    if (!TryCreateSessionProfile(kind, out RuntimeProfile? session, out string? sessionError))
+    if (!TryCreateSessionProfile(
+            kind,
+            out RuntimeProfile? session,
+            out string? sessionRuntimeId,
+            out string? sessionProviderId,
+            out string? sessionError))
     {
         Console.Error.WriteLine(sessionError);
         return 2;
+    }
+    if (!TryApplySessionIdentityOptions(
+            options,
+            ref sessionRuntimeId,
+            ref sessionProviderId,
+            out sessionError))
+    {
+        Console.Error.WriteLine(sessionError);
+        return 1;
     }
 
     ManagedRuntimeResolutionResult resolved = await new ManagedRuntimeResolutionService(managedRoot!).ResolveAsync(
         kind,
         projectPath,
         session,
+        CurrentRuntimeArchitecture(),
+        sessionRuntimeId,
+        sessionProviderId,
         cancellationToken: cancellationToken);
     if (!resolved.Success)
     {
@@ -742,7 +1092,7 @@ static async Task<int> RunToolAsync(string[] args, CancellationToken cancellatio
         || !ManagedToolCommandResolver.TryGetRuntimeKind(args[0], out RuntimeKind runtimeKind))
     {
         Console.Error.WriteLine(
-            "Usage: autoenvplus tool <pip|pip3|npm|npx|javac|jar> [--project directory] [--root directory] -- [arguments]");
+            "Usage: autoenvplus tool <pip|pip3|npm|npx|javac|jar|clang++|g++> [--runtime-id id] [--provider id] [--project directory] [--root directory] -- [arguments]");
         return 1;
     }
 
@@ -753,6 +1103,19 @@ static async Task<int> RunToolAsync(string[] args, CancellationToken cancellatio
     {
         Console.Error.WriteLine(rootError);
         return 1;
+    }
+
+    NetworkSettings? networkSettings = await LoadProviderSourceNetworkSettingsAsync(
+        managedRoot!,
+        GetManagedToolNetworkId(args[0])!,
+        cancellationToken);
+    if (networkSettings is null
+        || !TryResolveManagedToolNetworkSettings(
+            networkSettings,
+            args[0],
+            out EffectiveNetworkSettings? effectiveNetworkSettings))
+    {
+        return 2;
     }
 
     if (!TryGetOption(options, "--project", out string? projectPath, out string? projectError))
@@ -768,16 +1131,33 @@ static async Task<int> RunToolAsync(string[] args, CancellationToken cancellatio
         return 1;
     }
 
-    if (!TryCreateSessionProfile(runtimeKind, out RuntimeProfile? session, out string? sessionError))
+    if (!TryCreateSessionProfile(
+            runtimeKind,
+            out RuntimeProfile? session,
+            out string? sessionRuntimeId,
+            out string? sessionProviderId,
+            out string? sessionError))
     {
         Console.Error.WriteLine(sessionError);
         return 2;
+    }
+    if (!TryApplySessionIdentityOptions(
+            options,
+            ref sessionRuntimeId,
+            ref sessionProviderId,
+            out sessionError))
+    {
+        Console.Error.WriteLine(sessionError);
+        return 1;
     }
 
     ManagedToolCommandResult resolved = await new ManagedToolCommandResolver(managedRoot!).ResolveAsync(
         args[0],
         projectPath,
         session,
+        sessionRuntimeId,
+        sessionProviderId,
+        CurrentRuntimeArchitecture(),
         cancellationToken);
     if (!resolved.Success)
     {
@@ -807,6 +1187,11 @@ static async Task<int> RunToolAsync(string[] args, CancellationToken cancellatio
         startInfo.Environment["JAVA_HOME"] = command.Runtime.InstallRoot;
     }
 
+    ToolNetworkEnvironment.Apply(
+        startInfo.Environment,
+        args[0],
+        effectiveNetworkSettings!);
+
     using Process process = new() { StartInfo = startInfo };
     if (!process.Start())
     {
@@ -829,6 +1214,1122 @@ static async Task<int> RunToolAsync(string[] args, CancellationToken cancellatio
     }
 
     return process.ExitCode;
+}
+
+static async Task<int> RunProviderAsync(
+    string[] args,
+    bool pluginsOnly,
+    CancellationToken cancellationToken)
+{
+    if (args.Length == 0)
+    {
+        ShowProviderUsage(pluginsOnly);
+        return 1;
+    }
+
+    string command = args[0].ToLowerInvariant();
+    if (command is not "list"
+        and not "inspect"
+        and not "import"
+        and not "enable"
+        and not "disable"
+        and not "delete")
+    {
+        return UnknownProviderCommand(pluginsOnly);
+    }
+
+    if (!TryValidateProviderCommandArguments(args, command, out string? argumentError))
+    {
+        Console.Error.WriteLine(argumentError);
+        return 1;
+    }
+
+    if (!TryGetManagedRoot(args, out string? managedRoot, out string? rootError))
+    {
+        Console.Error.WriteLine(rootError);
+        return 1;
+    }
+
+    try
+    {
+        RuntimeProviderPluginStore store = new(managedRoot!);
+        return command switch
+        {
+            "list" => await RunProviderListAsync(
+                args,
+                pluginsOnly,
+                store,
+                cancellationToken),
+            "inspect" => await RunProviderInspectAsync(
+                args,
+                pluginsOnly,
+                store,
+                cancellationToken),
+            "import" => await RunProviderImportAsync(args, store, cancellationToken),
+            "enable" or "disable" or "delete" => await RunProviderMutationAsync(
+                args,
+                store,
+                cancellationToken),
+            _ => throw new InvalidOperationException("The provider command was not validated."),
+        };
+    }
+    catch (RuntimeProviderPluginException exception)
+    {
+        string field = string.IsNullOrWhiteSpace(exception.Field)
+            ? string.Empty
+            : $" at {exception.Field}";
+        Console.Error.WriteLine(
+            $"Provider plugin error [{exception.Code}]{field}: {exception.Message}");
+        return 2;
+    }
+}
+
+static bool TryValidateProviderCommandArguments(
+    string[] args,
+    string command,
+    out string? error)
+{
+    int positionalCount = command == "list" ? 1 : 2;
+    if (args.Length < positionalCount)
+    {
+        error = "The provider command is missing a required argument.";
+        return false;
+    }
+
+    HashSet<string> flags = new(StringComparer.OrdinalIgnoreCase) { "--json" };
+    HashSet<string> valueOptions = new(StringComparer.OrdinalIgnoreCase) { "--root" };
+    if (command == "list")
+    {
+        valueOptions.Add("--kind");
+    }
+
+    if (command is "import" or "enable" or "disable" or "delete")
+    {
+        flags.Add("--yes");
+    }
+
+    HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+    for (int index = positionalCount; index < args.Length; index++)
+    {
+        string argument = args[index];
+        if (flags.Contains(argument))
+        {
+            if (!seen.Add(argument))
+            {
+                error = $"{argument} can be specified only once.";
+                return false;
+            }
+
+            continue;
+        }
+
+        if (valueOptions.Contains(argument))
+        {
+            if (!seen.Add(argument))
+            {
+                error = $"{argument} can be specified only once.";
+                return false;
+            }
+
+            if (++index >= args.Length
+                || string.IsNullOrWhiteSpace(args[index])
+                || args[index].StartsWith("--", StringComparison.Ordinal))
+            {
+                error = $"{argument} requires a value.";
+                return false;
+            }
+
+            continue;
+        }
+
+        error = "The provider command contains an unsupported option or extra argument.";
+        return false;
+    }
+
+    error = null;
+    return true;
+}
+
+static async Task<int> RunProviderListAsync(
+    string[] args,
+    bool pluginsOnly,
+    RuntimeProviderPluginStore store,
+    CancellationToken cancellationToken)
+{
+    RuntimeKind? kindFilter = null;
+    if (TryFindOptionIndex(args, "--kind", out int kindIndex))
+    {
+        if (kindIndex + 1 >= args.Length
+            || !TryParseRuntimeKind(args[kindIndex + 1], out RuntimeKind parsedKind))
+        {
+            Console.Error.WriteLine("--kind requires a supported runtime kind.");
+            return 1;
+        }
+
+        kindFilter = parsedKind;
+    }
+
+    RuntimeProviderPluginListResult loaded = await store.ListAsync(cancellationToken);
+    List<CliProviderView> providers = pluginsOnly
+        ? []
+        : GetBuiltInProviderViews().ToList();
+    providers.AddRange(loaded.Plugins.Select(CreatePluginProviderView));
+    if (kindFilter is RuntimeKind kind)
+    {
+        providers = providers.Where(provider => provider.RuntimeKind == kind).ToList();
+    }
+
+    providers = providers
+        .OrderBy(provider => provider.RuntimeKind)
+        .ThenBy(provider => provider.ProviderId, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+    if (args.Contains("--json", StringComparer.OrdinalIgnoreCase))
+    {
+        Console.WriteLine(JsonSerializer.Serialize(
+            new CliProviderListView(providers, loaded.Errors),
+            CreateJsonOptions()));
+    }
+    else
+    {
+        Console.WriteLine(pluginsOnly
+            ? "AutoEnvPlus runtime provider plugins"
+            : "AutoEnvPlus runtime providers");
+        foreach (CliProviderView provider in providers)
+        {
+            string state = provider.Source == "built-in"
+                ? "built-in"
+                : provider.IsEnabled ? "enabled" : "disabled";
+            Console.WriteLine(
+                $"  {provider.ProviderId,-34} {provider.RuntimeKind,-8} [{state}]");
+            Console.WriteLine(
+                $"    {provider.DisplayName} by {provider.Vendor}; {DescribeProviderCatalog(provider)}");
+            if (provider.Source == "plugin")
+            {
+                Console.WriteLine($"    Trust: {provider.AuthenticityNotice}");
+            }
+        }
+
+        if (providers.Count == 0)
+        {
+            Console.WriteLine(kindFilter is null
+                ? "  No runtime provider plugins are installed."
+                : "  No runtime providers match the selected kind.");
+        }
+
+        PrintPluginListErrors(loaded.Errors);
+    }
+
+    return loaded.Success ? 0 : 2;
+}
+
+static async Task<int> RunProviderInspectAsync(
+    string[] args,
+    bool pluginsOnly,
+    RuntimeProviderPluginStore store,
+    CancellationToken cancellationToken)
+{
+    if (args.Length < 2 || args[1].StartsWith("--", StringComparison.Ordinal))
+    {
+        Console.Error.WriteLine(
+            $"Usage: autoenvplus {(pluginsOnly ? "plugin" : "provider")} inspect <provider-id> [--root directory] [--json]");
+        return 1;
+    }
+
+    if (!pluginsOnly)
+    {
+        CliProviderView? builtIn = GetBuiltInProviderViews().FirstOrDefault(provider =>
+            provider.ProviderId.Equals(args[1], StringComparison.OrdinalIgnoreCase));
+        if (builtIn is not null)
+        {
+            if (args.Contains("--json", StringComparer.OrdinalIgnoreCase))
+            {
+                Console.WriteLine(JsonSerializer.Serialize(builtIn, CreateJsonOptions()));
+            }
+            else
+            {
+                PrintProviderDetails(builtIn);
+            }
+
+            return 0;
+        }
+    }
+
+    if (!RuntimeProviderPluginIds.TryGetPluginId(args[1], out string pluginId))
+    {
+        Console.Error.WriteLine("The provider ID is invalid.");
+        return 1;
+    }
+
+    RuntimeProviderPluginListResult loaded = await store.ListAsync(cancellationToken);
+    RuntimeProviderPluginDescriptor? descriptor = loaded.Plugins.FirstOrDefault(plugin =>
+        plugin.Id.Equals(pluginId, StringComparison.OrdinalIgnoreCase));
+    if (descriptor is null)
+    {
+        Console.Error.WriteLine("The requested provider plugin is not installed.");
+        PrintPluginListErrors(loaded.Errors);
+        return 2;
+    }
+
+    if (args.Contains("--json", StringComparer.OrdinalIgnoreCase))
+    {
+        Console.WriteLine(JsonSerializer.Serialize(
+            new
+            {
+                provider = CreatePluginProviderView(descriptor),
+                manifest = descriptor.Manifest,
+                errors = loaded.Errors,
+            },
+            CreateJsonOptions()));
+        return loaded.Success ? 0 : 2;
+    }
+
+    PrintProviderDetails(CreatePluginProviderView(descriptor));
+    Console.WriteLine($"  Manifest:    {descriptor.ManifestPath}");
+    Console.WriteLine(
+        $"  Download hosts: {string.Join(", ", descriptor.Manifest.Releases.SelectMany(release => release.Assets).Select(asset => asset.DownloadUri.IdnHost).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase))}");
+    PrintPluginListErrors(loaded.Errors);
+    return loaded.Success ? 0 : 2;
+}
+
+static async Task<int> RunProviderImportAsync(
+    string[] args,
+    RuntimeProviderPluginStore store,
+    CancellationToken cancellationToken)
+{
+    if (args.Length < 2 || args[1].StartsWith("--", StringComparison.Ordinal))
+    {
+        Console.Error.WriteLine(
+            "Usage: autoenvplus plugin import <manifest.json> [--root directory] [--yes] [--json]");
+        return 1;
+    }
+
+    if (!TryResolvePluginManifestPath(args[1], out string? manifestPath, out string? pathError))
+    {
+        Console.Error.WriteLine(pathError);
+        return 1;
+    }
+
+    RuntimeProviderPluginImportPreview preview = await store.PreviewImportAsync(
+        manifestPath!,
+        cancellationToken);
+    bool apply = args.Contains("--yes", StringComparer.OrdinalIgnoreCase);
+    RuntimeProviderPluginDescriptor? imported = apply
+        ? await store.ImportAsync(preview, cancellationToken)
+        : null;
+
+    if (args.Contains("--json", StringComparer.OrdinalIgnoreCase))
+    {
+        Console.WriteLine(JsonSerializer.Serialize(
+            new
+            {
+                action = "import",
+                applied = apply,
+                defaultState = "disabled",
+                sourceFile = Path.GetFileName(preview.SourcePath),
+                provider = imported is null
+                    ? CreatePluginManifestProviderView(preview.Manifest, isEnabled: false)
+                    : CreatePluginProviderView(imported),
+                preview.ReleaseCount,
+                preview.AssetCount,
+                preview.DownloadHosts,
+                preview.HashAlgorithms,
+            },
+            CreateJsonOptions()));
+        return 0;
+    }
+
+    Console.WriteLine("Runtime provider plugin import plan");
+    Console.WriteLine($"  Source:      {preview.SourcePath}");
+    Console.WriteLine($"  Provider:    {preview.Manifest.ProviderId}");
+    Console.WriteLine($"  Name:        {preview.Manifest.DisplayName}");
+    Console.WriteLine($"  Tool:        {preview.Manifest.LanguageToolId}");
+    Console.WriteLine($"  Adapter:     {preview.Manifest.Kind}");
+    Console.WriteLine(
+        $"  Contents:    {preview.ReleaseCount} release(s), {preview.AssetCount} asset(s)");
+    Console.WriteLine($"  Hosts:       {string.Join(", ", preview.DownloadHosts)}");
+    Console.WriteLine("  Initial state: disabled");
+    Console.WriteLine($"  Trust:       {DeclarativeRuntimeCatalogProvider.AuthenticityNotice}");
+    if (!apply)
+    {
+        Console.WriteLine("Preview only: no files were changed. Add --yes to import this exact manifest.");
+        return 0;
+    }
+
+    Console.WriteLine(
+        $"Imported {imported!.ProviderId} in the disabled state. Inspect it, then enable it explicitly.");
+    return 0;
+}
+
+static async Task<int> RunProviderMutationAsync(
+    string[] args,
+    RuntimeProviderPluginStore store,
+    CancellationToken cancellationToken)
+{
+    if (args.Length < 2 || args[1].StartsWith("--", StringComparison.Ordinal))
+    {
+        Console.Error.WriteLine(
+            "Usage: autoenvplus plugin <enable|disable|delete> <plugin:id> [--root directory] [--yes] [--json]");
+        return 1;
+    }
+
+    if (!RuntimeProviderPluginIds.TryGetPluginId(args[1], out string pluginId))
+    {
+        Console.Error.WriteLine("The provider plugin ID is invalid.");
+        return 1;
+    }
+
+    RuntimeProviderPluginListResult loaded = await store.ListAsync(cancellationToken);
+    RuntimeProviderPluginDescriptor? current = loaded.Plugins.FirstOrDefault(plugin =>
+        plugin.Id.Equals(pluginId, StringComparison.OrdinalIgnoreCase));
+    if (current is null)
+    {
+        Console.Error.WriteLine("The requested provider plugin is not installed.");
+        PrintPluginListErrors(loaded.Errors);
+        return 2;
+    }
+
+    string action = args[0].ToLowerInvariant();
+    bool apply = args.Contains("--yes", StringComparer.OrdinalIgnoreCase);
+    object? result = null;
+    if (apply)
+    {
+        result = action switch
+        {
+            "enable" => await store.EnableAsync(pluginId, cancellationToken),
+            "disable" => await store.DisableAsync(pluginId, cancellationToken),
+            "delete" => await store.DeleteAsync(pluginId, cancellationToken),
+            _ => null,
+        };
+    }
+
+    if (args.Contains("--json", StringComparer.OrdinalIgnoreCase))
+    {
+        Console.WriteLine(JsonSerializer.Serialize(
+            new
+            {
+                action,
+                applied = apply,
+                provider = CreatePluginProviderView(current),
+                result,
+                errors = loaded.Errors,
+            },
+            CreateJsonOptions()));
+        return loaded.Success ? 0 : 2;
+    }
+
+    Console.WriteLine("Runtime provider plugin change plan");
+    Console.WriteLine($"  Action:      {action}");
+    Console.WriteLine($"  Provider:    {current.ProviderId} ({current.Manifest.DisplayName})");
+    Console.WriteLine($"  Current:     {(current.IsEnabled ? "enabled" : "disabled")}");
+    Console.WriteLine($"  Result:      {DescribeProviderMutationResult(action)}");
+    if (!apply)
+    {
+        Console.WriteLine("Preview only: no files were changed. Add --yes to apply this exact plan.");
+        return loaded.Success ? 0 : 2;
+    }
+
+    if (result is RuntimeProviderPluginDeleteResult deleted && deleted.CleanupPending)
+    {
+        Console.WriteLine(
+            "The plugin was removed from active storage; a quarantined cleanup copy remains under the managed root.");
+    }
+    else
+    {
+        Console.WriteLine($"Provider plugin {action} completed.");
+    }
+
+    return loaded.Success ? 0 : 2;
+}
+
+static string DescribeProviderMutationResult(string action) => action switch
+{
+    "enable" => "enabled (third-party provider becomes selectable)",
+    "disable" => "disabled (installed manifest is retained)",
+    "delete" => "deleted (managed plugin manifest and state entry are removed)",
+    _ => "unchanged",
+};
+
+static bool TryResolvePluginManifestPath(
+    string value,
+    out string? manifestPath,
+    out string? error)
+{
+    manifestPath = null;
+    error = null;
+    if (string.IsNullOrWhiteSpace(value)
+        || value.IndexOfAny(['\r', '\n', '\0']) >= 0
+        || (Uri.TryCreate(value, UriKind.Absolute, out Uri? uri) && !uri.IsFile))
+    {
+        error = "The plugin manifest must be an existing local JSON file.";
+        return false;
+    }
+
+    try
+    {
+        string fullPath = Path.GetFullPath(value);
+        if (!File.Exists(fullPath)
+            || !Path.GetExtension(fullPath).Equals(".json", StringComparison.OrdinalIgnoreCase))
+        {
+            error = "The plugin manifest must be an existing local JSON file.";
+            return false;
+        }
+
+        manifestPath = fullPath;
+        return true;
+    }
+    catch (Exception exception) when (exception is ArgumentException
+        or IOException
+        or NotSupportedException
+        or UnauthorizedAccessException
+        or System.Security.SecurityException)
+    {
+        error = "The plugin manifest path is invalid or inaccessible.";
+        return false;
+    }
+}
+
+static void ShowProviderUsage(bool pluginsOnly)
+{
+    string command = pluginsOnly ? "plugin" : "provider";
+    Console.Error.WriteLine("Usage:");
+    Console.Error.WriteLine(
+        $"  autoenvplus {command} list [--kind runtime] [--root directory] [--json]");
+    Console.Error.WriteLine(
+        $"  autoenvplus {command} inspect <provider-id> [--root directory] [--json]");
+    Console.Error.WriteLine(
+        $"  autoenvplus {command} import <manifest.json> [--root directory] [--yes] [--json]");
+    Console.Error.WriteLine(
+        $"  autoenvplus {command} <enable|disable|delete> <plugin:id> [--root directory] [--yes] [--json]");
+}
+
+static int UnknownProviderCommand(bool pluginsOnly)
+{
+    ShowProviderUsage(pluginsOnly);
+    return 1;
+}
+
+static void PrintPluginListErrors(IEnumerable<RuntimeProviderPluginError> errors)
+{
+    foreach (RuntimeProviderPluginError error in errors)
+    {
+        Console.Error.WriteLine($"Provider plugin warning [{error.Code}]: {error.Message}");
+    }
+}
+
+static void PrintProviderDetails(CliProviderView provider)
+{
+    Console.WriteLine("Runtime provider");
+    Console.WriteLine($"  ID:          {provider.ProviderId}");
+    Console.WriteLine($"  Name:        {provider.DisplayName}");
+    Console.WriteLine($"  Vendor:      {provider.Vendor}");
+    Console.WriteLine($"  Runtime:     {provider.RuntimeKind}");
+    Console.WriteLine($"  Source:      {provider.Source}");
+    Console.WriteLine($"  State:       {(provider.IsEnabled ? "enabled" : "disabled")}");
+    Console.WriteLine($"  Homepage:    {provider.Homepage}");
+    Console.WriteLine($"  License:     {provider.License}");
+    Console.WriteLine($"  Catalog:     {DescribeProviderCatalog(provider)}");
+    Console.WriteLine($"  Trust:       {provider.AuthenticityNotice}");
+}
+
+static string DescribeProviderCatalog(CliProviderView provider) =>
+    provider.ReleaseCount is int releases && provider.AssetCount is int assets
+        ? $"{releases} release(s), {assets} asset(s)"
+        : "loaded on demand";
+
+static IReadOnlyList<CliProviderView> GetBuiltInProviderViews() =>
+[
+    new(
+        PythonOrgCatalogProvider.ProviderName,
+        "Python.org Windows embeddable distributions",
+        "Python Software Foundation",
+        RuntimeKind.Python,
+        "built-in",
+        true,
+        "https://www.python.org/",
+        "PSF-2.0",
+        "AutoEnvPlus built-in provider policy",
+        null,
+        null),
+    new(
+        NodeJsCatalogProvider.ProviderName,
+        "Node.js official Windows distributions",
+        "OpenJS Foundation",
+        RuntimeKind.NodeJs,
+        "built-in",
+        true,
+        "https://nodejs.org/",
+        "See vendor distribution terms",
+        "AutoEnvPlus built-in provider policy",
+        null,
+        null),
+    new(
+        AdoptiumCatalogProvider.ProviderName,
+        "Eclipse Temurin",
+        "Eclipse Adoptium",
+        RuntimeKind.Java,
+        "built-in",
+        true,
+        "https://adoptium.net/",
+        "See vendor distribution terms",
+        "AutoEnvPlus built-in provider policy",
+        null,
+        null),
+    new(
+        DotNetSdkCatalogProvider.ProviderName,
+        "Microsoft .NET SDK",
+        "Microsoft",
+        RuntimeKind.DotNet,
+        "built-in",
+        true,
+        "https://dotnet.microsoft.com/",
+        "See vendor distribution terms",
+        "AutoEnvPlus built-in provider policy",
+        null,
+        null),
+];
+
+static CliProviderView CreatePluginProviderView(
+    RuntimeProviderPluginDescriptor descriptor) =>
+    CreatePluginManifestProviderView(descriptor.Manifest, descriptor.IsEnabled);
+
+static CliProviderView CreatePluginManifestProviderView(
+    RuntimeProviderPluginManifest manifest,
+    bool isEnabled) => new(
+        manifest.ProviderId,
+        manifest.DisplayName,
+        manifest.Vendor,
+        manifest.Kind,
+        "plugin",
+        isEnabled,
+        manifest.Homepage.AbsoluteUri,
+        manifest.License,
+        DeclarativeRuntimeCatalogProvider.AuthenticityNotice,
+        manifest.Releases.Count,
+        manifest.Releases.Sum(release => release.Assets.Count));
+
+static async Task<int> RunNetworkAsync(
+    string[] args,
+    CancellationToken cancellationToken)
+{
+    if (args.Length == 0
+        || !args[0].Equals("show", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine(
+            "Usage: autoenvplus network show [global|tool-id] [--root directory] [--json]");
+        return 1;
+    }
+
+    string target = "global";
+    bool targetSpecified = false;
+    for (int index = 1; index < args.Length; index++)
+    {
+        string argument = args[index];
+        if (argument.Equals("--json", StringComparison.OrdinalIgnoreCase))
+        {
+            continue;
+        }
+
+        if (argument.Equals("--root", StringComparison.OrdinalIgnoreCase))
+        {
+            if (++index >= args.Length || string.IsNullOrWhiteSpace(args[index]))
+            {
+                Console.Error.WriteLine("--root requires a value.");
+                return 1;
+            }
+
+            continue;
+        }
+
+        if (argument.StartsWith("-", StringComparison.Ordinal))
+        {
+            Console.Error.WriteLine($"Unsupported network option: {argument}");
+            return 1;
+        }
+
+        if (targetSpecified)
+        {
+            Console.Error.WriteLine("network show accepts at most one scope.");
+            return 1;
+        }
+
+        target = argument.Trim();
+        targetSpecified = true;
+    }
+
+    if (!TryGetManagedRoot(args, out string? managedRoot, out string? rootError))
+    {
+        Console.Error.WriteLine(rootError);
+        return 1;
+    }
+
+    NetworkSettingsStore store = new(managedRoot!);
+    NetworkSettingsLoadResult loaded = await store.LoadAsync(cancellationToken);
+    if (!loaded.Success || loaded.Settings is null)
+    {
+        PrintNetworkErrors(loaded.Errors);
+        return 2;
+    }
+
+    bool json = args.Contains("--json", StringComparer.OrdinalIgnoreCase);
+    NetworkSettings settings = loaded.Settings;
+    if (target.Equals("global", StringComparison.OrdinalIgnoreCase))
+    {
+        GlobalNetworkSettings global = settings.Global!;
+        object[] overrides = settings.Tools!
+            .OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(pair => (object)new
+            {
+                toolId = pair.Key,
+                httpProxy = CreateNetworkOverrideView(pair.Value.HttpProxy),
+                httpsProxy = CreateNetworkOverrideView(pair.Value.HttpsProxy),
+                mirror = CreateNetworkOverrideView(pair.Value.Mirror),
+            })
+            .ToArray();
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(
+                new
+                {
+                    scope = "global",
+                    settingsPath = store.SettingsPath,
+                    httpProxy = RedactNetworkEndpoint(global.HttpProxy),
+                    httpsProxy = RedactNetworkEndpoint(global.HttpsProxy),
+                    noProxy = global.NoProxy,
+                    mirror = RedactNetworkEndpoint(global.Mirror),
+                    toolOverrides = overrides,
+                },
+                CreateJsonOptions()));
+            return 0;
+        }
+
+        Console.WriteLine("Global network settings");
+        Console.WriteLine($"  File:        {store.SettingsPath}");
+        Console.WriteLine($"  HTTP proxy:  {DescribeNetworkEndpoint(global.HttpProxy)}");
+        Console.WriteLine($"  HTTPS proxy: {DescribeNetworkEndpoint(global.HttpsProxy)}");
+        Console.WriteLine($"  No proxy:    {DescribeNoProxy(global.NoProxy!)}");
+        Console.WriteLine($"  Mirror:      {DescribeNetworkEndpoint(global.Mirror)}");
+        Console.WriteLine($"  Overrides:   {overrides.Length}");
+        foreach ((string toolId, ToolNetworkSettings tool) in settings.Tools!
+                     .OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            Console.WriteLine(
+                $"    {toolId}: HTTP {DescribeNetworkOverride(tool.HttpProxy)}, "
+                + $"HTTPS {DescribeNetworkOverride(tool.HttpsProxy)}, "
+                + $"mirror {DescribeNetworkOverride(tool.Mirror)}");
+        }
+
+        return 0;
+    }
+
+    target = NormalizeNetworkScopeAlias(target);
+    if (!NetworkToolIds.IsSupported(target))
+    {
+        Console.Error.WriteLine($"Unsupported network tool scope: {target}");
+        Console.Error.WriteLine(
+            "Supported scopes: "
+            + string.Join(", ", NetworkToolIds.All.Order(StringComparer.OrdinalIgnoreCase)));
+        return 1;
+    }
+
+    if (!TryResolveNetworkSettings(settings, target, out EffectiveNetworkSettings? effective))
+    {
+        return 2;
+    }
+
+    if (json)
+    {
+        Console.WriteLine(JsonSerializer.Serialize(
+            new
+            {
+                scope = "tool",
+                toolId = effective!.ToolId,
+                httpProxy = RedactNetworkEndpointUri(effective.HttpProxy),
+                httpsProxy = RedactNetworkEndpointUri(effective.HttpsProxy),
+                noProxy = effective.NoProxy,
+                mirror = RedactNetworkEndpointUri(effective.Mirror),
+            },
+            CreateJsonOptions()));
+        return 0;
+    }
+
+    Console.WriteLine($"Effective network settings for {effective!.ToolId}");
+    Console.WriteLine($"  HTTP proxy:  {DescribeNetworkEndpointUri(effective.HttpProxy)}");
+    Console.WriteLine($"  HTTPS proxy: {DescribeNetworkEndpointUri(effective.HttpsProxy)}");
+    Console.WriteLine($"  No proxy:    {DescribeNoProxy(effective.NoProxy)}");
+    Console.WriteLine($"  Mirror:      {DescribeNetworkEndpointUri(effective.Mirror)}");
+    return 0;
+}
+
+static async Task<int> RunDownloadAsync(
+    string[] args,
+    CancellationToken cancellationToken)
+{
+    if (args.Length == 0)
+    {
+        ShowDownloadUsage();
+        return 1;
+    }
+
+    if (args[0].Equals("url", StringComparison.OrdinalIgnoreCase))
+    {
+        return await RunUrlDownloadAsync(args, cancellationToken);
+    }
+
+    if (args[0].Equals("import", StringComparison.OrdinalIgnoreCase))
+    {
+        return await RunDownloadImportAsync(args, cancellationToken);
+    }
+
+    if (args[0].Equals("list", StringComparison.OrdinalIgnoreCase))
+    {
+        return await RunDownloadListAsync(args, cancellationToken);
+    }
+
+    ShowDownloadUsage();
+    return 1;
+}
+
+static async Task<int> RunUrlDownloadAsync(
+    string[] args,
+    CancellationToken cancellationToken)
+{
+    if (args.Length < 2
+        || !Uri.TryCreate(args[1], UriKind.Absolute, out Uri? sourceUri)
+        || !sourceUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+        || string.IsNullOrWhiteSpace(sourceUri.Host)
+        || !string.IsNullOrEmpty(sourceUri.UserInfo))
+    {
+        Console.Error.WriteLine(
+            "Usage: autoenvplus download url <https-url> [--file name] [--connections 1|2|4|8|16] [--sha256 hash|--sha512 hash] [--max-bytes count] [--overwrite] [--root directory] [--yes]");
+        Console.Error.WriteLine("The source must be an absolute HTTPS URL without embedded credentials.");
+        return 1;
+    }
+
+    if (!TryParseTransferOptions(
+            args,
+            2,
+            allowConnections: true,
+            out CliTransferOptions? options,
+            out string? optionError))
+    {
+        Console.Error.WriteLine(optionError);
+        return 1;
+    }
+
+    if (!TryGetManagedRoot(args, out string? managedRoot, out string? rootError))
+    {
+        Console.Error.WriteLine(rootError);
+        return 1;
+    }
+
+    string inferredName;
+    try
+    {
+        inferredName = Path.GetFileName(Uri.UnescapeDataString(sourceUri.AbsolutePath));
+    }
+    catch (UriFormatException)
+    {
+        Console.Error.WriteLine("The URL path contains an invalid escaped file name.");
+        return 1;
+    }
+
+    string fileName = options!.FileName ?? inferredName;
+    if (!TryValidateManagedFileName(fileName, out string? fileNameError))
+    {
+        Console.Error.WriteLine(fileNameError);
+        return 1;
+    }
+
+    string libraryRoot = GetManagedDownloadLibraryRoot(managedRoot!);
+    string targetPath = Path.Combine(libraryRoot, fileName);
+    if (File.Exists(targetPath) && !options.Overwrite)
+    {
+        Console.Error.WriteLine(
+            $"The managed library already contains '{fileName}'. Review and add --overwrite to replace it.");
+        return 2;
+    }
+
+    NetworkSettings? settings = await LoadNetworkSettingsAsync(
+        managedRoot!,
+        cancellationToken);
+    if (settings is null
+        || !TryResolveNetworkSettings(
+            settings,
+            NetworkToolIds.Downloads,
+            out EffectiveNetworkSettings? effectiveNetworkSettings))
+    {
+        return 2;
+    }
+
+    Console.WriteLine("Managed download plan");
+    Console.WriteLine($"  Source:       {RedactNetworkEndpointUri(sourceUri)}");
+    Console.WriteLine($"  Destination:  {targetPath}");
+    Console.WriteLine($"  Connections:  {options.ConnectionCount}");
+    Console.WriteLine($"  Maximum size: {FormatByteCount(options.MaximumBytes)}");
+    Console.WriteLine($"  Integrity:    {DescribeIntegrity(options.Integrity)}");
+    Console.WriteLine($"  Overwrite:    {options.Overwrite}");
+    Console.WriteLine("  Execution:    downloaded content is stored but never executed automatically");
+    if (!options.Yes)
+    {
+        Console.WriteLine("Preview only: no files were changed. Add --yes to execute this exact plan.");
+        return 0;
+    }
+
+    using HttpClient client = NetworkHttpClientFactory.Create(
+        effectiveNetworkSettings!,
+        Timeout.InfiniteTimeSpan);
+    ManagedSegmentedDownloader downloader = new(client, libraryRoot);
+    SegmentedDownloadResult result;
+    try
+    {
+        result = await downloader.DownloadAsync(
+            new SegmentedDownloadRequest(
+                sourceUri,
+                fileName,
+                options.ConnectionCount,
+                options.MaximumBytes,
+                options.Integrity,
+                options.Overwrite),
+            new ConsoleManagedTransferProgress(),
+            cancellationToken);
+    }
+    catch (HttpRequestException exception)
+    {
+        string status = exception.StatusCode is null
+            ? "transport failure"
+            : $"HTTP {(int)exception.StatusCode.Value}";
+        Console.Error.WriteLine(
+            $"Managed download failed ({status}). The source query and credentials were not logged.");
+        return 2;
+    }
+
+    Console.WriteLine("Managed download completed.");
+    Console.WriteLine($"  File:         {result.FilePath}");
+    Console.WriteLine($"  Size:         {FormatByteCount(result.TotalBytes)}");
+    Console.WriteLine($"  Content SHA-256: {result.ContentSha256}");
+    Console.WriteLine($"  Mode:         {result.TransferMode} ({result.SegmentCount} segment(s))");
+    if (result.FallbackReason is DownloadFallbackReason fallbackReason)
+    {
+        Console.WriteLine($"  Range fallback: {fallbackReason}");
+    }
+
+    if (result.HasVerifiedExpectedHash)
+    {
+        Console.WriteLine(
+            $"  Expected {result.ExpectedHashAlgorithm!.Value.DisplayName()}: verified {result.VerifiedHash}");
+    }
+
+    return 0;
+}
+
+static async Task<int> RunDownloadImportAsync(
+    string[] args,
+    CancellationToken cancellationToken)
+{
+    if (args.Length < 2)
+    {
+        Console.Error.WriteLine(
+            "Usage: autoenvplus download import <local-file> [--file name] [--sha256 hash|--sha512 hash] [--max-bytes count] [--overwrite] [--root directory] [--yes]");
+        return 1;
+    }
+
+    if (!TryParseTransferOptions(
+            args,
+            2,
+            allowConnections: false,
+            out CliTransferOptions? options,
+            out string? optionError))
+    {
+        Console.Error.WriteLine(optionError);
+        return 1;
+    }
+
+    if (!TryGetManagedRoot(args, out string? managedRoot, out string? rootError))
+    {
+        Console.Error.WriteLine(rootError);
+        return 1;
+    }
+
+    string sourcePath;
+    FileInfo source;
+    try
+    {
+        sourcePath = Path.GetFullPath(args[1]);
+        if (!File.Exists(sourcePath))
+        {
+            Console.Error.WriteLine("The local package to import was not found.");
+            return 1;
+        }
+
+        FileAttributes attributes = File.GetAttributes(sourcePath);
+        if ((attributes & (FileAttributes.Directory
+            | FileAttributes.Device
+            | FileAttributes.ReparsePoint)) != 0)
+        {
+            Console.Error.WriteLine(
+                "The local import source must be a regular file and cannot be a reparse point.");
+            return 1;
+        }
+
+        source = new FileInfo(sourcePath);
+    }
+    catch (Exception exception) when (exception is ArgumentException
+        or NotSupportedException
+        or PathTooLongException)
+    {
+        Console.Error.WriteLine($"The local import path is invalid: {exception.Message}");
+        return 1;
+    }
+
+    if (source.Length > options!.MaximumBytes)
+    {
+        Console.Error.WriteLine(
+            $"The local file is {source.Length} bytes, exceeding the {options.MaximumBytes}-byte limit.");
+        return 1;
+    }
+
+    string fileName = options.FileName ?? source.Name;
+    if (!TryValidateManagedFileName(fileName, out string? fileNameError))
+    {
+        Console.Error.WriteLine(fileNameError);
+        return 1;
+    }
+
+    string libraryRoot = GetManagedDownloadLibraryRoot(managedRoot!);
+    string targetPath = Path.Combine(libraryRoot, fileName);
+    if (sourcePath.Equals(targetPath, StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine("The selected file is already inside the managed library.");
+        return 1;
+    }
+
+    if (File.Exists(targetPath) && !options.Overwrite)
+    {
+        Console.Error.WriteLine(
+            $"The managed library already contains '{fileName}'. Review and add --overwrite to replace it.");
+        return 2;
+    }
+
+    Console.WriteLine("Managed local import plan");
+    Console.WriteLine($"  Source:       {sourcePath}");
+    Console.WriteLine($"  Destination:  {targetPath}");
+    Console.WriteLine($"  Size:         {FormatByteCount(source.Length)}");
+    Console.WriteLine($"  Integrity:    {DescribeIntegrity(options.Integrity)}");
+    Console.WriteLine($"  Overwrite:    {options.Overwrite}");
+    Console.WriteLine("  Execution:    imported content is stored but never executed automatically");
+    if (!options.Yes)
+    {
+        Console.WriteLine("Preview only: no files were changed. Add --yes to execute this exact plan.");
+        return 0;
+    }
+
+    LocalPackageImportResult result = await new LocalPackageImportService(libraryRoot).ImportAsync(
+        new LocalPackageImportRequest(
+            sourcePath,
+            fileName,
+            options.MaximumBytes,
+            options.Integrity,
+            options.Overwrite),
+        new ConsoleManagedTransferProgress(),
+        cancellationToken);
+    Console.WriteLine("Managed local import completed.");
+    Console.WriteLine($"  File:     {result.FilePath}");
+    Console.WriteLine($"  Size:     {FormatByteCount(result.TotalBytes)}");
+    Console.WriteLine($"  Content SHA-256: {result.ContentSha256}");
+    if (result.HasVerifiedExpectedHash)
+    {
+        Console.WriteLine(
+            $"  Expected {result.ExpectedHashAlgorithm!.Value.DisplayName()}: verified {result.VerifiedHash}");
+    }
+
+    return 0;
+}
+
+static async Task<int> RunDownloadListAsync(
+    string[] args,
+    CancellationToken cancellationToken)
+{
+    for (int index = 1; index < args.Length; index++)
+    {
+        if (args[index].Equals("--json", StringComparison.OrdinalIgnoreCase))
+        {
+            continue;
+        }
+
+        if (args[index].Equals("--root", StringComparison.OrdinalIgnoreCase))
+        {
+            if (++index >= args.Length || string.IsNullOrWhiteSpace(args[index]))
+            {
+                Console.Error.WriteLine("--root requires a value.");
+                return 1;
+            }
+
+            continue;
+        }
+
+        Console.Error.WriteLine($"Unsupported download list option: {args[index]}");
+        return 1;
+    }
+
+    if (!TryGetManagedRoot(args, out string? managedRoot, out string? rootError))
+    {
+        Console.Error.WriteLine(rootError);
+        return 1;
+    }
+
+    string libraryRoot = GetManagedDownloadLibraryRoot(managedRoot!);
+    ManagedDownloadLibrary library = new(libraryRoot);
+    IReadOnlyList<ManagedDownloadLibraryItem> items = await library.ListFilesAsync(
+        cancellationToken);
+    if (args.Contains("--json", StringComparer.OrdinalIgnoreCase))
+    {
+        Console.WriteLine(JsonSerializer.Serialize(items, CreateJsonOptions()));
+        return 0;
+    }
+
+    Console.WriteLine("Managed download library");
+    Console.WriteLine($"  Root: {libraryRoot}");
+    foreach (ManagedDownloadLibraryItem item in items)
+    {
+        Console.WriteLine(
+            $"  {item.FileName}  {FormatByteCount(item.SizeBytes)}  "
+            + $"{item.Origin?.ToString() ?? "unknown"}");
+        Console.WriteLine($"    {item.FilePath}");
+        if (!string.IsNullOrWhiteSpace(item.ContentSha256))
+        {
+            Console.WriteLine($"    Content SHA-256 recorded at commit: {item.ContentSha256}");
+        }
+
+        if (item.HasVerifiedExpectedHash)
+        {
+            Console.WriteLine(
+                $"    Expected {item.ExpectedHashAlgorithm!.Value.DisplayName()}: revalidated {item.VerifiedHash}");
+        }
+        else if (item.HasRecordedExpectedHashEvidence)
+        {
+            Console.WriteLine(item.ContentIdentityChanged
+                ? "    Recorded expected-hash evidence is stale: current bytes changed."
+                : "    Expected-hash evidence was recorded at commit but was not revalidated.");
+        }
+    }
+
+    if (items.Count == 0)
+    {
+        Console.WriteLine("  No managed downloads or imports were found.");
+    }
+
+    return 0;
+}
+
+static void ShowDownloadUsage()
+{
+    Console.Error.WriteLine("Usage:");
+    Console.Error.WriteLine(
+        "  autoenvplus download url <https-url> [--file name] [--connections 1|2|4|8|16] [--sha256 hash|--sha512 hash] [--max-bytes count] [--overwrite] [--root directory] [--yes]");
+    Console.Error.WriteLine(
+        "  autoenvplus download import <local-file> [--file name] [--sha256 hash|--sha512 hash] [--max-bytes count] [--overwrite] [--root directory] [--yes]");
+    Console.Error.WriteLine("  autoenvplus download list [--root directory] [--json]");
 }
 
 static async Task<int> RunShimAsync(string[] args, CancellationToken cancellationToken)
@@ -877,7 +2378,7 @@ static async Task<int> RunShimAsync(string[] args, CancellationToken cancellatio
     Console.WriteLine("Shim activation plan");
     Console.WriteLine($"  Directory: {shimDirectory}");
     Console.WriteLine($"  Engine:    {(nativeShim is null ? "CMD fallback" : "native Win32 x64")}");
-    Console.WriteLine("  Commands:  python, python3, pip, pip3, node, npm, npx, java, javac, jar, dotnet");
+    Console.WriteLine("  Commands:  python, python3, pip, pip3, node, npm, npx, java, javac, jar, dotnet, cl, clang, clang++, gcc, g++, cmake, ninja");
     Console.WriteLine($"  PATH:      {(pathPlan.Changed ? "add/move Shim directory to first user position" : "already active")}");
     if (!args.Contains("--yes", StringComparer.OrdinalIgnoreCase))
     {
@@ -988,6 +2489,7 @@ static async Task<int> RunShellAsync(string[] args, CancellationToken cancellati
     Console.WriteLine($"  Shim folder:  {Path.Combine(managedRoot!, "shims")}");
     Console.WriteLine("  Commands:     Use-AutoEnvPlusRuntime, Clear-AutoEnvPlusRuntime");
     Console.WriteLine("  Variables:    AUTOENVPLUS_PYTHON_VERSION, AUTOENVPLUS_NODE_VERSION, AUTOENVPLUS_JAVA_VERSION, AUTOENVPLUS_DOTNET_VERSION");
+    Console.WriteLine("  Exact pins:   AUTOENVPLUS_<KIND>_RUNTIME_ID and AUTOENVPLUS_<KIND>_RUNTIME_PROVIDER_ID (session only)");
     Console.WriteLine($"  Profile:      {(plan.ProfileChanged ? "create/update with snapshot" : "managed block already current")}");
     Console.WriteLine($"  Module:       {(plan.ModuleChanged ? "create/update atomically" : "already current")}");
     if (plan.ExistingProfileBlockCount > 1)
@@ -1651,6 +3153,23 @@ static async Task<int> RunProjectAsync(string[] args, CancellationToken cancella
             Console.WriteLine($"    {selection.EnvironmentVariable}={selection.ResolvedVersion}");
         }
 
+        if (plan.NetworkSummary.Applied)
+        {
+            ProjectTerminalNetworkSummary network = plan.NetworkSummary;
+            string pipMirror = !network.PipEnvironmentApplied
+                ? "not applied"
+                : network.PipMirrorConfigured ? "configured" : "official";
+            string npmMirror = !network.NpmEnvironmentApplied
+                ? "not applied"
+                : network.NpmMirrorConfigured ? "configured" : "official";
+            Console.WriteLine(
+                $"  Network: proxy={network.ProxySource}; HTTP={(network.HttpProxyConfigured ? "configured" : "direct")}; "
+                + $"HTTPS={(network.HttpsProxyConfigured ? "configured" : "direct")}; no-proxy={network.NoProxyEntryCount}");
+            Console.WriteLine(
+                $"    pip mirror={pipMirror}; npm registry={npmMirror}; "
+                + $"removed inherited variables={plan.EnvironmentRemovals.Count}");
+        }
+
         foreach (string warning in plan.Warnings)
         {
             Console.Error.WriteLine($"  warning: {warning}");
@@ -1814,24 +3333,408 @@ static int RunResolve(string[] args)
     return 0;
 }
 
+static async Task<NetworkSettings?> LoadNetworkSettingsAsync(
+    string managedRoot,
+    CancellationToken cancellationToken)
+{
+    NetworkSettingsLoadResult loaded = await new NetworkSettingsStore(managedRoot)
+        .LoadAsync(cancellationToken);
+    if (!loaded.Success || loaded.Settings is null)
+    {
+        PrintNetworkErrors(loaded.Errors);
+        return null;
+    }
+
+    return loaded.Settings;
+}
+
+static async Task<NetworkSettings?> LoadProviderSourceNetworkSettingsAsync(
+    string managedRoot,
+    string networkToolId,
+    CancellationToken cancellationToken)
+{
+    ProviderSourceNetworkSettingsLoadResult loaded =
+        await new ProviderSourceNetworkSettingsLoader(managedRoot)
+            .LoadForToolsAsync([networkToolId], cancellationToken);
+    if (!loaded.Success || loaded.Settings is null)
+    {
+        foreach (string error in loaded.Errors)
+        {
+            Console.Error.WriteLine(error);
+        }
+
+        return null;
+    }
+
+    return loaded.Settings;
+}
+
+static bool TryResolveRuntimeNetworkSettings(
+    NetworkSettings settings,
+    string runtime,
+    out EffectiveNetworkSettings? effective)
+{
+    if (!TryParseCatalogRuntimeKind(runtime, out RuntimeKind kind)
+        || !NetworkToolIds.TryGetRuntimeScope(kind, out string toolId))
+    {
+        Console.Error.WriteLine(
+            "The runtime provider must be python, node, java, dotnet, msvc, llvm, mingw, cmake, or ninja.");
+        effective = null;
+        return false;
+    }
+
+    return TryResolveNetworkSettings(settings, toolId, out effective);
+}
+
+static string NormalizeNetworkScopeAlias(string value) =>
+    value.Trim().ToLowerInvariant() switch
+    {
+        "python" => NetworkToolIds.RuntimePython,
+        "node" or "nodejs" => NetworkToolIds.RuntimeNode,
+        "java" => NetworkToolIds.RuntimeJava,
+        "dotnet" => NetworkToolIds.RuntimeDotNet,
+        "cpp" or "c++" => NetworkToolIds.RuntimeCpp,
+        "pip3" => NetworkToolIds.Pip,
+        "npx" => NetworkToolIds.Npm,
+        "download" => NetworkToolIds.Downloads,
+        _ => value.Trim().ToLowerInvariant(),
+    };
+
+static bool TryResolveManagedToolNetworkSettings(
+    NetworkSettings settings,
+    string toolAlias,
+    out EffectiveNetworkSettings? effective)
+{
+    string? toolId = GetManagedToolNetworkId(toolAlias);
+    if (toolId is null)
+    {
+        Console.Error.WriteLine("No network scope is available for the selected managed tool.");
+        effective = null;
+        return false;
+    }
+
+    return TryResolveNetworkSettings(settings, toolId, out effective);
+}
+
+static string? GetManagedToolNetworkId(string toolAlias) =>
+    toolAlias.Trim().ToLowerInvariant() switch
+    {
+        "pip" or "pip3" => NetworkToolIds.Pip,
+        "npm" or "npx" => NetworkToolIds.Npm,
+        "javac" or "jar" => NetworkToolIds.RuntimeJava,
+        "clang++" or "g++" => NetworkToolIds.RuntimeCpp,
+        _ => null,
+    };
+
+static bool TryResolveNetworkSettings(
+    NetworkSettings settings,
+    string toolId,
+    out EffectiveNetworkSettings? effective)
+{
+    NetworkSettingsResolutionResult resolved = NetworkSettingsResolver.Resolve(settings, toolId);
+    if (!resolved.Success || resolved.EffectiveSettings is null)
+    {
+        PrintNetworkErrors(resolved.Errors);
+        effective = null;
+        return false;
+    }
+
+    effective = resolved.EffectiveSettings;
+    return true;
+}
+
+static void PrintNetworkErrors(IEnumerable<NetworkSettingsError> errors)
+{
+    foreach (NetworkSettingsError error in errors)
+    {
+        Console.Error.WriteLine(
+            $"Network settings error [{error.Code}] at {error.Path}: {error.Message}");
+    }
+}
+
+static string DescribeNetworkEndpoint(string? value) =>
+    RedactNetworkEndpoint(value) ?? "disabled";
+
+static string DescribeNetworkEndpointUri(Uri? value) =>
+    RedactNetworkEndpointUri(value) ?? "disabled";
+
+static string? RedactNetworkEndpoint(string? value)
+{
+    if (string.IsNullOrWhiteSpace(value)
+        || !Uri.TryCreate(value, UriKind.Absolute, out Uri? uri))
+    {
+        return null;
+    }
+
+    return RedactNetworkEndpointUri(uri);
+}
+
+static string? RedactNetworkEndpointUri(Uri? value)
+{
+    if (value is null)
+    {
+        return null;
+    }
+
+    bool redactedQuery = !string.IsNullOrEmpty(value.Query);
+    UriBuilder safe = new(value)
+    {
+        UserName = string.Empty,
+        Password = string.Empty,
+        Query = string.Empty,
+        Fragment = string.Empty,
+    };
+    return safe.Uri.AbsoluteUri + (redactedQuery ? " [query redacted]" : string.Empty);
+}
+
+static string DescribeNetworkOverride(NetworkEndpointOverride? value)
+{
+    NetworkEndpointOverrideMode mode = value?.Mode ?? NetworkEndpointOverrideMode.Inherit;
+    return mode == NetworkEndpointOverrideMode.Custom
+        ? $"custom ({RedactNetworkEndpoint(value?.Value) ?? "invalid endpoint"})"
+        : mode.ToString().ToLowerInvariant();
+}
+
+static CliNetworkOverrideView CreateNetworkOverrideView(NetworkEndpointOverride? value)
+{
+    NetworkEndpointOverrideMode mode = value?.Mode ?? NetworkEndpointOverrideMode.Inherit;
+    return new CliNetworkOverrideView(
+        mode.ToString().ToLowerInvariant(),
+        mode == NetworkEndpointOverrideMode.Custom
+            ? RedactNetworkEndpoint(value?.Value)
+            : null);
+}
+
+static string DescribeNoProxy(IReadOnlyList<string> values) =>
+    values.Count == 0 ? "none" : string.Join(", ", values);
+
+static bool TryParseTransferOptions(
+    string[] args,
+    int startIndex,
+    bool allowConnections,
+    out CliTransferOptions? options,
+    out string? error)
+{
+    const long defaultMaximumBytes = 100L * 1024 * 1024 * 1024;
+    const long absoluteMaximumBytes = 1024L * 1024 * 1024 * 1024;
+    string? fileName = null;
+    int connections = 8;
+    long maximumBytes = defaultMaximumBytes;
+    PackageHashExpectation? integrity = null;
+    bool overwrite = false;
+    bool yes = false;
+    HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+
+    for (int index = startIndex; index < args.Length; index++)
+    {
+        string argument = args[index];
+        if (!argument.StartsWith("--", StringComparison.Ordinal))
+        {
+            options = null;
+            error = $"Unexpected download argument: {argument}";
+            return false;
+        }
+
+        if (!seen.Add(argument))
+        {
+            options = null;
+            error = $"Download option {argument} was specified more than once.";
+            return false;
+        }
+
+        if (argument.Equals("--yes", StringComparison.OrdinalIgnoreCase))
+        {
+            yes = true;
+            continue;
+        }
+
+        if (argument.Equals("--overwrite", StringComparison.OrdinalIgnoreCase))
+        {
+            overwrite = true;
+            continue;
+        }
+
+        if (index + 1 >= args.Length || string.IsNullOrWhiteSpace(args[index + 1]))
+        {
+            options = null;
+            error = $"{argument} requires a value.";
+            return false;
+        }
+
+        string value = args[++index];
+        if (argument.Equals("--root", StringComparison.OrdinalIgnoreCase))
+        {
+            continue;
+        }
+
+        if (argument.Equals("--file", StringComparison.OrdinalIgnoreCase))
+        {
+            fileName = value;
+            continue;
+        }
+
+        if (argument.Equals("--connections", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!allowConnections)
+            {
+                options = null;
+                error = "--connections is only valid for URL downloads.";
+                return false;
+            }
+
+            if (!int.TryParse(value, out connections)
+                || !ManagedSegmentedDownloader.SupportedConnectionCounts.Contains(connections))
+            {
+                options = null;
+                error = "--connections must be one of 1, 2, 4, 8, or 16.";
+                return false;
+            }
+
+            continue;
+        }
+
+        if (argument.Equals("--max-bytes", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!long.TryParse(value, out maximumBytes)
+                || maximumBytes < 1
+                || maximumBytes > absoluteMaximumBytes)
+            {
+                options = null;
+                error = $"--max-bytes must be an integer from 1 through {absoluteMaximumBytes}.";
+                return false;
+            }
+
+            continue;
+        }
+
+        PackageHashAlgorithm? algorithm = argument.ToLowerInvariant() switch
+        {
+            "--sha256" => PackageHashAlgorithm.Sha256,
+            "--sha512" => PackageHashAlgorithm.Sha512,
+            _ => null,
+        };
+        if (algorithm is PackageHashAlgorithm selectedAlgorithm)
+        {
+            if (integrity is not null)
+            {
+                options = null;
+                error = "Specify only one of --sha256 or --sha512.";
+                return false;
+            }
+
+            if (!selectedAlgorithm.IsValidHash(value))
+            {
+                options = null;
+                error = $"{argument} requires a valid {selectedAlgorithm.DisplayName()} hexadecimal hash.";
+                return false;
+            }
+
+            integrity = new PackageHashExpectation(selectedAlgorithm, value.ToLowerInvariant());
+            continue;
+        }
+
+        options = null;
+        error = $"Unsupported download option: {argument}";
+        return false;
+    }
+
+    options = new CliTransferOptions(
+        fileName,
+        connections,
+        maximumBytes,
+        integrity,
+        overwrite,
+        yes);
+    error = null;
+    return true;
+}
+
+static bool TryValidateManagedFileName(string? fileName, out string? error)
+{
+    if (string.IsNullOrWhiteSpace(fileName)
+        || fileName.Length > 240
+        || fileName is "." or ".."
+        || fileName.IndexOfAny(
+            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]) >= 0
+        || fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0
+        || !fileName.Equals(Path.GetFileName(fileName), StringComparison.Ordinal)
+        || fileName.EndsWith(" ", StringComparison.Ordinal)
+        || fileName.EndsWith(".", StringComparison.Ordinal))
+    {
+        error = "The destination must be a safe file name without a path.";
+        return false;
+    }
+
+    string baseName = fileName.Split('.')[0];
+    bool reserved = baseName.Equals("CON", StringComparison.OrdinalIgnoreCase)
+        || baseName.Equals("PRN", StringComparison.OrdinalIgnoreCase)
+        || baseName.Equals("AUX", StringComparison.OrdinalIgnoreCase)
+        || baseName.Equals("NUL", StringComparison.OrdinalIgnoreCase)
+        || (baseName.Length == 4
+            && (baseName.StartsWith("COM", StringComparison.OrdinalIgnoreCase)
+                || baseName.StartsWith("LPT", StringComparison.OrdinalIgnoreCase))
+            && baseName[3] is >= '1' and <= '9');
+    if (reserved)
+    {
+        error = "The destination file name is reserved by Windows.";
+        return false;
+    }
+
+    string extension = Path.GetExtension(fileName);
+    if (!ManagedDownloadLibrary.AllowedExtensions.Contains(
+            extension,
+            StringComparer.OrdinalIgnoreCase))
+    {
+        error = "The destination extension is not approved. Supported extensions: "
+            + string.Join(", ", ManagedDownloadLibrary.AllowedExtensions);
+        return false;
+    }
+
+    error = null;
+    return true;
+}
+
+static string GetManagedDownloadLibraryRoot(string managedRoot) =>
+    Path.Combine(managedRoot, "downloads", "library");
+
+static string DescribeIntegrity(PackageHashExpectation? integrity) =>
+    integrity is null
+        ? "content SHA-256 will be recorded; no expected hash was supplied"
+        : $"verify {integrity.Algorithm.DisplayName()} {integrity.ExpectedHash}";
+
+static string FormatByteCount(long bytes)
+{
+    string[] units = ["B", "KiB", "MiB", "GiB", "TiB"];
+    double value = bytes;
+    int unit = 0;
+    while (value >= 1024 && unit < units.Length - 1)
+    {
+        value /= 1024;
+        unit++;
+    }
+
+    return unit == 0 ? $"{bytes} B" : $"{value:0.##} {units[unit]}";
+}
+
 static IRuntimeCatalogProvider? CreateProvider(
     string runtime,
     HttpClient client,
     RuntimeArchitecture architecture,
     string[] args,
     RuntimeVersion? requestedVersion,
+    Uri? mirror,
     out string? error)
 {
     error = null;
     if (runtime.Equals("python", StringComparison.OrdinalIgnoreCase))
     {
-        return new PythonOrgCatalogProvider(client, architecture);
+        return new PythonOrgCatalogProvider(client, architecture, mirror);
     }
 
     if (runtime.Equals("node", StringComparison.OrdinalIgnoreCase)
         || runtime.Equals("nodejs", StringComparison.OrdinalIgnoreCase))
     {
-        return new NodeJsCatalogProvider(client);
+        return new NodeJsCatalogProvider(client, mirror);
     }
 
     if (runtime.Equals("java", StringComparison.OrdinalIgnoreCase))
@@ -1846,24 +3749,147 @@ static IRuntimeCatalogProvider? CreateProvider(
             return null;
         }
 
-        return new AdoptiumCatalogProvider(client, feature, architecture);
+        return new AdoptiumCatalogProvider(client, feature, architecture, mirror);
     }
 
     if (runtime.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
     {
-        return new DotNetSdkCatalogProvider(client, architecture);
+        return new DotNetSdkCatalogProvider(client, architecture, mirror);
     }
 
     error = "The runtime provider must be python, node, java, or dotnet.";
     return null;
 }
 
-static HttpClient CreateHttpClient(TimeSpan timeout)
+static async Task<CliProviderResolution> ResolveCatalogProviderAsync(
+    string runtime,
+    HttpClient client,
+    RuntimeArchitecture architecture,
+    string[] args,
+    RuntimeVersion? requestedVersion,
+    Uri? officialMirror,
+    string managedRoot,
+    CancellationToken cancellationToken)
 {
-    HttpClient client = new() { Timeout = timeout };
-    client.DefaultRequestHeaders.UserAgent.ParseAdd("AutoEnvPlus/0.1");
-    return client;
+    if (args.Count(argument => argument.Equals(
+            "--provider",
+            StringComparison.OrdinalIgnoreCase)) > 1)
+    {
+        return new(null, "--provider can be specified only once.");
+    }
+
+    if (!TryGetOption(args, "--provider", out string? requestedProvider, out string? optionError))
+    {
+        return new(null, optionError);
+    }
+
+    if (!TryParseRuntimeKind(runtime, out RuntimeKind expectedKind))
+    {
+        return new(
+            null,
+            "The runtime provider must be python, node, java, dotnet, msvc, llvm, mingw, cmake, or ninja.");
+    }
+
+    bool requiresExplicitPlugin = ToolchainRuntimeProviderPolicy.RequiresExplicitPlugin(
+        expectedKind);
+    if (requiresExplicitPlugin && requestedProvider is null)
+    {
+        return new(
+            null,
+            $"{expectedKind} has no built-in archive provider. Specify --provider plugin:<id>; "
+            + "the separate 'toolchain install' command continues to use the built-in WinGet workflow.");
+    }
+
+    string? officialProviderId = requiresExplicitPlugin
+        ? null
+        : GetBuiltInProviderId(expectedKind);
+    if (!requiresExplicitPlugin
+        && (requestedProvider is null
+            || requestedProvider.Equals(officialProviderId, StringComparison.OrdinalIgnoreCase)))
+    {
+        IRuntimeCatalogProvider? provider = CreateProvider(
+            runtime,
+            client,
+            architecture,
+            args,
+            requestedVersion,
+            officialMirror,
+            out string? error);
+        return provider is null
+            ? new(null, error ?? "No built-in runtime provider is available.")
+            : new(new CliProviderSelection(provider, IsThirdParty: false), null);
+    }
+
+    if (requestedProvider is null)
+    {
+        return new(null, "An explicit runtime provider is required.");
+    }
+
+    if (RuntimeProviderPluginIds.BuiltInProviderIds.Contains(requestedProvider))
+    {
+        return new(
+            null,
+            requiresExplicitPlugin
+                ? "Toolchain archive catalogs require an explicit plugin:<id> provider; built-in archive providers are not available."
+                : "The selected built-in provider does not support the requested runtime kind.");
+    }
+
+    if (!requestedProvider.StartsWith(
+            RuntimeProviderPluginIds.Prefix,
+            StringComparison.OrdinalIgnoreCase)
+        || !RuntimeProviderPluginIds.TryGetPluginId(requestedProvider, out _))
+    {
+        return new(
+            null,
+            requiresExplicitPlugin
+                ? "--provider must be a valid plugin:<id> value for this toolchain archive catalog."
+                : $"--provider must be {officialProviderId} or a valid plugin:<id> value.");
+    }
+
+    try
+    {
+        RuntimeProviderPluginRegistry registry = new(
+            new RuntimeProviderPluginStore(managedRoot));
+        DeclarativeRuntimeCatalogProvider? provider = await registry.ResolveByIdAsync(
+            requestedProvider,
+            cancellationToken);
+        if (provider is null)
+        {
+            return new(
+                null,
+                "The selected provider plugin is not installed and enabled.");
+        }
+
+        if (provider.Kind != expectedKind)
+        {
+            return new(
+                null,
+                "The selected provider plugin does not support the requested runtime kind.");
+        }
+
+        return new(new CliProviderSelection(provider, IsThirdParty: true), null);
+    }
+    catch (RuntimeProviderPluginException exception)
+    {
+        return new(
+            null,
+            $"Provider plugin error [{exception.Code}]: {exception.Message}");
+    }
 }
+
+static string GetBuiltInProviderId(RuntimeKind kind) => kind switch
+{
+    RuntimeKind.Python => PythonOrgCatalogProvider.ProviderName,
+    RuntimeKind.NodeJs => NodeJsCatalogProvider.ProviderName,
+    RuntimeKind.Java => AdoptiumCatalogProvider.ProviderName,
+    RuntimeKind.DotNet => DotNetSdkCatalogProvider.ProviderName,
+    _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+};
+
+static string FormatProviderUri(Uri uri, bool isThirdParty) =>
+    isThirdParty
+        ? RedactNetworkEndpointUri(uri) ?? "HTTPS endpoint"
+        : uri.AbsoluteUri;
 
 static JsonSerializerOptions CreateJsonOptions() => new()
 {
@@ -1876,8 +3902,16 @@ static bool TryParseRuntimeKind(string value, out RuntimeKind kind)
     string normalized = value.Equals("node", StringComparison.OrdinalIgnoreCase)
         ? nameof(RuntimeKind.NodeJs)
         : value;
-    return Enum.TryParse(normalized, true, out kind);
+    return Enum.TryParse(normalized, true, out kind) && Enum.IsDefined(kind);
 }
+
+static bool TryParseCatalogRuntimeKind(string value, out RuntimeKind kind) =>
+    TryParseRuntimeKind(value, out kind)
+    && (kind is RuntimeKind.Python
+        or RuntimeKind.NodeJs
+        or RuntimeKind.Java
+        or RuntimeKind.DotNet
+        || ToolchainRuntimeProviderPolicy.RequiresExplicitPlugin(kind));
 
 static bool TryParseToolchainComponent(string value, out ToolchainComponent component)
 {
@@ -1958,32 +3992,146 @@ static bool TryFindOptionIndex(string[] args, string option, out int index)
 static bool TryCreateSessionProfile(
     RuntimeKind kind,
     out RuntimeProfile? profile,
+    out string? runtimeId,
+    out string? providerId,
     out string? error)
 {
-    string variableName = kind switch
-    {
-        RuntimeKind.NodeJs => "AUTOENVPLUS_NODE_VERSION",
-        _ => $"AUTOENVPLUS_{kind.ToString().ToUpperInvariant()}_VERSION",
-    };
+    string variableName = ManagedRuntimeSessionPin.GetVersionVariableName(kind);
     string? value = System.Environment.GetEnvironmentVariable(variableName);
     if (string.IsNullOrWhiteSpace(value))
     {
         profile = null;
+    }
+    else if (!VersionSelector.TryParse(value, out VersionSelector? selector))
+    {
+        profile = null;
+        runtimeId = null;
+        providerId = null;
+        error = $"Environment variable {variableName} contains an invalid selector: {value}";
+        return false;
+    }
+    else
+    {
+        profile = new RuntimeProfile(
+            new Dictionary<RuntimeKind, VersionSelector> { [kind] = selector! });
+    }
+
+    string runtimeIdVariable = ManagedRuntimeSessionPin.GetRuntimeIdVariableName(kind);
+    if (!TryReadSessionIdentity(runtimeIdVariable, out runtimeId, out error))
+    {
+        providerId = null;
+        return false;
+    }
+
+    string providerIdVariable = ManagedRuntimeSessionPin.GetProviderIdVariableName(kind);
+    if (!TryReadSessionIdentity(providerIdVariable, out providerId, out error))
+    {
+        return false;
+    }
+
+    error = null;
+    return true;
+}
+
+static bool TryApplySessionIdentityOptions(
+    string[] args,
+    ref string? runtimeId,
+    ref string? providerId,
+    out string? error)
+{
+    int runtimeIdCount = args.Count(argument => argument.Equals(
+        "--runtime-id",
+        StringComparison.OrdinalIgnoreCase));
+    int providerCount = args.Count(argument => argument.Equals(
+        "--provider",
+        StringComparison.OrdinalIgnoreCase));
+    if (runtimeIdCount > 1 || providerCount > 1)
+    {
+        error = "--runtime-id and --provider can each be specified only once.";
+        return false;
+    }
+
+    if (runtimeIdCount == 0 && providerCount == 0)
+    {
         error = null;
         return true;
     }
 
-    if (!VersionSelector.TryParse(value, out VersionSelector? selector))
+    if (runtimeIdCount == 0)
     {
-        profile = null;
-        error = $"Environment variable {variableName} contains an invalid selector: {value}";
+        error = "--provider requires --runtime-id for an exact session pin.";
         return false;
     }
 
-    profile = new RuntimeProfile(new Dictionary<RuntimeKind, VersionSelector> { [kind] = selector! });
+    if (!TryGetOption(args, "--runtime-id", out string? requestedRuntimeId, out error)
+        || !TryValidateSessionIdentity("--runtime-id", requestedRuntimeId, out error))
+    {
+        return false;
+    }
+
+    string? requestedProviderId = null;
+    if (providerCount > 0
+        && (!TryGetOption(args, "--provider", out requestedProviderId, out error)
+            || !TryValidateSessionIdentity("--provider", requestedProviderId, out error)))
+    {
+        return false;
+    }
+
+    runtimeId = requestedRuntimeId;
+    providerId = requestedProviderId;
     error = null;
     return true;
 }
+
+static bool TryReadSessionIdentity(
+    string variableName,
+    out string? value,
+    out string? error)
+{
+    value = System.Environment.GetEnvironmentVariable(variableName);
+    if (string.IsNullOrEmpty(value))
+    {
+        value = null;
+        error = null;
+        return true;
+    }
+
+    if (!TryValidateSessionIdentity(variableName, value, out error))
+    {
+        value = null;
+        return false;
+    }
+
+    error = null;
+    return true;
+}
+
+static bool TryValidateSessionIdentity(
+    string source,
+    string? value,
+    out string? error)
+{
+    if (string.IsNullOrEmpty(value)
+        || value.Length > 512
+        || value.StartsWith("--", StringComparison.Ordinal)
+        || !value.Equals(value.Trim(), StringComparison.Ordinal)
+        || value.Any(char.IsControl))
+    {
+        error = $"{source} contains an invalid session identity.";
+        return false;
+    }
+
+    error = null;
+    return true;
+}
+
+static RuntimeArchitecture CurrentRuntimeArchitecture() =>
+    RuntimeInformation.ProcessArchitecture switch
+    {
+        Architecture.X86 => RuntimeArchitecture.X86,
+        Architecture.Arm64 => RuntimeArchitecture.Arm64,
+        _ => RuntimeArchitecture.X64,
+    };
 
 static void GetCurrentCliInvocation(
     out string executable,
@@ -2047,13 +4195,21 @@ static int ShowHelp()
     Console.WriteLine();
     Console.WriteLine("  autoenvplus doctor [--json]");
     Console.WriteLine("  autoenvplus list [--managed] [--json] [--root directory]");
-    Console.WriteLine("  autoenvplus catalog <python|node|java|dotnet> [catalog options]");
-    Console.WriteLine("  autoenvplus install <python|node|java|dotnet> <exact-version> [--arch value] [--root directory] [--yes]");
+    Console.WriteLine("  autoenvplus catalog <python|node|java|dotnet|msvc|llvm|mingw|cmake|ninja> [--provider official-id|plugin:id] [catalog options]");
+    Console.WriteLine("  autoenvplus install <python|node|java|dotnet|msvc|llvm|mingw|cmake|ninja> <exact-version> [--provider official-id|plugin:id] [--arch value] [--root directory] [--yes]");
+    Console.WriteLine("    Toolchain archive kinds require --provider plugin:<id>; toolchain install remains the WinGet workflow.");
     Console.WriteLine("  autoenvplus uninstall <managed-runtime-id> [--root directory] [--force] [--yes]");
-    Console.WriteLine("  autoenvplus use <runtime> <selector> --global [--root directory]");
-    Console.WriteLine("  autoenvplus which <runtime> [--project directory] [--root directory]");
-    Console.WriteLine("  autoenvplus exec <runtime> [--project directory] [--root directory] -- [arguments]");
-    Console.WriteLine("  autoenvplus tool <pip|pip3|npm|npx|javac|jar> [options] -- [arguments]");
+    Console.WriteLine("  autoenvplus use <python|node|java|dotnet|msvc|llvm|mingw|cmake|ninja> <selector> --global [--runtime-id id --provider id] [--root directory]");
+    Console.WriteLine("    Exact identity options must be supplied together; selection uses the current CLI process architecture.");
+    Console.WriteLine("  autoenvplus which <runtime> [--runtime-id id] [--provider id] [--project directory] [--root directory]");
+    Console.WriteLine("  autoenvplus exec <runtime> [--runtime-id id] [--provider id] [--project directory] [--root directory] -- [arguments]");
+    Console.WriteLine("  autoenvplus tool <pip|pip3|npm|npx|javac|jar|clang++|g++> [--runtime-id id] [--provider id] [options] -- [arguments]");
+    Console.WriteLine("  autoenvplus network show [global|tool-id] [--root directory] [--json]");
+    Console.WriteLine("  autoenvplus download url <https-url> [--file name] [--connections 1|2|4|8|16] [--sha256 hash|--sha512 hash] [--root directory] [--yes]");
+    Console.WriteLine("  autoenvplus download import <local-file> [--file name] [--sha256 hash|--sha512 hash] [--root directory] [--yes]");
+    Console.WriteLine("  autoenvplus download list [--root directory] [--json]");
+    Console.WriteLine("  autoenvplus provider list|inspect [options]");
+    Console.WriteLine("  autoenvplus plugin list|inspect|import|enable|disable|delete [options]");
     Console.WriteLine("  autoenvplus shim install [--root directory] [--yes]");
     Console.WriteLine("  autoenvplus shim rollback <snapshot-file> [--root directory]");
     Console.WriteLine("  autoenvplus shell powershell [--profile file] [--install-profile --yes] [--root directory]");
@@ -2072,6 +4228,97 @@ static int ShowHelp()
     Console.WriteLine("  autoenvplus project cmake-preset <path> --rollback <snapshot-file> [--root directory] [--yes]");
     Console.WriteLine("  autoenvplus resolve <runtime> <selector> [installed-version ...]");
     return 0;
+}
+
+internal sealed record CliTransferOptions(
+    string? FileName,
+    int ConnectionCount,
+    long MaximumBytes,
+    PackageHashExpectation? Integrity,
+    bool Overwrite,
+    bool Yes);
+
+internal sealed record CliNetworkOverrideView(
+    [property: JsonPropertyName("mode")] string Mode,
+    [property: JsonPropertyName("endpoint")] string? Endpoint);
+
+internal sealed record CliProviderView(
+    string ProviderId,
+    string DisplayName,
+    string Vendor,
+    RuntimeKind RuntimeKind,
+    string Source,
+    bool IsEnabled,
+    string Homepage,
+    string License,
+    string AuthenticityNotice,
+    int? ReleaseCount,
+    int? AssetCount);
+
+internal sealed record CliProviderListView(
+    IReadOnlyList<CliProviderView> Providers,
+    IReadOnlyList<RuntimeProviderPluginError> Errors);
+
+internal sealed record CliProviderSelection(
+    IRuntimeCatalogProvider Provider,
+    bool IsThirdParty);
+
+internal sealed record CliProviderResolution(
+    CliProviderSelection? Selection,
+    string? Error);
+
+internal sealed class ConsoleManagedTransferProgress : IProgress<ManagedTransferProgress>
+{
+    private readonly object _sync = new();
+    private ManagedTransferPhase? _lastPhase;
+    private int _lastPercent = -1;
+    private DateTimeOffset _lastReportUtc = DateTimeOffset.MinValue;
+
+    public void Report(ManagedTransferProgress value)
+    {
+        lock (_sync)
+        {
+            int percent = value.TotalBytes is > 0
+                ? (int)Math.Clamp(value.CompletedBytes * 100 / value.TotalBytes.Value, 0, 100)
+                : -1;
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            bool phaseChanged = value.Phase != _lastPhase;
+            bool shouldReport = phaseChanged
+                || percent >= _lastPercent + 5
+                || now - _lastReportUtc >= TimeSpan.FromSeconds(2)
+                || (value.TotalBytes is long total && value.CompletedBytes >= total);
+            if (!shouldReport)
+            {
+                return;
+            }
+
+            _lastPhase = value.Phase;
+            _lastPercent = percent;
+            _lastReportUtc = now;
+            string bytes = value.TotalBytes is long totalBytes
+                ? $"{FormatBytes(value.CompletedBytes)} / {FormatBytes(totalBytes)}"
+                : FormatBytes(value.CompletedBytes);
+            string percentage = percent >= 0 ? $" ({percent}%)" : string.Empty;
+            string segments = value.TotalSegments > 1
+                ? $"; {value.CompletedSegments}/{value.TotalSegments} segments"
+                : string.Empty;
+            Console.WriteLine($"  [{value.Phase}] {bytes}{percentage}{segments}");
+        }
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        string[] units = ["B", "KiB", "MiB", "GiB", "TiB"];
+        double value = bytes;
+        int unit = 0;
+        while (value >= 1024 && unit < units.Length - 1)
+        {
+            value /= 1024;
+            unit++;
+        }
+
+        return unit == 0 ? $"{bytes} B" : $"{value:0.##} {units[unit]}";
+    }
 }
 
 internal sealed class ConsoleInstallProgress : IProgress<InstallProgress>

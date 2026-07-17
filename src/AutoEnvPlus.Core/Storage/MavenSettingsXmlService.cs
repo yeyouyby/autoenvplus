@@ -29,13 +29,15 @@ public sealed partial class MavenSettingsXmlService
         ArgumentException.ThrowIfNullOrWhiteSpace(settingsPath);
         ArgumentNullException.ThrowIfNull(environment);
         string fullPath = Path.GetFullPath(settingsPath);
-        if (!File.Exists(fullPath))
-        {
-            return new MavenSettingsReadResult(fullPath, false, null, null, null);
-        }
-
         try
         {
+            if (!StorageFileSafety.EnsureOrdinaryFileOrMissing(
+                fullPath,
+                "Maven settings.xml"))
+            {
+                return new MavenSettingsReadResult(fullPath, false, null, null, null);
+            }
+
             string content = File.ReadAllText(fullPath);
             XDocument document = Parse(content);
             XElement root = RequireSettingsRoot(document);
@@ -74,7 +76,9 @@ public sealed partial class MavenSettingsXmlService
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
         string fullPath = Path.GetFullPath(settingsPath);
         string destination = Path.GetFullPath(destinationPath);
-        bool existed = File.Exists(fullPath);
+        bool existed = StorageFileSafety.EnsureOrdinaryFileOrMissing(
+            fullPath,
+            "Maven settings.xml");
         string? before = existed ? File.ReadAllText(fullPath) : null;
         XDocument document = existed
             ? Parse(before!)
@@ -113,9 +117,9 @@ public sealed partial class MavenSettingsXmlService
         ArgumentException.ThrowIfNullOrWhiteSpace(settingsPath);
         ArgumentNullException.ThrowIfNull(content);
         string fullPath = Path.GetFullPath(settingsPath);
-        string directory = Path.GetDirectoryName(fullPath)
-            ?? throw new InvalidOperationException("Maven settings.xml requires a parent directory.");
-        Directory.CreateDirectory(directory);
+        string directory = StorageFileSafety.PrepareOrdinaryParentForWrite(
+            fullPath,
+            "Maven settings.xml");
         string temporary = Path.Combine(
             directory,
             $".{Path.GetFileName(fullPath)}.{Guid.NewGuid():N}.tmp");
@@ -126,6 +130,12 @@ public sealed partial class MavenSettingsXmlService
                 content,
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
                 cancellationToken).ConfigureAwait(false);
+            _ = StorageFileSafety.EnsureOrdinaryFileOrMissing(
+                temporary,
+                "Maven settings.xml temporary file");
+            _ = StorageFileSafety.EnsureOrdinaryFileOrMissing(
+                fullPath,
+                "Maven settings.xml");
             File.Move(temporary, fullPath, overwrite: true);
         }
         finally
