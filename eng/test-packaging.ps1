@@ -383,6 +383,8 @@ try {
         '-p:IncludeAllContentForSelfExtract=true',
         'AutoEnvPlusBundledCliPath',
         'AutoEnvPlusBundledShimPath',
+        'AutoEnvPlusSingleFileAssetName',
+        'AutoEnvPlus-win-x64.pri',
         'cli/autoenvplus.exe',
         'cli/autoenvplus-shim.exe'
     )) {

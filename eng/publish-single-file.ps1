@@ -141,6 +141,7 @@ $arguments = @(
     "-p:AutoEnvPlusBundledCliPath=$bundledCliPath",
     "-p:AutoEnvPlusBundledShimPath=$bundledShimPath",
     "-p:AutoEnvPlusBundleManifestPath=$bundleMapPath",
+    '-p:AutoEnvPlusSingleFileAssetName=AutoEnvPlus-win-x64',
     '-o', $stagingRoot
 )
 if ($NoRestore) {
@@ -173,6 +174,7 @@ $requiredEntries = @(
     'AutoEnvPlus.App.dll',
     'AutoEnvPlus.Core.dll',
     'AutoEnvPlus.App.pri',
+    'AutoEnvPlus-win-x64.pri',
     'Microsoft.ui.xaml.dll',
     'Microsoft.WindowsAppRuntime.dll',
     'System.Private.CoreLib.dll',

@@ -73,11 +73,31 @@
     </ItemGroup>
   </Target>
   <Target
+    Name="AutoEnvPlusAddSingleFileAssetPriCopy"
+    BeforeTargets="GenerateSingleFileBundle"
+    DependsOnTargets="PrepareForBundle"
+    Condition="'$(PublishSingleFile)' == 'true' and '$(AutoEnvPlusSingleFileAssetName)' != ''">
+    <!-- MRT Core locates the app's main PRI by the entry executable name
+         (<EXE>.pri) in the app base directory, which for a single-file bundle
+         is the extraction directory. Release assets rename the bundle EXE, so
+         ship a copy of the app PRI under the asset name or every ms-appx
+         resource lookup fails at startup with a XamlParseException. -->
+    <ItemGroup>
+      <FilesToBundle Include="$(OutputPath)$(AssemblyName).pri">
+        <RelativePath>$(AutoEnvPlusSingleFileAssetName).pri</RelativePath>
+        <TargetPath>$(AutoEnvPlusSingleFileAssetName).pri</TargetPath>
+      </FilesToBundle>
+    </ItemGroup>
+    <Error
+      Condition="!Exists('$(OutputPath)$(AssemblyName).pri')"
+      Text="The application PRI was not found under $(OutputPath); the single-file bundle cannot resolve ms-appx resources." />
+  </Target>
+  <Target
     Name="AutoEnvPlusCaptureSingleFileBundleInputs"
     AfterTargets="PrepareForBundle"
     BeforeTargets="GenerateSingleFileBundle"
     Condition="'$(PublishSingleFile)' == 'true' and '$(AutoEnvPlusBundleManifestPath)' != ''"
-    DependsOnTargets="PrepareForBundle;AutoEnvPlusAddSingleFileCompanions">
+    DependsOnTargets="PrepareForBundle;AutoEnvPlusAddSingleFileCompanions;AutoEnvPlusAddSingleFileAssetPriCopy">
     <!-- Capture the exact SDK item set before GenerateBundle consumes it. This
          is a verification sidecar only; the .NET SDK still creates the EXE. -->
     <WriteLinesToFile
