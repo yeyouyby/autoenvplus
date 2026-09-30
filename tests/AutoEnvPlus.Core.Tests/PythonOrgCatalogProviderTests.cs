@@ -200,6 +200,63 @@ public sealed class PythonOrgCatalogProviderTests : IDisposable
             StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task GetAssetAsync_RejectsManifestOverByteLimitBeforeVerification()
+    {
+        byte[] manifest = CreateManifest();
+        string manifestHash = Sha256(manifest);
+        bool verifierCalled = false;
+        using HttpClient client = new(new StubHttpMessageHandler(request =>
+        {
+            string path = request.RequestUri!.AbsolutePath;
+            if (path.EndsWith("/release/", StringComparison.Ordinal))
+            {
+                return StubHttpMessageHandler.Text(ReleaseIndex, "application/json");
+            }
+
+            if (path.EndsWith("/release_file/", StringComparison.Ordinal))
+            {
+                return StubHttpMessageHandler.Text(CreateReleaseFiles(manifestHash), "application/json");
+            }
+
+            HttpResponseMessage response = StubHttpMessageHandler.Bytes(manifest);
+            response.Content.Headers.ContentLength = PythonOrgCatalogProvider.MaximumManifestBytes + 1L;
+            return response;
+        }));
+        PythonOrgCatalogProvider provider = new(
+            client,
+            RuntimeArchitecture.X64,
+            new Uri("https://api.example.test/downloads/"),
+            new CallbackPythonReleaseSignatureVerifier(() => verifierCalled = true));
+        RuntimeRelease release = Assert.Single(await provider.GetReleasesAsync());
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(
+            () => provider.GetAssetAsync(release));
+
+        Assert.Contains("byte limit", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.False(verifierCalled);
+    }
+
+    [Fact]
+    public async Task GetReleasesAsync_RejectsExcessiveReleaseCount()
+    {
+        string catalog = "[" + string.Join(
+            ',',
+            Enumerable.Repeat("{}", PythonOrgCatalogProvider.MaximumReleaseEntries + 1)) + "]";
+        using HttpClient client = new(new StubHttpMessageHandler(
+            _ => StubHttpMessageHandler.Text(catalog, "application/json")));
+        PythonOrgCatalogProvider provider = new(
+            client,
+            RuntimeArchitecture.X64,
+            new Uri("https://api.example.test/downloads/"),
+            new StubPythonReleaseSignatureVerifier());
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(
+            () => provider.GetReleasesAsync());
+
+        Assert.Contains("releases", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static byte[] CreateManifest() => Encoding.UTF8.GetBytes("""
         {
           "versions": [
@@ -270,6 +327,21 @@ public sealed class PythonOrgCatalogProviderTests : IDisposable
                 Convert.ToBase64String(new byte[32]),
                 PythonReleaseSignatureVerifier.TrustRootSha256,
                 signingPolicy.PolicySourceUri));
+        }
+    }
+
+    private sealed class CallbackPythonReleaseSignatureVerifier(Action callback)
+        : IPythonReleaseSignatureVerifier
+    {
+        public Task<PackageSignatureVerification> VerifyAsync(
+            ReadOnlyMemory<byte> manifest,
+            Uri manifestUri,
+            Uri bundleUri,
+            PythonReleaseSigningPolicy signingPolicy,
+            CancellationToken cancellationToken = default)
+        {
+            callback();
+            throw new Xunit.Sdk.XunitException("The oversized manifest reached signature verification.");
         }
     }
 

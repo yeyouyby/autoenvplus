@@ -104,6 +104,29 @@ public sealed class CacheCleanupServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task RestoreAsync_RejectsSameLengthIsolatedContentChangeWithRestoredTimestamp()
+    {
+        string source = CreateCache("content-change");
+        CacheDirectoryLocation location = CreateLocation(source);
+        CacheCleanupService service = new();
+        CacheCleanupPlan plan = await service.CreatePlanAsync(location);
+        Assert.True((await service.CleanupAsync(plan)).Success);
+        CacheCleanupItem item = Assert.Single(
+            (await service.DiscoverItemsAsync([location])).Items);
+        string isolatedFile = Path.Combine(item.TrashPath, "content", "one.txt");
+        DateTime lastWriteUtc = File.GetLastWriteTimeUtc(isolatedFile);
+        File.WriteAllText(isolatedFile, "other");
+        File.SetLastWriteTimeUtc(isolatedFile, lastWriteUtc);
+
+        CacheCleanupOperationResult restore = await service.RestoreAsync(item);
+
+        Assert.False(restore.Success);
+        Assert.Contains("changed", restore.Error, StringComparison.OrdinalIgnoreCase);
+        Assert.False(File.Exists(Path.Combine(source, "one.txt")));
+        Assert.Equal("other", File.ReadAllText(isolatedFile));
+    }
+
+    [Fact]
     public async Task CleanupAsync_RejectsPlanAfterCacheChanged()
     {
         string source = CreateCache();
@@ -117,6 +140,25 @@ public sealed class CacheCleanupServiceTests : IDisposable
         Assert.Contains("changed", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.False(Directory.Exists(plan.TrashPath));
         Assert.True(File.Exists(Path.Combine(source, "later.txt")));
+    }
+
+    [Fact]
+    public async Task CleanupAsync_RejectsSameLengthContentChangeAfterPlan()
+    {
+        string source = CreateCache("same-length-plan-change");
+        CacheCleanupService service = new();
+        CacheCleanupPlan plan = await service.CreatePlanAsync(CreateLocation(source));
+        string changedPath = Path.Combine(source, "one.txt");
+        DateTime lastWriteUtc = File.GetLastWriteTimeUtc(changedPath);
+        File.WriteAllText(changedPath, "other");
+        File.SetLastWriteTimeUtc(changedPath, lastWriteUtc);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.CleanupAsync(plan));
+
+        Assert.Contains("changed", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("other", File.ReadAllText(changedPath));
+        Assert.False(Directory.Exists(plan.TrashPath));
     }
 
     [Fact]
@@ -195,6 +237,82 @@ public sealed class CacheCleanupServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task PurgeAsync_RejectsChangedContentAfterInterruptedPurge()
+    {
+        string source = Directory.CreateDirectory(Path.Combine(_root, "changed-purge-source")).FullName;
+        File.WriteAllText(Path.Combine(source, "one.bin"), "1111");
+        File.WriteAllText(Path.Combine(source, "two.bin"), "2222");
+        CacheDirectoryLocation location = CreateLocation(source);
+        CacheCleanupService service = new();
+        CacheCleanupPlan plan = await service.CreatePlanAsync(location);
+        Assert.True((await service.CleanupAsync(plan)).Success);
+        CacheCleanupItem item = Assert.Single(
+            (await service.DiscoverItemsAsync([location])).Items);
+        using CancellationTokenSource cancellation = new();
+        ImmediateProgress<CacheCleanupProgress> progress = new(value =>
+        {
+            if (value.Stage == "purge" && value.CompletedEntries == 1)
+            {
+                cancellation.Cancel();
+            }
+        });
+        CacheCleanupOperationResult interrupted = await service.PurgeAsync(
+            item,
+            progress,
+            cancellation.Token);
+        Assert.True(interrupted.PurgePending);
+        CacheCleanupItem pending = Assert.Single(
+            (await service.DiscoverItemsAsync([location])).Items);
+        string remainingFile = Assert.Single(Directory.EnumerateFiles(
+            Path.Combine(pending.TrashPath, "content"),
+            "*",
+            SearchOption.AllDirectories));
+        DateTime lastWriteUtc = File.GetLastWriteTimeUtc(remainingFile);
+        File.WriteAllText(remainingFile, "9999");
+        File.SetLastWriteTimeUtc(remainingFile, lastWriteUtc);
+
+        CacheCleanupOperationResult retry = await service.PurgeAsync(pending);
+
+        Assert.False(retry.Success);
+        Assert.Contains("identity", retry.Error, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("9999", File.ReadAllText(remainingFile));
+    }
+
+    [Fact]
+    public async Task PurgeAsync_StableHandleBlocksReplacementAfterHashBeforeDelete()
+    {
+        string source = Directory.CreateDirectory(Path.Combine(_root, "stable-delete-source")).FullName;
+        File.WriteAllText(Path.Combine(source, "cache.bin"), "1111");
+        string replacement = Path.Combine(_root, "replacement.bin");
+        File.WriteAllText(replacement, "9999");
+        bool replacementAttempted = false;
+        CacheCleanupService service = new(
+            managedRoot: null,
+            afterVerifiedFileHash: verifiedPath =>
+            {
+                replacementAttempted = true;
+                Exception blocked = Assert.ThrowsAny<Exception>(() =>
+                    File.Move(replacement, verifiedPath, overwrite: true));
+                Assert.True(blocked is IOException or UnauthorizedAccessException);
+                throw new IOException("simulated interruption after blocked replacement", blocked);
+            });
+        CacheDirectoryLocation location = CreateLocation(source);
+        CacheCleanupPlan plan = await service.CreatePlanAsync(location);
+        Assert.True((await service.CleanupAsync(plan)).Success);
+        CacheCleanupItem item = Assert.Single(
+            (await service.DiscoverItemsAsync([location])).Items);
+        string isolatedFile = Path.Combine(item.TrashPath, "content", "cache.bin");
+
+        CacheCleanupOperationResult result = await service.PurgeAsync(item);
+
+        Assert.False(result.Success);
+        Assert.True(result.PurgePending);
+        Assert.True(replacementAttempted);
+        Assert.Equal("1111", File.ReadAllText(isolatedFile));
+        Assert.Equal("9999", File.ReadAllText(replacement));
+    }
+
+    [Fact]
     public async Task PurgeAsync_PreCancelledRequestRemainsRecoverable()
     {
         string source = CreateCache("pre-cancel-purge");
@@ -233,6 +351,7 @@ public sealed class CacheCleanupServiceTests : IDisposable
         JsonObject manifest = JsonNode.Parse(File.ReadAllText(item.ManifestPath))!.AsObject();
         manifest["state"] = "purge-pending";
         manifest["contentEntryNames"] = new JsonArray();
+        manifest["purgeEntries"] = new JsonArray();
         File.WriteAllText(
             item.ManifestPath,
             manifest.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
@@ -245,6 +364,29 @@ public sealed class CacheCleanupServiceTests : IDisposable
         Assert.True(result.Success);
         Assert.False(Directory.Exists(item.TrashPath));
         Assert.Empty((await service.DiscoverItemsAsync([location])).Items);
+    }
+
+    [Fact]
+    public async Task DiscoverItemsAsync_ReadsRecoverableManifestWithoutPurgeIdentityField()
+    {
+        string source = CreateCache("legacy-recoverable-manifest");
+        CacheDirectoryLocation location = CreateLocation(source);
+        CacheCleanupService service = new();
+        CacheCleanupPlan plan = await service.CreatePlanAsync(location);
+        Assert.True((await service.CleanupAsync(plan)).Success);
+        CacheCleanupItem item = Assert.Single(
+            (await service.DiscoverItemsAsync([location])).Items);
+        JsonObject manifest = JsonNode.Parse(File.ReadAllText(item.ManifestPath))!.AsObject();
+        manifest.Remove("purgeEntries");
+        File.WriteAllText(
+            item.ManifestPath,
+            manifest.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+
+        CacheCleanupCatalog catalog = await service.DiscoverItemsAsync([location]);
+
+        CacheCleanupItem recovered = Assert.Single(catalog.Items);
+        Assert.Empty(catalog.Errors);
+        Assert.True(recovered.CanRestore);
     }
 
     [Fact]

@@ -58,6 +58,270 @@ public sealed class ManagedRuntimeInstallCoordinatorTests : IDisposable
     }
 
     [Fact]
+    public async Task InstallAsync_RegistryCommitThenFailureRestoresPreTransactionState()
+    {
+        ManagedRuntimeInstallRequest request = CreateRequest(setGlobalDefault: false);
+        FakeInstaller installer = new(InstallOutcome.Installed, createDestination: true);
+        FakeRegistry registry = new() { CommitThenFailUpsert = true };
+        ManagedRuntimeInstallCoordinator coordinator = new(
+            _root,
+            installer,
+            registry,
+            new FakeGlobalProfile());
+
+        ManagedRuntimeInstallTransactionResult result = await coordinator.InstallAsync(request);
+
+        Assert.False(result.Success);
+        Assert.False(result.PendingCleanup);
+        Assert.Empty(registry.Entries);
+        Assert.False(Directory.Exists(request.Plan.DestinationRoot));
+    }
+
+    [Fact]
+    public async Task InstallAsync_DoesNotHoldGlobalStateLockWhilePackageIsPrepared()
+    {
+        ManagedRuntimeInstallRequest request = CreateRequest(setGlobalDefault: false);
+        BlockingInstaller installer = new();
+        ManagedRuntimeRegistry registry = new(_root);
+        ManagedRuntimeInstallCoordinator coordinator = new(
+            _root,
+            installer,
+            registry,
+            new GlobalRuntimeProfileStore(_root));
+
+        Task<ManagedRuntimeInstallTransactionResult> installTask = coordinator.InstallAsync(request);
+        await installer.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        using CancellationTokenSource readTimeout = new(TimeSpan.FromSeconds(1));
+        RegistryLoadResult concurrentRead = await new ManagedRuntimeRegistry(_root)
+            .LoadAsync(readTimeout.Token);
+
+        Assert.Empty(concurrentRead.Errors);
+        installer.Release.TrySetResult(true);
+        ManagedRuntimeInstallTransactionResult result = await installTask;
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task InstallAsync_CancellationWhileWaitingForCommitLockRemovesNewInstall()
+    {
+        ManagedRuntimeInstallRequest request = CreateRequest(setGlobalDefault: false);
+        BlockingSuccessfulInstaller installer = new(InstallOutcome.Installed);
+        FakeRegistry registry = new();
+        ManagedRuntimeInstallCoordinator coordinator = new(
+            _root,
+            installer,
+            registry,
+            new FakeGlobalProfile());
+        using CancellationTokenSource cancellation = new();
+
+        Task<ManagedRuntimeInstallTransactionResult> pending = coordinator.InstallAsync(
+            request,
+            cancellationToken: cancellation.Token);
+        await installer.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        string transactionLockPath = Path.Combine(
+            _root,
+            "state",
+            "managed-runtime-install-state.lock");
+        FileStream heldTransactionLock = new(
+            transactionLockPath,
+            FileMode.Open,
+            FileAccess.ReadWrite,
+            FileShare.None);
+        try
+        {
+            installer.Release.TrySetResult(true);
+            await installer.Finished.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await Task.Delay(100);
+            Assert.False(pending.IsCompleted);
+            cancellation.Cancel();
+        }
+        finally
+        {
+            heldTransactionLock.Dispose();
+        }
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await pending);
+
+        Assert.False(Directory.Exists(request.Plan.DestinationRoot));
+        Assert.Empty(registry.Entries);
+    }
+
+    [Fact]
+    public async Task InstallAsync_CancellationDuringRegistryReadRemovesNewInstall()
+    {
+        ManagedRuntimeInstallRequest request = CreateRequest(setGlobalDefault: false);
+        FakeRegistry registry = new() { BlockFirstLoad = true };
+        ManagedRuntimeInstallCoordinator coordinator = new(
+            _root,
+            new FakeInstaller(InstallOutcome.Installed, createDestination: true),
+            registry,
+            new FakeGlobalProfile());
+        using CancellationTokenSource cancellation = new();
+
+        Task<ManagedRuntimeInstallTransactionResult> pending = coordinator.InstallAsync(
+            request,
+            cancellationToken: cancellation.Token);
+        await registry.LoadStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await pending);
+        Assert.False(Directory.Exists(request.Plan.DestinationRoot));
+        Assert.Empty(registry.Entries);
+    }
+
+    [Fact]
+    public async Task InstallAsync_RevalidatesDestinationAfterWaitingForCommitLock()
+    {
+        ManagedRuntimeInstallRequest request = CreateRequest(setGlobalDefault: false);
+        BlockingSuccessfulInstaller installer = new(InstallOutcome.Installed);
+        FakeRegistry registry = new();
+        ManagedRuntimeInstallCoordinator coordinator = new(
+            _root,
+            installer,
+            registry,
+            new FakeGlobalProfile());
+
+        Task<ManagedRuntimeInstallTransactionResult> pending = coordinator.InstallAsync(request);
+        await installer.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        string transactionLockPath = Path.Combine(
+            _root,
+            "state",
+            "managed-runtime-install-state.lock");
+        using (FileStream heldTransactionLock = new(
+                   transactionLockPath,
+                   FileMode.Open,
+                   FileAccess.ReadWrite,
+                   FileShare.None))
+        {
+            installer.Release.TrySetResult(true);
+            await installer.Finished.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Directory.Delete(request.Plan.DestinationRoot, recursive: true);
+        }
+
+        ManagedRuntimeInstallTransactionResult result = await pending;
+
+        Assert.False(result.Success);
+        Assert.Contains("disappeared", result.Error, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(registry.Entries);
+    }
+
+    [Fact]
+    public async Task InstallAsync_LockPathChangeAfterPreparationLeavesOwnershipUnknown()
+    {
+        ManagedRuntimeInstallRequest request = CreateRequest(setGlobalDefault: false);
+        BlockingSuccessfulInstaller installer = new(InstallOutcome.Installed);
+        FakeRegistry registry = new();
+        ManagedRuntimeInstallCoordinator coordinator = new(
+            _root,
+            installer,
+            registry,
+            new FakeGlobalProfile());
+
+        Task<ManagedRuntimeInstallTransactionResult> pending = coordinator.InstallAsync(request);
+        await installer.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        string transactionLockPath = Path.Combine(
+            _root,
+            "state",
+            "managed-runtime-install-state.lock");
+        File.Delete(transactionLockPath);
+        Directory.CreateDirectory(transactionLockPath);
+        installer.Release.TrySetResult(true);
+
+        ManagedRuntimeInstallTransactionResult result = await pending;
+
+        Assert.False(result.Success);
+        Assert.True(result.PendingCleanup);
+        Assert.Equal(request.Plan.DestinationRoot, result.InstallRoot);
+        Assert.Contains("ownership", result.Error, StringComparison.OrdinalIgnoreCase);
+        Assert.True(Directory.Exists(request.Plan.DestinationRoot));
+        Assert.Empty(registry.Entries);
+    }
+
+    [Fact]
+    public async Task InstallAsync_RegistryCommitThenCancellationRestoresPreTransactionState()
+    {
+        ManagedRuntimeInstallRequest request = CreateRequest(setGlobalDefault: false);
+        FakeRegistry registry = new() { CommitThenCancelUpsert = true };
+        ManagedRuntimeInstallCoordinator coordinator = new(
+            _root,
+            new FakeInstaller(InstallOutcome.Installed, createDestination: true),
+            registry,
+            new FakeGlobalProfile());
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            coordinator.InstallAsync(request));
+
+        Assert.Empty(registry.Entries);
+        Assert.False(Directory.Exists(request.Plan.DestinationRoot));
+    }
+
+    [Fact]
+    public async Task InstallAsync_FailedOwnerDoesNotDeleteConcurrentlyAdoptedInstallation()
+    {
+        ManagedRuntimeInstallRequest ownerRequest = CreateRequest(setGlobalDefault: true);
+        ManagedRuntimeInstallRequest adopterRequest = ownerRequest with
+        {
+            SetGlobalDefault = false,
+        };
+        PromotedBlockingInstaller ownerInstaller = new();
+        FakeRegistry registry = new();
+        FakeGlobalProfile profile = new() { FailSet = true };
+        ManagedRuntimeInstallCoordinator owner = new(
+            _root,
+            ownerInstaller,
+            registry,
+            profile);
+        ManagedRuntimeInstallCoordinator adopter = new(
+            _root,
+            new FakeInstaller(InstallOutcome.AlreadyInstalled, createDestination: false),
+            registry,
+            profile);
+
+        Task<ManagedRuntimeInstallTransactionResult> pendingOwner =
+            owner.InstallAsync(ownerRequest);
+        await ownerInstaller.Promoted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        ManagedRuntimeInstallTransactionResult adopted =
+            await adopter.InstallAsync(adopterRequest);
+        ownerInstaller.AllowReturn.TrySetResult(true);
+        ManagedRuntimeInstallTransactionResult failedOwner = await pendingOwner;
+
+        Assert.True(adopted.Success);
+        Assert.False(failedOwner.Success);
+        Assert.False(failedOwner.PendingCleanup);
+        Assert.True(Directory.Exists(ownerRequest.Plan.DestinationRoot));
+        Assert.Equal(ownerRequest.Entry, Assert.Single(registry.Entries));
+    }
+
+    [Fact]
+    public async Task InstallAsync_FailurePreservesInstallRootOwnedByDifferentRegistryEntry()
+    {
+        ManagedRuntimeInstallRequest request = CreateRequest(setGlobalDefault: false);
+        ManagedRuntimeEntry existing = request.Entry with
+        {
+            Id = "other-runtime-id",
+            ProviderId = "other-provider",
+            Version = RuntimeVersion.Parse("20.0.0"),
+            PackageHash = new string('b', 64),
+        };
+        FakeRegistry registry = new() { FailUpsert = true };
+        registry.Entries.Add(existing);
+        ManagedRuntimeInstallCoordinator coordinator = new(
+            _root,
+            new FakeInstaller(InstallOutcome.Installed, createDestination: true),
+            registry,
+            new FakeGlobalProfile());
+
+        ManagedRuntimeInstallTransactionResult result = await coordinator.InstallAsync(request);
+
+        Assert.False(result.Success);
+        Assert.False(result.PendingCleanup);
+        Assert.True(Directory.Exists(request.Plan.DestinationRoot));
+        Assert.Equal(existing, Assert.Single(registry.Entries));
+    }
+
+    [Fact]
     public async Task InstallAsync_CompensationRefusesNestedReparsePointCleanup()
     {
         if (!OperatingSystem.IsWindows())
@@ -187,6 +451,12 @@ public sealed class ManagedRuntimeInstallCoordinatorTests : IDisposable
         ManagedRuntimeEntry previous = request.Entry with
         {
             Version = RuntimeVersion.Parse("20.0.0"),
+            InstallRoot = Path.Combine(
+                _root,
+                "runtimes",
+                "nodejs",
+                "20.0.0",
+                "x64"),
             PackageHash = new string('b', 64),
         };
         RuntimeProfile originalProfile = new(new Dictionary<RuntimeKind, VersionSelector>
@@ -485,13 +755,31 @@ public sealed class ManagedRuntimeInstallCoordinatorTests : IDisposable
 
         public bool FailUpsert { get; set; }
 
-        public Task<RegistryLoadResult> LoadAsync(
+        public bool CommitThenFailUpsert { get; set; }
+
+        public bool CommitThenCancelUpsert { get; set; }
+
+        public bool BlockFirstLoad { get; set; }
+
+        public TaskCompletionSource<bool> LoadStarted { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        private int _loadAttempts;
+
+        public async Task<RegistryLoadResult> LoadAsync(
             CancellationToken cancellationToken = default)
         {
+            if (BlockFirstLoad
+                && Interlocked.Increment(ref _loadAttempts) == 1)
+            {
+                LoadStarted.TrySetResult(true);
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
             lock (Entries)
             {
-                return Task.FromResult(new RegistryLoadResult(Entries.ToArray(), []));
+                return new RegistryLoadResult(Entries.ToArray(), []);
             }
         }
 
@@ -511,6 +799,19 @@ public sealed class ManagedRuntimeInstallCoordinatorTests : IDisposable
                     entry.Id,
                     StringComparison.OrdinalIgnoreCase));
                 Entries.Add(entry);
+                if (CommitThenFailUpsert)
+                {
+                    CommitThenFailUpsert = false;
+                    throw new IOException("simulated post-commit registry failure");
+                }
+
+                if (CommitThenCancelUpsert)
+                {
+                    CommitThenCancelUpsert = false;
+                    throw new OperationCanceledException(
+                        "simulated post-commit registry cancellation");
+                }
+
                 return Task.FromResult(new RegistryLoadResult(Entries.ToArray(), []));
             }
         }
@@ -527,6 +828,79 @@ public sealed class ManagedRuntimeInstallCoordinatorTests : IDisposable
                     StringComparison.OrdinalIgnoreCase));
                 return Task.FromResult(new RegistryLoadResult(Entries.ToArray(), []));
             }
+        }
+    }
+
+    private sealed class BlockingInstaller : IArchiveInstaller
+    {
+        public TaskCompletionSource<bool> Started { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource<bool> Release { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public async Task<InstallResult> InstallAsync(
+            ArchiveInstallPlan plan,
+            IProgress<InstallProgress>? progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            Started.TrySetResult(true);
+            await Release.Task.WaitAsync(cancellationToken);
+            return new InstallResult(InstallOutcome.Failed, null, "simulated preparation failure");
+        }
+    }
+
+    private sealed class BlockingSuccessfulInstaller(
+        InstallOutcome outcome) : IArchiveInstaller
+    {
+        public TaskCompletionSource<bool> Started { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource<bool> Release { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource<bool> Finished { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public async Task<InstallResult> InstallAsync(
+            ArchiveInstallPlan plan,
+            IProgress<InstallProgress>? progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            Started.TrySetResult(true);
+            await Release.Task.WaitAsync(cancellationToken);
+            Directory.CreateDirectory(plan.DestinationRoot);
+            File.WriteAllText(
+                Path.Combine(plan.DestinationRoot, plan.ExpectedExecutableRelativePath),
+                "runtime");
+            Finished.TrySetResult(true);
+            return new InstallResult(outcome, plan.DestinationRoot, null);
+        }
+    }
+
+    private sealed class PromotedBlockingInstaller : IArchiveInstaller
+    {
+        public TaskCompletionSource<bool> Promoted { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource<bool> AllowReturn { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public async Task<InstallResult> InstallAsync(
+            ArchiveInstallPlan plan,
+            IProgress<InstallProgress>? progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            Directory.CreateDirectory(plan.DestinationRoot);
+            File.WriteAllText(
+                Path.Combine(plan.DestinationRoot, plan.ExpectedExecutableRelativePath),
+                "runtime");
+            Promoted.TrySetResult(true);
+            await AllowReturn.Task.WaitAsync(cancellationToken);
+            return new InstallResult(
+                InstallOutcome.Installed,
+                plan.DestinationRoot,
+                null);
         }
     }
 

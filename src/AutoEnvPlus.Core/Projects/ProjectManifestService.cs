@@ -42,14 +42,35 @@ public sealed class ProjectManifestService
         string projectRoot = Path.GetDirectoryName(fullPath)
             ?? throw new ArgumentException("The manifest must have a parent directory.", nameof(manifestPath));
 
+        return LoadCore(fullPath, projectRoot, File.ReadAllLines(fullPath));
+    }
+
+    internal ProjectManifestLoadResult LoadContent(string manifestPath, string content)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(manifestPath);
+        ArgumentNullException.ThrowIfNull(content);
+        string fullPath = Path.GetFullPath(manifestPath);
+        string projectRoot = Path.GetDirectoryName(fullPath)
+            ?? throw new ArgumentException("The manifest must have a parent directory.", nameof(manifestPath));
+        string[] lines = content
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Split('\n');
+
+        return LoadCore(fullPath, projectRoot, lines);
+    }
+
+    private static ProjectManifestLoadResult LoadCore(
+        string fullPath,
+        string projectRoot,
+        IReadOnlyList<string> lines)
+    {
         Dictionary<RuntimeKind, VersionSelector> tools = [];
         Dictionary<RuntimeKind, string> runtimeIds = [];
         Dictionary<RuntimeKind, string> providerIds = [];
         List<ProjectManifestError> errors = [];
         string? section = null;
-        string[] lines = File.ReadAllLines(fullPath);
-
-        for (int index = 0; index < lines.Length; index++)
+        for (int index = 0; index < lines.Count; index++)
         {
             int lineNumber = index + 1;
             string line = StripComment(lines[index]).Trim();

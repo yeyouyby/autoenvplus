@@ -74,6 +74,30 @@ public sealed class PnpmRcServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task ConditionalWrite_RejectsNewerConfigWithoutOverwritingIt()
+    {
+        string config = Path.Combine(_root, "config", "rc");
+        Directory.CreateDirectory(Path.GetDirectoryName(config)!);
+        const string before = "store-dir=C:\\old\n";
+        const string newer = "store-dir=C:\\newer\n";
+        File.WriteAllText(config, before);
+        PnpmRcMutation mutation = new PnpmRcService().CreateMutation(
+            config,
+            Path.Combine(_root, "destination"));
+        File.WriteAllText(config, newer);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => new PnpmRcService().WriteAtomicallyIfUnchangedAsync(
+                config,
+                expectedExisted: true,
+                expectedContent: before,
+                content: mutation.After));
+
+        Assert.Contains("changed", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(newer, File.ReadAllText(config));
+    }
+
+    [Fact]
     public void ReadAndMutation_RejectSymbolicLinkWithoutReadingTarget()
     {
         if (!OperatingSystem.IsWindows())

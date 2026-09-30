@@ -17,6 +17,13 @@
                         <AdaptiveTrigger MinWindowWidth="0" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
+                        <Setter Target="DetailHeader.Padding" Value="16,16,16,10" />
+                        <Setter Target="DetailStatusInfo.Margin" Value="16,0,16,8" />
+                        <Setter Target="OverviewContent.Padding" Value="16,12,16,24" />
+                        <Setter Target="ToolContent.Padding" Value="16,12,16,24" />
+                        <Setter Target="SourceContent.Padding" Value="16,12,16,24" />
+                        <Setter Target="ProjectContent.Padding" Value="16,12,16,24" />
+                        <Setter Target="ExtensionContent.Padding" Value="16,12,16,24" />
                         <Setter Target="HeaderActionColumn.Width" Value="0" />
                         <Setter Target="HeaderActionRow.Height" Value="Auto" />
                         <Setter Target="DetailHeaderActions.(Grid.Row)" Value="1" />
@@ -30,6 +37,16 @@
                         <Setter Target="OverviewDetectedCard.(Grid.Column)" Value="0" />
                         <Setter Target="OverviewManagedCard.(Grid.Row)" Value="2" />
                         <Setter Target="OverviewManagedCard.(Grid.Column)" Value="0" />
+                        <Setter Target="SourceActionColumn.Width" Value="0" />
+                        <Setter Target="SourceActionRow.Height" Value="Auto" />
+                        <Setter Target="AddSourceButton.(Grid.Row)" Value="1" />
+                        <Setter Target="AddSourceButton.(Grid.Column)" Value="0" />
+                        <Setter Target="AddSourceButton.HorizontalAlignment" Value="Left" />
+                        <Setter Target="PluginActionColumn.Width" Value="0" />
+                        <Setter Target="PluginActionRow.Height" Value="Auto" />
+                        <Setter Target="ImportProviderButton.(Grid.Row)" Value="1" />
+                        <Setter Target="ImportProviderButton.(Grid.Column)" Value="0" />
+                        <Setter Target="ImportProviderButton.HorizontalAlignment" Value="Left" />
                     </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="WideDetailLayout">
@@ -37,6 +54,13 @@
                         <AdaptiveTrigger MinWindowWidth="760" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
+                        <Setter Target="DetailHeader.Padding" Value="32,20,32,12" />
+                        <Setter Target="DetailStatusInfo.Margin" Value="32,0,32,8" />
+                        <Setter Target="OverviewContent.Padding" Value="32,12,32,32" />
+                        <Setter Target="ToolContent.Padding" Value="32,12,32,32" />
+                        <Setter Target="SourceContent.Padding" Value="32,12,32,32" />
+                        <Setter Target="ProjectContent.Padding" Value="32,12,32,32" />
+                        <Setter Target="ExtensionContent.Padding" Value="32,12,32,32" />
                         <Setter Target="HeaderActionColumn.Width" Value="Auto" />
                         <Setter Target="HeaderActionRow.Height" Value="0" />
                         <Setter Target="DetailHeaderActions.(Grid.Row)" Value="0" />
@@ -50,12 +74,22 @@
                         <Setter Target="OverviewDetectedCard.(Grid.Column)" Value="1" />
                         <Setter Target="OverviewManagedCard.(Grid.Row)" Value="0" />
                         <Setter Target="OverviewManagedCard.(Grid.Column)" Value="2" />
+                        <Setter Target="SourceActionColumn.Width" Value="Auto" />
+                        <Setter Target="SourceActionRow.Height" Value="0" />
+                        <Setter Target="AddSourceButton.(Grid.Row)" Value="0" />
+                        <Setter Target="AddSourceButton.(Grid.Column)" Value="1" />
+                        <Setter Target="AddSourceButton.HorizontalAlignment" Value="Stretch" />
+                        <Setter Target="PluginActionColumn.Width" Value="Auto" />
+                        <Setter Target="PluginActionRow.Height" Value="0" />
+                        <Setter Target="ImportProviderButton.(Grid.Row)" Value="0" />
+                        <Setter Target="ImportProviderButton.(Grid.Column)" Value="1" />
+                        <Setter Target="ImportProviderButton.HorizontalAlignment" Value="Stretch" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
 
-        <Grid Padding="32,20,32,12" ColumnSpacing="12" RowSpacing="8">
+        <Grid x:Name="DetailHeader" Padding="32,20,32,12" ColumnSpacing="12" RowSpacing="8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition />
@@ -89,6 +123,7 @@
                     x:Name="OperationProgress"
                     Width="20"
                     Height="20"
+                    AutomationProperties.Name="语言工具操作进度"
                     IsActive="False" />
                 <Button
                     x:Name="ScanLanguageButton"
@@ -115,13 +150,14 @@
             x:Name="DetailStatusInfo"
             Grid.Row="1"
             Margin="32,0,32,8"
+            AutomationProperties.LiveSetting="Polite"
             IsClosable="False"
             IsOpen="False" />
 
         <Pivot x:Name="DetailPivot" Grid.Row="2">
             <PivotItem Header="概览">
                 <ScrollViewer>
-                    <StackPanel Padding="32,12,32,32" Spacing="18">
+                    <StackPanel x:Name="OverviewContent" Padding="32,12,32,32" Spacing="18">
                         <Grid ColumnSpacing="12" RowSpacing="12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition />
@@ -166,7 +202,7 @@
                                 BorderThickness="1"
                                 CornerRadius="{StaticResource CardCornerRadius}">
                                 <StackPanel Spacing="4">
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="可管理安装" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="AutoEnvPlus 安装适配器" TextWrapping="Wrap" />
                                     <TextBlock x:Name="OverviewManagedCount" FontSize="26" FontWeight="SemiBold" Text="—" />
                                 </StackPanel>
                             </Border>
@@ -192,24 +228,25 @@
                         <InfoBar
                             IsClosable="False"
                             IsOpen="True"
-                            Message="语言是稳定的配置容器；CPython、PyPy、Node.js、MSVC、GCC 和 Clang 等都是语言工具，不会再作为语言并列显示。"
+                            Message="语言是稳定配置容器；每个语言工具拥有自己的 Provider，Provider Source 只能在其归属 Provider 下配置。目录声明不会自动获得安装、切换或卸载能力。"
                             Severity="Informational"
-                            Title="语言与工具分层" />
+                            Title="Language → Language Tool → Provider → Provider Source" />
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>
 
             <PivotItem Header="工具与版本">
                 <ScrollViewer>
-                    <StackPanel Padding="32,12,32,32" Spacing="14">
+                    <StackPanel x:Name="ToolContent" Padding="32,12,32,32" Spacing="14">
                         <InfoBar
                             IsClosable="False"
                             IsOpen="True"
-                            Message="安装按钮仅对当前已接通的官方归档或固定 WinGet 白名单显示；其他目录项只提供发现证据和外部来源，不会伪装成受管安装。"
+                            Message="“AutoEnvPlus 操作”表示应用内有实际适配器；“目录元数据”只声明厂商、许可证、发现命令和 Provider。受管卸载只处理 AutoEnvPlus 注册的运行时，并在执行前重新检查全局和项目引用。"
                             Severity="Informational"
-                            Title="能力以实际实现为准" />
+                            Title="操作能力以实际适配器为准" />
                         <ListView
                             x:Name="ToolList"
+                            AutomationProperties.Name="当前语言的语言工具"
                             IsItemClickEnabled="False"
                             SelectionMode="None">
                             <ListView.ItemContainerStyle>
@@ -223,18 +260,51 @@
                                 <DataTemplate>
                                     <Border
                                         Padding="16"
+                                        AutomationProperties.Name="{Binding AutomationName}"
                                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="1"
                                         CornerRadius="{StaticResource CardCornerRadius}">
-                                        <Grid ColumnSpacing="14">
+                                        <Grid ColumnSpacing="14" RowSpacing="10">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition />
-                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition x:Name="ToolActionColumn" Width="Auto" />
                                             </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition />
+                                                <RowDefinition x:Name="ToolActionRow" Height="0" />
+                                            </Grid.RowDefinitions>
+                                            <VisualStateManager.VisualStateGroups>
+                                                <VisualStateGroup>
+                                                    <VisualState x:Name="CompactToolItem">
+                                                        <VisualState.StateTriggers>
+                                                            <AdaptiveTrigger MinWindowWidth="0" />
+                                                        </VisualState.StateTriggers>
+                                                        <VisualState.Setters>
+                                                            <Setter Target="ToolActionColumn.Width" Value="0" />
+                                                            <Setter Target="ToolActionRow.Height" Value="Auto" />
+                                                            <Setter Target="ToolActions.(Grid.Row)" Value="1" />
+                                                            <Setter Target="ToolActions.(Grid.Column)" Value="0" />
+                                                            <Setter Target="ToolActions.HorizontalAlignment" Value="Left" />
+                                                        </VisualState.Setters>
+                                                    </VisualState>
+                                                    <VisualState x:Name="WideToolItem">
+                                                        <VisualState.StateTriggers>
+                                                            <AdaptiveTrigger MinWindowWidth="720" />
+                                                        </VisualState.StateTriggers>
+                                                        <VisualState.Setters>
+                                                            <Setter Target="ToolActionColumn.Width" Value="Auto" />
+                                                            <Setter Target="ToolActionRow.Height" Value="0" />
+                                                            <Setter Target="ToolActions.(Grid.Row)" Value="0" />
+                                                            <Setter Target="ToolActions.(Grid.Column)" Value="1" />
+                                                            <Setter Target="ToolActions.HorizontalAlignment" Value="Stretch" />
+                                                        </VisualState.Setters>
+                                                    </VisualState>
+                                                </VisualStateGroup>
+                                            </VisualStateManager.VisualStateGroups>
                                             <StackPanel Spacing="6">
+                                                <TextBlock FontSize="17" FontWeight="SemiBold" Text="{Binding DisplayName}" TextWrapping="Wrap" />
                                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                                    <TextBlock FontSize="17" FontWeight="SemiBold" Text="{Binding DisplayName}" />
                                                     <Border
                                                         Padding="6,2"
                                                         Background="{ThemeResource AccentFillColorTertiaryBrush}"
@@ -247,9 +317,20 @@
                                                         Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
                                                         CornerRadius="4"
                                                         Visibility="{Binding ManagedVisibility}">
-                                                        <TextBlock FontSize="12" Text="可管理" />
+                                                        <TextBlock FontSize="12" Text="AutoEnvPlus 操作" />
+                                                    </Border>
+                                                    <Border
+                                                        Padding="6,2"
+                                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                        CornerRadius="4"
+                                                        Visibility="{Binding MetadataVisibility}">
+                                                        <TextBlock FontSize="12" Text="目录元数据" />
                                                     </Border>
                                                 </StackPanel>
+                                                <TextBlock
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Text="{Binding HierarchySummary}"
+                                                    TextWrapping="Wrap" />
                                                 <TextBlock
                                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                     Text="{Binding RoleSummary}"
@@ -257,7 +338,34 @@
                                                 <TextBlock Text="{Binding VersionSummary}" TextWrapping="Wrap" />
                                                 <TextBlock
                                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                    Text="{Binding CapabilitySummary}"
+                                                    Text="{Binding CatalogCapabilitySummary}"
+                                                    TextWrapping="Wrap" />
+                                                <TextBlock
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Text="{Binding ToolMetadataSummary}"
+                                                    TextWrapping="Wrap" />
+                                                <ItemsControl
+                                                    AutomationProperties.Name="目录元数据外部链接"
+                                                    ItemsSource="{Binding MetadataLinks}"
+                                                    Visibility="{Binding MetadataVisibility}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <ItemsWrapGrid Orientation="Horizontal" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <HyperlinkButton
+                                                                Margin="0,0,8,0"
+                                                                AutomationProperties.Name="{Binding AutomationName}"
+                                                                Content="{Binding Label}"
+                                                                NavigateUri="{Binding NavigateUri}" />
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <TextBlock
+                                                    FontWeight="SemiBold"
+                                                    Text="{Binding OperationSummary}"
                                                     TextWrapping="Wrap" />
                                                 <TextBlock
                                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -265,6 +373,7 @@
                                                     TextWrapping="Wrap" />
                                             </StackPanel>
                                             <StackPanel
+                                                x:Name="ToolActions"
                                                 Grid.Column="1"
                                                 VerticalAlignment="Center"
                                                 Orientation="Horizontal"
@@ -273,7 +382,7 @@
                                                     Width="36"
                                                     Height="36"
                                                     Padding="0"
-                                                    AutomationProperties.Name="选择版本与生效范围"
+                                                    AutomationProperties.Name="{Binding SwitchActionAutomationName}"
                                                     Click="OnSwitchGlobalVersionClicked"
                                                     Tag="{Binding}"
                                                     ToolTipService.ToolTip="全局、项目或新终端会话"
@@ -281,7 +390,19 @@
                                                     <FontIcon FontSize="16" Glyph="&#xE895;" />
                                                 </Button>
                                                 <Button
+                                                    Width="36"
+                                                    Height="36"
+                                                    Padding="0"
+                                                    AutomationProperties.Name="{Binding UninstallActionAutomationName}"
+                                                    Click="OnUninstallManagedRuntimeClicked"
+                                                    Tag="{Binding}"
+                                                    ToolTipService.ToolTip="卸载 AutoEnvPlus 受管版本"
+                                                    Visibility="{Binding UninstallActionVisibility}">
+                                                    <SymbolIcon Symbol="Delete" />
+                                                </Button>
+                                                <Button
                                                     VerticalAlignment="Center"
+                                                    AutomationProperties.Name="{Binding ManageActionAutomationName}"
                                                     Click="OnManageToolClicked"
                                                     Content="{Binding ManageActionText}"
                                                     Tag="{Binding}"
@@ -292,34 +413,55 @@
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>
+                        <StackPanel
+                            x:Name="EmptyToolState"
+                            HorizontalAlignment="Center"
+                            AutomationProperties.Name="当前语言没有可显示的语言工具"
+                            Spacing="4"
+                            Visibility="Collapsed">
+                            <TextBlock HorizontalAlignment="Center" FontWeight="SemiBold" Text="没有可显示的语言工具" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="当前目录或实验性工具显示策略没有返回工具项。"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>
 
-            <PivotItem Header="包与来源">
+            <PivotItem Header="Provider 来源">
                 <ScrollViewer>
-                    <StackPanel Padding="32,12,32,32" Spacing="14">
+                    <StackPanel x:Name="SourceContent" Padding="32,12,32,32" Spacing="14">
                         <InfoBar
                             x:Name="MirrorInfo"
+                            AutomationProperties.LiveSetting="Polite"
                             IsClosable="False"
                             IsOpen="True"
-                            Message="每个来源槽都属于具体语言工具的具体 Provider。HTTP/HTTPS 代理和 NO_PROXY 仍是设置中的通用传输策略。"
+                            Message="每个来源槽都保留 Language / Language Tool / Provider / Provider Source 四级归属；不会把同名端点应用到其他 Provider。HTTP/HTTPS 代理和 NO_PROXY 仍是通用传输策略。"
                             Severity="Informational"
-                            Title="Provider 来源归属" />
-                        <Grid ColumnSpacing="12">
+                            Title="精确 Provider Source 归属" />
+                        <Grid ColumnSpacing="12" RowSpacing="8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition />
-                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition x:Name="SourceActionColumn" Width="Auto" />
                             </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition x:Name="SourceActionRow" Height="0" />
+                            </Grid.RowDefinitions>
                             <StackPanel Spacing="4">
-                                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="包管理工具与源" />
+                                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Language Tool / Provider / Provider Source" />
                                 <TextBlock
                                     x:Name="PackageManagerSummary"
+                                    AutomationProperties.LiveSetting="Polite"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                     TextWrapping="Wrap" />
                             </StackPanel>
                             <Button
+                                x:Name="AddSourceButton"
                                 Grid.Column="1"
+                                AutomationProperties.Name="为当前语言的 Provider 添加自定义源"
                                 Click="OnAddCustomSourceClicked">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <SymbolIcon Symbol="Add" />
@@ -329,6 +471,7 @@
                         </Grid>
                         <ListView
                             x:Name="MirrorList"
+                            AutomationProperties.Name="当前语言的 Provider Source"
                             IsItemClickEnabled="False"
                             SelectionMode="None">
                             <ListView.ItemContainerStyle>
@@ -342,15 +485,48 @@
                                 <DataTemplate>
                                     <Border
                                         Padding="16"
+                                        AutomationProperties.Name="{Binding AutomationName}"
                                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="1"
                                         CornerRadius="{StaticResource CardCornerRadius}">
-                                        <Grid ColumnSpacing="12">
+                                        <Grid ColumnSpacing="12" RowSpacing="8">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition />
-                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition x:Name="MirrorActionColumn" Width="Auto" />
                                             </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition />
+                                                <RowDefinition x:Name="MirrorActionRow" Height="0" />
+                                            </Grid.RowDefinitions>
+                                            <VisualStateManager.VisualStateGroups>
+                                                <VisualStateGroup>
+                                                    <VisualState x:Name="CompactMirrorItem">
+                                                        <VisualState.StateTriggers>
+                                                            <AdaptiveTrigger MinWindowWidth="0" />
+                                                        </VisualState.StateTriggers>
+                                                        <VisualState.Setters>
+                                                            <Setter Target="MirrorActionColumn.Width" Value="0" />
+                                                            <Setter Target="MirrorActionRow.Height" Value="Auto" />
+                                                            <Setter Target="MirrorActions.(Grid.Row)" Value="1" />
+                                                            <Setter Target="MirrorActions.(Grid.Column)" Value="0" />
+                                                            <Setter Target="MirrorActions.HorizontalAlignment" Value="Left" />
+                                                        </VisualState.Setters>
+                                                    </VisualState>
+                                                    <VisualState x:Name="WideMirrorItem">
+                                                        <VisualState.StateTriggers>
+                                                            <AdaptiveTrigger MinWindowWidth="720" />
+                                                        </VisualState.StateTriggers>
+                                                        <VisualState.Setters>
+                                                            <Setter Target="MirrorActionColumn.Width" Value="Auto" />
+                                                            <Setter Target="MirrorActionRow.Height" Value="0" />
+                                                            <Setter Target="MirrorActions.(Grid.Row)" Value="0" />
+                                                            <Setter Target="MirrorActions.(Grid.Column)" Value="1" />
+                                                            <Setter Target="MirrorActions.HorizontalAlignment" Value="Stretch" />
+                                                        </VisualState.Setters>
+                                                    </VisualState>
+                                                </VisualStateGroup>
+                                            </VisualStateManager.VisualStateGroups>
                                             <StackPanel Spacing="5">
                                                 <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
                                                 <TextBlock Text="{Binding Ownership}" TextWrapping="Wrap" />
@@ -364,8 +540,9 @@
                                                     Text="{Binding Purpose}"
                                                     TextWrapping="Wrap" />
                                             </StackPanel>
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" Spacing="6">
+                                            <StackPanel x:Name="MirrorActions" Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" Spacing="6">
                                                 <Button
+                                                    AutomationProperties.Name="{Binding PrimaryActionAutomationName}"
                                                     Click="OnEditMirrorClicked"
                                                     Content="{Binding PrimaryActionText}"
                                                     IsEnabled="{Binding CanEdit}"
@@ -384,18 +561,24 @@
                                 </DataTemplate>
                             </ListView.ItemTemplate>
                         </ListView>
-                        <TextBlock
-                            x:Name="EmptyMirrorText"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="此语言的 Provider 暂未声明来源槽。"
-                            Visibility="Collapsed" />
+                        <StackPanel
+                            x:Name="EmptyMirrorState"
+                            AutomationProperties.Name="此语言的 Provider 暂未声明 Provider Source"
+                            Spacing="4"
+                            Visibility="Collapsed">
+                            <TextBlock FontWeight="SemiBold" Text="没有 Provider Source" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="此语言的 Provider 暂未声明来源槽；通用代理策略仍可生效。"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>
 
             <PivotItem Header="项目环境">
                 <ScrollViewer>
-                    <StackPanel Padding="32,12,32,32" Spacing="14">
+                    <StackPanel x:Name="ProjectContent" Padding="32,12,32,32" Spacing="14">
                         <Grid ColumnSpacing="8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition />
@@ -426,6 +609,7 @@
                         </Button>
                         <InfoBar
                             x:Name="ProjectInfo"
+                            AutomationProperties.LiveSetting="Polite"
                             IsClosable="False"
                             IsOpen="True"
                             Message="只读取固定候选路径和项目元数据，不递归扫描、不跟随重解析点，也不执行外部命令。"
@@ -467,14 +651,18 @@
                 </ScrollViewer>
             </PivotItem>
 
-            <PivotItem Header="语言与扩展">
+            <PivotItem Header="Provider 插件">
                 <ScrollViewer>
-                    <StackPanel Padding="32,12,32,32" Spacing="14">
-                        <Grid ColumnSpacing="12">
+                    <StackPanel x:Name="ExtensionContent" Padding="32,12,32,32" Spacing="14">
+                        <Grid ColumnSpacing="12" RowSpacing="8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition />
-                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition x:Name="PluginActionColumn" Width="Auto" />
                             </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition x:Name="PluginActionRow" Height="0" />
+                            </Grid.RowDefinitions>
                             <StackPanel Spacing="3">
                                 <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="此语言的 Provider 插件" />
                                 <TextBlock
@@ -483,7 +671,9 @@
                                     TextWrapping="Wrap" />
                             </StackPanel>
                             <Button
+                                x:Name="ImportProviderButton"
                                 Grid.Column="1"
+                                AutomationProperties.Name="为当前语言导入 Provider 插件"
                                 Click="OnImportProviderPluginClicked">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <SymbolIcon Symbol="OpenFile" />
@@ -499,6 +689,7 @@
                             Title="插件信任边界" />
                         <ListView
                             x:Name="ProviderPluginList"
+                            AutomationProperties.Name="当前语言的 Provider 插件"
                             IsItemClickEnabled="False"
                             SelectionMode="None">
                             <ListView.ItemContainerStyle>
@@ -512,15 +703,48 @@
                                 <DataTemplate>
                                     <Border
                                         Padding="14"
+                                        AutomationProperties.Name="{Binding AutomationName}"
                                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="1"
                                         CornerRadius="{StaticResource CardCornerRadius}">
-                                        <Grid ColumnSpacing="12">
+                                        <Grid ColumnSpacing="12" RowSpacing="8">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition />
-                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition x:Name="PluginItemActionColumn" Width="Auto" />
                                             </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition />
+                                                <RowDefinition x:Name="PluginItemActionRow" Height="0" />
+                                            </Grid.RowDefinitions>
+                                            <VisualStateManager.VisualStateGroups>
+                                                <VisualStateGroup>
+                                                    <VisualState x:Name="CompactPluginItem">
+                                                        <VisualState.StateTriggers>
+                                                            <AdaptiveTrigger MinWindowWidth="0" />
+                                                        </VisualState.StateTriggers>
+                                                        <VisualState.Setters>
+                                                            <Setter Target="PluginItemActionColumn.Width" Value="0" />
+                                                            <Setter Target="PluginItemActionRow.Height" Value="Auto" />
+                                                            <Setter Target="PluginItemActions.(Grid.Row)" Value="1" />
+                                                            <Setter Target="PluginItemActions.(Grid.Column)" Value="0" />
+                                                            <Setter Target="PluginItemActions.HorizontalAlignment" Value="Left" />
+                                                        </VisualState.Setters>
+                                                    </VisualState>
+                                                    <VisualState x:Name="WidePluginItem">
+                                                        <VisualState.StateTriggers>
+                                                            <AdaptiveTrigger MinWindowWidth="720" />
+                                                        </VisualState.StateTriggers>
+                                                        <VisualState.Setters>
+                                                            <Setter Target="PluginItemActionColumn.Width" Value="Auto" />
+                                                            <Setter Target="PluginItemActionRow.Height" Value="0" />
+                                                            <Setter Target="PluginItemActions.(Grid.Row)" Value="0" />
+                                                            <Setter Target="PluginItemActions.(Grid.Column)" Value="1" />
+                                                            <Setter Target="PluginItemActions.HorizontalAlignment" Value="Stretch" />
+                                                        </VisualState.Setters>
+                                                    </VisualState>
+                                                </VisualStateGroup>
+                                            </VisualStateManager.VisualStateGroups>
                                             <StackPanel Spacing="4">
                                                 <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
                                                 <TextBlock
@@ -528,13 +752,14 @@
                                                     Text="{Binding Detail}"
                                                     TextWrapping="Wrap" />
                                             </StackPanel>
-                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                            <StackPanel x:Name="PluginItemActions" Grid.Column="1" Orientation="Horizontal" Spacing="6">
                                                 <Button
+                                                    AutomationProperties.Name="{Binding ToggleAutomationName}"
                                                     Click="OnToggleProviderPluginClicked"
                                                     Content="{Binding ToggleText}"
                                                     Tag="{Binding}" />
                                                 <Button
-                                                    AutomationProperties.Name="删除 Provider 插件"
+                                                    AutomationProperties.Name="{Binding DeleteAutomationName}"
                                                     Click="OnDeleteProviderPluginClicked"
                                                     Tag="{Binding}"
                                                     ToolTipService.ToolTip="删除 Provider 插件">
@@ -548,6 +773,7 @@
                         </ListView>
                         <TextBlock
                             x:Name="EmptyProviderPluginText"
+                            AutomationProperties.Name="此语言没有 Provider 插件"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             Text="此语言当前没有可桥接的语言工具 Provider 插件。" />
                     </StackPanel>

@@ -50,10 +50,10 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="语言" />
+                        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="语言目录" />
                         <TextBlock
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="按语言组织编译器、解释器、运行时、SDK、包管理器和开发工具。"
+                            Text="先选择语言，再查看语言工具、Provider 和 Provider Source。目录声明不等同于 AutoEnvPlus 已接通操作。"
                             TextWrapping="Wrap" />
                     </StackPanel>
                     <StackPanel
@@ -66,6 +66,7 @@
                             x:Name="RefreshProgress"
                             Width="20"
                             Height="20"
+                            AutomationProperties.Name="语言目录操作进度"
                             IsActive="False" />
                         <Button
                             x:Name="RefreshButton"
@@ -88,6 +89,7 @@
 
                 <InfoBar
                     x:Name="StatusInfo"
+                    AutomationProperties.LiveSetting="Polite"
                     IsClosable="False"
                     IsOpen="True"
                     Severity="Informational"
@@ -96,9 +98,9 @@
                 <InfoBar
                     IsClosable="False"
                     IsOpen="True"
-                    Message="打开此页只读取上次库存快照。只有点击扫描按钮后才检查 PATH；不会运行版本命令或访问网络。"
+                    Message="136 个内置工具是生态目录规模，不代表 136 个受管适配器。只有标明 AutoEnvPlus 操作适配器的工具可在应用内安装或切换；扫描仅按需检查 PATH，不运行版本命令或访问网络。"
                     Severity="Informational"
-                    Title="按需检测" />
+                    Title="目录元数据与可执行操作分开" />
 
                 <Border
                     Padding="16"
@@ -134,9 +136,10 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Spacing="2">
-                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="编译器工具与运行时（语言工具）" />
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Language → Language Tool" />
                         <TextBlock
                             x:Name="LanguageSummaryText"
+                            AutomationProperties.LiveSetting="Polite"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             Text="正在计算有效语言集合…"
                             TextWrapping="Wrap" />
@@ -153,6 +156,7 @@
                 <Grid MinHeight="120">
                     <ListView
                         x:Name="LanguageList"
+                        AutomationProperties.Name="语言目录"
                         IsItemClickEnabled="False"
                         SelectionMode="None">
                         <ListView.ItemContainerStyle>
@@ -166,6 +170,7 @@
                             <DataTemplate>
                                 <Border
                                     Padding="16"
+                                    AutomationProperties.Name="{Binding AutomationName}"
                                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1"
@@ -283,16 +288,26 @@
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
-                    <TextBlock
-                        x:Name="EmptyLanguageText"
+                    <StackPanel
+                        x:Name="EmptyLanguageState"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="没有符合当前条件的语言。"
-                        Visibility="Collapsed" />
+                        AutomationProperties.Name="没有符合当前条件的语言"
+                        Spacing="4"
+                        Visibility="Collapsed">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontWeight="SemiBold"
+                            Text="没有符合当前条件的语言" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="可更改搜索词、状态筛选或显示范围。"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
                 </Grid>
 
-                <Expander IsExpanded="False">
+                <Expander AutomationProperties.Name="当前语言目录的语言包" IsExpanded="False">
                     <Expander.Header>
                         <StackPanel Spacing="2">
                             <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="语言包" />

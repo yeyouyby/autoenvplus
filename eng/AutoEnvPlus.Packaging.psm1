@@ -89,6 +89,101 @@ function ConvertTo-AutoEnvPlusPackageVersion {
     return $Version
 }
 
+function Get-AutoEnvPlusVersionInfo {
+    [CmdletBinding()]
+    param(
+        [string]$PropsPath = [System.IO.Path]::GetFullPath(
+            (Join-Path $PSScriptRoot '..\Directory.Build.props'))
+    )
+
+    $document = Read-AutoEnvPlusXmlDocument -Path $PropsPath
+    function Get-SinglePropertyValue {
+        param([Parameter(Mandatory)][string]$Name)
+
+        $nodes = $document.SelectNodes("/Project/PropertyGroup/$Name")
+        if ($null -eq $nodes -or $nodes.Count -ne 1) {
+            throw "Directory.Build.props must declare exactly one $Name property."
+        }
+
+        $value = $nodes[0].InnerText.Trim()
+        if ([string]::IsNullOrWhiteSpace($value)) {
+            throw "Directory.Build.props property $Name cannot be empty."
+        }
+        return $value
+    }
+
+    $productVersion = Get-SinglePropertyValue -Name 'AutoEnvPlusProductVersion'
+    if ($productVersion -notmatch '^(0|[1-9][0-9]{0,4})\.(0|[1-9][0-9]{0,4})\.(0|[1-9][0-9]{0,4})$') {
+        throw "AutoEnvPlusProductVersion must contain exactly three numeric components: $productVersion"
+    }
+    foreach ($component in $productVersion.Split('.')) {
+        if ([int]$component -gt 65535) {
+            throw "Each AutoEnvPlusProductVersion component must be between 0 and 65535: $productVersion"
+        }
+    }
+
+    $packageExpression = Get-SinglePropertyValue -Name 'AutoEnvPlusPackageVersion'
+    if ($packageExpression -ne '$(AutoEnvPlusProductVersion).0') {
+        throw 'AutoEnvPlusPackageVersion must be derived from AutoEnvPlusProductVersion with a zero revision.'
+    }
+    $tagExpression = Get-SinglePropertyValue -Name 'AutoEnvPlusReleaseTag'
+    if ($tagExpression -ne 'v$(AutoEnvPlusProductVersion)') {
+        throw 'AutoEnvPlusReleaseTag must be derived from AutoEnvPlusProductVersion.'
+    }
+    $releaseStage = Get-SinglePropertyValue -Name 'AutoEnvPlusReleaseStage'
+    if ($releaseStage -notin @('preview', 'stable')) {
+        throw 'AutoEnvPlusReleaseStage must be preview or stable.'
+    }
+
+    $repositoryUrl = ConvertTo-AutoEnvPlusHttpsUri `
+        -Value (Get-SinglePropertyValue -Name 'AutoEnvPlusRepositoryUrl') `
+        -ParameterName 'AutoEnvPlusRepositoryUrl'
+    $repositoryUrl = $repositoryUrl.TrimEnd('/')
+    $packageVersion = ConvertTo-AutoEnvPlusPackageVersion -Version "$productVersion.0"
+    $releaseTag = "v$productVersion"
+    return [pscustomobject]@{
+        ProductVersion = $productVersion
+        PackageVersion = $packageVersion
+        ReleaseTag = $releaseTag
+        ReleaseStage = $releaseStage
+        RepositoryUrl = $repositoryUrl
+        PackageUri = "$repositoryUrl/releases/download/$releaseTag/AutoEnvPlus-win-x64.msix"
+        AppInstallerUri = "$repositoryUrl/releases/latest/download/AutoEnvPlus.appinstaller"
+    }
+}
+
+function Clear-AutoEnvPlusPortableArchiveArtifacts {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$ArtifactsRoot,
+        [string]$ArchiveName = 'AutoEnvPlus-win-x64-portable.zip'
+    )
+
+    if ([System.IO.Path]::IsPathRooted($ArchiveName) -or
+        $ArchiveName -ne [System.IO.Path]::GetFileName($ArchiveName) -or
+        -not $ArchiveName.EndsWith('.zip', [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw 'ArchiveName must be a leaf .zip file name.'
+    }
+
+    $root = [System.IO.Path]::GetFullPath($ArtifactsRoot)
+    $rootPrefix = $root.TrimEnd(
+        [System.IO.Path]::DirectorySeparatorChar,
+        [System.IO.Path]::AltDirectorySeparatorChar)
+    $prefix = $rootPrefix + [System.IO.Path]::DirectorySeparatorChar
+    foreach ($name in @($ArchiveName, "$ArchiveName.sha256")) {
+        $path = [System.IO.Path]::GetFullPath((Join-Path $root $name))
+        if (-not $path.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Portable archive cleanup escaped its artifact root: $path"
+        }
+        if (Test-Path -LiteralPath $path -PathType Container) {
+            throw "Portable archive output must be a file, not a directory: $path"
+        }
+        if (Test-Path -LiteralPath $path -PathType Leaf) {
+            Remove-Item -LiteralPath $path -Force
+        }
+    }
+}
+
 function Assert-AutoEnvPlusPackageName {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Name)
@@ -249,98 +344,86 @@ function New-AutoEnvPlusAppInstaller {
     Assert-AutoEnvPlusAppInstaller @assertionParameters | Out-Null
 }
 
-function New-AutoEnvPlusRoundedRectanglePath {
-    param(
-        [Parameter(Mandatory)][float]$X,
-        [Parameter(Mandatory)][float]$Y,
-        [Parameter(Mandatory)][float]$Width,
-        [Parameter(Mandatory)][float]$Height,
-        [Parameter(Mandatory)][float]$Radius
-    )
-
-    $diameter = $Radius * 2
-    $path = New-Object System.Drawing.Drawing2D.GraphicsPath
-    $path.AddArc($X, $Y, $diameter, $diameter, 180, 90)
-    $path.AddArc($X + $Width - $diameter, $Y, $diameter, $diameter, 270, 90)
-    $path.AddArc($X + $Width - $diameter, $Y + $Height - $diameter, $diameter, $diameter, 0, 90)
-    $path.AddArc($X, $Y + $Height - $diameter, $diameter, $diameter, 90, 90)
-    $path.CloseFigure()
-    return $path
-}
-
 function New-AutoEnvPlusBrandAssets {
     [CmdletBinding()]
-    param([Parameter(Mandatory)][string]$OutputDirectory)
+    param(
+        [Parameter(Mandatory)][string]$OutputDirectory,
+        [string]$SourcePath
+    )
 
     Add-Type -AssemblyName System.Drawing
+    if ([string]::IsNullOrWhiteSpace($SourcePath)) {
+        $SourcePath = Join-Path $PSScriptRoot '..\assets\branding\autoenvplus-logo.png'
+    }
+    $SourcePath = [System.IO.Path]::GetFullPath($SourcePath)
+    if (-not (Test-Path -LiteralPath $SourcePath -PathType Leaf)) {
+        throw "The authoritative AutoEnvPlus brand PNG was not found: $SourcePath"
+    }
+    $sourceItem = Get-Item -LiteralPath $SourcePath -Force
+    if (($sourceItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "The authoritative AutoEnvPlus brand PNG cannot be a reparse point: $SourcePath"
+    }
+
     [System.IO.Directory]::CreateDirectory($OutputDirectory) | Out-Null
 
     $specifications = @(
-        [pscustomobject]@{ Name = 'StoreLogo.png'; Width = 50; Height = 50 },
-        [pscustomobject]@{ Name = 'Square44x44Logo.png'; Width = 44; Height = 44 },
-        [pscustomobject]@{ Name = 'Square150x150Logo.png'; Width = 150; Height = 150 },
-        [pscustomobject]@{ Name = 'Wide310x150Logo.png'; Width = 310; Height = 150 },
-        [pscustomobject]@{ Name = 'Square310x310Logo.png'; Width = 310; Height = 310 },
-        [pscustomobject]@{ Name = 'SplashScreen.png'; Width = 620; Height = 300 }
+        [pscustomobject]@{ Name = 'StoreLogo.png'; Width = 50; Height = 50; Square = $true },
+        [pscustomobject]@{ Name = 'Square44x44Logo.png'; Width = 44; Height = 44; Square = $true },
+        [pscustomobject]@{ Name = 'Square150x150Logo.png'; Width = 150; Height = 150; Square = $true },
+        [pscustomobject]@{ Name = 'Wide310x150Logo.png'; Width = 310; Height = 150; Square = $false },
+        [pscustomobject]@{ Name = 'Square310x310Logo.png'; Width = 310; Height = 310; Square = $true },
+        [pscustomobject]@{ Name = 'SplashScreen.png'; Width = 620; Height = 300; Square = $false }
     )
 
-    foreach ($specification in $specifications) {
-        $bitmap = New-Object System.Drawing.Bitmap(
-            $specification.Width,
-            $specification.Height,
-            [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
-        $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-        try {
-            $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-            $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
-            $graphics.Clear([System.Drawing.Color]::FromArgb(255, 15, 23, 42))
+    $sourceImage = [System.Drawing.Image]::FromFile($SourcePath)
+    try {
+        if ($sourceImage.Width -ne 512 -or $sourceImage.Height -ne 512) {
+            throw 'The authoritative AutoEnvPlus brand PNG must be exactly 512 by 512 pixels.'
+        }
 
-            $shortSide = [math]::Min($specification.Width, $specification.Height)
-            $iconSize = $shortSide * 0.72
-            $iconX = ($specification.Width - $iconSize) / 2
-            $iconY = ($specification.Height - $iconSize) / 2
-            $cornerRadius = $iconSize * 0.22
-            $iconPath = New-AutoEnvPlusRoundedRectanglePath -X $iconX -Y $iconY -Width $iconSize -Height $iconSize -Radius $cornerRadius
-            $accentBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 0, 120, 212))
+        foreach ($specification in $specifications) {
+            $bitmap = New-Object System.Drawing.Bitmap(
+                $specification.Width,
+                $specification.Height,
+                [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+            $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
             try {
-                $graphics.FillPath($accentBrush, $iconPath)
+                $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+                $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+                $graphics.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
+                $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+                $backgroundColor = if ($specification.Square) {
+                    [System.Drawing.Color]::Transparent
+                }
+                else {
+                    [System.Drawing.Color]::FromArgb(255, 23, 26, 33)
+                }
+                $graphics.Clear($backgroundColor)
+
+                $iconSize = if ($specification.Square) {
+                    [float]$specification.Width
+                }
+                else {
+                    [float]([math]::Min($specification.Width, $specification.Height) * 0.72)
+                }
+                $destination = New-Object System.Drawing.RectangleF(
+                    [float](($specification.Width - $iconSize) / 2),
+                    [float](($specification.Height - $iconSize) / 2),
+                    $iconSize,
+                    $iconSize)
+                $graphics.DrawImage($sourceImage, $destination)
+
+                $assetPath = Join-Path $OutputDirectory $specification.Name
+                $bitmap.Save($assetPath, [System.Drawing.Imaging.ImageFormat]::Png)
             }
             finally {
-                $accentBrush.Dispose()
-                $iconPath.Dispose()
+                $graphics.Dispose()
+                $bitmap.Dispose()
             }
-
-            $strokeWidth = [math]::Max(2.0, $iconSize * 0.075)
-            $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::White, $strokeWidth)
-            try {
-                $pen.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
-                $pen.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
-                $pen.LineJoin = [System.Drawing.Drawing2D.LineJoin]::Round
-                $left = $iconX + ($iconSize * 0.24)
-                $apexX = $iconX + ($iconSize * 0.43)
-                $right = $iconX + ($iconSize * 0.62)
-                $top = $iconY + ($iconSize * 0.24)
-                $bottom = $iconY + ($iconSize * 0.76)
-                $graphics.DrawLine($pen, $left, $bottom, $apexX, $top)
-                $graphics.DrawLine($pen, $apexX, $top, $right, $bottom)
-                $graphics.DrawLine($pen, $left + ($iconSize * 0.08), $iconY + ($iconSize * 0.57), $right - ($iconSize * 0.08), $iconY + ($iconSize * 0.57))
-                $plusX = $iconX + ($iconSize * 0.72)
-                $plusY = $iconY + ($iconSize * 0.51)
-                $plusRadius = $iconSize * 0.11
-                $graphics.DrawLine($pen, $plusX - $plusRadius, $plusY, $plusX + $plusRadius, $plusY)
-                $graphics.DrawLine($pen, $plusX, $plusY - $plusRadius, $plusX, $plusY + $plusRadius)
-            }
-            finally {
-                $pen.Dispose()
-            }
-
-            $assetPath = Join-Path $OutputDirectory $specification.Name
-            $bitmap.Save($assetPath, [System.Drawing.Imaging.ImageFormat]::Png)
         }
-        finally {
-            $graphics.Dispose()
-            $bitmap.Dispose()
-        }
+    }
+    finally {
+        $sourceImage.Dispose()
     }
 }
 
@@ -603,9 +686,11 @@ Export-ModuleMember -Function @(
     'Assert-AutoEnvPlusAppInstaller',
     'Assert-AutoEnvPlusPackageName',
     'Assert-AutoEnvPlusSigningCertificate',
+    'Clear-AutoEnvPlusPortableArchiveArtifacts',
     'ConvertTo-AutoEnvPlusHttpsUri',
     'ConvertTo-AutoEnvPlusPackageVersion',
     'ConvertTo-AutoEnvPlusTimestampUri',
+    'Get-AutoEnvPlusVersionInfo',
     'Get-AutoEnvPlusAppInstallerIdentity',
     'Get-AutoEnvPlusMsixIdentity',
     'Get-AutoEnvPlusSigningCertificate',

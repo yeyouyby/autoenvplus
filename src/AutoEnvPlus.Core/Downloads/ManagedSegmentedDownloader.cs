@@ -206,7 +206,6 @@ public sealed class ManagedSegmentedDownloader
         request.Headers.Range = new RangeHeaderValue(0, 0);
         RemoteEntityIdentity? headIdentity = CreateIdentity(
             head?.StrongEntityTag,
-            head?.LastModifiedUtc,
             head?.TotalLength);
         AddIfRange(request, headIdentity);
 
@@ -275,7 +274,6 @@ public sealed class ManagedSegmentedDownloader
         {
             identity = CreateIdentity(
                 GetStrongEntityTag(response),
-                response.Content.Headers.LastModified,
                 totalLength);
         }
 
@@ -310,7 +308,6 @@ public sealed class ManagedSegmentedDownloader
         return new HeadSnapshot(
             totalLength,
             GetStrongEntityTag(response),
-            response.Content.Headers.LastModified,
             rejectsRanges);
     }
 
@@ -636,14 +633,10 @@ public sealed class ManagedSegmentedDownloader
         HttpRequestMessage request,
         RemoteEntityIdentity? identity)
     {
-        if (identity?.StrongEntityTag is string entityTag)
+        if (identity is not null)
         {
             request.Headers.IfRange = new RangeConditionHeaderValue(
-                new EntityTagHeaderValue(entityTag));
-        }
-        else if (identity?.LastModifiedUtc is DateTimeOffset lastModified)
-        {
-            request.Headers.IfRange = new RangeConditionHeaderValue(lastModified);
+                new EntityTagHeaderValue(identity.StrongEntityTag));
         }
     }
 
@@ -662,15 +655,9 @@ public sealed class ManagedSegmentedDownloader
         HttpResponseMessage response,
         RemoteEntityIdentity identity)
     {
-        if (identity.StrongEntityTag is string expectedEntityTag)
-        {
-            return expectedEntityTag.Equals(
-                GetStrongEntityTag(response),
-                StringComparison.Ordinal);
-        }
-
-        return identity.LastModifiedUtc is DateTimeOffset expectedLastModified
-            && response.Content.Headers.LastModified == expectedLastModified;
+        return identity.StrongEntityTag.Equals(
+            GetStrongEntityTag(response),
+            StringComparison.Ordinal);
     }
 
     private static string? GetStrongEntityTag(HttpResponseMessage response)
@@ -683,19 +670,14 @@ public sealed class ManagedSegmentedDownloader
 
     private static RemoteEntityIdentity? CreateIdentity(
         string? strongEntityTag,
-        DateTimeOffset? lastModifiedUtc,
         long? totalLength)
     {
-        if (totalLength is not long length
-            || (strongEntityTag is null && lastModifiedUtc is null))
+        if (totalLength is not long length || strongEntityTag is null)
         {
             return null;
         }
 
-        return new RemoteEntityIdentity(
-            strongEntityTag,
-            strongEntityTag is null ? lastModifiedUtc : null,
-            length);
+        return new RemoteEntityIdentity(strongEntityTag, length);
     }
 
     private static IReadOnlyList<ByteRange> CreateRanges(long totalLength, int segmentCount)
@@ -817,7 +799,6 @@ public sealed class ManagedSegmentedDownloader
     private sealed record HeadSnapshot(
         long? TotalLength,
         string? StrongEntityTag,
-        DateTimeOffset? LastModifiedUtc,
         bool ExplicitlyRejectsRanges);
 
     private sealed record RemoteProbe(
@@ -827,8 +808,7 @@ public sealed class ManagedSegmentedDownloader
         DownloadFallbackReason? FallbackReason);
 
     private sealed record RemoteEntityIdentity(
-        string? StrongEntityTag,
-        DateTimeOffset? LastModifiedUtc,
+        string StrongEntityTag,
         long TotalLength);
 
     private sealed record ByteRange(int Index, long Start, long End)

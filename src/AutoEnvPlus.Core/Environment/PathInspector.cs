@@ -2,7 +2,22 @@ namespace AutoEnvPlus.Core.Environment;
 
 public sealed class PathInspector
 {
-    private static readonly string[] DefaultExtensions = [".exe", ".cmd", ".bat", ".com"];
+    private readonly IReadOnlyList<string> _executableExtensions;
+
+    public PathInspector()
+        : this(PathExtensionPolicy.GetCurrent())
+    {
+    }
+
+    internal PathInspector(string? pathExtensions)
+        : this(PathExtensionPolicy.Parse(pathExtensions))
+    {
+    }
+
+    private PathInspector(IReadOnlyList<string> executableExtensions)
+    {
+        _executableExtensions = executableExtensions;
+    }
 
     public PathInspectionReport InspectCurrent(IEnumerable<string>? commands = null)
     {
@@ -82,7 +97,7 @@ public sealed class PathInspector
         return new PathInspectionReport(entries, resolutions);
     }
 
-    private static IReadOnlyList<CommandResolution> FindCommands(
+    private IReadOnlyList<CommandResolution> FindCommands(
         IReadOnlyList<PathInspectionEntry> entries,
         IEnumerable<string> commands)
     {
@@ -112,7 +127,7 @@ public sealed class PathInspector
         return resolutions;
     }
 
-    private static IEnumerable<string> CandidateFileNames(string command)
+    private IEnumerable<string> CandidateFileNames(string command)
     {
         if (Path.HasExtension(command))
         {
@@ -120,7 +135,7 @@ public sealed class PathInspector
             yield break;
         }
 
-        foreach (string extension in DefaultExtensions)
+        foreach (string extension in _executableExtensions)
         {
             yield return command + extension;
         }
@@ -185,5 +200,37 @@ public sealed class PathInspector
         {
             return value.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         }
+    }
+}
+
+internal static class PathExtensionPolicy
+{
+    private static readonly string[] FallbackExtensions = [".com", ".exe", ".bat", ".cmd"];
+
+    public static IReadOnlyList<string> GetCurrent() => Parse(
+        System.Environment.GetEnvironmentVariable("PATHEXT"));
+
+    public static IReadOnlyList<string> Parse(string? value)
+    {
+        List<string> extensions = [];
+        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string candidate in (value ?? string.Empty).Split(
+                     ';',
+                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            string extension = candidate.StartsWith(".", StringComparison.Ordinal)
+                ? candidate
+                : "." + candidate;
+            if (extension.Length is <= 1 or > 32
+                || extension[1..].Any(character => !char.IsAsciiLetterOrDigit(character))
+                || !seen.Add(extension))
+            {
+                continue;
+            }
+
+            extensions.Add(extension.ToLowerInvariant());
+        }
+
+        return extensions.Count == 0 ? FallbackExtensions : extensions;
     }
 }

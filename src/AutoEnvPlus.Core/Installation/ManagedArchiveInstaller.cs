@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.IO.Compression;
 using System.Text.Json;
 using AutoEnvPlus.Core.Providers;
@@ -16,6 +17,7 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
 {
     private const string InstallReceiptFileName = ".autoenvplus-install.json";
     private const int MaximumInstallReceiptBytes = 32 * 1024;
+    private const int ExtractionBufferBytes = 81_920;
     private static readonly JsonSerializerOptions ReceiptJsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -120,12 +122,12 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
 
             progress?.Report(new InstallProgress("extract"));
             Directory.CreateDirectory(extractionRoot);
-            ExtractZipSafely(
+            await ExtractZipSafelyAsync(
                 packagePath,
                 extractionRoot,
                 plan.MaximumArchiveEntries,
                 plan.MaximumUncompressedBytes,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
 
             string payloadRoot = ResolvePayloadRoot(extractionRoot, plan.Asset.ArchiveRootDirectory);
             string payloadExecutable = ResolveRelativePath(
@@ -211,7 +213,7 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
         }
     }
 
-    private static void ExtractZipSafely(
+    private static async Task ExtractZipSafelyAsync(
         string packagePath,
         string extractionRoot,
         int maximumEntries,
@@ -226,7 +228,8 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
                 $"The archive has {archive.Entries.Count} entries, exceeding the {maximumEntries}-entry limit.");
         }
 
-        long uncompressedBytes = 0;
+        long declaredUncompressedBytes = 0;
+        long actualUncompressedBytes = 0;
         foreach (ZipArchiveEntry entry in archive.Entries)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -235,8 +238,14 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
                 throw new InvalidDataException($"The archive contains a symbolic link: '{entry.FullName}'.");
             }
 
-            uncompressedBytes = checked(uncompressedBytes + entry.Length);
-            if (uncompressedBytes > maximumUncompressedBytes)
+            if (entry.Length < 0)
+            {
+                throw new InvalidDataException(
+                    $"The archive entry has an invalid uncompressed length: '{entry.FullName}'.");
+            }
+
+            declaredUncompressedBytes = checked(declaredUncompressedBytes + entry.Length);
+            if (declaredUncompressedBytes > maximumUncompressedBytes)
             {
                 throw new InvalidDataException(
                     $"The archive exceeds the {maximumUncompressedBytes}-byte uncompressed size limit.");
@@ -258,15 +267,104 @@ public sealed class ManagedArchiveInstaller : IArchiveInstaller
 
             if (entry.Name.Length == 0)
             {
+                if (entry.Length != 0)
+                {
+                    throw new InvalidDataException(
+                        $"The archive directory entry has unexpected content: '{entry.FullName}'.");
+                }
+
                 Directory.CreateDirectory(destinationPath);
                 continue;
             }
 
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
-            using Stream source = entry.Open();
-            using FileStream target = new(destinationPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            source.CopyTo(target);
+            await using Stream source = entry.Open();
+            await using FileStream target = new(
+                destinationPath,
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None,
+                ExtractionBufferBytes,
+                FileOptions.Asynchronous | FileOptions.SequentialScan);
+            long extractedBytes = await CopyArchiveEntryAsync(
+                source,
+                target,
+                entry.FullName,
+                entry.Length,
+                checked(maximumUncompressedBytes - actualUncompressedBytes),
+                cancellationToken).ConfigureAwait(false);
+            actualUncompressedBytes = checked(actualUncompressedBytes + extractedBytes);
         }
+    }
+
+    internal static async Task<long> CopyArchiveEntryAsync(
+        Stream source,
+        Stream target,
+        string entryName,
+        long declaredLength,
+        long maximumBytes,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(entryName);
+        if (declaredLength < 0 || maximumBytes < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                declaredLength < 0 ? nameof(declaredLength) : nameof(maximumBytes));
+        }
+
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(ExtractionBufferBytes);
+        long completed = 0;
+        try
+        {
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                int read = await source.ReadAsync(
+                    buffer.AsMemory(0, buffer.Length),
+                    cancellationToken).ConfigureAwait(false);
+                if (read == 0)
+                {
+                    break;
+                }
+
+                long next = checked(completed + read);
+                if (next > declaredLength)
+                {
+                    throw new InvalidDataException(
+                        $"The archive entry '{entryName}' expanded beyond its declared "
+                        + $"{declaredLength}-byte length.");
+                }
+
+                if (next > maximumBytes)
+                {
+                    throw new InvalidDataException(
+                        $"The archive exceeds its uncompressed size limit while extracting "
+                        + $"'{entryName}'.");
+                }
+
+                await target.WriteAsync(
+                    buffer.AsMemory(0, read),
+                    cancellationToken).ConfigureAwait(false);
+                completed = next;
+            }
+
+            await target.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+
+        if (completed != declaredLength)
+        {
+            throw new InvalidDataException(
+                $"The archive entry '{entryName}' produced {completed} bytes instead of its "
+                + $"declared {declaredLength}-byte length.");
+        }
+
+        return completed;
     }
 
     private static string ResolvePayloadRoot(string extractionRoot, string? archiveRootDirectory)

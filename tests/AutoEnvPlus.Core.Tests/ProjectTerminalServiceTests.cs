@@ -103,7 +103,88 @@ public sealed class ProjectTerminalServiceTests : IDisposable
         Assert.Equal(
             Path.Combine(_managedRoot, "shims"),
             plan.EnvironmentOverrides["PATH"].Split(';')[0]);
+        Assert.Contains("AUTOENVPLUS_NODE_VERSION", plan.EnvironmentRemovals, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("AUTOENVPLUS_SHIM_DEPTH", plan.EnvironmentRemovals, StringComparer.OrdinalIgnoreCase);
+        Assert.DoesNotContain(
+            "AUTOENVPLUS_PYTHON_VERSION",
+            plan.EnvironmentRemovals,
+            StringComparer.OrdinalIgnoreCase);
         Assert.Equal(parentPath, System.Environment.GetEnvironmentVariable("PATH") ?? string.Empty);
+    }
+
+    [Fact]
+    public async Task CreatePlanAsync_ClearsInheritedSessionPinsNotReviewedByProject()
+    {
+        WriteManifest("[tools]\npython = \"3.12\"\n");
+        Dictionary<string, string?> inherited = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["AUTOENVPLUS_NODE_VERSION"] = "20",
+            ["AUTOENVPLUS_NODE_RUNTIME_ID"] = "stale-node",
+            ["AUTOENVPLUS_NODE_RUNTIME_PROVIDER_ID"] = "stale-provider",
+            ["AUTOENVPLUS_SHIM_DEPTH"] = "4",
+        };
+        Dictionary<string, string?> original = inherited.Keys.ToDictionary(
+            key => key,
+            System.Environment.GetEnvironmentVariable,
+            StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            foreach ((string key, string? value) in inherited)
+            {
+                System.Environment.SetEnvironmentVariable(key, value);
+            }
+
+            ProjectTerminalPlan plan = await CreateService().CreatePlanAsync(_projectRoot);
+
+            Assert.True(plan.CanLaunch);
+            Assert.Contains("AUTOENVPLUS_NODE_VERSION", plan.EnvironmentRemovals, StringComparer.OrdinalIgnoreCase);
+            Assert.Contains("AUTOENVPLUS_NODE_RUNTIME_ID", plan.EnvironmentRemovals, StringComparer.OrdinalIgnoreCase);
+            Assert.Contains(
+                "AUTOENVPLUS_NODE_RUNTIME_PROVIDER_ID",
+                plan.EnvironmentRemovals,
+                StringComparer.OrdinalIgnoreCase);
+            Assert.Contains("AUTOENVPLUS_SHIM_DEPTH", plan.EnvironmentRemovals, StringComparer.OrdinalIgnoreCase);
+            Assert.DoesNotContain(
+                "AUTOENVPLUS_PYTHON_VERSION",
+                plan.EnvironmentRemovals,
+                StringComparer.OrdinalIgnoreCase);
+            Assert.Equal("3.12.8", plan.EnvironmentOverrides["AUTOENVPLUS_PYTHON_VERSION"]);
+        }
+        finally
+        {
+            foreach ((string key, string? value) in original)
+            {
+                System.Environment.SetEnvironmentVariable(key, value);
+            }
+        }
+    }
+
+    [Fact]
+    public void ResolveWindowsTerminalPath_DoesNotSearchProcessPath()
+    {
+        string fakeLocalAppData = Directory.CreateDirectory(
+            Path.Combine(_root, "fake-local-app-data")).FullName;
+        string fakeWindowsApps = Directory.CreateDirectory(
+            Path.Combine(fakeLocalAppData, "Microsoft", "WindowsApps")).FullName;
+        File.WriteAllText(Path.Combine(fakeWindowsApps, "wt.exe"), "ordinary planted executable");
+        string plantedDirectory = Directory.CreateDirectory(
+            Path.Combine(_root, "planted-path-entry")).FullName;
+        File.WriteAllText(Path.Combine(plantedDirectory, "wt.exe"), "not Windows Terminal");
+        string? originalPath = System.Environment.GetEnvironmentVariable("PATH");
+        try
+        {
+            System.Environment.SetEnvironmentVariable(
+                "PATH",
+                plantedDirectory + ";" + (originalPath ?? string.Empty));
+
+            string? resolved = ProjectTerminalService.ResolveWindowsTerminalPath(fakeLocalAppData);
+
+            Assert.Null(resolved);
+        }
+        finally
+        {
+            System.Environment.SetEnvironmentVariable("PATH", originalPath);
+        }
     }
 
     [Fact]

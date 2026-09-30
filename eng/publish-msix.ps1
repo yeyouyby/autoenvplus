@@ -2,14 +2,11 @@
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Release',
-    [Parameter(Mandatory)]
     [string]$PackageVersion,
     [string]$PackageName = 'yeyouyby.AutoEnvPlus',
     [string]$Publisher,
     [string]$PublisherDisplayName = 'yeyouyby',
-    [Parameter(Mandatory)]
     [string]$PackageUri,
-    [Parameter(Mandatory)]
     [string]$AppInstallerUri,
     [string]$CertificatePath,
     [Security.SecureString]$CertificatePassword,
@@ -19,14 +16,23 @@ param(
     [string]$SignToolPath,
     [string]$OpenSslPath,
     [string]$BuildCacheRoot,
-    [switch]$SkipBuild
+    [string]$ArtifactsRoot,
+    [switch]$SkipBuild,
+    [switch]$NoRestore
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$artifactsRoot = Join-Path $repositoryRoot 'artifacts'
-$outputRoot = Join-Path $artifactsRoot (Join-Path 'msix' $PackageVersion)
+$artifactsRoot = if (-not [string]::IsNullOrWhiteSpace($ArtifactsRoot)) {
+    [System.IO.Path]::GetFullPath($ArtifactsRoot)
+}
+elseif (-not [string]::IsNullOrWhiteSpace($env:AUTOENVPLUS_ARTIFACTS_ROOT)) {
+    [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
+}
+else {
+    Join-Path $repositoryRoot 'artifacts'
+}
 $stagingRoot = Join-Path $artifactsRoot '.staging\AutoEnvPlus-msix'
 $packageStagingRoot = Join-Path $stagingRoot 'package'
 $verificationRoot = Join-Path $stagingRoot 'verify'
@@ -36,12 +42,57 @@ $modulePath = Join-Path $PSScriptRoot 'AutoEnvPlus.Packaging.psm1'
 $manifestTemplate = Join-Path $repositoryRoot 'packaging\AppxManifest.xml'
 $appInstallerTemplate = Join-Path $repositoryRoot 'packaging\AutoEnvPlus.appinstaller'
 $appInstallerSchema = Join-Path $repositoryRoot 'packaging\AutoEnvPlus.AppInstallerProfile.xsd'
+
+if ([string]::IsNullOrWhiteSpace($Publisher) -and
+    -not [string]::IsNullOrWhiteSpace($env:AUTOENVPLUS_PUBLISHER)) {
+    $Publisher = $env:AUTOENVPLUS_PUBLISHER
+}
+if ([string]::IsNullOrWhiteSpace($TimestampUri) -and
+    -not [string]::IsNullOrWhiteSpace($env:AUTOENVPLUS_TIMESTAMP_URI)) {
+    $TimestampUri = $env:AUTOENVPLUS_TIMESTAMP_URI
+}
+$environmentPfxPassword = $env:AUTOENVPLUS_PFX_PASSWORD
+$env:AUTOENVPLUS_PFX_PASSWORD = $null
+$env:AUTOENVPLUS_PUBLISHER = $null
+$env:AUTOENVPLUS_TIMESTAMP_URI = $null
+
+Import-Module $modulePath -Force
+$versionInfo = Get-AutoEnvPlusVersionInfo
+$PackageVersion = if ([string]::IsNullOrWhiteSpace($PackageVersion)) {
+    $versionInfo.PackageVersion
+}
+else {
+    ConvertTo-AutoEnvPlusPackageVersion -Version $PackageVersion.Trim()
+}
+if (-not [string]::Equals(
+        $PackageVersion,
+        $versionInfo.PackageVersion,
+        [System.StringComparison]::Ordinal)) {
+    throw "PackageVersion must match Directory.Build.props ($($versionInfo.PackageVersion)); found $PackageVersion."
+}
+$PackageUri = if ([string]::IsNullOrWhiteSpace($PackageUri)) {
+    $versionInfo.PackageUri
+}
+else {
+    ConvertTo-AutoEnvPlusHttpsUri -Value $PackageUri -ParameterName 'PackageUri' -RequiredExtension '.msix'
+}
+$AppInstallerUri = if ([string]::IsNullOrWhiteSpace($AppInstallerUri)) {
+    $versionInfo.AppInstallerUri
+}
+else {
+    ConvertTo-AutoEnvPlusHttpsUri -Value $AppInstallerUri -ParameterName 'AppInstallerUri' -RequiredExtension '.appinstaller'
+}
+if (-not [string]::Equals($PackageUri, $versionInfo.PackageUri, [System.StringComparison]::Ordinal)) {
+    throw "PackageUri must match the authoritative release URI: $($versionInfo.PackageUri)"
+}
+if (-not [string]::Equals($AppInstallerUri, $versionInfo.AppInstallerUri, [System.StringComparison]::Ordinal)) {
+    throw "AppInstallerUri must match the authoritative release URI: $($versionInfo.AppInstallerUri)"
+}
+$outputRoot = Join-Path $artifactsRoot (Join-Path 'msix' $PackageVersion)
 $msixPath = Join-Path $outputRoot 'AutoEnvPlus-win-x64.msix'
 $appInstallerPath = Join-Path $outputRoot 'AutoEnvPlus.appinstaller'
 $developmentCertificatePath = Join-Path $outputRoot 'AutoEnvPlus-development.cer'
 $releaseMetadataPath = Join-Path $outputRoot 'AutoEnvPlus-release.json'
-
-Import-Module $modulePath -Force
 
 function Assert-ArtifactPath {
     param([Parameter(Mandatory)][string]$Path)
@@ -328,10 +379,7 @@ function Set-BuildCacheEnvironment {
     }
 }
 
-$PackageVersion = ConvertTo-AutoEnvPlusPackageVersion -Version $PackageVersion
 Assert-AutoEnvPlusPackageName -Name $PackageName
-$PackageUri = ConvertTo-AutoEnvPlusHttpsUri -Value $PackageUri -ParameterName 'PackageUri' -RequiredExtension '.msix'
-$AppInstallerUri = ConvertTo-AutoEnvPlusHttpsUri -Value $AppInstallerUri -ParameterName 'AppInstallerUri' -RequiredExtension '.appinstaller'
 if (-not [string]::IsNullOrWhiteSpace($TimestampUri)) {
     $TimestampUri = ConvertTo-AutoEnvPlusTimestampUri -Value $TimestampUri
 }
@@ -373,8 +421,8 @@ try {
         if ($null -ne $CertificatePassword) {
             $plainTextPassword = ConvertFrom-SecurePassword -Value $CertificatePassword
         }
-        elseif ($null -ne $env:AUTOENVPLUS_PFX_PASSWORD) {
-            $plainTextPassword = $env:AUTOENVPLUS_PFX_PASSWORD
+        elseif ($null -ne $environmentPfxPassword) {
+            $plainTextPassword = $environmentPfxPassword
         }
         else {
             throw 'Provide -CertificatePassword or set AUTOENVPLUS_PFX_PASSWORD for the production PFX.'
@@ -397,11 +445,17 @@ try {
     }
 
     if (-not $SkipBuild) {
-        & (Join-Path $PSScriptRoot 'publish.ps1') `
-            -Configuration $Configuration `
-            -Version $PackageVersion `
-            -BuildCacheRoot $script:BuildCacheRoot `
-            -NoArchive
+        $portablePublishParameters = @{
+            Configuration = $Configuration
+            Version = $versionInfo.ProductVersion
+            BuildCacheRoot = $script:BuildCacheRoot
+            ArtifactsRoot = $artifactsRoot
+            NoArchive = $true
+        }
+        if ($NoRestore) {
+            $portablePublishParameters.NoRestore = $true
+        }
+        & (Join-Path $PSScriptRoot 'publish.ps1') @portablePublishParameters
     }
     if (-not (Test-Path -LiteralPath $portableRoot -PathType Container)) {
         throw "Portable publish layout was not found: $portableRoot"
@@ -495,6 +549,8 @@ try {
     }
     $metadata = [ordered]@{
         schemaVersion = 1
+        productVersion = $versionInfo.ProductVersion
+        releaseTag = $versionInfo.ReleaseTag
         packageName = $PackageName
         packageVersion = $PackageVersion
         architecture = 'x64'
@@ -511,7 +567,7 @@ try {
         certificateSha256 = $certificateSha256
         certificateNotAfterUtc = $certificate.NotAfter.ToUniversalTime().ToString('O')
         developmentCertificate = [bool]$DevelopmentCertificate
-        timestampUri = $TimestampUri
+        rfc3161Timestamped = -not [string]::IsNullOrWhiteSpace($TimestampUri)
         makeAppxVersion = (Get-Item -LiteralPath $MakeAppxPath).VersionInfo.ProductVersion
         signToolVersion = (Get-Item -LiteralPath $SignToolPath).VersionInfo.ProductVersion
         createdAtUtc = [DateTime]::UtcNow.ToString('O')
@@ -540,5 +596,6 @@ finally {
         $certificate.Dispose()
     }
     $plainTextPassword = $null
+    $environmentPfxPassword = $null
     Remove-ArtifactPath -Path $stagingRoot
 }

@@ -1,4 +1,7 @@
+using System.Collections.Concurrent;
 using System.Text;
+using AutoEnvPlus.Core.Cryptography;
+using AutoEnvPlus.Core.Networking;
 using Org.BouncyCastle.Bcpg;
 using Org.BouncyCastle.Bcpg.OpenPgp;
 
@@ -18,12 +21,12 @@ public sealed record VerifiedNodeReleaseChecksums(
 
 public sealed class NodeReleaseSignatureVerifier : INodeReleaseSignatureVerifier
 {
-    private const int MaximumSignedManifestBytes = 1_048_576;
-    private const int MaximumPublicKeyBytes = 262_144;
+    internal const int MaximumSignedManifestBytes = 1_048_576;
+    internal const int MaximumPublicKeyBytes = 262_144;
     private static readonly UTF8Encoding StrictUtf8 = new(false, true);
 
     private readonly HttpClient _httpClient;
-    private readonly Dictionary<string, byte[]> _keyCache = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, byte[]> _keyCache = new(StringComparer.Ordinal);
 
     public NodeReleaseSignatureVerifier(HttpClient httpClient)
     {
@@ -100,13 +103,9 @@ public sealed class NodeReleaseSignatureVerifier : INodeReleaseSignatureVerifier
                 $"The Node.js release key fingerprint does not match the pinned value {trustedKey.PrimaryFingerprint}.");
         }
 
-        if (primaryKey.IsRevoked() || signingKey.IsRevoked())
-        {
-            throw new InvalidDataException("The Node.js release signature uses a revoked OpenPGP key.");
-        }
-
         DateTimeOffset signatureTime = AsUtc(parsed.Signature.CreationTime);
-        ValidateSignatureTime(signatureTime, releaseDate, signingKey);
+        ValidateSignatureTime(signatureTime, releaseDate);
+        OpenPgpSigningKeyValidator.Validate(primaryKey, signingKey, signatureTime);
 
         try
         {
@@ -168,43 +167,13 @@ public sealed class NodeReleaseSignatureVerifier : INodeReleaseSignatureVerifier
     private async Task<byte[]> DownloadLimitedAsync(
         Uri uri,
         int maximumBytes,
-        CancellationToken cancellationToken)
-    {
-        using HttpResponseMessage response = await _httpClient.GetAsync(
+        CancellationToken cancellationToken) =>
+        await BoundedHttpResponseReader.GetBytesAsync(
+            _httpClient,
             uri,
-            HttpCompletionOption.ResponseHeadersRead,
+            maximumBytes,
+            "Node.js signature metadata",
             cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        if (response.Content.Headers.ContentLength is long contentLength
-            && contentLength > maximumBytes)
-        {
-            throw new InvalidDataException(
-                $"Security metadata at '{uri}' exceeds the {maximumBytes}-byte limit.");
-        }
-
-        await using Stream source = await response.Content.ReadAsStreamAsync(
-            cancellationToken).ConfigureAwait(false);
-        using MemoryStream destination = new();
-        byte[] buffer = new byte[16_384];
-        while (true)
-        {
-            int read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
-            if (read == 0)
-            {
-                break;
-            }
-
-            if (destination.Length + read > maximumBytes)
-            {
-                throw new InvalidDataException(
-                    $"Security metadata at '{uri}' exceeds the {maximumBytes}-byte limit.");
-            }
-
-            destination.Write(buffer, 0, read);
-        }
-
-        return destination.ToArray();
-    }
 
     private static ParsedClearSignedDocument ParseClearSignedDocument(byte[] value)
     {
@@ -334,19 +303,11 @@ public sealed class NodeReleaseSignatureVerifier : INodeReleaseSignatureVerifier
 
     private static void ValidateSignatureTime(
         DateTimeOffset signatureTime,
-        DateOnly? releaseDate,
-        PgpPublicKey signingKey)
+        DateOnly? releaseDate)
     {
-        DateTimeOffset keyCreated = AsUtc(signingKey.CreationTime);
-        if (signatureTime < keyCreated.AddMinutes(-5))
+        if (signatureTime > DateTimeOffset.UtcNow.AddMinutes(10))
         {
-            throw new InvalidDataException("The Node.js release signature predates its signing key.");
-        }
-
-        long validSeconds = signingKey.GetValidSeconds();
-        if (validSeconds > 0 && signatureTime > keyCreated.AddSeconds(validSeconds).AddMinutes(5))
-        {
-            throw new InvalidDataException("The Node.js release signature was created after its signing key expired.");
+            throw new InvalidDataException("The Node.js release signature creation time is in the future.");
         }
 
         if (releaseDate is DateOnly date)

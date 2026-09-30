@@ -1,4 +1,6 @@
-# 声明式 Runtime Provider 插件
+# AutoEnvPlus v0.0.1 声明式 Runtime Provider 插件
+
+本文是插件作者与审核者指南。产品目录边界见 [语言与语言包](LANGUAGE-PACKS.md)，完整信任模型见 [安全模型](SECURITY.md)，文档导航见 [文档首页](README.md)。
 
 AutoEnvPlus 的 Runtime Provider 插件用于把第三方、社区或组织内部发行版接入同一套语言工具目录、下载校验、受限 ZIP 解压、托管注册表和版本隔离流程。当前公开格式是严格的 schema 2 JSON 数据文件，用 `languageToolId` 绑定一个精确语言工具；它不加载第三方 DLL，也不执行插件声明的脚本、安装命令或安装后钩子。导入器仍接受旧 schema 1 `runtimeKind` 清单，并在导入时映射、规范化为 schema 2。
 

@@ -1,0 +1,21 @@
+<Project Sdk="WixToolset.Sdk/4.0.6">
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <OutputName>AutoEnvPlus-win-x64</OutputName>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <Deterministic>true</Deterministic>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(RestoreLockedMode)' == ''">false</RestoreLockedMode>
+    <!-- Windows App SDK 1.8 ships modern MUI LCIDs and long version metadata
+         that the legacy MSI ICE03 language validator cannot represent. ICE91
+         is inapplicable because this package is intentionally per-user. -->
+    <SuppressIces>ICE03;ICE91</SuppressIces>
+    <DefineConstants>$(DefineConstants);ProductCode=$(ProductCode);UpgradeCode=$(UpgradeCode);MsiVersion=$(MsiVersion);PackageVersion=$(PackageVersion);RepositoryUrl=$(RepositoryUrl);PayloadHash=$(PayloadHash);IconPath=$(IconPath);PortableRoot=$(PortableRoot)</DefineConstants>
+  </PropertyGroup>
+
+  <!-- The release script supplies this generated source outside the project tree. -->
+  <ItemGroup Condition="'$(GeneratedWixSource)' != ''">
+    <Compile Include="$(GeneratedWixSource)" />
+  </ItemGroup>
+</Project>

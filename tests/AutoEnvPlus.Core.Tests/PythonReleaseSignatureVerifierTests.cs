@@ -241,6 +241,26 @@ public sealed class PythonReleaseSignatureVerifierTests
         Assert.Contains("matching", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task VerifyAsync_RejectsDeclaredBundleOverByteLimitBeforeParsing()
+    {
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+        {
+            HttpResponseMessage response = StubHttpMessageHandler.Bytes([0]);
+            response.Content.Headers.ContentLength = 1_048_577;
+            return response;
+        }));
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            new PythonReleaseSignatureVerifier(client).VerifyAsync(
+                ReadFixture("windows-3.14.6.json"),
+                ManifestUri,
+                BundleUri,
+                PythonReleaseSigningPolicy.ForVersion(Runtimes.RuntimeVersion.Parse("3.14.6"))));
+
+        Assert.Contains("byte limit", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static HttpClient CreateClient(byte[] bundle, Action? onRequest = null) =>
         new(new StubHttpMessageHandler(request =>
         {
