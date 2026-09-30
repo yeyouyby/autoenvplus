@@ -126,6 +126,48 @@ public sealed class CommandShimManagerTests : IDisposable
         Assert.Contains($"\"{executable}\" \"{assembly}\" exec python -- %*", python);
     }
 
+    [Fact]
+    public async Task InstallAsync_RejectsComFileThatCanInterceptNativeAlias()
+    {
+        Directory.CreateDirectory(_root);
+        string executable = Path.Combine(_root, "autoenvplus.exe");
+        string native = Path.Combine(_root, "autoenvplus-shim.exe");
+        string shims = Directory.CreateDirectory(Path.Combine(_root, "shims")).FullName;
+        string interceptor = Path.Combine(shims, "python.com");
+        File.WriteAllText(executable, string.Empty);
+        File.WriteAllText(native, "native");
+        File.WriteAllText(interceptor, "unmanaged");
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => new CommandShimManager(".COM;.EXE;.CMD").InstallAsync(
+                _root,
+                executable,
+                [],
+                native));
+
+        Assert.Contains("python.COM", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("unmanaged", File.ReadAllText(interceptor));
+        Assert.False(File.Exists(Path.Combine(shims, "node.exe")));
+    }
+
+    [Fact]
+    public async Task InstallAsync_RejectsBatFileThatCanInterceptCmdFallbackAlias()
+    {
+        Directory.CreateDirectory(_root);
+        string executable = Path.Combine(_root, "autoenvplus.exe");
+        string shims = Directory.CreateDirectory(Path.Combine(_root, "shims")).FullName;
+        string interceptor = Path.Combine(shims, "npm.bat");
+        File.WriteAllText(executable, string.Empty);
+        File.WriteAllText(interceptor, "unmanaged");
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => new CommandShimManager(".BAT;.CMD").InstallAsync(_root, executable));
+
+        Assert.Contains("npm.BAT", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("unmanaged", File.ReadAllText(interceptor));
+        Assert.False(File.Exists(Path.Combine(shims, "python.cmd")));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))

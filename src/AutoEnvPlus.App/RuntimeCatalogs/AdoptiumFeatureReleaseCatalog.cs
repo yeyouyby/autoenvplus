@@ -1,9 +1,12 @@
 using System.Text.Json;
+using AutoEnvPlus.Core.Networking;
 
 namespace AutoEnvPlus.App.RuntimeCatalogs;
 
 internal sealed class AdoptiumFeatureReleaseCatalog
 {
+    internal const int MaximumCatalogBytes = 64 * 1024;
+
     private static readonly Uri DefaultBaseUri = new("https://api.adoptium.net/v3/");
     private readonly HttpClient _httpClient;
     private readonly Uri _baseUri;
@@ -17,21 +20,13 @@ internal sealed class AdoptiumFeatureReleaseCatalog
     public async Task<JavaFeatureReleaseCatalogSnapshot> GetAsync(
         CancellationToken cancellationToken = default)
     {
-        using HttpRequestMessage request = new(
-            HttpMethod.Get,
-            new Uri(_baseUri, "info/available_releases"));
-        request.Headers.Accept.ParseAdd("application/json");
-        using HttpResponseMessage response = await _httpClient.SendAsync(
-            request,
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using JsonDocument document = await JsonDocument.ParseAsync(
-            stream,
-            new JsonDocumentOptions { MaxDepth = 16 },
-            cancellationToken);
+        using JsonDocument document = await BoundedHttpResponseReader.GetJsonAsync(
+            _httpClient,
+            new Uri(_baseUri, "info/available_releases"),
+            MaximumCatalogBytes,
+            maximumDepth: 16,
+            description: "Adoptium feature-release catalog",
+            cancellationToken: cancellationToken).ConfigureAwait(false);
         JsonElement root = document.RootElement;
         if (root.ValueKind != JsonValueKind.Object)
         {

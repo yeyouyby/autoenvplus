@@ -103,6 +103,30 @@ public sealed class MavenSettingsXmlServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task ConditionalWrite_RejectsNewerSettingsWithoutOverwritingThem()
+    {
+        string settings = Path.Combine(_root, ".m2", "settings.xml");
+        Directory.CreateDirectory(Path.GetDirectoryName(settings)!);
+        const string before = "<settings><localRepository>C:\\old</localRepository></settings>";
+        const string newer = "<settings><localRepository>C:\\newer</localRepository></settings>";
+        File.WriteAllText(settings, before);
+        MavenSettingsMutation mutation = new MavenSettingsXmlService().CreateMutation(
+            settings,
+            Path.Combine(_root, "destination"));
+        File.WriteAllText(settings, newer);
+
+        InvalidOperationException exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => new MavenSettingsXmlService().WriteAtomicallyIfUnchangedAsync(
+                settings,
+                expectedExisted: true,
+                expectedContent: before,
+                content: mutation.After));
+
+        Assert.Contains("changed", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(newer, File.ReadAllText(settings));
+    }
+
+    [Fact]
     public void ReadAndMutation_RejectSymbolicLinkWithoutReadingTarget()
     {
         if (!OperatingSystem.IsWindows())

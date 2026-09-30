@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="AutoEnvPlus"
+    Manufacturer="AutoEnvPlus contributors"
+    Version="$(var.MsiVersion)"
+    ProductCode="$(var.ProductCode)"
+    UpgradeCode="$(var.UpgradeCode)"
+    Scope="perUser"
+    Language="1033"
+    InstallerVersion="500"
+    Compressed="yes">
+    <MajorUpgrade
+      DowngradeErrorMessage="A newer version of AutoEnvPlus is already installed."
+      Schedule="afterInstallInitialize"
+      AllowSameVersionUpgrades="no"
+      AllowDowngrades="no" />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="AutoEnvPlusIcon" SourceFile="$(var.IconPath)" />
+    <Property Id="ARPPRODUCTICON" Value="AutoEnvPlusIcon" />
+    <Property Id="ARPURLINFOABOUT" Value="$(var.RepositoryUrl)" />
+    <Property Id="ARPHELPLINK" Value="$(var.RepositoryUrl)/issues" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="AUTOENVPLUS_PACKAGE_VERSION" Value="$(var.PackageVersion)" />
+    <Property Id="AUTOENVPLUS_PAYLOAD_SHA256" Value="$(var.PayloadHash)" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="AutoEnvPlusProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="AutoEnvPlus" />
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="AutoEnvPlus" />
+    </StandardDirectory>
+
+    <Feature Id="MainFeature" Title="AutoEnvPlus" Description="AutoEnvPlus desktop application and command-line tools." Level="1">
+      <ComponentGroupRef Id="PayloadComponents" />
+      <ComponentGroupRef Id="PayloadDirectoryCleanupComponents" />
+      <ComponentRef Id="InstallFolderCleanupComponent" />
+      <ComponentRef Id="StartMenuShortcutComponent" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <Component Id="InstallFolderCleanupComponent" Directory="INSTALLFOLDER" Guid="{9B47B4BE-E388-54A8-A2EE-DCB6A0B98C94}">
+      <RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall" />
+      <RemoveFolder Id="RemoveAutoEnvPlusProgramsFolder" Directory="AutoEnvPlusProgramsFolder" On="uninstall" />
+      <RegistryValue
+        Root="HKCU"
+        Key="Software\AutoEnvPlus\Installer"
+        Name="InstallFolder"
+        Type="string"
+        Value="[INSTALLFOLDER]"
+        KeyPath="yes" />
+    </Component>
+
+    <Component Id="StartMenuShortcutComponent" Directory="ApplicationProgramsFolder" Guid="{C9FAF7B3-7C2A-5D72-9C8E-7E9E2B58B442}">
+      <Shortcut
+        Id="AutoEnvPlusStartMenuShortcut"
+        Name="AutoEnvPlus"
+        Description="Manage language tools and development environments"
+        Target="[INSTALLFOLDER]AutoEnvPlus.App.exe"
+        WorkingDirectory="INSTALLFOLDER"
+        Icon="AutoEnvPlusIcon" />
+      <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
+      <RegistryValue
+        Root="HKCU"
+        Key="Software\AutoEnvPlus\Installer"
+        Name="StartMenuShortcut"
+        Type="integer"
+        Value="1"
+        KeyPath="yes" />
+  </Component>
+</Fragment>
+</Wix>

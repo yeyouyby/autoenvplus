@@ -14,6 +14,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\AutoEnvPlus.Core\AutoEnvPlus.Core.csproj" />
+    <ProjectReference Include="..\..\src\AutoEnvPlus.Cli\AutoEnvPlus.Cli.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile
@@ -22,6 +23,9 @@
     <Compile
       Include="..\..\src\AutoEnvPlus.App\Appearance\ApplicationSettingsPresentationPolicy.cs"
       Link="App\ApplicationSettingsPresentationPolicy.cs" />
+    <Compile
+      Include="..\..\src\AutoEnvPlus.App\Appearance\ProductIdentityPresentation.cs"
+      Link="App\ProductIdentityPresentation.cs" />
     <Compile
       Include="..\..\src\AutoEnvPlus.App\RuntimeCatalogs\AdoptiumFeatureReleaseCatalog.cs"
       Link="App\AdoptiumFeatureReleaseCatalog.cs" />

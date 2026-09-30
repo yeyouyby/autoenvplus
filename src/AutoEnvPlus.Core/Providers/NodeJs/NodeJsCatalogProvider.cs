@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using AutoEnvPlus.Core.Installation;
+using AutoEnvPlus.Core.Networking;
 using AutoEnvPlus.Core.Runtimes;
 
 namespace AutoEnvPlus.Core.Providers.NodeJs;
@@ -9,6 +10,10 @@ namespace AutoEnvPlus.Core.Providers.NodeJs;
 public sealed partial class NodeJsCatalogProvider : IArchiveRuntimeProvider
 {
     public const string ProviderName = "nodejs-official";
+    internal const int MaximumCatalogBytes = 8 * 1024 * 1024;
+    internal const int MaximumReleaseEntries = 4_096;
+
+    private const int MaximumFilesPerRelease = 128;
 
     private static readonly Uri DefaultBaseUri = new("https://nodejs.org/dist/");
     private readonly HttpClient _httpClient;
@@ -32,20 +37,23 @@ public sealed partial class NodeJsCatalogProvider : IArchiveRuntimeProvider
     public async Task<IReadOnlyList<RuntimeRelease>> GetReleasesAsync(
         CancellationToken cancellationToken = default)
     {
-        using HttpResponseMessage response = await _httpClient.GetAsync(
+        using JsonDocument document = await BoundedHttpResponseReader.GetJsonAsync(
+            _httpClient,
             new Uri(_baseUri, "index.json"),
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-
-        await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        using JsonDocument document = await JsonDocument.ParseAsync(
-            stream,
+            MaximumCatalogBytes,
+            maximumDepth: 32,
+            description: "Node.js release index",
             cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (document.RootElement.ValueKind != JsonValueKind.Array)
         {
             throw new InvalidDataException("The Node.js release index is not a JSON array.");
+        }
+
+        if (document.RootElement.GetArrayLength() > MaximumReleaseEntries)
+        {
+            throw new InvalidDataException(
+                $"The Node.js release index contains more than {MaximumReleaseEntries} releases.");
         }
 
         List<RuntimeRelease> releases = [];
@@ -171,6 +179,12 @@ public sealed partial class NodeJsCatalogProvider : IArchiveRuntimeProvider
             || files.ValueKind != JsonValueKind.Array)
         {
             return [];
+        }
+
+        if (files.GetArrayLength() > MaximumFilesPerRelease)
+        {
+            throw new InvalidDataException(
+                $"A Node.js release contains more than {MaximumFilesPerRelease} file descriptors.");
         }
 
         HashSet<string> values = files

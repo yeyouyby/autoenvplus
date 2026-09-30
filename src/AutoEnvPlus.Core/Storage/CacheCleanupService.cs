@@ -1,12 +1,26 @@
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Win32.SafeHandles;
 
 namespace AutoEnvPlus.Core.Storage;
 
 public sealed class CacheCleanupService
 {
+    private const uint GenericReadAccess = 0x80000000;
+    private const uint DeleteAccess = 0x00010000;
+    private const uint OpenExisting = 3;
+    private const uint FileFlagOpenReparsePoint = 0x00200000;
+    private const uint FileFlagSequentialScan = 0x08000000;
+    private const uint FileAttributeDirectory = 0x00000010;
+    private const uint FileAttributeDevice = 0x00000040;
+    private const uint FileAttributeReparsePoint = 0x00000400;
+    private const int FileDispositionInfoClass = 4;
+    private const int FileAttributeTagInfoClass = 9;
+
     public const string TrashDirectoryName = ".autoenvplus-cache-trash";
 
     private const string ManifestFileName = "cleanup.json";
@@ -27,9 +41,18 @@ public sealed class CacheCleanupService
 
     private readonly object _ownerToken = new();
     private readonly string? _managedRoot;
+    private readonly Action<string>? _afterVerifiedFileHash;
 
     public CacheCleanupService(string? managedRoot = null)
+        : this(managedRoot, afterVerifiedFileHash: null)
     {
+    }
+
+    internal CacheCleanupService(
+        string? managedRoot,
+        Action<string>? afterVerifiedFileHash)
+    {
+        _afterVerifiedFileHash = afterVerifiedFileHash;
         if (managedRoot is not null)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(managedRoot);
@@ -153,7 +176,24 @@ public sealed class CacheCleanupService
             throw new IOException($"The cleanup transaction already exists: {expectedTrashPath}");
         }
 
-        Inventory current = ScanInventory(source.DirectoryPath, cancellationToken);
+        Inventory current;
+        try
+        {
+            current = ScanInventory(source.DirectoryPath, cancellationToken);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return FailedResult(
+                source.DirectoryPath,
+                plan.Id,
+                exception is OperationCanceledException,
+                false,
+                false,
+                0,
+                0,
+                exception.Message);
+        }
+
         if (!EntriesEqual(plan.Entries, current.TopLevelEntries)
             || plan.FileCount != current.FileCount
             || plan.TotalBytes != current.TotalBytes)
@@ -653,6 +693,7 @@ public sealed class CacheCleanupService
         {
             State = PurgePendingState,
             ContentEntryNames = loaded.Content.TopLevelEntries.Select(entry => entry.Name).ToArray(),
+            PurgeEntries = loaded.Content.TopLevelEntries,
         };
         DirectoryMutationLease? mutationLease = null;
         bool purgeStarted = loaded.State == CacheCleanupItemState.PurgePending;
@@ -679,14 +720,7 @@ public sealed class CacheCleanupService
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 EnsureChildPath(loaded.ContentPath, file.FullPath, "purge entry");
-                FileAttributes attributes = File.GetAttributes(file.FullPath);
-                if ((attributes & FileAttributes.ReparsePoint) != 0)
-                {
-                    throw new InvalidDataException(
-                        $"Permanent purge refuses reparse points: {file.FullPath}");
-                }
-
-                File.Delete(file.FullPath);
+                DeleteFileIfIdentityMatches(file);
                 deletedFiles++;
                 deletedBytes = checked(deletedBytes + file.Length);
                 progress?.Report(new CacheCleanupProgress(
@@ -791,10 +825,18 @@ public sealed class CacheCleanupService
             Inventory remaining = Directory.Exists(loaded.ContentPath)
                 ? ScanInventory(loaded.ContentPath, CancellationToken.None)
                 : Inventory.Empty;
+            if (state.Equals(PurgePendingState, StringComparison.Ordinal))
+            {
+                EnsureDeletionSubset(loaded.Content, remaining);
+            }
+
             CleanupManifest updated = manifest with
             {
                 State = state,
                 ContentEntryNames = remaining.TopLevelEntries.Select(entry => entry.Name).ToArray(),
+                PurgeEntries = state.Equals(PurgePendingState, StringComparison.Ordinal)
+                    ? remaining.TopLevelEntries
+                    : null,
             };
             WriteManifest(item.ManifestPath, updated);
             return FailedResult(
@@ -891,7 +933,7 @@ public sealed class CacheCleanupService
         if (manifest.State.Equals(PurgePendingState, StringComparison.Ordinal))
         {
             state = CacheCleanupItemState.PurgePending;
-            ValidatePurgeInventory(manifest.PlannedEntries, content);
+            ValidatePurgeInventory(manifest.PurgeEntries, content);
         }
         else if (manifest.State.Equals(RecoverableState, StringComparison.Ordinal))
         {
@@ -1006,19 +1048,14 @@ public sealed class CacheCleanupService
     }
 
     private static void ValidatePurgeInventory(
-        IReadOnlyList<CacheCleanupEntryIdentity> planned,
+        IReadOnlyList<CacheCleanupEntryIdentity>? expectedRemaining,
         Inventory content)
     {
-        HashSet<string> expected = planned
-            .Select(entry => entry.Name)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (CacheCleanupEntryIdentity entry in content.TopLevelEntries)
+        if (expectedRemaining is null
+            || !EntriesEqual(expectedRemaining, content.TopLevelEntries))
         {
-            if (!expected.Contains(entry.Name))
-            {
-                throw new InvalidDataException(
-                    $"An unexpected top-level entry appeared in the isolation directory: {entry.Name}");
-            }
+            throw new InvalidDataException(
+                "The purge-pending cache content no longer matches its recorded identity; automatic deletion was refused.");
         }
     }
 
@@ -1126,7 +1163,8 @@ public sealed class CacheCleanupService
             plan.Entries,
             contentEntryNames,
             plan.FileCount,
-            plan.TotalBytes);
+            plan.TotalBytes,
+            null);
 
     private static CleanupManifest ReadAndValidateManifestIdentity(
         string trashRoot,
@@ -1232,6 +1270,49 @@ public sealed class CacheCleanupService
             {
                 throw new InvalidDataException("The cleanup manifest content list is invalid.");
             }
+        }
+
+        if (manifest.State.Equals(PurgePendingState, StringComparison.Ordinal))
+        {
+            if (manifest.PurgeEntries is null)
+            {
+                throw new InvalidDataException(
+                    "The purge-pending manifest does not contain a remaining-content identity.");
+            }
+
+            HashSet<string> purgeNames = new(StringComparer.OrdinalIgnoreCase);
+            foreach (CacheCleanupEntryIdentity entry in manifest.PurgeEntries)
+            {
+                if (entry is null)
+                {
+                    throw new InvalidDataException(
+                        "The purge-pending manifest contains a null entry.");
+                }
+
+                EnsureSimpleName(entry.Name);
+                if (!purgeNames.Add(entry.Name)
+                    || !names.Contains(entry.Name)
+                    || entry.FileCount < 0
+                    || entry.TotalBytes < 0
+                    || string.IsNullOrWhiteSpace(entry.Fingerprint)
+                    || entry.Fingerprint.Length != 64
+                    || entry.Fingerprint.Any(character => !Uri.IsHexDigit(character)))
+                {
+                    throw new InvalidDataException(
+                        "The purge-pending manifest contains an invalid remaining entry.");
+                }
+            }
+
+            if (!purgeNames.SetEquals(contentNames))
+            {
+                throw new InvalidDataException(
+                    "The purge-pending manifest content names do not match its remaining identities.");
+            }
+        }
+        else if (manifest.PurgeEntries is not null)
+        {
+            throw new InvalidDataException(
+                "Only purge-pending manifests may contain remaining purge identities.");
         }
 
         if (!Path.IsPathFullyQualified(manifest.SourcePath))
@@ -1345,14 +1426,38 @@ public sealed class CacheCleanupService
                 throw new InvalidDataException("A cache entry escaped its source directory.");
             }
 
-            long length = isDirectory ? 0 : new FileInfo(path).Length;
+            long length = 0;
+            string contentSha256 = string.Empty;
+            if (!isDirectory)
+            {
+                using FileStream stream = new(
+                    path,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.Read,
+                    81_920,
+                    FileOptions.SequentialScan);
+                FileAttributes lockedAttributes = File.GetAttributes(path);
+                if ((lockedAttributes & (FileAttributes.Directory
+                    | FileAttributes.Device
+                    | FileAttributes.ReparsePoint)) != 0)
+                {
+                    throw new InvalidDataException(
+                        $"Cache cleanup requires ordinary files: {path}");
+                }
+
+                length = stream.Length;
+                contentSha256 = Convert.ToHexString(SHA256.HashData(stream));
+            }
+
             long lastWriteTicks = File.GetLastWriteTimeUtc(path).Ticks;
             nodes.Add(new InventoryNode(
                 path,
                 NormalizeRelativePath(relativePath),
                 isDirectory,
                 length,
-                lastWriteTicks));
+                lastWriteTicks,
+                contentSha256));
             if (isDirectory)
             {
                 string[] children = Directory.EnumerateFileSystemEntries(
@@ -1383,7 +1488,8 @@ public sealed class CacheCleanupService
                 node.RelativePath.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 node.RelativePath,
                 node.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                node.LastWriteTicks.ToString(System.Globalization.CultureInfo.InvariantCulture)) + "\n";
+                node.LastWriteTicks.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                node.ContentSha256) + "\n";
             hash.AppendData(Encoding.UTF8.GetBytes(fingerprintLine));
             if (!node.IsDirectory)
             {
@@ -1423,6 +1529,98 @@ public sealed class CacheCleanupService
         else
         {
             File.Move(source, destination);
+        }
+    }
+
+    private void DeleteFileIfIdentityMatches(InventoryNode expected)
+    {
+        SafeFileHandle handle = CreateFileW(
+            expected.FullPath,
+            GenericReadAccess | DeleteAccess,
+            FileShare.Read,
+            IntPtr.Zero,
+            OpenExisting,
+            FileFlagOpenReparsePoint | FileFlagSequentialScan,
+            IntPtr.Zero);
+        if (handle.IsInvalid)
+        {
+            int error = Marshal.GetLastWin32Error();
+            handle.Dispose();
+            throw new IOException(
+                $"The purge file could not be locked by stable identity: {expected.FullPath}",
+                new Win32Exception(error));
+        }
+
+        using (handle)
+        using (FileStream stream = new(
+                   handle,
+                   FileAccess.Read,
+                   81_920,
+                   isAsync: false))
+        {
+            if (!GetFileInformationByHandleEx(
+                    handle,
+                    FileAttributeTagInfoClass,
+                    out FileAttributeTagInfo info,
+                    (uint)Marshal.SizeOf<FileAttributeTagInfo>()))
+            {
+                int error = Marshal.GetLastWin32Error();
+                throw new IOException(
+                    $"The purge file identity could not be inspected: {expected.FullPath}",
+                    new Win32Exception(error));
+            }
+
+            if ((info.FileAttributes & (FileAttributeDirectory
+                | FileAttributeDevice
+                | FileAttributeReparsePoint)) != 0)
+            {
+                throw new InvalidDataException(
+                    $"Permanent purge requires an ordinary file: {expected.FullPath}");
+            }
+
+            long length = stream.Length;
+            string contentSha256 = Convert.ToHexString(SHA256.HashData(stream));
+            if (length != expected.Length
+                || !contentSha256.Equals(expected.ContentSha256, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    $"The purge entry changed after it was inventoried: {expected.RelativePath}");
+            }
+
+            _afterVerifiedFileHash?.Invoke(expected.FullPath);
+            FileDispositionInfo disposition = new() { DeleteFile = true };
+            if (!SetFileInformationByHandle(
+                    handle,
+                    FileDispositionInfoClass,
+                    ref disposition,
+                    (uint)Marshal.SizeOf<FileDispositionInfo>()))
+            {
+                int error = Marshal.GetLastWin32Error();
+                throw new IOException(
+                    $"The verified purge file could not be deleted by stable identity: {expected.FullPath}",
+                    new Win32Exception(error));
+            }
+        }
+    }
+
+    private static void EnsureDeletionSubset(Inventory original, Inventory remaining)
+    {
+        Dictionary<string, InventoryNode> originalByPath = original.Nodes.ToDictionary(
+            node => node.RelativePath,
+            StringComparer.Ordinal);
+        foreach (InventoryNode node in remaining.Nodes)
+        {
+            if (!originalByPath.TryGetValue(node.RelativePath, out InventoryNode? originalNode)
+                || node.IsDirectory != originalNode.IsDirectory
+                || (!node.IsDirectory
+                    && (node.Length != originalNode.Length
+                        || !node.ContentSha256.Equals(
+                            originalNode.ContentSha256,
+                            StringComparison.Ordinal))))
+            {
+                throw new InvalidDataException(
+                    $"The purge-pending content changed outside the recorded deletion set: {node.RelativePath}");
+            }
         }
     }
 
@@ -1855,7 +2053,8 @@ public sealed class CacheCleanupService
         IReadOnlyList<CacheCleanupEntryIdentity> PlannedEntries,
         IReadOnlyList<string> ContentEntryNames,
         long OriginalFileCount,
-        long OriginalTotalBytes);
+        long OriginalTotalBytes,
+        IReadOnlyList<CacheCleanupEntryIdentity>? PurgeEntries = null);
 
     private sealed record LoadedCleanupItem(
         CleanupManifest Manifest,
@@ -1883,5 +2082,46 @@ public sealed class CacheCleanupService
         string RelativePath,
         bool IsDirectory,
         long Length,
-        long LastWriteTicks);
+        long LastWriteTicks,
+        string ContentSha256);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct FileAttributeTagInfo
+    {
+        public uint FileAttributes;
+        public uint ReparseTag;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct FileDispositionInfo
+    {
+        [MarshalAs(UnmanagedType.Bool)]
+        public bool DeleteFile;
+    }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern SafeFileHandle CreateFileW(
+        string fileName,
+        uint desiredAccess,
+        FileShare shareMode,
+        IntPtr securityAttributes,
+        uint creationDisposition,
+        uint flagsAndAttributes,
+        IntPtr templateFile);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetFileInformationByHandleEx(
+        SafeFileHandle file,
+        int fileInformationClass,
+        out FileAttributeTagInfo fileInformation,
+        uint bufferSize);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetFileInformationByHandle(
+        SafeFileHandle file,
+        int fileInformationClass,
+        ref FileDispositionInfo fileInformation,
+        uint bufferSize);
 }

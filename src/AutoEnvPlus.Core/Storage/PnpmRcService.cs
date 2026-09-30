@@ -101,10 +101,37 @@ public sealed partial class PnpmRcService
         return new PnpmRcMutation(fullPath, existed, before, after);
     }
 
-    public async Task WriteAtomicallyAsync(
+    public Task WriteAtomicallyAsync(
         string configPath,
         string content,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) => WriteAtomicallyCoreAsync(
+            configPath,
+            expectedKnown: false,
+            expectedExisted: false,
+            expectedContent: null,
+            content,
+            cancellationToken);
+
+    internal Task WriteAtomicallyIfUnchangedAsync(
+        string configPath,
+        bool expectedExisted,
+        string? expectedContent,
+        string content,
+        CancellationToken cancellationToken = default) => WriteAtomicallyCoreAsync(
+            configPath,
+            expectedKnown: true,
+            expectedExisted,
+            expectedContent,
+            content,
+            cancellationToken);
+
+    private static async Task WriteAtomicallyCoreAsync(
+        string configPath,
+        bool expectedKnown,
+        bool expectedExisted,
+        string? expectedContent,
+        string content,
+        CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(configPath);
         ArgumentNullException.ThrowIfNull(content);
@@ -125,9 +152,21 @@ public sealed partial class PnpmRcService
             _ = StorageFileSafety.EnsureOrdinaryFileOrMissing(
                 temporary,
                 "pnpm global config temporary file");
-            _ = StorageFileSafety.EnsureOrdinaryFileOrMissing(
+            bool currentExists = StorageFileSafety.EnsureOrdinaryFileOrMissing(
                 fullPath,
                 "pnpm global config");
+            string? currentContent = currentExists ? File.ReadAllText(fullPath) : null;
+            if (expectedKnown
+                && (currentExists != expectedExisted
+                    || !string.Equals(
+                        currentContent,
+                        expectedContent,
+                        StringComparison.Ordinal)))
+            {
+                throw new InvalidOperationException(
+                    "The pnpm global config changed before commit; the newer file was preserved.");
+            }
+
             File.Move(temporary, fullPath, overwrite: true);
         }
         finally

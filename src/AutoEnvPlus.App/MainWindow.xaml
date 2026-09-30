@@ -10,62 +10,217 @@
     <Grid
         x:Name="RootSurface"
         Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator
+                Invoked="OnNavigationAcceleratorInvoked"
+                Key="Number1"
+                Modifiers="Control" />
+            <KeyboardAccelerator
+                Invoked="OnNavigationAcceleratorInvoked"
+                Key="Number2"
+                Modifiers="Control" />
+            <KeyboardAccelerator
+                Invoked="OnNavigationAcceleratorInvoked"
+                Key="Number3"
+                Modifiers="Control" />
+            <KeyboardAccelerator
+                Invoked="OnNavigationAcceleratorInvoked"
+                Key="Number4"
+                Modifiers="Control" />
+            <KeyboardAccelerator
+                Invoked="OnNavigationAcceleratorInvoked"
+                Key="Number5"
+                Modifiers="Control" />
+            <KeyboardAccelerator
+                Invoked="OnNavigationAcceleratorInvoked"
+                Key="Number6"
+                Modifiers="Control" />
+            <KeyboardAccelerator
+                Invoked="OnNavigationAcceleratorInvoked"
+                Key="Number7"
+                Modifiers="Control" />
+            <KeyboardAccelerator
+                Invoked="OnNavigationAcceleratorInvoked"
+                Key="Number8"
+                Modifiers="Control" />
+            <KeyboardAccelerator
+                Invoked="OnNavigationAcceleratorInvoked"
+                Key="Number0"
+                Modifiers="Control" />
+        </Grid.KeyboardAccelerators>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <Grid
+            x:Name="AppTitleBar"
+            Height="48"
+            Background="Transparent">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="TitleBarLeftInsetColumn" Width="0" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+                <ColumnDefinition x:Name="TitleBarRightInsetColumn" Width="0" />
+            </Grid.ColumnDefinitions>
+
+            <Border
+                Grid.Column="1"
+                Width="28"
+                Height="28"
+                Margin="12,0,0,0"
+                VerticalAlignment="Center"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+                <FontIcon
+                    FontSize="15"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                    Glyph="&#xE756;" />
+            </Border>
+            <TextBlock
+                Grid.Column="2"
+                Margin="10,0,0,0"
+                VerticalAlignment="Center"
+                FontSize="15"
+                FontWeight="SemiBold"
+                Text="AutoEnvPlus" />
+            <Border
+                Grid.Column="3"
+                Margin="10,0,0,0"
+                VerticalAlignment="Center"
+                Style="{StaticResource ShellVersionBadgeStyle}">
+                <TextBlock
+                    x:Name="VersionBadgeText"
+                    FontSize="11"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </Border>
+        </Grid>
+
         <NavigationView
             x:Name="RootNavigation"
-            AlwaysShowHeader="False"
+            Grid.Row="1"
+            AlwaysShowHeader="True"
+            AutomationProperties.Name="AutoEnvPlus 主导航"
             Background="Transparent"
+            CompactModeThresholdWidth="720"
+            CompactPaneLength="48"
+            ExpandedModeThresholdWidth="1080"
             IsBackButtonVisible="Collapsed"
+            IsPaneToggleButtonVisible="True"
             IsSettingsVisible="True"
-            IsTitleBarAutoPaddingEnabled="True"
+            IsTitleBarAutoPaddingEnabled="False"
+            OpenPaneLength="232"
             PaneDisplayMode="Auto"
             PaneTitle="AutoEnvPlus"
             SelectionChanged="OnNavigationSelectionChanged">
 
+            <NavigationView.Header>
+                <Grid
+                    x:Name="ShellPageHeader"
+                    MinHeight="64"
+                    Padding="0,4,24,12"
+                    AutomationProperties.LiveSetting="Polite">
+                    <StackPanel Spacing="2">
+                        <TextBlock
+                            x:Name="PageHeaderTitle"
+                            FontSize="28"
+                            FontWeight="SemiBold"
+                            Text="概览"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Name="PageHeaderSubtitle"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="上次环境快照与常用入口"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+            </NavigationView.Header>
+
             <NavigationView.MenuItems>
-                <NavigationViewItem Content="概览" Tag="dashboard">
+                <NavigationViewItem
+                    AutomationProperties.Name="概览"
+                    Content="概览"
+                    Tag="dashboard"
+                    ToolTipService.ToolTip="概览（Ctrl+1）">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE80F;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="语言" Tag="languages">
+                <NavigationViewItem
+                    AutomationProperties.Name="语言工具"
+                    Content="语言工具"
+                    Tag="languages"
+                    ToolTipService.ToolTip="语言工具（Ctrl+2）">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE950;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="项目环境" Tag="projects">
+                <NavigationViewItem
+                    AutomationProperties.Name="项目环境"
+                    Content="项目环境"
+                    Tag="projects"
+                    ToolTipService.ToolTip="项目环境（Ctrl+3）">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8B7;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="下载中心" Tag="downloads">
+                <NavigationViewItem
+                    AutomationProperties.Name="下载中心"
+                    Content="下载中心"
+                    Tag="downloads"
+                    ToolTipService.ToolTip="下载中心（Ctrl+4）">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE896;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="PATH 与命令" Tag="path">
+                <NavigationViewItem
+                    AutomationProperties.Name="PATH 与命令"
+                    Content="PATH 与命令"
+                    Tag="path"
+                    ToolTipService.ToolTip="PATH 与命令（Ctrl+5）">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8A5;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="缓存与存储" Tag="storage">
+                <NavigationViewItem
+                    AutomationProperties.Name="缓存与存储"
+                    Content="缓存与存储"
+                    Tag="storage"
+                    ToolTipService.ToolTip="缓存与存储（Ctrl+6）">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xEDA2;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItemSeparator />
-                <NavigationViewItem Content="环境诊断" Tag="doctor">
+                <NavigationViewItem
+                    AutomationProperties.Name="环境诊断"
+                    Content="环境诊断"
+                    Tag="doctor"
+                    ToolTipService.ToolTip="环境诊断（Ctrl+7）">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE9D9;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="活动记录" Tag="activity">
+                <NavigationViewItem
+                    AutomationProperties.Name="活动记录"
+                    Content="活动记录"
+                    Tag="activity"
+                    ToolTipService.ToolTip="活动记录（Ctrl+8）">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE823;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
 
-            <Frame x:Name="ContentFrame" />
+            <Frame
+                x:Name="ContentFrame"
+                AutomationProperties.Name="概览内容"
+                IsTabStop="False" />
         </NavigationView>
     </Grid>
 </Window>

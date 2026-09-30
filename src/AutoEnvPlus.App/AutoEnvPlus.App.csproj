@@ -10,8 +10,21 @@
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>
+    <EnableMsixTooling>true</EnableMsixTooling>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\assets\branding\autoenvplus.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
+    <!-- Windows App SDK 1.8 supports unpackaged .NET bundles when MSIX tooling
+         embeds the WinUI PRI and every remaining payload is self-extracted. -->
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <DebugType>None</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260529003" />
@@ -34,5 +47,37 @@
     </ItemGroup>
     <MakeDir Directories="$(OutDir)cli" />
     <Copy SourceFiles="@(AutoEnvPlusCliFiles)" DestinationFolder="$(OutDir)cli" SkipUnchangedFiles="true" />
+  </Target>
+  <Target
+    Name="AutoEnvPlusAddSingleFileCompanions"
+    BeforeTargets="GenerateSingleFileBundle"
+    DependsOnTargets="PrepareForBundle"
+    Condition="'$(PublishSingleFile)' == 'true' and '$(AutoEnvPlusBundledCliPath)' != '' and '$(AutoEnvPlusBundledShimPath)' != ''">
+    <Error Condition="!Exists('$(AutoEnvPlusBundledCliPath)')" Text="Bundled CLI was not found: $(AutoEnvPlusBundledCliPath)" />
+    <Error Condition="!Exists('$(AutoEnvPlusBundledShimPath)')" Text="Bundled native Shim was not found: $(AutoEnvPlusBundledShimPath)" />
+    <ItemGroup>
+      <FilesToBundle Include="$(AutoEnvPlusBundledCliPath)">
+        <RelativePath>cli\autoenvplus.exe</RelativePath>
+        <TargetPath>cli\autoenvplus.exe</TargetPath>
+      </FilesToBundle>
+      <FilesToBundle Include="$(AutoEnvPlusBundledShimPath)">
+        <RelativePath>cli\autoenvplus-shim.exe</RelativePath>
+        <TargetPath>cli\autoenvplus-shim.exe</TargetPath>
+      </FilesToBundle>
+    </ItemGroup>
+  </Target>
+  <Target
+    Name="AutoEnvPlusCaptureSingleFileBundleInputs"
+    AfterTargets="PrepareForBundle"
+    BeforeTargets="GenerateSingleFileBundle"
+    Condition="'$(PublishSingleFile)' == 'true' and '$(AutoEnvPlusBundleManifestPath)' != ''"
+    DependsOnTargets="PrepareForBundle;AutoEnvPlusAddSingleFileCompanions">
+    <!-- Capture the exact SDK item set before GenerateBundle consumes it. This
+         is a verification sidecar only; the .NET SDK still creates the EXE. -->
+    <WriteLinesToFile
+      File="$(AutoEnvPlusBundleManifestPath)"
+      Lines="@(FilesToBundle->'%(RelativePath)|%(FullPath)|%(Extension)')"
+      Overwrite="true"
+      WriteOnlyWhenDifferent="false" />
   </Target>
 </Project>

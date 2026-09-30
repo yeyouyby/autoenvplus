@@ -115,13 +115,27 @@ public sealed class ProjectTerminalService
         string managedRoot,
         IManagedRuntimeRegistryStore? registry = null,
         RuntimeArchitecture? architecture = null,
-        string? shellExecutable = null,
-        string? windowsTerminalExecutable = null)
+        string? shellExecutable = null)
+        : this(
+            managedRoot,
+            registry,
+            architecture,
+            shellExecutable,
+            windowsTerminalExecutable: null)
+    {
+    }
+
+    internal ProjectTerminalService(
+        string managedRoot,
+        IManagedRuntimeRegistryStore? registry,
+        RuntimeArchitecture? architecture,
+        string? shellExecutable,
+        string? windowsTerminalExecutable)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(managedRoot);
         _managedRoot = Path.GetFullPath(managedRoot);
         _registry = registry ?? new ManagedRuntimeRegistry(_managedRoot);
-        _architecture = architecture ?? CurrentArchitecture();
+        _architecture = architecture ?? ProjectRuntimeArchitecture.Current;
         _windowsPowerShellExecutable = Path.GetFullPath(
             shellExecutable ?? GetWindowsPowerShellPath());
         if (!Path.GetFileName(_windowsPowerShellExecutable)
@@ -132,7 +146,9 @@ public sealed class ProjectTerminalService
                 nameof(shellExecutable));
         }
 
-        _windowsTerminalExecutable = ResolveWindowsTerminalPath(windowsTerminalExecutable);
+        _windowsTerminalExecutable = windowsTerminalExecutable is null
+            ? ResolveWindowsTerminalPath()
+            : ValidateTestWindowsTerminalPath(windowsTerminalExecutable);
     }
 
     public bool IsHostAvailable(ProjectTerminalHost host) => host switch
@@ -171,6 +187,7 @@ public sealed class ProjectTerminalService
         List<ProjectTerminalSelection> selections = [];
         Dictionary<string, string> environment = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> environmentRemovals = new(StringComparer.OrdinalIgnoreCase);
+        ResetInheritedSessionPins(environmentRemovals);
         string shimDirectory = Path.Combine(_managedRoot, "shims");
 
         RegistryLoadResult registry = await _registry.LoadAsync(cancellationToken).ConfigureAwait(false);
@@ -210,11 +227,21 @@ public sealed class ProjectTerminalService
             }
 
             VersionSelector selector = new(VersionSelectorKind.Exact, currentEntry.Version);
-            environment[supported.Variable] = currentEntry.Version.ToString();
-            environment[ManagedRuntimeSessionPin.GetRuntimeIdVariableName(currentEntry.Kind)] =
-                currentEntry.Id;
-            environment[ManagedRuntimeSessionPin.GetProviderIdVariableName(currentEntry.Kind)] =
-                currentEntry.ProviderId;
+            SetEnvironmentOverride(
+                environment,
+                environmentRemovals,
+                supported.Variable,
+                currentEntry.Version.ToString());
+            SetEnvironmentOverride(
+                environment,
+                environmentRemovals,
+                ManagedRuntimeSessionPin.GetRuntimeIdVariableName(currentEntry.Kind),
+                currentEntry.Id);
+            SetEnvironmentOverride(
+                environment,
+                environmentRemovals,
+                ManagedRuntimeSessionPin.GetProviderIdVariableName(currentEntry.Kind),
+                currentEntry.ProviderId);
             selections.Add(new ProjectTerminalSelection(
                 currentEntry.Kind,
                 selector,
@@ -266,7 +293,11 @@ public sealed class ProjectTerminalService
         environment["PATH"] = PrependPath(
             System.Environment.GetEnvironmentVariable("PATH") ?? string.Empty,
             shimDirectory);
-        environment["AUTOENVPLUS_SESSION_SCOPE"] = "exact-runtime";
+        SetEnvironmentOverride(
+            environment,
+            environmentRemovals,
+            "AUTOENVPLUS_SESSION_SCOPE",
+            "exact-runtime");
         string shellExecutable = effectiveHost == ProjectTerminalHost.WindowsTerminal
             ? _windowsTerminalExecutable!
             : _windowsPowerShellExecutable;
@@ -362,6 +393,7 @@ public sealed class ProjectTerminalService
         List<ProjectTerminalSelection> selections = [];
         Dictionary<string, string> environment = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> environmentRemovals = new(StringComparer.OrdinalIgnoreCase);
+        ResetInheritedSessionPins(environmentRemovals);
         string shimDirectory = Path.Combine(_managedRoot, "shims");
 
         RegistryLoadResult registry = await _registry.LoadAsync(cancellationToken).ConfigureAwait(false);
@@ -400,9 +432,21 @@ public sealed class ProjectTerminalService
             }
 
             string resolvedVersion = entry.Version.ToString();
-            environment[supported.Variable] = resolvedVersion;
-            environment[ManagedRuntimeSessionPin.GetRuntimeIdVariableName(kind)] = entry.Id;
-            environment[ManagedRuntimeSessionPin.GetProviderIdVariableName(kind)] = entry.ProviderId;
+            SetEnvironmentOverride(
+                environment,
+                environmentRemovals,
+                supported.Variable,
+                resolvedVersion);
+            SetEnvironmentOverride(
+                environment,
+                environmentRemovals,
+                ManagedRuntimeSessionPin.GetRuntimeIdVariableName(kind),
+                entry.Id);
+            SetEnvironmentOverride(
+                environment,
+                environmentRemovals,
+                ManagedRuntimeSessionPin.GetProviderIdVariableName(kind),
+                entry.ProviderId);
             selections.Add(new ProjectTerminalSelection(
                 kind,
                 requestedSelector,
@@ -802,6 +846,29 @@ public sealed class ProjectTerminalService
         right?.AbsoluteUri,
         StringComparison.Ordinal);
 
+    private static void ResetInheritedSessionPins(ISet<string> removals)
+    {
+        foreach (RuntimeKind kind in SupportedKinds.Keys)
+        {
+            removals.Add(ManagedRuntimeSessionPin.GetVersionVariableName(kind));
+            removals.Add(ManagedRuntimeSessionPin.GetRuntimeIdVariableName(kind));
+            removals.Add(ManagedRuntimeSessionPin.GetProviderIdVariableName(kind));
+        }
+
+        removals.Add("AUTOENVPLUS_SESSION_SCOPE");
+        removals.Add("AUTOENVPLUS_SHIM_DEPTH");
+    }
+
+    private static void SetEnvironmentOverride(
+        IDictionary<string, string> environment,
+        ISet<string> removals,
+        string name,
+        string value)
+    {
+        removals.Remove(name);
+        environment[name] = value;
+    }
+
     private static void SetOrRemoveEnvironmentVariable(
         IDictionary<string, string> environment,
         ISet<string> removals,
@@ -879,62 +946,69 @@ public sealed class ProjectTerminalService
             "-NoExit",
         ];
 
-    private static string? ResolveWindowsTerminalPath(string? configuredPath)
+    private static string? ResolveWindowsTerminalPath() => ResolveWindowsTerminalPath(
+        System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData));
+
+    internal static string? ResolveWindowsTerminalPath(string localApplicationDataPath)
     {
-        if (configuredPath is not null)
+        if (string.IsNullOrWhiteSpace(localApplicationDataPath))
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(configuredPath);
-            string fullPath = Path.GetFullPath(configuredPath);
-            if (!Path.GetFileName(fullPath).Equals("wt.exe", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new ArgumentException(
-                    "The Windows Terminal executable must be named 'wt.exe'.",
-                    nameof(configuredPath));
-            }
-
-            return fullPath;
+            return null;
         }
 
-        string windowsAppsPath = Path.Combine(
-            System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+        string windowsAppsDirectory = Path.GetFullPath(Path.Combine(
+            localApplicationDataPath,
             "Microsoft",
-            "WindowsApps",
-            "wt.exe");
-        if (File.Exists(windowsAppsPath))
+            "WindowsApps"));
+        string windowsAppsPath = Path.Combine(windowsAppsDirectory, "wt.exe");
+        if (!Path.GetDirectoryName(windowsAppsPath)!.Equals(
+                windowsAppsDirectory,
+                StringComparison.OrdinalIgnoreCase)
+            || !File.Exists(windowsAppsPath))
         {
-            return windowsAppsPath;
+            return null;
         }
 
-        foreach (string pathEntry in (System.Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
-            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        try
         {
-            try
-            {
-                string candidate = Path.GetFullPath(Path.Combine(
-                    System.Environment.ExpandEnvironmentVariables(pathEntry.Trim('"')),
-                    "wt.exe"));
-                if (File.Exists(candidate))
-                {
-                    return candidate;
-                }
-            }
-            catch (Exception exception) when (exception is ArgumentException
-                or NotSupportedException
-                or PathTooLongException)
-            {
-                // Ignore malformed PATH entries and continue deterministic discovery.
-            }
+            FileAttributes attributes = File.GetAttributes(windowsAppsPath);
+            return (attributes & FileAttributes.ReparsePoint) != 0
+                && (attributes & (FileAttributes.Directory | FileAttributes.Device)) == 0
+                    ? windowsAppsPath
+                    : null;
         }
-
-        return null;
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
-    private static RuntimeArchitecture CurrentArchitecture() => RuntimeInformation.ProcessArchitecture switch
+    private static string ValidateTestWindowsTerminalPath(string configuredPath)
     {
-        Architecture.X86 => RuntimeArchitecture.X86,
-        Architecture.Arm64 => RuntimeArchitecture.Arm64,
-        _ => RuntimeArchitecture.X64,
-    };
+        ArgumentException.ThrowIfNullOrWhiteSpace(configuredPath);
+        string fullPath = Path.GetFullPath(configuredPath);
+        if (!Path.GetFileName(fullPath).Equals("wt.exe", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                "The Windows Terminal executable must be named 'wt.exe'.",
+                nameof(configuredPath));
+        }
+
+        if (File.Exists(fullPath))
+        {
+            FileAttributes attributes = File.GetAttributes(fullPath);
+            if ((attributes & (FileAttributes.Directory
+                | FileAttributes.Device
+                | FileAttributes.ReparsePoint)) != 0)
+            {
+                throw new ArgumentException(
+                    "The injected Windows Terminal test executable must be an ordinary file.",
+                    nameof(configuredPath));
+            }
+        }
+
+        return fullPath;
+    }
 
     private static int LaunchNewConsole(ProjectTerminalPlan plan) => LaunchNewConsole(
         plan.ProjectRoot,

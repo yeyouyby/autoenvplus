@@ -74,6 +74,12 @@ public sealed partial class LanguagesPage : Page
             return;
         }
 
+        StatusInfo.IsOpen = true;
+        StatusInfo.Severity = InfoBarSeverity.Informational;
+        StatusInfo.Title = scanPath ? "正在扫描语言工具" : "正在读取语言目录";
+        StatusInfo.Message = scanPath
+            ? "只检查目录声明的 PATH 命令；不会运行版本命令或访问网络。"
+            : "正在读取语言包、显示偏好和上次库存快照。";
         SetBusy(true);
         try
         {
@@ -126,8 +132,11 @@ public sealed partial class LanguagesPage : Page
                 ? $"库存 {capturedAt.ToLocalTime():yyyy-MM-dd HH:mm}"
                     + (_inventoryCatalogChanged ? "（目录已变化，等待重新检测）" : string.Empty)
                 : "尚无库存快照（未自动扫描）";
+            int operationAdapterCount = _activeCatalog.Tools.Count(tool =>
+                LanguageToolUiPolicy.GetManagementKind(tool) != ToolManagementKind.None);
             StatusInfo.Message = $"{_activeCatalog.Languages.Count} 门可用语言 · "
                 + $"{_activeCatalog.Tools.Count} 个语言工具 · "
+                + $"{operationAdapterCount} 个工具已接通 AutoEnvPlus 安装适配器 · "
                 + $"检测到 {detectedLanguageIds.Count} 门语言 · {inventoryStatus}"
                 + (_inventoryWarning is null ? string.Empty : $" · {_inventoryWarning}")
                 + (packs.Errors.Count > 0
@@ -220,7 +229,7 @@ public sealed partial class LanguagesPage : Page
             .ToArray();
         LanguageList.ItemsSource = filtered;
         LanguageList.Visibility = filtered.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
-        EmptyLanguageText.Visibility = filtered.Length == 0
+        EmptyLanguageState.Visibility = filtered.Length == 0
             ? Visibility.Visible
             : Visibility.Collapsed;
         int effectiveCount = _rows.Count(row => row.Entry.IsVisible);
@@ -613,9 +622,11 @@ public sealed partial class LanguagesPage : Page
                 : DisplayName[..1].ToUpperInvariant();
             int detectedTools = tools.Count(tool =>
                 tool.DiscoveryCommands.Any(detectedCommands.Contains));
-            int managedTools = tools.Count(tool => tool.Capabilities.Install);
+            int managedTools = tools.Count(tool =>
+                LanguageToolUiPolicy.GetManagementKind(tool) != ToolManagementKind.None);
+            int metadataOnlyTools = tools.Count - managedTools;
             ToolSummary = $"{tools.Count} 个语言工具 · PATH 已检测 {detectedTools} 个 · "
-                + $"AutoEnvPlus 可管理安装 {managedTools} 个";
+                + $"{managedTools} 个已接通 AutoEnvPlus 操作 · {metadataOnlyTools} 个仅目录元数据";
             string aliases = entry.Language.Aliases.Count == 0
                 ? entry.Language.Id
                 : string.Join("、", entry.Language.Aliases.Take(4));
@@ -644,6 +655,8 @@ public sealed partial class LanguagesPage : Page
         public string IdentitySummary { get; }
 
         public string SearchText { get; }
+
+        public string AutomationName => $"{DisplayName}，{ToolSummary}";
 
         public Visibility DetectedVisibility => Entry.IsDetected
             ? Visibility.Visible

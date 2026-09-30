@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using AutoEnvPlus.Core.Providers;
@@ -32,6 +33,13 @@ public sealed class ProjectLockFileService
 {
     public const int CurrentSchemaVersion = 2;
     public const string LockFileName = "autoenvplus.lock";
+    public const int MaximumManifestBytes = 256 * 1024;
+    public const int MaximumLockFileBytes = 1024 * 1024;
+    public const int MaximumRuntimeEntries = 64;
+
+    private static readonly UTF8Encoding StrictUtf8 = new(
+        encoderShouldEmitUTF8Identifier: false,
+        throwOnInvalidBytes: true);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -40,16 +48,46 @@ public sealed class ProjectLockFileService
         Converters = { new JsonStringEnumConverter() },
     };
 
+    private readonly Func<ProjectLockManifestSnapshot, CancellationToken, Task>? _snapshotObserver;
+
+    public ProjectLockFileService()
+    {
+    }
+
+    internal ProjectLockFileService(
+        Func<ProjectLockManifestSnapshot, CancellationToken, Task> snapshotObserver)
+    {
+        _snapshotObserver = snapshotObserver ?? throw new ArgumentNullException(nameof(snapshotObserver));
+    }
+
     public async Task<ProjectLockResult> CreateAsync(
         string manifestPath,
         IReadOnlyList<ManagedRuntimeEntry> installedRuntimes,
-        RuntimeArchitecture architecture = RuntimeArchitecture.Any,
+        RuntimeArchitecture? architecture = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(manifestPath);
         ArgumentNullException.ThrowIfNull(installedRuntimes);
         string fullManifestPath = Path.GetFullPath(manifestPath);
-        ProjectManifestLoadResult manifest = new ProjectManifestService().Load(fullManifestPath);
+        RuntimeArchitecture effectiveArchitecture = architecture ?? ProjectRuntimeArchitecture.Current;
+        if (!Enum.IsDefined(effectiveArchitecture)
+            || effectiveArchitecture == RuntimeArchitecture.Any)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(architecture),
+                architecture,
+                "Project lock creation requires a concrete runtime architecture.");
+        }
+
+        ProjectLockManifestSnapshot snapshot = await ReadManifestSnapshotAsync(
+            fullManifestPath,
+            cancellationToken).ConfigureAwait(false);
+        if (_snapshotObserver is not null)
+        {
+            await _snapshotObserver(snapshot, cancellationToken).ConfigureAwait(false);
+        }
+
+        ProjectManifestLoadResult manifest = snapshot.Manifest;
         if (!manifest.Success)
         {
             return new ProjectLockResult(
@@ -61,15 +99,20 @@ public sealed class ProjectLockFileService
 
         List<ProjectLockEntry> locked = [];
         List<string> errors = [];
+        RuntimeProfile projectProfile = manifest.Manifest.ToRuntimeProfile();
         foreach ((RuntimeKind kind, VersionSelector selector) in manifest.Manifest.Tools.OrderBy(pair => pair.Key))
         {
-            RuntimeProfile projectProfile = manifest.Manifest.ToRuntimeProfile();
+            RuntimeArchitecture resolutionArchitecture = SelectResolutionArchitecture(
+                kind,
+                manifest.Manifest,
+                installedRuntimes,
+                effectiveArchitecture);
             ManagedRuntimeResolutionResult resolution =
                 ManagedRuntimeResolutionService.ResolveRegistered(
                 kind,
                 new RuntimeResolutionContext(Project: projectProfile),
                 installedRuntimes,
-                architecture);
+                resolutionArchitecture);
             if (!resolution.Success)
             {
                 errors.AddRange(resolution.Errors);
@@ -98,14 +141,21 @@ public sealed class ProjectLockFileService
             return new ProjectLockResult(false, null, null, errors);
         }
 
-        string manifestHash = await ComputeSha256Async(
-            fullManifestPath,
-            cancellationToken).ConfigureAwait(false);
         ProjectLockDocument document = new(
             CurrentSchemaVersion,
             DateTimeOffset.UtcNow,
-            manifestHash,
+            snapshot.Sha256,
             locked);
+        byte[] serialized = JsonSerializer.SerializeToUtf8Bytes(document, JsonOptions);
+        if (serialized.Length > MaximumLockFileBytes)
+        {
+            return new ProjectLockResult(
+                false,
+                null,
+                null,
+                [$"The generated project lock file exceeds the {MaximumLockFileBytes}-byte limit."]);
+        }
+
         string lockPath = Path.Combine(manifest.Manifest.ProjectRoot, LockFileName);
         string temporary = lockPath + $".{Guid.NewGuid():N}.tmp";
         try
@@ -118,11 +168,7 @@ public sealed class ProjectLockFileService
                 16_384,
                 FileOptions.Asynchronous | FileOptions.WriteThrough))
             {
-                await JsonSerializer.SerializeAsync(
-                    stream,
-                    document,
-                    JsonOptions,
-                    cancellationToken).ConfigureAwait(false);
+                await stream.WriteAsync(serialized, cancellationToken).ConfigureAwait(false);
                 await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
             }
 
@@ -138,6 +184,36 @@ public sealed class ProjectLockFileService
         }
     }
 
+    private static RuntimeArchitecture SelectResolutionArchitecture(
+        RuntimeKind kind,
+        ProjectEnvironmentManifest manifest,
+        IReadOnlyList<ManagedRuntimeEntry> installedRuntimes,
+        RuntimeArchitecture defaultArchitecture)
+    {
+        if (!manifest.ExactSelections.TryGetValue(
+                kind,
+                out RuntimeSelectionIdentity? identity))
+        {
+            return defaultArchitecture;
+        }
+
+        ManagedRuntimeEntry[] pinned = installedRuntimes
+            .Where(entry => entry.Id.Equals(
+                identity.RuntimeId,
+                StringComparison.OrdinalIgnoreCase))
+            .Take(2)
+            .ToArray();
+        if (pinned.Length != 1
+            || !Enum.IsDefined(pinned[0].Architecture)
+            || pinned[0].Architecture == RuntimeArchitecture.Any)
+        {
+            // ResolveRegistered owns the detailed missing, duplicate, and invalid pin errors.
+            return defaultArchitecture;
+        }
+
+        return pinned[0].Architecture;
+    }
+
     public async Task<ProjectLockResult> LoadAsync(
         string lockPath,
         CancellationToken cancellationToken = default)
@@ -151,17 +227,14 @@ public sealed class ProjectLockFileService
 
         try
         {
-            await using FileStream stream = new(
+            byte[] bytes = await ReadBoundedFileAsync(
                 fullPath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.Read,
-                16_384,
-                FileOptions.Asynchronous | FileOptions.SequentialScan);
-            LockDocumentDto? serialized = await JsonSerializer.DeserializeAsync<LockDocumentDto>(
-                stream,
-                JsonOptions,
+                MaximumLockFileBytes,
+                "project lock file",
                 cancellationToken).ConfigureAwait(false);
+            LockDocumentDto? serialized = JsonSerializer.Deserialize<LockDocumentDto>(
+                bytes,
+                JsonOptions);
             if (serialized is null)
             {
                 return new ProjectLockResult(
@@ -193,6 +266,10 @@ public sealed class ProjectLockFileService
                 null,
                 [$"Invalid lock JSON: {exception.Message}"]);
         }
+        catch (InvalidDataException exception)
+        {
+            return new ProjectLockResult(false, fullPath, null, [exception.Message]);
+        }
     }
 
     public async Task<bool> IsCurrentAsync(
@@ -201,10 +278,12 @@ public sealed class ProjectLockFileService
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(document);
-        string hash = await ComputeSha256Async(
+        ProjectLockManifestSnapshot snapshot = await ReadManifestSnapshotAsync(
             Path.GetFullPath(manifestPath),
             cancellationToken).ConfigureAwait(false);
-        return document.ManifestSha256.Equals(hash, StringComparison.OrdinalIgnoreCase);
+        return document.ManifestSha256.Equals(
+            snapshot.Sha256,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     private static ProjectLockDocument? ValidateAndConvert(
@@ -225,6 +304,14 @@ public sealed class ProjectLockFileService
         if (serialized.Runtimes is null)
         {
             validationErrors.Add("The project lock file does not contain a runtimes array.");
+            errors = validationErrors.ToArray();
+            return null;
+        }
+
+        if (serialized.Runtimes.Count > MaximumRuntimeEntries)
+        {
+            validationErrors.Add(
+                $"The project lock file contains {serialized.Runtimes.Count} runtime entries; at most {MaximumRuntimeEntries} are allowed.");
             errors = validationErrors.ToArray();
             return null;
         }
@@ -330,8 +417,40 @@ public sealed class ProjectLockFileService
             : null;
     }
 
-    private static async Task<string> ComputeSha256Async(
+    internal static async Task<ProjectLockManifestSnapshot> ReadManifestSnapshotAsync(
+        string manifestPath,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(manifestPath);
+        string fullPath = Path.GetFullPath(manifestPath);
+        byte[] bytes = await ReadBoundedFileAsync(
+            fullPath,
+            MaximumManifestBytes,
+            "project manifest",
+            cancellationToken).ConfigureAwait(false);
+        bool utf8Bom = bytes.AsSpan().StartsWith(Encoding.UTF8.Preamble);
+        int textOffset = utf8Bom ? Encoding.UTF8.Preamble.Length : 0;
+        string content;
+        try
+        {
+            content = StrictUtf8.GetString(bytes, textOffset, bytes.Length - textOffset);
+        }
+        catch (DecoderFallbackException exception)
+        {
+            throw new InvalidDataException("The project manifest must use valid UTF-8.", exception);
+        }
+
+        ProjectManifestLoadResult manifest = new ProjectManifestService().LoadContent(
+            fullPath,
+            content);
+        string sha256 = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+        return new ProjectLockManifestSnapshot(fullPath, bytes, sha256, manifest);
+    }
+
+    private static async Task<byte[]> ReadBoundedFileAsync(
         string path,
+        int maximumBytes,
+        string description,
         CancellationToken cancellationToken)
     {
         await using FileStream stream = new(
@@ -339,10 +458,37 @@ public sealed class ProjectLockFileService
             FileMode.Open,
             FileAccess.Read,
             FileShare.Read,
-            81_920,
+            16_384,
             FileOptions.Asynchronous | FileOptions.SequentialScan);
-        byte[] hash = await SHA256.HashDataAsync(stream, cancellationToken).ConfigureAwait(false);
-        return Convert.ToHexString(hash).ToLowerInvariant();
+        if (stream.Length > maximumBytes)
+        {
+            throw new InvalidDataException(
+                $"The {description} exceeds the {maximumBytes}-byte limit.");
+        }
+
+        byte[] buffer = new byte[checked((int)stream.Length)];
+        int total = 0;
+        while (total < buffer.Length)
+        {
+            int read = await stream.ReadAsync(
+                buffer.AsMemory(total),
+                cancellationToken).ConfigureAwait(false);
+            if (read == 0)
+            {
+                throw new InvalidDataException(
+                    $"The {description} changed while it was being read.");
+            }
+
+            total += read;
+        }
+
+        if (stream.ReadByte() != -1)
+        {
+            throw new InvalidDataException(
+                $"The {description} changed while it was being read.");
+        }
+
+        return buffer;
     }
 
     private sealed record LockDocumentDto(
@@ -361,3 +507,9 @@ public sealed class ProjectLockFileService
         string? PackageHash,
         string? PackageSha256);
 }
+
+internal sealed record ProjectLockManifestSnapshot(
+    string FullPath,
+    byte[] Bytes,
+    string Sha256,
+    ProjectManifestLoadResult Manifest);

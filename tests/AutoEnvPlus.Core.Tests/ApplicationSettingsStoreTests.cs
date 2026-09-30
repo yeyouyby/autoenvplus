@@ -65,6 +65,31 @@ public sealed class ApplicationSettingsStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task UpdateAsync_EditorOwnedFieldsPreserveNewerUnrelatedSettings()
+    {
+        AutoEnvPlusApplicationSettingsStore store = new(_root);
+        await store.SaveAsync(AutoEnvPlusApplicationSettings.Default);
+        AutoEnvPlusApplicationSettings staleEditorSnapshot = await store.LoadAsync();
+        await store.UpdateAsync(current => current with
+        {
+            RequireDestructiveActionConfirmation = false,
+            ShellAutoActivation = false,
+        });
+
+        AutoEnvPlusApplicationSettings updated = await store.UpdateAsync(current => current with
+        {
+            StartupDestination = StartupDestination.Projects,
+            Theme = ApplicationThemePreference.Dark,
+            DefaultDownloadConnections = staleEditorSnapshot.DefaultDownloadConnections,
+        });
+
+        Assert.Equal(StartupDestination.Projects, updated.StartupDestination);
+        Assert.Equal(ApplicationThemePreference.Dark, updated.Theme);
+        Assert.False(updated.RequireDestructiveActionConfirmation);
+        Assert.False(updated.ShellAutoActivation);
+    }
+
+    [Fact]
     public async Task LoadAsync_RejectsUnknownAndDuplicateFields()
     {
         AutoEnvPlusApplicationSettingsStore store = new(_root);

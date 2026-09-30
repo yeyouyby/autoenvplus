@@ -233,6 +233,84 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
     }
 
     [Fact]
+    public async Task CopyArchiveEntryAsync_RejectsBytesBeyondDeclaredLengthBeforeWritingThem()
+    {
+        using MemoryStream source = new([1, 2, 3]);
+        using MemoryStream target = new();
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            ManagedArchiveInstaller.CopyArchiveEntryAsync(
+                source,
+                target,
+                "payload.bin",
+                declaredLength: 2,
+                maximumBytes: 100,
+                CancellationToken.None));
+
+        Assert.Contains("declared", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, target.Length);
+    }
+
+    [Fact]
+    public async Task CopyArchiveEntryAsync_RejectsBytesBeyondRemainingGlobalLimitBeforeWritingThem()
+    {
+        using MemoryStream source = new([1, 2, 3]);
+        using MemoryStream target = new();
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            ManagedArchiveInstaller.CopyArchiveEntryAsync(
+                source,
+                target,
+                "payload.bin",
+                declaredLength: 3,
+                maximumBytes: 2,
+                CancellationToken.None));
+
+        Assert.Contains("uncompressed size limit", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, target.Length);
+    }
+
+    [Fact]
+    public async Task CopyArchiveEntryAsync_RejectsBytesShorterThanDeclaredLength()
+    {
+        using MemoryStream source = new([1, 2]);
+        using MemoryStream target = new();
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            ManagedArchiveInstaller.CopyArchiveEntryAsync(
+                source,
+                target,
+                "payload.bin",
+                declaredLength: 3,
+                maximumBytes: 100,
+                CancellationToken.None));
+
+        Assert.Contains("produced 2 bytes", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(new byte[] { 1, 2 }, target.ToArray());
+    }
+
+    [Fact]
+    public async Task CopyArchiveEntryAsync_CancellationStopsBetweenBufferedReads()
+    {
+        using BlockingAfterFirstReadStream source = new([1, 2, 3]);
+        using MemoryStream target = new();
+        using CancellationTokenSource cancellation = new(TimeSpan.FromSeconds(10));
+        Task<long> copy = ManagedArchiveInstaller.CopyArchiveEntryAsync(
+            source,
+            target,
+            "payload.bin",
+            declaredLength: 6,
+            maximumBytes: 6,
+            cancellation.Token);
+        await source.SecondReadStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        await cancellation.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => copy);
+        Assert.Equal(new byte[] { 1, 2, 3 }, target.ToArray());
+    }
+
+    [Fact]
     public async Task InstallAsync_RejectsDestinationOutsideManagedRootBeforeDownloading()
     {
         byte[] archive = CreateZip(($"{ArchiveRoot}/node.exe", "node-binary"));
@@ -679,6 +757,65 @@ public sealed class ManagedArchiveInstallerTests : IDisposable
             cancellationToken.ThrowIfCancellationRequested();
             Calls++;
             return Task.FromResult(verify(packagePath, requirement));
+        }
+    }
+
+    private sealed class BlockingAfterFirstReadStream(byte[] firstChunk) : Stream
+    {
+        private bool _returnedFirstChunk;
+
+        public TaskCompletionSource SecondReadStarted { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) =>
+            throw new NotSupportedException();
+
+        public override ValueTask<int> ReadAsync(
+            Memory<byte> buffer,
+            CancellationToken cancellationToken = default)
+        {
+            if (!_returnedFirstChunk)
+            {
+                _returnedFirstChunk = true;
+                firstChunk.AsMemory().CopyTo(buffer);
+                return ValueTask.FromResult(firstChunk.Length);
+            }
+
+            return WaitForCancellationAsync(cancellationToken);
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) =>
+            throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) =>
+            throw new NotSupportedException();
+
+        private async ValueTask<int> WaitForCancellationAsync(
+            CancellationToken cancellationToken)
+        {
+            SecondReadStarted.TrySetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return 0;
         }
     }
 }

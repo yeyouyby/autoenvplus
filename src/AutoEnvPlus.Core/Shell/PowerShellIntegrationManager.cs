@@ -1,5 +1,9 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Globalization;
+using System.Security.Cryptography;
+using AutoEnvPlus.Core.State;
 
 namespace AutoEnvPlus.Core.Shell;
 
@@ -11,23 +15,41 @@ public sealed record PowerShellIntegrationPlan(
     string ModulePath,
     string? ModuleBefore,
     string ModuleContent,
-    int ExistingProfileBlockCount)
+    int ExistingProfileBlockCount,
+    byte[] ProfileBeforeBytes,
+    byte[] ProfileAfterBytes,
+    byte[]? ModuleBeforeBytes,
+    byte[] ModuleContentBytes)
 {
-    public bool ProfileChanged => !Before.Equals(After, StringComparison.Ordinal)
-        || !ProfileExisted;
+    public bool ProfileChanged => !ProfileExisted
+        || !ProfileBeforeBytes.AsSpan().SequenceEqual(ProfileAfterBytes);
 
-    public bool ModuleChanged => !ModuleContent.Equals(ModuleBefore, StringComparison.Ordinal);
+    public bool ModuleChanged => ModuleBeforeBytes is null
+        || !ModuleBeforeBytes.AsSpan().SequenceEqual(ModuleContentBytes);
 
     public bool Changed => ProfileChanged || ModuleChanged;
 }
 
 public sealed record PowerShellProfileSnapshot(
-    string Id,
+    int SchemaVersion,
+    string? Id,
     DateTimeOffset CreatedAtUtc,
-    string ProfilePath,
+    string? ProfilePath,
     bool ProfileExisted,
-    string Before,
-    string After);
+    byte[]? BeforeBytes,
+    byte[]? AfterBytes,
+    string? BeforeSha256,
+    string? AfterSha256,
+    string? ModulePath,
+    string? Before,
+    string? After);
+
+public sealed record PowerShellRollbackPreview(
+    bool Success,
+    string SnapshotPath,
+    string ProfilePath,
+    bool DeletesProfile,
+    string? Error);
 
 public sealed record PowerShellIntegrationResult(
     bool Success,
@@ -41,18 +63,29 @@ public sealed class PowerShellIntegrationManager
     public const string BeginMarker = "# >>> AutoEnvPlus PowerShell integration >>>";
     public const string EndMarker = "# <<< AutoEnvPlus PowerShell integration <<<";
 
+    private const int CurrentSnapshotSchemaVersion = 2;
+    private const int MaximumProfileBytes = 2 * 1024 * 1024;
+    private const int MaximumModuleBytes = 1024 * 1024;
+    private const int MaximumSnapshotBytes = 8 * 1024 * 1024;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    private static readonly Encoding FileEncoding = new UTF8Encoding(
-        encoderShouldEmitUTF8Identifier: false);
+    private static readonly UTF8Encoding StrictUtf8NoBom = new(
+        encoderShouldEmitUTF8Identifier: false,
+        throwOnInvalidBytes: true);
+    private static readonly UTF8Encoding StrictUtf8WithBom = new(
+        encoderShouldEmitUTF8Identifier: true,
+        throwOnInvalidBytes: true);
 
     private readonly string _managedRoot;
     private readonly string _autoEnvPlusExecutable;
     private readonly IReadOnlyList<string> _autoEnvPlusPrefixArguments;
+    private readonly Func<string, CancellationToken, Task>? _snapshotCommittedObserver;
 
     public PowerShellIntegrationManager(
         string managedRoot,
@@ -64,6 +97,17 @@ public sealed class PowerShellIntegrationManager
         _managedRoot = Path.GetFullPath(managedRoot);
         _autoEnvPlusExecutable = Path.GetFullPath(autoEnvPlusExecutable);
         _autoEnvPlusPrefixArguments = autoEnvPlusPrefixArguments?.ToArray() ?? [];
+    }
+
+    internal PowerShellIntegrationManager(
+        string managedRoot,
+        string autoEnvPlusExecutable,
+        IReadOnlyList<string>? autoEnvPlusPrefixArguments,
+        Func<string, CancellationToken, Task> snapshotCommittedObserver)
+        : this(managedRoot, autoEnvPlusExecutable, autoEnvPlusPrefixArguments)
+    {
+        _snapshotCommittedObserver = snapshotCommittedObserver
+            ?? throw new ArgumentNullException(nameof(snapshotCommittedObserver));
     }
 
     public string ModulePath => Path.Combine(
@@ -101,24 +145,34 @@ public sealed class PowerShellIntegrationManager
 
         string fullProfilePath = Path.GetFullPath(profilePath);
         bool profileExisted = File.Exists(fullProfilePath);
-        string before = profileExisted ? File.ReadAllText(fullProfilePath) : string.Empty;
+        TextFileContent profileBefore = profileExisted
+            ? ReadTextFile(fullProfilePath, MaximumProfileBytes, "PowerShell Profile")
+            : TextFileContent.NewUtf8Bom();
         string moduleContent = BuildModuleContent();
-        string? moduleBefore = File.Exists(ModulePath) ? File.ReadAllText(ModulePath) : null;
-        (string withoutBlocks, int blockCount) = RemoveManagedBlocks(before);
+        TextFileContent? moduleBefore = File.Exists(ModulePath)
+            ? ReadTextFile(ModulePath, MaximumModuleBytes, "AutoEnvPlus PowerShell module")
+            : null;
+        (string withoutBlocks, int blockCount) = RemoveManagedBlocks(profileBefore.Text);
         string after = AppendManagedBlock(
             withoutBlocks,
             BuildProfileBlock(ModulePath),
-            DetectNewLine(before));
+            DetectNewLine(profileBefore.Text));
+        byte[] profileAfterBytes = profileBefore.Encode(after);
+        byte[] moduleContentBytes = EncodeUtf8Bom(moduleContent);
 
         return new PowerShellIntegrationPlan(
             fullProfilePath,
             profileExisted,
-            before,
+            profileBefore.Text,
             after,
             ModulePath,
-            moduleBefore,
+            moduleBefore?.Text,
             moduleContent,
-            blockCount);
+            blockCount,
+            profileBefore.Bytes,
+            profileAfterBytes,
+            moduleBefore?.Bytes,
+            moduleContentBytes);
     }
 
     public async Task<PowerShellIntegrationResult> ApplyAsync(
@@ -126,24 +180,34 @@ public sealed class PowerShellIntegrationManager
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(plan);
-        EnsurePlanTargetsManagedModule(plan);
+        ValidatePlan(plan);
 
         bool profileExistsNow = File.Exists(plan.ProfilePath);
-        string profileNow = profileExistsNow
-            ? await File.ReadAllTextAsync(plan.ProfilePath, cancellationToken).ConfigureAwait(false)
-            : string.Empty;
+        byte[] profileNow = profileExistsNow
+            ? await ReadFileBytesAsync(
+                plan.ProfilePath,
+                MaximumProfileBytes,
+                "PowerShell Profile",
+                cancellationToken).ConfigureAwait(false)
+            : [];
         if (profileExistsNow != plan.ProfileExisted
-            || !profileNow.Equals(plan.Before, StringComparison.Ordinal))
+            || !profileNow.AsSpan().SequenceEqual(plan.ProfileBeforeBytes))
         {
             return Failure(
                 plan,
                 "The PowerShell Profile changed after the preview was created; refresh and review the new plan.");
         }
 
-        string? moduleNow = File.Exists(plan.ModulePath)
-            ? await File.ReadAllTextAsync(plan.ModulePath, cancellationToken).ConfigureAwait(false)
+        bool moduleExistsNow = File.Exists(plan.ModulePath);
+        byte[]? moduleNow = moduleExistsNow
+            ? await ReadFileBytesAsync(
+                plan.ModulePath,
+                MaximumModuleBytes,
+                "AutoEnvPlus PowerShell module",
+                cancellationToken).ConfigureAwait(false)
             : null;
-        if (!string.Equals(moduleNow, plan.ModuleBefore, StringComparison.Ordinal))
+        if (moduleExistsNow != (plan.ModuleBeforeBytes is not null)
+            || !BytesEqual(moduleNow, plan.ModuleBeforeBytes))
         {
             return Failure(
                 plan,
@@ -151,36 +215,74 @@ public sealed class PowerShellIntegrationManager
         }
 
         string? snapshotPath = null;
+        byte[]? snapshotBytes = null;
+        bool snapshotCommitted = false;
+        bool moduleCommitted = false;
         try
         {
             if (plan.ModuleChanged)
             {
                 await WriteFileAtomicallyAsync(
                     plan.ModulePath,
-                    plan.ModuleContent,
-                    cancellationToken).ConfigureAwait(false);
+                    plan.ModuleContentBytes,
+                    cancellationToken,
+                    expectation: new ExpectedFileState(
+                        plan.ModuleBeforeBytes is not null,
+                        plan.ModuleBeforeBytes ?? [],
+                        MaximumModuleBytes,
+                        "The AutoEnvPlus PowerShell module changed after the preview was created; refresh the plan."),
+                    requireNoReparsePath: true)
+                    .ConfigureAwait(false);
+                moduleCommitted = true;
             }
 
             if (plan.ProfileChanged)
             {
                 PowerShellProfileSnapshot snapshot = new(
+                    CurrentSnapshotSchemaVersion,
                     Guid.NewGuid().ToString("N"),
                     DateTimeOffset.UtcNow,
                     plan.ProfilePath,
                     plan.ProfileExisted,
-                    plan.Before,
-                    plan.After);
+                    plan.ProfileBeforeBytes,
+                    plan.ProfileAfterBytes,
+                    ComputeSha256(plan.ProfileBeforeBytes),
+                    ComputeSha256(plan.ProfileAfterBytes),
+                    plan.ModulePath,
+                    null,
+                    null);
                 string snapshotDirectory = GetSnapshotDirectory();
-                snapshotPath = Path.Combine(snapshotDirectory, snapshot.Id + ".json");
+                snapshotPath = Path.Combine(snapshotDirectory, snapshot.Id! + ".json");
+                snapshotBytes = JsonSerializer.SerializeToUtf8Bytes(snapshot, JsonOptions);
+                if (snapshotBytes.Length > MaximumSnapshotBytes)
+                {
+                    throw new InvalidDataException(
+                        "The PowerShell Profile snapshot exceeds the supported size limit.");
+                }
+
                 await WriteFileAtomicallyAsync(
                     snapshotPath,
-                    JsonSerializer.Serialize(snapshot, JsonOptions),
+                    snapshotBytes,
                     cancellationToken,
-                    overwrite: false).ConfigureAwait(false);
+                    overwrite: false,
+                    requireNoReparsePath: true).ConfigureAwait(false);
+                snapshotCommitted = true;
+                if (_snapshotCommittedObserver is not null)
+                {
+                    await _snapshotCommittedObserver(snapshotPath, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+
                 await WriteFileAtomicallyAsync(
                     plan.ProfilePath,
-                    plan.After,
-                    cancellationToken).ConfigureAwait(false);
+                    plan.ProfileAfterBytes,
+                    cancellationToken,
+                    expectation: new ExpectedFileState(
+                        plan.ProfileExisted,
+                        plan.ProfileBeforeBytes,
+                        MaximumProfileBytes,
+                        "The PowerShell Profile changed after the preview was created; refresh and review the new plan."))
+                    .ConfigureAwait(false);
             }
 
             return new PowerShellIntegrationResult(
@@ -193,78 +295,180 @@ public sealed class PowerShellIntegrationManager
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
             or InvalidOperationException
-            or JsonException)
+            or InvalidDataException
+            or JsonException
+            or ArgumentException
+            or NotSupportedException
+            or OperationCanceledException)
         {
+            string? compensationError = await CompensateFailedApplyAsync(
+                plan,
+                moduleCommitted,
+                snapshotCommitted ? snapshotPath : null,
+                snapshotCommitted ? snapshotBytes : null).ConfigureAwait(false);
+            if (!snapshotCommitted || compensationError is null)
+            {
+                snapshotPath = null;
+            }
+
+            if (exception is OperationCanceledException && compensationError is null)
+            {
+                throw;
+            }
+
+            string error = compensationError is null
+                ? exception.Message
+                : $"{exception.Message} Automatic transaction rollback was incomplete: {compensationError}";
             return new PowerShellIntegrationResult(
                 false,
                 false,
                 plan.ModulePath,
                 snapshotPath,
-                exception.Message);
+                error);
         }
+    }
+
+    private static async Task<string?> CompensateFailedApplyAsync(
+        PowerShellIntegrationPlan plan,
+        bool moduleCommitted,
+        string? snapshotPath,
+        byte[]? snapshotBytes)
+    {
+        List<string> errors = [];
+        if (snapshotPath is not null && snapshotBytes is not null)
+        {
+            try
+            {
+                ManagedPathSafety.EnsureNoReparsePointInPath(snapshotPath);
+                EnsureFileMatches(
+                    snapshotPath,
+                    new ExpectedFileState(
+                        true,
+                        snapshotBytes,
+                        MaximumSnapshotBytes,
+                        "The newly-created PowerShell Profile snapshot changed before rollback."));
+                File.Delete(snapshotPath);
+            }
+            catch (Exception exception) when (exception is IOException
+                or UnauthorizedAccessException
+                or InvalidOperationException
+                or InvalidDataException
+                or ArgumentException
+                or NotSupportedException)
+            {
+                errors.Add($"snapshot cleanup failed: {exception.Message}");
+            }
+        }
+
+        if (moduleCommitted)
+        {
+            try
+            {
+                ExpectedFileState installedModule = new(
+                    true,
+                    plan.ModuleContentBytes,
+                    MaximumModuleBytes,
+                    "The PowerShell module changed before transaction rollback.");
+                if (plan.ModuleBeforeBytes is not null)
+                {
+                    await WriteFileAtomicallyAsync(
+                        plan.ModulePath,
+                        plan.ModuleBeforeBytes,
+                        CancellationToken.None,
+                        expectation: installedModule,
+                        requireNoReparsePath: true).ConfigureAwait(false);
+                }
+                else
+                {
+                    ManagedPathSafety.EnsureNoReparsePointInPath(plan.ModulePath);
+                    EnsureFileMatches(plan.ModulePath, installedModule);
+                    File.Delete(plan.ModulePath);
+                }
+            }
+            catch (Exception exception) when (exception is IOException
+                or UnauthorizedAccessException
+                or InvalidOperationException
+                or InvalidDataException
+                or ArgumentException
+                or NotSupportedException)
+            {
+                errors.Add($"module restoration failed: {exception.Message}");
+            }
+        }
+
+        return errors.Count == 0 ? null : string.Join(" ", errors);
+    }
+
+    public async Task<PowerShellRollbackPreview> PreviewRollbackAsync(
+        string snapshotPath,
+        string expectedProfilePath,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(snapshotPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(expectedProfilePath);
+        string fullSnapshotPath = Path.GetFullPath(snapshotPath);
+        string fullExpectedProfilePath = Path.GetFullPath(expectedProfilePath);
+        RollbackPreparationResult prepared = await PrepareRollbackAsync(
+            fullSnapshotPath,
+            fullExpectedProfilePath,
+            cancellationToken).ConfigureAwait(false);
+        return prepared.Preparation is { } preparation
+            ? new PowerShellRollbackPreview(
+                true,
+                fullSnapshotPath,
+                preparation.ProfilePath,
+                !preparation.ProfileExisted,
+                null)
+            : new PowerShellRollbackPreview(
+                false,
+                fullSnapshotPath,
+                fullExpectedProfilePath,
+                false,
+                prepared.Error);
     }
 
     public async Task<PowerShellIntegrationResult> RollbackAsync(
         string snapshotPath,
+        string expectedProfilePath,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(snapshotPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(expectedProfilePath);
         string fullSnapshotPath = Path.GetFullPath(snapshotPath);
+        string fullExpectedProfilePath = Path.GetFullPath(expectedProfilePath);
+        RollbackPreparationResult prepared = await PrepareRollbackAsync(
+            fullSnapshotPath,
+            fullExpectedProfilePath,
+            cancellationToken).ConfigureAwait(false);
+        if (prepared.Preparation is not { } preparation)
+        {
+            return new PowerShellIntegrationResult(
+                false,
+                false,
+                ModulePath,
+                fullSnapshotPath,
+                prepared.Error);
+        }
+
         try
         {
-            EnsureChildPath(GetSnapshotDirectory(), fullSnapshotPath);
-            if (!File.Exists(fullSnapshotPath))
-            {
-                return new PowerShellIntegrationResult(
-                    false,
-                    false,
-                    ModulePath,
-                    fullSnapshotPath,
-                    "The PowerShell Profile snapshot does not exist.");
-            }
-
-            PowerShellProfileSnapshot? snapshot = JsonSerializer.Deserialize<PowerShellProfileSnapshot>(
-                await File.ReadAllTextAsync(fullSnapshotPath, cancellationToken).ConfigureAwait(false),
-                JsonOptions);
-            string expectedId = Path.GetFileNameWithoutExtension(fullSnapshotPath);
-            if (snapshot is null
-                || !Guid.TryParseExact(snapshot.Id, "N", out _)
-                || !snapshot.Id.Equals(expectedId, StringComparison.OrdinalIgnoreCase)
-                || string.IsNullOrWhiteSpace(snapshot.ProfilePath)
-                || !Path.IsPathFullyQualified(snapshot.ProfilePath))
-            {
-                return new PowerShellIntegrationResult(
-                    false,
-                    false,
-                    ModulePath,
-                    fullSnapshotPath,
-                    "The PowerShell Profile snapshot is invalid.");
-            }
-
-            bool profileExistsNow = File.Exists(snapshot.ProfilePath);
-            string profileNow = profileExistsNow
-                ? await File.ReadAllTextAsync(snapshot.ProfilePath, cancellationToken).ConfigureAwait(false)
-                : string.Empty;
-            if (!profileExistsNow || !profileNow.Equals(snapshot.After, StringComparison.Ordinal))
-            {
-                return new PowerShellIntegrationResult(
-                    false,
-                    false,
-                    ModulePath,
-                    fullSnapshotPath,
-                    "The PowerShell Profile changed after this snapshot; automatic rollback would overwrite newer changes.");
-            }
-
-            if (snapshot.ProfileExisted)
+            ExpectedFileState expectation = new(
+                true,
+                preparation.AfterBytes,
+                MaximumProfileBytes,
+                "The PowerShell Profile changed after this snapshot; automatic rollback would overwrite newer changes.");
+            if (preparation.ProfileExisted)
             {
                 await WriteFileAtomicallyAsync(
-                    snapshot.ProfilePath,
-                    snapshot.Before,
-                    cancellationToken).ConfigureAwait(false);
+                    preparation.ProfilePath,
+                    preparation.BeforeBytes,
+                    cancellationToken,
+                    expectation: expectation).ConfigureAwait(false);
             }
             else
             {
-                File.Delete(snapshot.ProfilePath);
+                EnsureFileMatches(preparation.ProfilePath, expectation);
+                File.Delete(preparation.ProfilePath);
             }
 
             return new PowerShellIntegrationResult(
@@ -277,7 +481,7 @@ public sealed class PowerShellIntegrationManager
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
             or InvalidOperationException
-            or JsonException
+            or InvalidDataException
             or ArgumentException
             or NotSupportedException)
         {
@@ -593,13 +797,92 @@ public sealed class PowerShellIntegrationManager
     private static string ToPowerShellSingleQuotedLiteral(string value) =>
         "'" + value.Replace("'", "''", StringComparison.Ordinal) + "'";
 
-    private void EnsurePlanTargetsManagedModule(PowerShellIntegrationPlan plan)
+    private void ValidatePlan(PowerShellIntegrationPlan plan)
     {
         if (!Path.GetFullPath(plan.ModulePath).Equals(ModulePath, StringComparison.OrdinalIgnoreCase))
         {
             throw new ArgumentException(
                 "The PowerShell module plan must target the AutoEnvPlus managed shell directory.",
                 nameof(plan));
+        }
+
+        if (!Path.IsPathFullyQualified(plan.ProfilePath)
+            || plan.ProfileBeforeBytes.Length > MaximumProfileBytes
+            || plan.ProfileAfterBytes.Length > MaximumProfileBytes
+            || plan.ModuleContentBytes.Length > MaximumModuleBytes
+            || plan.ModuleBeforeBytes is { Length: > MaximumModuleBytes })
+        {
+            throw new ArgumentException("The PowerShell integration plan is invalid.", nameof(plan));
+        }
+
+        TextFileContent profileBefore;
+        if (plan.ProfileExisted)
+        {
+            profileBefore = DecodeTextBytes(plan.ProfileBeforeBytes, "PowerShell Profile");
+        }
+        else
+        {
+            if (plan.ProfileBeforeBytes.Length != 0 || plan.Before.Length != 0)
+            {
+                throw new ArgumentException(
+                    "A new PowerShell Profile plan cannot contain previous file bytes.",
+                    nameof(plan));
+            }
+
+            profileBefore = TextFileContent.NewUtf8Bom();
+        }
+
+        if (!profileBefore.Text.Equals(plan.Before, StringComparison.Ordinal))
+        {
+            throw new ArgumentException(
+                "The PowerShell Profile preview does not match its original bytes.",
+                nameof(plan));
+        }
+
+        (string withoutBlocks, _) = RemoveManagedBlocks(profileBefore.Text);
+        string expectedAfter = AppendManagedBlock(
+            withoutBlocks,
+            BuildProfileBlock(ModulePath),
+            DetectNewLine(profileBefore.Text));
+        byte[] expectedAfterBytes = profileBefore.Encode(expectedAfter);
+        if (!expectedAfter.Equals(plan.After, StringComparison.Ordinal)
+            || !expectedAfterBytes.AsSpan().SequenceEqual(plan.ProfileAfterBytes))
+        {
+            throw new ArgumentException(
+                "The PowerShell Profile plan does not describe a valid AutoEnvPlus transformation.",
+                nameof(plan));
+        }
+
+        string expectedModuleContent = BuildModuleContent();
+        byte[] expectedModuleBytes = EncodeUtf8Bom(expectedModuleContent);
+        if (!expectedModuleContent.Equals(plan.ModuleContent, StringComparison.Ordinal)
+            || !expectedModuleBytes.AsSpan().SequenceEqual(plan.ModuleContentBytes))
+        {
+            throw new ArgumentException(
+                "The PowerShell module plan does not contain the current AutoEnvPlus module.",
+                nameof(plan));
+        }
+
+        if (plan.ModuleBeforeBytes is null)
+        {
+            if (plan.ModuleBefore is not null)
+            {
+                throw new ArgumentException(
+                    "The PowerShell module preview is inconsistent with its file state.",
+                    nameof(plan));
+            }
+        }
+        else
+        {
+            TextFileContent moduleBefore = DecodeTextBytes(
+                plan.ModuleBeforeBytes,
+                "AutoEnvPlus PowerShell module");
+            if (!moduleBefore.Text.Equals(plan.ModuleBefore, StringComparison.Ordinal))
+            {
+                throw new ArgumentException(
+                    "The PowerShell module preview does not match its original bytes.",
+                    nameof(plan));
+            }
         }
     }
 
@@ -617,11 +900,418 @@ public sealed class PowerShellIntegrationManager
             null,
             error);
 
+    private async Task<RollbackPreparationResult> PrepareRollbackAsync(
+        string fullSnapshotPath,
+        string fullExpectedProfilePath,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            EnsureSnapshotPath(fullSnapshotPath);
+            if (!File.Exists(fullSnapshotPath))
+            {
+                return new RollbackPreparationResult(
+                    null,
+                    "The PowerShell Profile snapshot does not exist.");
+            }
+
+            byte[] serialized = await ReadFileBytesAsync(
+                fullSnapshotPath,
+                MaximumSnapshotBytes,
+                "PowerShell Profile snapshot",
+                cancellationToken,
+                requireNonEmpty: true,
+                requireNoReparsePath: true).ConfigureAwait(false);
+            ValidateSnapshotJsonShape(serialized);
+            PowerShellProfileSnapshot? snapshot = JsonSerializer.Deserialize<PowerShellProfileSnapshot>(
+                serialized,
+                JsonOptions);
+            string? validationError = ValidateSnapshot(
+                fullSnapshotPath,
+                fullExpectedProfilePath,
+                snapshot,
+                out RollbackPreparation? preparation);
+            if (validationError is not null)
+            {
+                return new RollbackPreparationResult(null, validationError);
+            }
+
+            if (!File.Exists(preparation!.ProfilePath))
+            {
+                return new RollbackPreparationResult(
+                    null,
+                    "The PowerShell Profile changed after this snapshot; automatic rollback would overwrite newer changes.");
+            }
+
+            byte[] current = await ReadFileBytesAsync(
+                preparation.ProfilePath,
+                MaximumProfileBytes,
+                "PowerShell Profile",
+                cancellationToken).ConfigureAwait(false);
+            if (!ComputeSha256(current).Equals(preparation.AfterSha256, StringComparison.OrdinalIgnoreCase)
+                || !current.AsSpan().SequenceEqual(preparation.AfterBytes))
+            {
+                return new RollbackPreparationResult(
+                    null,
+                    "The PowerShell Profile changed after this snapshot; automatic rollback would overwrite newer changes.");
+            }
+
+            return new RollbackPreparationResult(preparation, null);
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException
+            or InvalidDataException
+            or JsonException
+            or ArgumentException
+            or NotSupportedException)
+        {
+            return new RollbackPreparationResult(
+                null,
+                $"The PowerShell Profile snapshot could not be used: {exception.Message}");
+        }
+    }
+
+    private string? ValidateSnapshot(
+        string fullSnapshotPath,
+        string fullExpectedProfilePath,
+        PowerShellProfileSnapshot? snapshot,
+        out RollbackPreparation? preparation)
+    {
+        preparation = null;
+        string expectedId = Path.GetFileNameWithoutExtension(fullSnapshotPath);
+        if (snapshot is null
+            || snapshot.SchemaVersion is not 0 and not CurrentSnapshotSchemaVersion
+            || !Guid.TryParseExact(snapshot.Id, "N", out _)
+            || !string.Equals(snapshot.Id, expectedId, StringComparison.OrdinalIgnoreCase)
+            || snapshot.CreatedAtUtc == default
+            || string.IsNullOrWhiteSpace(snapshot.ProfilePath)
+            || !Path.IsPathFullyQualified(snapshot.ProfilePath))
+        {
+            return "The PowerShell Profile snapshot is invalid.";
+        }
+
+        string canonicalProfilePath = Path.GetFullPath(snapshot.ProfilePath);
+        if (!canonicalProfilePath.Equals(snapshot.ProfilePath, StringComparison.OrdinalIgnoreCase)
+            || !canonicalProfilePath.Equals(fullExpectedProfilePath, StringComparison.OrdinalIgnoreCase))
+        {
+            return "The PowerShell Profile snapshot is not bound to the explicitly selected Profile.";
+        }
+
+        return snapshot.SchemaVersion == 0
+            ? ValidateLegacySnapshot(snapshot, canonicalProfilePath, out preparation)
+            : ValidateCurrentSnapshot(snapshot, canonicalProfilePath, out preparation);
+    }
+
+    private string? ValidateCurrentSnapshot(
+        PowerShellProfileSnapshot snapshot,
+        string canonicalProfilePath,
+        out RollbackPreparation? preparation)
+    {
+        preparation = null;
+        if (snapshot.BeforeBytes is null
+            || snapshot.AfterBytes is null
+            || string.IsNullOrWhiteSpace(snapshot.BeforeSha256)
+            || string.IsNullOrWhiteSpace(snapshot.AfterSha256)
+            || snapshot.BeforeBytes.Length > MaximumProfileBytes
+            || snapshot.AfterBytes.Length > MaximumProfileBytes
+            || (!snapshot.ProfileExisted && snapshot.BeforeBytes.Length != 0)
+            || !ComputeSha256(snapshot.BeforeBytes).Equals(
+                snapshot.BeforeSha256,
+                StringComparison.OrdinalIgnoreCase)
+            || !ComputeSha256(snapshot.AfterBytes).Equals(
+                snapshot.AfterSha256,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "The PowerShell Profile snapshot byte hashes are invalid.";
+        }
+
+        TextFileContent before = snapshot.ProfileExisted
+            ? DecodeTextBytes(snapshot.BeforeBytes, "PowerShell Profile snapshot before image")
+            : TextFileContent.NewUtf8Bom();
+        TextFileContent after = DecodeTextBytes(
+            snapshot.AfterBytes,
+            "PowerShell Profile snapshot after image");
+        string? modulePathError = ResolveSnapshotModulePath(
+            snapshot.ModulePath,
+            after.Text,
+            out string? snapshotModulePath);
+        if (modulePathError is not null)
+        {
+            return modulePathError;
+        }
+
+        (string withoutBlocks, _) = RemoveManagedBlocks(before.Text);
+        string expectedAfterText = AppendManagedBlock(
+            withoutBlocks,
+            BuildProfileBlock(snapshotModulePath!),
+            DetectNewLine(before.Text));
+        byte[] expectedAfterBytes = before.Encode(expectedAfterText);
+        if (!expectedAfterBytes.AsSpan().SequenceEqual(snapshot.AfterBytes))
+        {
+            return "The PowerShell Profile snapshot does not describe a valid AutoEnvPlus transformation.";
+        }
+
+        preparation = new RollbackPreparation(
+            canonicalProfilePath,
+            snapshot.ProfileExisted,
+            snapshot.BeforeBytes,
+            snapshot.AfterBytes,
+            snapshot.AfterSha256);
+        return null;
+    }
+
+    private string? ValidateLegacySnapshot(
+        PowerShellProfileSnapshot snapshot,
+        string canonicalProfilePath,
+        out RollbackPreparation? preparation)
+    {
+        preparation = null;
+        if (snapshot.Before is null
+            || snapshot.After is null
+            || snapshot.BeforeBytes is not null
+            || snapshot.AfterBytes is not null
+            || snapshot.BeforeSha256 is not null
+            || snapshot.AfterSha256 is not null
+            || snapshot.ModulePath is not null
+            || (!snapshot.ProfileExisted && snapshot.Before.Length != 0))
+        {
+            return "The legacy PowerShell Profile snapshot is invalid.";
+        }
+
+        byte[] beforeBytes = StrictUtf8NoBom.GetBytes(snapshot.Before);
+        byte[] afterBytes = StrictUtf8NoBom.GetBytes(snapshot.After);
+        if (beforeBytes.Length > MaximumProfileBytes
+            || afterBytes.Length > MaximumProfileBytes)
+        {
+            return "The legacy PowerShell Profile snapshot exceeds the supported Profile size limit.";
+        }
+
+        string? modulePathError = ResolveSnapshotModulePath(
+            null,
+            snapshot.After,
+            out string? snapshotModulePath);
+        if (modulePathError is not null)
+        {
+            return modulePathError;
+        }
+
+        (string withoutBlocks, _) = RemoveManagedBlocks(snapshot.Before);
+        string expectedAfter = AppendManagedBlock(
+            withoutBlocks,
+            BuildProfileBlock(snapshotModulePath!),
+            DetectNewLine(snapshot.Before));
+        if (!expectedAfter.Equals(snapshot.After, StringComparison.Ordinal))
+        {
+            return "The legacy PowerShell Profile snapshot does not describe a valid AutoEnvPlus transformation.";
+        }
+
+        preparation = new RollbackPreparation(
+            canonicalProfilePath,
+            snapshot.ProfileExisted,
+            beforeBytes,
+            afterBytes,
+            ComputeSha256(afterBytes));
+        return null;
+    }
+
+    private string? ResolveSnapshotModulePath(
+        string? declaredModulePath,
+        string after,
+        out string? snapshotModulePath)
+    {
+        snapshotModulePath = declaredModulePath;
+        if (snapshotModulePath is null
+            && !TryExtractManagedModulePath(after, out snapshotModulePath))
+        {
+            return "The PowerShell Profile snapshot does not contain a valid AutoEnvPlus module path.";
+        }
+
+        if (string.IsNullOrWhiteSpace(snapshotModulePath)
+            || !Path.IsPathFullyQualified(snapshotModulePath))
+        {
+            return "The PowerShell Profile snapshot contains an invalid AutoEnvPlus module path.";
+        }
+
+        string canonicalSnapshotModulePath = Path.GetFullPath(snapshotModulePath);
+        if (!canonicalSnapshotModulePath.Equals(
+                snapshotModulePath,
+                StringComparison.OrdinalIgnoreCase)
+            || !canonicalSnapshotModulePath.Equals(
+                Path.GetFullPath(ModulePath),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "The PowerShell Profile snapshot is not bound to the AutoEnvPlus managed module.";
+        }
+
+        return null;
+    }
+
+    private static bool TryExtractManagedModulePath(
+        string content,
+        out string? modulePath)
+    {
+        const string assignmentPrefix = "$__autoEnvPlusModulePath = ";
+        modulePath = null;
+        IReadOnlyList<ProfileLine> lines = ParseLines(content);
+        for (int index = 0; index < lines.Count; index++)
+        {
+            if (!lines[index].Text.Equals(BeginMarker, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (modulePath is not null
+                || index + 1 >= lines.Count
+                || !lines[index + 1].Text.StartsWith(
+                    assignmentPrefix,
+                    StringComparison.Ordinal)
+                || !TryParsePowerShellSingleQuotedLiteral(
+                    lines[index + 1].Text[assignmentPrefix.Length..],
+                    out modulePath))
+            {
+                modulePath = null;
+                return false;
+            }
+        }
+
+        return modulePath is not null;
+    }
+
+    private static bool TryParsePowerShellSingleQuotedLiteral(
+        string literal,
+        out string? value)
+    {
+        value = null;
+        if (literal.Length < 2
+            || literal[0] != '\''
+            || literal[^1] != '\'')
+        {
+            return false;
+        }
+
+        StringBuilder result = new(literal.Length - 2);
+        for (int index = 1; index < literal.Length - 1; index++)
+        {
+            char character = literal[index];
+            if (character != '\'')
+            {
+                result.Append(character);
+                continue;
+            }
+
+            if (index + 1 >= literal.Length - 1
+                || literal[index + 1] != '\'')
+            {
+                return false;
+            }
+
+            result.Append('\'');
+            index++;
+        }
+
+        value = result.ToString();
+        return true;
+    }
+
+    private static void ValidateSnapshotJsonShape(byte[] serialized)
+    {
+        using JsonDocument document = JsonDocument.Parse(
+            serialized,
+            new JsonDocumentOptions
+            {
+                AllowTrailingCommas = false,
+                CommentHandling = JsonCommentHandling.Disallow,
+                MaxDepth = 16,
+            });
+        if (document.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            throw new InvalidDataException("The PowerShell Profile snapshot must be a JSON object.");
+        }
+
+        HashSet<string> properties = new(StringComparer.Ordinal);
+        foreach (JsonProperty property in document.RootElement.EnumerateObject())
+        {
+            if (!properties.Add(property.Name))
+            {
+                throw new InvalidDataException(
+                    $"The PowerShell Profile snapshot contains a duplicate '{property.Name}' property.");
+            }
+        }
+
+        string[] legacyProperties =
+        [
+            "id",
+            "createdAtUtc",
+            "profilePath",
+            "profileExisted",
+            "before",
+            "after",
+        ];
+        if (!properties.Contains("schemaVersion"))
+        {
+            if (!properties.SetEquals(legacyProperties))
+            {
+                throw new InvalidDataException(
+                    "The legacy PowerShell Profile snapshot has an invalid property set.");
+            }
+
+            return;
+        }
+
+        JsonElement schemaVersion = document.RootElement.GetProperty("schemaVersion");
+        if (schemaVersion.ValueKind != JsonValueKind.Number
+            || !schemaVersion.TryGetInt32(out int version)
+            || version != CurrentSnapshotSchemaVersion)
+        {
+            throw new InvalidDataException("The PowerShell Profile snapshot schema is not supported.");
+        }
+
+        string[] requiredProperties =
+        [
+            "schemaVersion",
+            "id",
+            "createdAtUtc",
+            "profilePath",
+            "profileExisted",
+            "beforeBytes",
+            "afterBytes",
+            "beforeSha256",
+            "afterSha256",
+        ];
+        HashSet<string> allowedProperties = new(
+            requiredProperties.Append("modulePath"),
+            StringComparer.Ordinal);
+        if (requiredProperties.Any(property => !properties.Contains(property))
+            || properties.Any(property => !allowedProperties.Contains(property)))
+        {
+            throw new InvalidDataException(
+                "The PowerShell Profile snapshot has an invalid property set.");
+        }
+    }
+
+    private void EnsureSnapshotPath(string fullSnapshotPath)
+    {
+        string snapshotDirectory = Path.GetFullPath(GetSnapshotDirectory());
+        string? parent = Path.GetDirectoryName(fullSnapshotPath);
+        if (parent is null
+            || !Path.GetFullPath(parent).Equals(snapshotDirectory, StringComparison.OrdinalIgnoreCase)
+            || !Path.GetExtension(fullSnapshotPath).Equals(".json", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                "The PowerShell Profile snapshot must be a direct .json child of the AutoEnvPlus snapshot directory.");
+        }
+
+        ManagedPathSafety.EnsureNoReparsePointInPath(fullSnapshotPath);
+    }
+
     private static async Task WriteFileAtomicallyAsync(
         string path,
-        string content,
+        byte[] content,
         CancellationToken cancellationToken,
-        bool overwrite = true)
+        bool overwrite = true,
+        ExpectedFileState? expectation = null,
+        bool requireNoReparsePath = false)
     {
         string fullPath = Path.GetFullPath(path);
         string? directory = Path.GetDirectoryName(fullPath);
@@ -630,17 +1320,48 @@ public sealed class PowerShellIntegrationManager
             throw new InvalidOperationException("The target file does not have a parent directory.");
         }
 
+        if (requireNoReparsePath)
+        {
+            ManagedPathSafety.EnsureNoReparsePointInPath(directory);
+        }
+
         Directory.CreateDirectory(directory);
+        if (requireNoReparsePath)
+        {
+            ManagedPathSafety.EnsureNoReparsePointInPath(directory);
+            ManagedPathSafety.EnsureNoReparsePointInPath(fullPath);
+        }
+
         string temporaryPath = Path.Combine(
             directory,
             $".{Path.GetFileName(fullPath)}.{Guid.NewGuid():N}.tmp");
         try
         {
-            await File.WriteAllTextAsync(
+            await using (FileStream stream = new(
                 temporaryPath,
-                content,
-                FileEncoding,
-                cancellationToken).ConfigureAwait(false);
+                FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.None,
+                16_384,
+                FileOptions.Asynchronous | FileOptions.WriteThrough))
+            {
+                await stream.WriteAsync(content, cancellationToken).ConfigureAwait(false);
+                await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
+                stream.Flush(flushToDisk: true);
+            }
+
+            if (requireNoReparsePath)
+            {
+                ManagedPathSafety.EnsureNoReparsePointInPath(directory);
+                ManagedPathSafety.EnsureNoReparsePointInPath(temporaryPath);
+                ManagedPathSafety.EnsureNoReparsePointInPath(fullPath);
+            }
+
+            if (expectation is not null)
+            {
+                EnsureFileMatches(fullPath, expectation);
+            }
+
             File.Move(temporaryPath, fullPath, overwrite);
         }
         finally
@@ -652,19 +1373,258 @@ public sealed class PowerShellIntegrationManager
         }
     }
 
-    private static void EnsureChildPath(string root, string candidate)
+    private static void EnsureFileMatches(string path, ExpectedFileState expectation)
     {
-        string fullRoot = Path.GetFullPath(root).TrimEnd(
-            Path.DirectorySeparatorChar,
-            Path.AltDirectorySeparatorChar);
-        string fullCandidate = Path.GetFullPath(candidate);
-        string prefix = fullRoot + Path.DirectorySeparatorChar;
-        if (!fullCandidate.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        bool exists = File.Exists(path);
+        if (exists != expectation.Exists)
         {
-            throw new ArgumentException(
-                "The PowerShell Profile snapshot must remain inside the AutoEnvPlus state directory.");
+            throw new InvalidOperationException(expectation.ChangedMessage);
+        }
+
+        if (exists)
+        {
+            byte[] current = ReadFileBytes(path, expectation.MaximumBytes, "expected target file");
+            if (!current.AsSpan().SequenceEqual(expectation.Bytes))
+            {
+                throw new InvalidOperationException(expectation.ChangedMessage);
+            }
         }
     }
+
+    private static TextFileContent ReadTextFile(
+        string path,
+        long maximumBytes,
+        string description) => DecodeTextBytes(
+            ReadFileBytes(path, maximumBytes, description),
+            description);
+
+    private static byte[] ReadFileBytes(
+        string path,
+        long maximumBytes,
+        string description,
+        bool requireNonEmpty = false,
+        bool requireNoReparsePath = false)
+    {
+        string fullPath = Path.GetFullPath(path);
+        if (requireNoReparsePath)
+        {
+            ManagedPathSafety.EnsureNoReparsePointInPath(fullPath);
+        }
+
+        EnsureOrdinaryFile(fullPath, description);
+        using FileStream stream = new(
+            fullPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            16_384,
+            FileOptions.SequentialScan);
+        if ((requireNonEmpty && stream.Length == 0)
+            || stream.Length < 0
+            || stream.Length > maximumBytes
+            || stream.Length > int.MaxValue)
+        {
+            throw new InvalidDataException($"The {description} has an invalid size.");
+        }
+
+        byte[] bytes = new byte[(int)stream.Length];
+        stream.ReadExactly(bytes);
+        if (requireNoReparsePath)
+        {
+            ManagedPathSafety.EnsureNoReparsePointInPath(fullPath);
+        }
+
+        EnsureOrdinaryFile(fullPath, description);
+        return bytes;
+    }
+
+    private static async Task<byte[]> ReadFileBytesAsync(
+        string path,
+        long maximumBytes,
+        string description,
+        CancellationToken cancellationToken,
+        bool requireNonEmpty = false,
+        bool requireNoReparsePath = false)
+    {
+        string fullPath = Path.GetFullPath(path);
+        if (requireNoReparsePath)
+        {
+            ManagedPathSafety.EnsureNoReparsePointInPath(fullPath);
+        }
+
+        EnsureOrdinaryFile(fullPath, description);
+        await using FileStream stream = new(
+            fullPath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            16_384,
+            FileOptions.Asynchronous | FileOptions.SequentialScan);
+        if ((requireNonEmpty && stream.Length == 0)
+            || stream.Length < 0
+            || stream.Length > maximumBytes
+            || stream.Length > int.MaxValue)
+        {
+            throw new InvalidDataException($"The {description} has an invalid size.");
+        }
+
+        byte[] bytes = new byte[(int)stream.Length];
+        await stream.ReadExactlyAsync(bytes, cancellationToken).ConfigureAwait(false);
+        if (requireNoReparsePath)
+        {
+            ManagedPathSafety.EnsureNoReparsePointInPath(fullPath);
+        }
+
+        EnsureOrdinaryFile(fullPath, description);
+        return bytes;
+    }
+
+    private static void EnsureOrdinaryFile(string path, string description)
+    {
+        FileAttributes attributes = File.GetAttributes(path);
+        if ((attributes & (FileAttributes.Directory
+            | FileAttributes.Device
+            | FileAttributes.ReparsePoint)) != 0)
+        {
+            throw new InvalidDataException($"The {description} must be an ordinary file.");
+        }
+    }
+
+    private static TextFileContent DecodeTextBytes(byte[] bytes, string description)
+    {
+        (Encoding Encoding, byte[] Preamble) format = DetectEncoding(bytes, description);
+        try
+        {
+            string text = format.Encoding.GetString(bytes, format.Preamble.Length, bytes.Length - format.Preamble.Length);
+            return new TextFileContent(bytes.ToArray(), text, format.Encoding, format.Preamble);
+        }
+        catch (DecoderFallbackException exception)
+        {
+            throw new InvalidDataException($"The {description} uses an unsupported or invalid text encoding.", exception);
+        }
+    }
+
+    private static (Encoding Encoding, byte[] Preamble) DetectEncoding(
+        byte[] bytes,
+        string description)
+    {
+        if (StartsWith(bytes, [0x00, 0x00, 0xFE, 0xFF]))
+        {
+            return (new UTF32Encoding(bigEndian: true, byteOrderMark: false, throwOnInvalidCharacters: true),
+                [0x00, 0x00, 0xFE, 0xFF]);
+        }
+
+        if (StartsWith(bytes, [0xFF, 0xFE, 0x00, 0x00]))
+        {
+            return (new UTF32Encoding(bigEndian: false, byteOrderMark: false, throwOnInvalidCharacters: true),
+                [0xFF, 0xFE, 0x00, 0x00]);
+        }
+
+        if (StartsWith(bytes, [0xEF, 0xBB, 0xBF]))
+        {
+            return (StrictUtf8NoBom, [0xEF, 0xBB, 0xBF]);
+        }
+
+        if (StartsWith(bytes, [0xFF, 0xFE]))
+        {
+            return (new UnicodeEncoding(bigEndian: false, byteOrderMark: false, throwOnInvalidBytes: true),
+                [0xFF, 0xFE]);
+        }
+
+        if (StartsWith(bytes, [0xFE, 0xFF]))
+        {
+            return (new UnicodeEncoding(bigEndian: true, byteOrderMark: false, throwOnInvalidBytes: true),
+                [0xFE, 0xFF]);
+        }
+
+        try
+        {
+            _ = StrictUtf8NoBom.GetString(bytes);
+            return (StrictUtf8NoBom, []);
+        }
+        catch (DecoderFallbackException) when (OperatingSystem.IsWindows())
+        {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            int codePage = CultureInfo.CurrentCulture.TextInfo.ANSICodePage;
+            try
+            {
+                Encoding ansi = Encoding.GetEncoding(
+                    codePage,
+                    EncoderFallback.ExceptionFallback,
+                    DecoderFallback.ExceptionFallback);
+                _ = ansi.GetString(bytes);
+                return (ansi, []);
+            }
+            catch (Exception exception) when (exception is ArgumentException
+                or NotSupportedException
+                or DecoderFallbackException)
+            {
+                throw new InvalidDataException(
+                    $"The {description} uses an unsupported or invalid text encoding.",
+                    exception);
+            }
+        }
+    }
+
+    private static byte[] EncodeUtf8Bom(string content)
+    {
+        byte[] payload = StrictUtf8WithBom.GetBytes(content);
+        byte[] preamble = StrictUtf8WithBom.GetPreamble();
+        byte[] bytes = new byte[preamble.Length + payload.Length];
+        preamble.CopyTo(bytes, 0);
+        payload.CopyTo(bytes, preamble.Length);
+        return bytes;
+    }
+
+    private static bool StartsWith(byte[] value, byte[] prefix) =>
+        value.AsSpan().StartsWith(prefix);
+
+    private static bool BytesEqual(byte[]? left, byte[]? right) =>
+        left is null
+            ? right is null
+            : right is not null && left.AsSpan().SequenceEqual(right);
+
+    private static string ComputeSha256(byte[] bytes) =>
+        Convert.ToHexString(SHA256.HashData(bytes));
+
+    private sealed record TextFileContent(
+        byte[] Bytes,
+        string Text,
+        Encoding Encoding,
+        byte[] Preamble)
+    {
+        public static TextFileContent NewUtf8Bom() => new(
+            [],
+            string.Empty,
+            StrictUtf8NoBom,
+            StrictUtf8WithBom.GetPreamble());
+
+        public byte[] Encode(string content)
+        {
+            byte[] payload = Encoding.GetBytes(content);
+            byte[] bytes = new byte[Preamble.Length + payload.Length];
+            Preamble.CopyTo(bytes, 0);
+            payload.CopyTo(bytes, Preamble.Length);
+            return bytes;
+        }
+    }
+
+    private sealed record ExpectedFileState(
+        bool Exists,
+        byte[] Bytes,
+        long MaximumBytes,
+        string ChangedMessage);
+
+    private sealed record RollbackPreparation(
+        string ProfilePath,
+        bool ProfileExisted,
+        byte[] BeforeBytes,
+        byte[] AfterBytes,
+        string AfterSha256);
+
+    private sealed record RollbackPreparationResult(
+        RollbackPreparation? Preparation,
+        string? Error);
 
     private sealed record ProfileLine(string Text, string LineEnding);
 }

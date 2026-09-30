@@ -77,6 +77,41 @@ public sealed class AdoptiumFeatureReleaseCatalogTests
     }
 
     [Fact]
+    public async Task GetAsync_RejectsDeclaredCatalogOverByteLimit()
+    {
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+        {
+            HttpResponseMessage response = StubHttpMessageHandler.Text("{}", "application/json");
+            response.Content.Headers.ContentLength =
+                AdoptiumFeatureReleaseCatalog.MaximumCatalogBytes + 1L;
+            return response;
+        }));
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            new AdoptiumFeatureReleaseCatalog(
+                client,
+                new Uri("https://api.example.test/v3/")).GetAsync());
+
+        Assert.Contains("byte limit", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GetAsync_PropagatesCallerCancellationDuringResponseBodyRead()
+    {
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+            new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StreamContent(new NeverEndingReadStream()),
+            }));
+        using CancellationTokenSource cancellation = new(TimeSpan.FromMilliseconds(50));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            new AdoptiumFeatureReleaseCatalog(
+                client,
+                new Uri("https://api.example.test/v3/")).GetAsync(cancellation.Token));
+    }
+
+    [Fact]
     public void Constructor_RejectsInsecureApiBaseUri()
     {
         using HttpClient client = new();
@@ -87,5 +122,44 @@ public sealed class AdoptiumFeatureReleaseCatalogTests
                 new Uri("http://api.example.test/v3/")));
 
         Assert.Contains("HTTPS", exception.Message, StringComparison.Ordinal);
+    }
+
+    private sealed class NeverEndingReadStream : Stream
+    {
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) =>
+            throw new NotSupportedException();
+
+        public override async ValueTask<int> ReadAsync(
+            Memory<byte> buffer,
+            CancellationToken cancellationToken = default)
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return 0;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) =>
+            throw new NotSupportedException();
     }
 }

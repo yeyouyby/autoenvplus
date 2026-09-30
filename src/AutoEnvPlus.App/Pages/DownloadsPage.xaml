@@ -18,6 +18,7 @@
                             <Setter Target="HeaderActions.(Grid.Row)" Value="1" />
                             <Setter Target="HeaderActions.(Grid.Column)" Value="0" />
                             <Setter Target="HeaderActions.Margin" Value="0,12,0,0" />
+                            <Setter Target="HeaderActions.Orientation" Value="Vertical" />
 
                             <Setter Target="DownloadPrimaryColumn.Width" Value="*" />
                             <Setter Target="DownloadConnectionColumn.Width" Value="0" />
@@ -51,6 +52,7 @@
                             <Setter Target="HeaderActions.(Grid.Row)" Value="0" />
                             <Setter Target="HeaderActions.(Grid.Column)" Value="1" />
                             <Setter Target="HeaderActions.Margin" Value="12,0,0,0" />
+                            <Setter Target="HeaderActions.Orientation" Value="Horizontal" />
 
                             <Setter Target="DownloadPrimaryColumn.Width" Value="*" />
                             <Setter Target="DownloadConnectionColumn.Width" Value="160" />
@@ -122,6 +124,7 @@
 
             <InfoBar
                 x:Name="DownloadInfo"
+                AutomationProperties.LiveSetting="Polite"
                 IsClosable="False"
                 IsOpen="True"
                 Message="服务器不支持稳定的 HTTP Range 时会自动从零开始单连接下载；不会降低 HTTPS 或摘要校验要求。"
@@ -224,6 +227,7 @@
             <Grid
                 x:Name="TransferStatusPanel"
                 Padding="0,12"
+                AutomationProperties.LiveSetting="Polite"
                 RowSpacing="8">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -239,11 +243,16 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition x:Name="TransferBytesRow" Height="0" />
                     </Grid.RowDefinitions>
-                    <TextBlock x:Name="TransferTitleText" FontWeight="SemiBold" Text="当前没有任务" />
+                    <TextBlock
+                        x:Name="TransferTitleText"
+                        FontWeight="SemiBold"
+                        Text="当前没有任务"
+                        TextWrapping="Wrap" />
                     <TextBlock
                         x:Name="TransferBytesText"
                         Grid.Column="1"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        TextWrapping="Wrap" />
                 </Grid>
                 <ProgressBar
                     x:Name="TransferProgressBar"
@@ -270,8 +279,10 @@
                         <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="下载库" />
                         <TextBlock
                             x:Name="LibrarySummaryText"
+                            AutomationProperties.LiveSetting="Polite"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="正在读取…" />
+                            Text="正在读取…"
+                            TextWrapping="Wrap" />
                     </StackPanel>
                     <Button
                         AutomationProperties.Name="刷新下载库"
@@ -287,6 +298,11 @@
                     x:Name="LibraryList"
                     MaxHeight="520"
                     SelectionMode="None">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid Padding="8,10" ColumnSpacing="12" RowSpacing="4">

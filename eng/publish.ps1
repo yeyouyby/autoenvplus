@@ -4,17 +4,32 @@ param(
     [string]$Configuration = 'Release',
     [string]$Version,
     [string]$BuildCacheRoot,
-    [switch]$NoArchive
+    [string]$ArtifactsRoot,
+    [switch]$NoArchive,
+    [switch]$NoRestore
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$artifactsRoot = Join-Path $repositoryRoot 'artifacts'
+$artifactsRoot = if (-not [string]::IsNullOrWhiteSpace($ArtifactsRoot)) {
+    [System.IO.Path]::GetFullPath($ArtifactsRoot)
+}
+elseif (-not [string]::IsNullOrWhiteSpace($env:AUTOENVPLUS_ARTIFACTS_ROOT)) {
+    [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
+}
+else {
+    Join-Path $repositoryRoot 'artifacts'
+}
 $outputRoot = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64'
 $cliStage = Join-Path $artifactsRoot '.staging\AutoEnvPlus.Cli-win-x64'
-$archivePath = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64.zip'
+$archivePath = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64-portable.zip'
+$archiveHashPath = "$archivePath.sha256"
 $appBuildRoot = Join-Path $repositoryRoot "src\AutoEnvPlus.App\bin\x64\$Configuration\net8.0-windows10.0.19041.0\win-x64"
+$modulePath = Join-Path $PSScriptRoot 'AutoEnvPlus.Packaging.psm1'
+
+Import-Module $modulePath -Force
+$versionInfo = Get-AutoEnvPlusVersionInfo
 
 function Assert-ArtifactPath {
     param([Parameter(Mandatory)][string]$Path)
@@ -83,22 +98,24 @@ function Set-BuildCacheEnvironment {
 
 Set-BuildCacheEnvironment
 
-$versionArguments = @()
-if (-not [string]::IsNullOrWhiteSpace($Version)) {
-    $parsedVersion = $null
-    if (-not [System.Version]::TryParse($Version, [ref]$parsedVersion)) {
-        throw "Version must be a valid .NET assembly version: $Version"
-    }
-    $versionArguments = @("-p:Version=$Version")
+$Version = if ([string]::IsNullOrWhiteSpace($Version)) {
+    $versionInfo.ProductVersion
 }
+else {
+    $Version.Trim()
+}
+if (-not [string]::Equals(
+        $Version,
+        $versionInfo.ProductVersion,
+        [System.StringComparison]::Ordinal)) {
+    throw "Version must match Directory.Build.props ($($versionInfo.ProductVersion)); found $Version."
+}
+$versionArguments = @("-p:Version=$Version")
 
 New-Item -ItemType Directory -Path $artifactsRoot -Force | Out-Null
 Remove-ArtifactPath -Path $outputRoot
 Remove-ArtifactPath -Path $cliStage
-if (Test-Path -LiteralPath $archivePath) {
-    Assert-ArtifactPath -Path $archivePath
-    Remove-Item -LiteralPath $archivePath -Force
-}
+Clear-AutoEnvPlusPortableArchiveArtifacts -ArtifactsRoot $artifactsRoot
 
 try {
     $cliPublishArguments = @(
@@ -112,6 +129,9 @@ try {
         '-p:DebugSymbols=false'
     )
     $cliPublishArguments += $versionArguments
+    if ($NoRestore) {
+        $cliPublishArguments += '--no-restore'
+    }
     $cliPublishArguments += @(
         '-o', $cliStage
     )
@@ -129,6 +149,9 @@ try {
         '-p:DebugSymbols=false'
     )
     $appBuildArguments += $versionArguments
+    if ($NoRestore) {
+        $appBuildArguments += '--no-restore'
+    }
     Invoke-DotNet -Arguments $appBuildArguments
 
     New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
@@ -171,6 +194,8 @@ try {
         (Join-Path $outputRoot 'LICENSE'),
         (Join-Path $outputRoot 'THIRD-PARTY-NOTICES.md'),
         (Join-Path $licensesOutput 'Sigstore.Net-Apache-2.0.txt'),
+        (Join-Path $licensesOutput 'WindowsAppSDK-license.txt'),
+        (Join-Path $licensesOutput 'WindowsAppSDK-NOTICE.txt'),
         (Join-Path $cliOutput 'autoenvplus.exe'),
         (Join-Path $cliOutput 'autoenvplus-shim.exe')
     )
@@ -189,12 +214,15 @@ try {
             $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             "$hash *$relativePath"
         }
-    Set-Content -LiteralPath $checksumPath -Value $checksumLines -Encoding UTF8
+    [System.IO.File]::WriteAllLines(
+        $checksumPath,
+        $checksumLines,
+        (New-Object System.Text.UTF8Encoding($false)))
 
     if (-not $NoArchive) {
         Compress-Archive -Path (Join-Path $outputRoot '*') -DestinationPath $archivePath -CompressionLevel Optimal
         $archiveHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
-        Set-Content -LiteralPath ($archivePath + '.sha256') -Value "$archiveHash *$(Split-Path $archivePath -Leaf)" -Encoding ASCII
+        Set-Content -LiteralPath $archiveHashPath -Value "$archiveHash *$(Split-Path $archivePath -Leaf)" -Encoding ASCII
     }
 
     $publishedFiles = Get-ChildItem -LiteralPath $outputRoot -File -Recurse

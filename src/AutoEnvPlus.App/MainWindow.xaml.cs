@@ -2,16 +2,23 @@ using AutoEnvPlus.App.Appearance;
 using AutoEnvPlus.App.Pages;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Settings;
+using System.Reflection;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Windows.Graphics;
+using Windows.System;
 
 namespace AutoEnvPlus.App;
 
 public sealed partial class MainWindow : Window
 {
     private readonly WindowBackdropManager _backdropManager;
+    private readonly AppWindowTitleBar _appWindowTitleBar;
     private bool _suppressSelectionChanged;
+    private string? _currentNavigationTag;
 
     public MainWindow()
         : this(AutoEnvPlusApplicationSettings.Default)
@@ -23,6 +30,17 @@ public sealed partial class MainWindow : Window
         ArgumentNullException.ThrowIfNull(applicationSettings);
         applicationSettings.Validate();
         InitializeComponent();
+        ApplyProductIdentity();
+
+        ExtendsContentIntoTitleBar = true;
+        SetTitleBar(AppTitleBar);
+        _appWindowTitleBar = AppWindow.TitleBar;
+        RootSurface.SizeChanged += OnRootSurfaceSizeChanged;
+        AppTitleBar.XamlRoot.Changed += OnTitleBarXamlRootChanged;
+        Closed += OnWindowClosed;
+        UpdateTitleBarInsets(_appWindowTitleBar);
+        ConfigureSettingsNavigationItem();
+
         _backdropManager = new WindowBackdropManager(
             this,
             RootSurface,
@@ -74,80 +92,206 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        if (args.SelectedItemContainer?.Tag is not string tag)
+        if (args.SelectedItemContainer?.Tag is string tag)
         {
-            return;
+            NavigateCore(tag);
         }
-
-        NavigateCore(tag);
     }
 
     internal void NavigateTo(string tag, string? context = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tag);
-        if (tag.Equals("settings", StringComparison.Ordinal))
-        {
-            if (!ReferenceEquals(RootNavigation.SelectedItem, RootNavigation.SettingsItem))
-            {
-                _suppressSelectionChanged = true;
-                try
-                {
-                    RootNavigation.SelectedItem = RootNavigation.SettingsItem;
-                }
-                finally
-                {
-                    _suppressSelectionChanged = false;
-                }
-            }
+        bool moveFocus = ContentFrame.Content is not null;
+        ShellPageMetadata metadata = GetPageMetadata(tag);
+        Control? navigationItem = SelectNavigationItem(metadata.Tag);
 
-            NavigateCore(tag, context);
+        if (context is null
+            && metadata.Tag.Equals(_currentNavigationTag, StringComparison.Ordinal))
+        {
+            QueueNavigationFocus(navigationItem);
             return;
         }
 
-        NavigationViewItem? item = RootNavigation.MenuItems
-            .OfType<NavigationViewItem>()
-            .FirstOrDefault(candidate => candidate.Tag is string candidateTag
-                && candidateTag.Equals(tag, StringComparison.Ordinal));
-        if (item is not null && !ReferenceEquals(RootNavigation.SelectedItem, item))
+        NavigateCore(metadata.Tag, context);
+        if (moveFocus)
         {
-            _suppressSelectionChanged = true;
-            try
-            {
-                RootNavigation.SelectedItem = item;
-            }
-            finally
-            {
-                _suppressSelectionChanged = false;
-            }
+            QueueNavigationFocus(SelectNavigationItem(
+                _currentNavigationTag ?? metadata.Tag));
         }
-
-        NavigateCore(tag, context);
     }
 
     private void NavigateCore(string tag, string? context = null)
     {
+        ShellPageMetadata metadata = GetPageMetadata(tag);
+        Page page;
         try
         {
-            ContentFrame.Content = tag switch
-            {
-                "dashboard" => new DashboardPage(),
-                "languages" => new LanguagesPage(),
-                "path" => new PathPage(),
-                "storage" => new StoragePage(),
-                "projects" => new ProjectsPage(context),
-                "downloads" => new DownloadsPage(),
-                "doctor" => new DiagnosticsPage(),
-                "activity" => new ActivityPage(),
-                "settings" => new SettingsPage(_backdropManager),
-                _ => new DashboardPage(),
-            };
+            page = CreatePage(metadata.Tag, context);
         }
         catch (InvalidOperationException) when (!ManagedRootResolver.TryResolve(
             null,
             out _,
             out _))
         {
-            ContentFrame.Content = new SettingsPage(_backdropManager);
+            metadata = GetPageMetadata("settings");
+            _ = SelectNavigationItem(metadata.Tag);
+            page = new SettingsPage(_backdropManager);
         }
+
+        ContentFrame.Content = page;
+        _currentNavigationTag = metadata.Tag;
+        UpdatePageHeader(metadata);
     }
+
+    private Page CreatePage(string tag, string? context) => tag switch
+    {
+        "dashboard" => new DashboardPage(),
+        "languages" => new LanguagesPage(),
+        "path" => new PathPage(),
+        "storage" => new StoragePage(),
+        "projects" => new ProjectsPage(context),
+        "downloads" => new DownloadsPage(),
+        "doctor" => new DiagnosticsPage(),
+        "activity" => new ActivityPage(),
+        "settings" => new SettingsPage(_backdropManager),
+        _ => new DashboardPage(),
+    };
+
+    private Control? SelectNavigationItem(string tag)
+    {
+        object? item = tag.Equals("settings", StringComparison.Ordinal)
+            ? RootNavigation.SettingsItem
+            : RootNavigation.MenuItems
+                .OfType<NavigationViewItem>()
+                .FirstOrDefault(candidate => candidate.Tag is string candidateTag
+                    && candidateTag.Equals(tag, StringComparison.Ordinal));
+        if (item is null || ReferenceEquals(RootNavigation.SelectedItem, item))
+        {
+            return item as Control;
+        }
+
+        _suppressSelectionChanged = true;
+        try
+        {
+            RootNavigation.SelectedItem = item;
+        }
+        finally
+        {
+            _suppressSelectionChanged = false;
+        }
+
+        return item as Control;
+    }
+
+    private void UpdatePageHeader(ShellPageMetadata metadata)
+    {
+        PageHeaderTitle.Text = metadata.Title;
+        PageHeaderSubtitle.Text = metadata.Subtitle;
+        AutomationProperties.SetName(
+            ShellPageHeader,
+            $"{metadata.Title}。{metadata.Subtitle}");
+        AutomationProperties.SetName(ContentFrame, $"{metadata.Title}内容");
+    }
+
+    private void ConfigureSettingsNavigationItem()
+    {
+        if (RootNavigation.SettingsItem is not NavigationViewItem settingsItem)
+        {
+            return;
+        }
+
+        settingsItem.Content = "设置";
+        AutomationProperties.SetName(settingsItem, "设置");
+        ToolTipService.SetToolTip(settingsItem, "设置（Ctrl+0）");
+    }
+
+    private void QueueNavigationFocus(Control? navigationItem)
+    {
+        if (navigationItem is null || ContentFrame.Content is null)
+        {
+            return;
+        }
+
+        _ = navigationItem.DispatcherQueue.TryEnqueue(() =>
+            navigationItem.Focus(FocusState.Keyboard));
+    }
+
+    private void OnNavigationAcceleratorInvoked(
+        KeyboardAccelerator sender,
+        KeyboardAcceleratorInvokedEventArgs args)
+    {
+        string? tag = sender.Key switch
+        {
+            VirtualKey.Number1 => "dashboard",
+            VirtualKey.Number2 => "languages",
+            VirtualKey.Number3 => "projects",
+            VirtualKey.Number4 => "downloads",
+            VirtualKey.Number5 => "path",
+            VirtualKey.Number6 => "storage",
+            VirtualKey.Number7 => "doctor",
+            VirtualKey.Number8 => "activity",
+            VirtualKey.Number0 => "settings",
+            _ => null,
+        };
+        if (tag is null)
+        {
+            return;
+        }
+
+        NavigateTo(tag);
+        args.Handled = true;
+    }
+
+    private void OnRootSurfaceSizeChanged(object sender, SizeChangedEventArgs args) =>
+        UpdateTitleBarInsets(_appWindowTitleBar);
+
+    private void OnTitleBarXamlRootChanged(XamlRoot sender, XamlRootChangedEventArgs args) =>
+        UpdateTitleBarInsets(_appWindowTitleBar);
+
+    private void UpdateTitleBarInsets(AppWindowTitleBar titleBar)
+    {
+        double scale = AppTitleBar.XamlRoot.RasterizationScale;
+        if (!double.IsFinite(scale) || scale <= 0)
+        {
+            scale = 1;
+        }
+
+        TitleBarLeftInsetColumn.Width = new GridLength(titleBar.LeftInset / scale);
+        TitleBarRightInsetColumn.Width = new GridLength(titleBar.RightInset / scale);
+    }
+
+    private void ApplyProductIdentity()
+    {
+        ProductIdentityPresentation identity =
+            ProductIdentityPresentationPolicy.FromAssembly(typeof(MainWindow).Assembly);
+        Title = identity.WindowTitle;
+        VersionBadgeText.Text = identity.DisplayVersion;
+        AutomationProperties.SetName(AppTitleBar, identity.AutomationName);
+    }
+
+    private void OnWindowClosed(object sender, WindowEventArgs args)
+    {
+        Closed -= OnWindowClosed;
+        RootSurface.SizeChanged -= OnRootSurfaceSizeChanged;
+        AppTitleBar.XamlRoot.Changed -= OnTitleBarXamlRootChanged;
+    }
+
+    private static ShellPageMetadata GetPageMetadata(string tag) => tag switch
+    {
+        "dashboard" => new("dashboard", "概览", "上次环境快照与常用入口"),
+        "languages" => new("languages", "语言工具", "版本、Provider 与全局选择"),
+        "projects" => new("projects", "项目环境", "隔离配置与项目工具链"),
+        "downloads" => new("downloads", "下载中心", "受管包与传输任务"),
+        "path" => new("path", "PATH 与命令", "命令路由、冲突与回滚"),
+        "storage" => new("storage", "缓存与存储", "受管数据、迁移与清理"),
+        "doctor" => new("doctor", "环境诊断", "只读检查与报告导出"),
+        "activity" => new("activity", "活动记录", "关键变更与操作结果"),
+        "settings" => new("settings", "设置", "外观、启动、网络与日志"),
+        _ => new("dashboard", "概览", "上次环境快照与常用入口"),
+    };
+
+    private sealed record ShellPageMetadata(
+        string Tag,
+        string Title,
+        string Subtitle);
 }

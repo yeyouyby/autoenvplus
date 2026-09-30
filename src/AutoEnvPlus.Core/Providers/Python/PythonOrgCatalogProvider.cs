@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using AutoEnvPlus.Core.Installation;
+using AutoEnvPlus.Core.Networking;
 using AutoEnvPlus.Core.Runtimes;
 
 namespace AutoEnvPlus.Core.Providers.Python;
@@ -12,6 +13,12 @@ namespace AutoEnvPlus.Core.Providers.Python;
 public sealed partial class PythonOrgCatalogProvider : IArchiveRuntimeProvider
 {
     public const string ProviderName = "python-org";
+    internal const int MaximumCatalogBytes = 16 * 1024 * 1024;
+    internal const int MaximumManifestBytes = 8 * 1024 * 1024;
+    internal const int MaximumReleaseEntries = 4_096;
+
+    private const int MaximumReleaseFileEntries = 512;
+    private const int MaximumManifestVersionEntries = 512;
 
     private static readonly Uri DefaultApiBaseUri = new("https://www.python.org/api/v2/downloads/");
     private readonly HttpClient _httpClient;
@@ -42,19 +49,23 @@ public sealed partial class PythonOrgCatalogProvider : IArchiveRuntimeProvider
     public async Task<IReadOnlyList<RuntimeRelease>> GetReleasesAsync(
         CancellationToken cancellationToken = default)
     {
-        using HttpResponseMessage response = await _httpClient.GetAsync(
+        using JsonDocument document = await BoundedHttpResponseReader.GetJsonAsync(
+            _httpClient,
             new Uri(_apiBaseUri, "release/?is_published=true"),
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        using JsonDocument document = await JsonDocument.ParseAsync(
-            stream,
+            MaximumCatalogBytes,
+            maximumDepth: 32,
+            description: "python.org release catalog",
             cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (document.RootElement.ValueKind != JsonValueKind.Array)
         {
             throw new InvalidDataException("The python.org release response is not a JSON array.");
+        }
+
+        if (document.RootElement.GetArrayLength() > MaximumReleaseEntries)
+        {
+            throw new InvalidDataException(
+                $"The python.org release catalog contains more than {MaximumReleaseEntries} releases.");
         }
 
         List<RuntimeRelease> releases = [];
@@ -165,19 +176,24 @@ public sealed partial class PythonOrgCatalogProvider : IArchiveRuntimeProvider
         CancellationToken cancellationToken)
     {
         Uri filesUri = new(_apiBaseUri, $"release_file/?release={releaseId}");
-        using HttpResponseMessage response = await _httpClient.GetAsync(
+        using JsonDocument filesDocument = await BoundedHttpResponseReader.GetJsonAsync(
+            _httpClient,
             filesUri,
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        using JsonDocument filesDocument = await JsonDocument.ParseAsync(
-            stream,
+            MaximumCatalogBytes,
+            maximumDepth: 32,
+            description: "python.org release-file catalog",
             cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (filesDocument.RootElement.ValueKind != JsonValueKind.Array)
         {
             throw new InvalidDataException("The python.org release-file response is not a JSON array.");
+        }
+
+        if (filesDocument.RootElement.GetArrayLength() > MaximumReleaseFileEntries)
+        {
+            throw new InvalidDataException(
+                $"The python.org release-file catalog contains more than "
+                + $"{MaximumReleaseFileEntries} entries.");
         }
 
         Uri? manifestUri = null;
@@ -209,7 +225,12 @@ public sealed partial class PythonOrgCatalogProvider : IArchiveRuntimeProvider
                 "This Python release does not publish a Sigstore-signed Windows install manifest.");
         }
 
-        byte[] content = await _httpClient.GetByteArrayAsync(manifestUri, cancellationToken).ConfigureAwait(false);
+        byte[] content = await BoundedHttpResponseReader.GetBytesAsync(
+            _httpClient,
+            manifestUri,
+            MaximumManifestBytes,
+            "Python Windows release manifest",
+            cancellationToken).ConfigureAwait(false);
         string actualHash = Convert.ToHexString(SHA256.HashData(content)).ToLowerInvariant();
         if (!actualHash.Equals(expectedHash, StringComparison.OrdinalIgnoreCase))
         {
@@ -233,11 +254,25 @@ public sealed partial class PythonOrgCatalogProvider : IArchiveRuntimeProvider
 
     private RuntimePackageAsset ParsePythonCoreAsset(RuntimeRelease release, VerifiedManifest verifiedManifest)
     {
-        using JsonDocument manifest = JsonDocument.Parse(verifiedManifest.Content);
+        using JsonDocument manifest = JsonDocument.Parse(
+            verifiedManifest.Content,
+            new JsonDocumentOptions
+            {
+                AllowTrailingCommas = false,
+                CommentHandling = JsonCommentHandling.Disallow,
+                MaxDepth = 32,
+            });
         if (!manifest.RootElement.TryGetProperty("versions", out JsonElement versions)
             || versions.ValueKind != JsonValueKind.Array)
         {
             throw new InvalidDataException("The Python Windows release manifest has no versions array.");
+        }
+
+        if (versions.GetArrayLength() > MaximumManifestVersionEntries)
+        {
+            throw new InvalidDataException(
+                $"The Python Windows release manifest contains more than "
+                + $"{MaximumManifestVersionEntries} versions.");
         }
 
         string architectureSuffix = _architecture switch

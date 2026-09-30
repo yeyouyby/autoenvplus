@@ -61,6 +61,30 @@ public sealed class NodeReleaseSignatureVerifierTests
         Assert.Contains("does not match release date", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task GetVerifiedChecksumsAsync_RejectsDeclaredManifestOverByteLimitBeforeParsing()
+    {
+        List<Uri> requests = [];
+        using HttpClient client = new(new StubHttpMessageHandler(request =>
+        {
+            requests.Add(request.RequestUri!);
+            HttpResponseMessage response = StubHttpMessageHandler.Text(
+                "not an OpenPGP document",
+                "application/pgp-signature");
+            response.Content.Headers.ContentLength =
+                NodeReleaseSignatureVerifier.MaximumSignedManifestBytes + 1L;
+            return response;
+        }));
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            new NodeReleaseSignatureVerifier(client).GetVerifiedChecksumsAsync(
+                ManifestUri,
+                new DateOnly(2026, 7, 8)));
+
+        Assert.Contains("byte limit", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal([ManifestUri], requests);
+    }
+
     private static HttpClient CreateFixtureClient(
         List<Uri> requests,
         string? signedManifest = null) =>

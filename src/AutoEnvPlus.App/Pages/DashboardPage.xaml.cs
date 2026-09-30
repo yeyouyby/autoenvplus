@@ -39,6 +39,8 @@ public sealed partial class DashboardPage : Page
     private readonly AppDownloadManager _downloadManager;
     private CancellationTokenSource? _refreshCancellation;
     private OverviewSnapshot? _snapshot;
+    private bool _cachedSnapshotLoadStarted;
+    private bool _isActive;
 
     public DashboardPage()
     {
@@ -50,12 +52,32 @@ public sealed partial class DashboardPage : Page
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
     {
+        if (_isActive || _pageCancellation.IsCancellationRequested)
+        {
+            return;
+        }
+
+        _isActive = true;
         _downloadManager.StateChanged += OnDownloadManagerStateChanged;
+        UpdateDownloadTransfer(_downloadManager.Snapshot);
+        if (_cachedSnapshotLoadStarted)
+        {
+            return;
+        }
+
+        // Dashboard activation is cache-only; all environment scans stay user-initiated.
+        _cachedSnapshotLoadStarted = true;
         await LoadCachedSnapshotAsync();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs args)
     {
+        if (!_isActive)
+        {
+            return;
+        }
+
+        _isActive = false;
         _refreshCancellation?.Cancel();
         _pageCancellation.Cancel();
         _downloadManager.StateChanged -= OnDownloadManagerStateChanged;
@@ -64,11 +86,13 @@ public sealed partial class DashboardPage : Page
     private async void OnQuickRefreshClicked(object sender, RoutedEventArgs args)
     {
         await RefreshAsync(fullScan: false);
+        RestoreActionFocus(sender);
     }
 
     private async void OnFullScanClicked(object sender, RoutedEventArgs args)
     {
         await RefreshAsync(fullScan: true);
+        RestoreActionFocus(sender);
     }
 
     private async Task LoadCachedSnapshotAsync()
@@ -113,6 +137,11 @@ public sealed partial class DashboardPage : Page
         _refreshCancellation = refresh;
         CancellationToken cancellationToken = refresh.Token;
         SetBusy(true);
+        OverviewInfo.Severity = InfoBarSeverity.Informational;
+        OverviewInfo.Title = fullScan ? "正在完整扫描" : "正在快速刷新";
+        OverviewInfo.Message = fullScan
+            ? "正在读取运行时、PATH、命令和缓存状态。"
+            : "正在读取 AutoEnvPlus 受管状态。";
 
         try
         {
@@ -386,6 +415,11 @@ public sealed partial class DashboardPage : Page
 
     private void OnDownloadManagerStateChanged(object? sender, EventArgs args)
     {
+        if (!_isActive)
+        {
+            return;
+        }
+
         if (DispatcherQueue.HasThreadAccess)
         {
             UpdateDownloadTransfer(_downloadManager.Snapshot);
@@ -393,7 +427,12 @@ public sealed partial class DashboardPage : Page
         else
         {
             _ = DispatcherQueue.TryEnqueue(() =>
-                UpdateDownloadTransfer(_downloadManager.Snapshot));
+            {
+                if (_isActive)
+                {
+                    UpdateDownloadTransfer(_downloadManager.Snapshot);
+                }
+            });
         }
     }
 
@@ -667,6 +706,14 @@ public sealed partial class DashboardPage : Page
         QuickRefreshButton.IsEnabled = !busy;
         FullScanButton.IsEnabled = !busy;
         RefreshProgress.IsActive = busy;
+    }
+
+    private void RestoreActionFocus(object sender)
+    {
+        if (_isActive && sender is Button button)
+        {
+            _ = button.Focus(FocusState.Programmatic);
+        }
     }
 
     private void OnNavigateClicked(object sender, RoutedEventArgs args)
