@@ -117,4 +117,27 @@ dotnet run --project src\AutoEnvPlus.Cli -- project terminal D:\work\my-project
 
 项目解析和终端启动分别经过只读预览与执行前复检。`autoenvplus.toml` 中的 `[tool-identities]` 将 Runtime ID 与 Provider ID 成对保存，避免同版本不同来源被静默替代。
 
+## 7. 用 MCP 调用全部功能
+
+`autoenvplus mcp` 启动一个 stdio MCP（Model Context Protocol）服务器，把 CLI 暴露给 MCP 客户端（例如 AI 助手）：
+
+```powershell
+dotnet run --project src\AutoEnvPlus.Cli -- mcp
+```
+
+在 MCP 客户端中按如下方式注册（路径换成实际安装位置）：
+
+```json
+{
+  "mcpServers": {
+    "autoenvplus": {
+      "command": "C:\\Users\\<you>\\AppData\\Local\\Programs\\AutoEnvPlus\\cli\\autoenvplus.exe",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+服务器提供六个工具：`doctor`、`list_runtimes`、`catalog`、`provider_list`、`which`，以及通用的 `cli`——后者接受任意 CLI 参数（如 `["install", "python", "3.14.6"]`），因此全部 CLI 功能都可以通过 MCP 调用。每次工具调用都会启动真实 CLI 进程，返回结构化的退出码、stdout 与 stderr；变更操作仍遵循 CLI 自身的安全规则（预览、`--yes` 确认等）。
+
 下一步阅读 [用户指南](USER-GUIDE.md)；遇到失败关闭或快照为空时查看 [故障排除](TROUBLESHOOTING.md)。

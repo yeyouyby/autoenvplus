@@ -89,6 +89,7 @@ static async Task<int> DispatchAsync(string[] args, CancellationToken cancellati
         "toolchain" => await RunToolchainAsync(commandArgs, cancellationToken),
         "project" => await RunProjectAsync(commandArgs, cancellationToken),
         "resolve" => RunResolve(commandArgs),
+        "mcp" => await AutoEnvPlusMcpServer.RunAsync(cancellationToken),
         "help" or "--help" or "-h" => ShowHelp(),
         _ => UnknownCommand(args[0]),
     };
@@ -4268,6 +4269,9 @@ static int ShowHelp()
     Console.WriteLine("  autoenvplus project cmake-preset <path> [--instance id] [--host x64|x86] [--target value] [--write --yes]");
     Console.WriteLine("  autoenvplus project cmake-preset <path> --rollback <snapshot-file> [--root directory] [--yes]");
     Console.WriteLine("  autoenvplus resolve <runtime> <selector> [installed-version ...]");
+    Console.WriteLine("  autoenvplus mcp");
+    Console.WriteLine("    Start a stdio MCP server exposing the CLI as callable tools (doctor, list_runtimes,");
+    Console.WriteLine("    catalog, provider_list, which, and a generic cli tool for every command).");
     return 0;
 }
 

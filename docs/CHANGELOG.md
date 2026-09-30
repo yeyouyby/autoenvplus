@@ -4,7 +4,9 @@
 
 ## Unreleased
 
-- 尚无超出 `v0.0.1` 候选范围的已承诺功能。
+### Added
+
+- `autoenvplus mcp`：stdio MCP（Model Context Protocol）服务器，把 CLI 暴露为可调用工具。六个工具：`doctor`、`list_runtimes`、`catalog`、`provider_list`、`which` 和通用 `cli`（可转发任意 CLI 命令，覆盖 install/uninstall/use/exec/tool/network/download/provider/plugin/shim/shell/storage/toolchain/project/resolve 全部功能）。每次工具调用都会启动真实 CLI 进程并返回退出码、stdout 与 stderr；协议支持 initialize/ping/tools 列表与调用、批处理与标准 JSON-RPC 错误码，并拒绝嵌套 MCP 递归。
 
 ## 0.0.1 - 待发布
 

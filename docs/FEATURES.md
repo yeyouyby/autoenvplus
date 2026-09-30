@@ -59,6 +59,7 @@
 | 精确工具身份 | 已实现 | 会话、项目和全局均可保存 selector + Runtime ID + Provider ID |
 | 全局选择 | 已实现 | 与托管注册表在统一锁序中复检并原子写入 |
 | 安全卸载 | 已实现 | 扫描全局、项目和锁文件引用，隔离目录并补偿注册表更新 |
+| MCP 服务器 | 已实现 | `autoenvplus mcp` 以 stdio JSON-RPC 暴露 doctor/list_runtimes/catalog/provider_list/which/cli 六个工具；每次调用转发到真实 CLI 进程并返回退出码与输出 |
 | Windows SDK 独立安装 | 未实现 | 可以发现；不宣称存在单独的受管安装适配器 |
 
 18 个 Shim 命令是 `python`、`python3`、`pip`、`pip3`、`node`、`npm`、`npx`、`java`、`javac`、`jar`、`dotnet`、`cl`、`clang`、`clang++`、`gcc`、`g++`、`cmake` 和 `ninja`。
