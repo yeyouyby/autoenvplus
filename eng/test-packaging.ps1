@@ -447,6 +447,32 @@ try {
     Assert-Equal $releaseWorkflow.Contains('-RequireSignedPayload') $true `
         'MSI release requires signed embedded payload'
 
+    $workflowFiles = @(
+        Get-ChildItem -LiteralPath (Join-Path $repositoryRoot '.github\workflows') -Filter '*.yml' |
+            Sort-Object Name)
+    Assert-Equal $workflowFiles.Count 4 'Repository ships exactly four workflow files'
+    foreach ($workflowFile in $workflowFiles) {
+        $workflowContent = [System.IO.File]::ReadAllText($workflowFile.FullName)
+        $usesLines = @(
+            [regex]::Matches($workflowContent, '(?m)^\s*uses:\s*(?<ref>\S+)\s*(?:#\s*(?<version>\S+))?\s*$'))
+        Assert-Equal ($usesLines.Count -gt 0) $true `
+            "$($workflowFile.Name) references at least one action"
+        foreach ($usesLine in $usesLines) {
+            $ref = $usesLine.Groups['ref'].Value
+            Assert-Equal ($ref -match '^[^@/]+/[^@]+@[0-9a-f]{40}$') $true `
+                "$($workflowFile.Name) pins action '$ref' to a full commit SHA"
+            Assert-Equal (-not [string]::IsNullOrWhiteSpace($usesLine.Groups['version'].Value)) $true `
+                "$($workflowFile.Name) documents the version for action '$ref'"
+        }
+    }
+
+    $dependabotConfig = [System.IO.File]::ReadAllText(
+        (Join-Path $repositoryRoot '.github\dependabot.yml'))
+    foreach ($requiredEcosystem in @('github-actions', 'nuget')) {
+        Assert-Equal $dependabotConfig.Contains("package-ecosystem: $requiredEcosystem") $true `
+            "Dependabot covers the $requiredEcosystem ecosystem"
+    }
+
     $env:AUTOENVPLUS_PFX_PASSWORD = 'packaging-test-password'
     $env:AUTOENVPLUS_PUBLISHER = 'CN=AutoEnvPlus Packaging Test'
     $env:AUTOENVPLUS_TIMESTAMP_URI = 'https://timestamp.example.test/rfc3161'

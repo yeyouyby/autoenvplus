@@ -1,0 +1,41 @@
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Shanghai
+    groups:
+      actions-minor:
+        update-types:
+          - minor
+          - patch
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "ci(deps)"
+
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Shanghai
+    groups:
+      nuget-minor-patch:
+        update-types:
+          - minor
+          - patch
+      nuget-major:
+        update-types:
+          - major
+    ignore:
+      # The WiX Toolset version is pinned deliberately and enforced by the
+      # packaging contract tests; bump it together with eng/test-packaging.ps1.
+      - dependency-name: WixToolset.Sdk
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "deps"

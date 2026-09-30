@@ -1,0 +1,90 @@
+name: CodeQL code scanning
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "30 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+concurrency:
+  group: autoenvplus-codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AUTOENVPLUS_BUILD_CACHE_ROOT: ${{ vars.AUTOENVPLUS_BUILD_CACHE_ROOT || format('{0}/.build-cache', github.workspace) }}
+
+jobs:
+  analyze:
+    name: Analyze managed sources
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Configure isolated build caches
+        shell: pwsh
+        run: |
+          $root = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_BUILD_CACHE_ROOT)
+          $values = [ordered]@{
+            AUTOENVPLUS_BUILD_CACHE_ROOT = $root
+            NUGET_PACKAGES = Join-Path $root '.nuget\packages'
+            NUGET_HTTP_CACHE_PATH = Join-Path $root '.nuget\v3-cache'
+            NUGET_PLUGINS_CACHE_PATH = Join-Path $root '.nuget\plugins-cache'
+            DOTNET_CLI_HOME = Join-Path $root '.dotnet'
+            TEMP = Join-Path $root 'tmp'
+            TMP = Join-Path $root 'tmp'
+            DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
+            DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+          }
+          foreach ($entry in $values.GetEnumerator()) {
+            if ($entry.Key -notin @('DOTNET_SKIP_FIRST_TIME_EXPERIENCE', 'DOTNET_CLI_TELEMETRY_OPTOUT')) {
+              [System.IO.Directory]::CreateDirectory($entry.Value) | Out-Null
+            }
+            "$($entry.Key)=$($entry.Value)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+
+      - name: Install repository .NET SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          global-json-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.AUTOENVPLUS_BUILD_CACHE_ROOT }}/.nuget/packages
+          key: nuget-win-x64-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            nuget-win-x64-
+
+      - name: Restore locked dependencies
+        shell: pwsh
+        run: dotnet restore AutoEnvPlus.sln --locked-mode -p:Platform=x64 -r win-x64
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3.38.2
+        with:
+          languages: csharp
+          build-mode: manual
+
+      - name: Build traced solution
+        shell: pwsh
+        run: dotnet build AutoEnvPlus.sln -c Release -p:Platform=x64 -r win-x64 --no-restore -m:1
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3.38.2
+        with:
+          category: "/language:csharp"

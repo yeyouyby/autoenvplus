@@ -62,6 +62,14 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.AUTOENVPLUS_BUILD_CACHE_ROOT }}/.nuget/packages
+          key: nuget-win-x64-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            nuget-win-x64-
+
       - name: Read authoritative release version
         shell: pwsh
         run: |
@@ -81,7 +89,30 @@ jobs:
 
       - name: Run Core and native Shim tests
         shell: pwsh
-        run: dotnet test tests\AutoEnvPlus.Core.Tests\AutoEnvPlus.Core.Tests.csproj -c Release -p:Platform=x64 -r win-x64 --no-restore -m:1
+        run: dotnet test tests\AutoEnvPlus.Core.Tests\AutoEnvPlus.Core.Tests.csproj -c Release -p:Platform=x64 -r win-x64 --no-restore -m:1 --collect:"XPlat Code Coverage"
+
+      - name: Summarize test coverage
+        shell: pwsh
+        run: |
+          $coverageFiles = @(Get-ChildItem -LiteralPath 'tests\AutoEnvPlus.Core.Tests\TestResults' -Recurse -Filter 'coverage.cobertura.xml' -ErrorAction SilentlyContinue)
+          if ($coverageFiles.Count -eq 0) {
+            Write-Host 'No coverage report was produced; skipping the coverage summary.'
+            exit 0
+          }
+          $latest = @($coverageFiles | Sort-Object LastWriteTime -Descending)[0]
+          [xml]$report = Get-Content -LiteralPath $latest.FullName -Raw
+          $lineRate = [double]$report.coverage.'line-rate' * 100.0
+          $branchRate = [double]$report.coverage.'branch-rate' * 100.0
+          $invariant = [System.Globalization.CultureInfo]::InvariantCulture
+          $summary = @(
+            '## Test coverage',
+            '',
+            '| Metric | Coverage |',
+            '|--------|---------:|',
+            ('| Lines | ' + $lineRate.ToString('0.##', $invariant) + '% |'),
+            ('| Branches | ' + $branchRate.ToString('0.##', $invariant) + '% |')
+          )
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value ($summary -join "`n") -Encoding utf8
 
       - name: Build WinUI application
         shell: pwsh
@@ -160,6 +191,23 @@ jobs:
             throw "CI candidate staging has an invalid file set. Missing=[$($missing -join ', ')]; unexpected=[$(($invalid.Name | Sort-Object) -join ', ')]."
           }
 
+          $invariant = [System.Globalization.CultureInfo]::InvariantCulture
+          $rows = New-Object System.Collections.Generic.List[string]
+          foreach ($entry in $sources.GetEnumerator()) {
+            $item = Get-Item -LiteralPath $entry.Value
+            $hash = (Get-FileHash -LiteralPath $entry.Value -Algorithm SHA256).Hash.ToLowerInvariant()
+            $rows.Add(('| {0} | {1} MiB | `{2}` |' -f $entry.Key, ([math]::Round($item.Length / 1MB, 2)).ToString($invariant), $hash))
+          }
+          $summary = @(
+            '## CI build summary',
+            '',
+            ("Product version: {0} (package {1})" -f $env:AUTOENVPLUS_PRODUCT_VERSION, $env:AUTOENVPLUS_PACKAGE_VERSION),
+            '',
+            '| Asset | Size | SHA-256 |',
+            '|-------|-----:|---------|'
+          ) + $rows
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value ($summary -join "`n") -Encoding utf8
+
       - name: Ensure dependency lock files did not drift
         shell: pwsh
         run: |
@@ -172,6 +220,17 @@ jobs:
             throw 'NuGet lock files changed or were generated during the build.'
           }
 
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: AutoEnvPlus-ci-failure-diagnostics
+          path: |
+            tests/AutoEnvPlus.Core.Tests/TestResults
+            ${{ env.AUTOENVPLUS_ARTIFACTS_ROOT }}/AutoEnvPlus-win-x64.exe.bundle-manifest.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Upload three unsigned CI candidates
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -180,3 +239,17 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: ${{ vars.AUTOENVPLUS_ARTIFACT_RETENTION_DAYS || 14 }}
+
+  lint-workflows:
+    name: Lint GitHub Actions workflows
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Run actionlint
+        uses: rhysd/actionlint@914e7df21a07ef503a81201c76d2b11c789d3fca # v1.7.12
