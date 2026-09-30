@@ -36,14 +36,20 @@
       ReferenceOutputAssembly="false"
       AdditionalProperties="Platform=AnyCPU" />
   </ItemGroup>
+  <PropertyGroup>
+    <!-- The CLI project reference inherits the global RuntimeIdentifier, so its
+         binaries land in a RID subdirectory whenever this project builds with -r. -->
+    <AutoEnvPlusCliOutputRoot Condition="'$(RuntimeIdentifier)' != ''">..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\$(RuntimeIdentifier)\</AutoEnvPlusCliOutputRoot>
+    <AutoEnvPlusCliOutputRoot Condition="'$(RuntimeIdentifier)' == ''">..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\</AutoEnvPlusCliOutputRoot>
+  </PropertyGroup>
   <Target Name="CopyAutoEnvPlusCli" AfterTargets="Build">
     <ItemGroup>
-      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus.exe" />
-      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus.dll" />
-      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus.deps.json" />
-      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus.runtimeconfig.json" />
-      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\AutoEnvPlus.Core.dll" />
-      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus-shim.exe" />
+      <AutoEnvPlusCliFiles Include="$(AutoEnvPlusCliOutputRoot)autoenvplus.exe" />
+      <AutoEnvPlusCliFiles Include="$(AutoEnvPlusCliOutputRoot)autoenvplus.dll" />
+      <AutoEnvPlusCliFiles Include="$(AutoEnvPlusCliOutputRoot)autoenvplus.deps.json" />
+      <AutoEnvPlusCliFiles Include="$(AutoEnvPlusCliOutputRoot)autoenvplus.runtimeconfig.json" />
+      <AutoEnvPlusCliFiles Include="$(AutoEnvPlusCliOutputRoot)AutoEnvPlus.Core.dll" />
+      <AutoEnvPlusCliFiles Include="$(AutoEnvPlusCliOutputRoot)autoenvplus-shim.exe" />
     </ItemGroup>
     <MakeDir Directories="$(OutDir)cli" />
     <Copy SourceFiles="@(AutoEnvPlusCliFiles)" DestinationFolder="$(OutDir)cli" SkipUnchangedFiles="true" />
