@@ -82,6 +82,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msi.ps1 `
 
 在准备 tag 前完成并由另一名维护者复核：
 
+> 官方参考：[SignPath Foundation 申请](https://signpath.org/apply)、[文档站](https://docs.signpath.io)、[项目设置](https://docs.signpath.io/projects)、[Artifact Configuration 语法](https://docs.signpath.io/artifact-configuration/syntax)、[GitHub Trusted Build System](https://docs.signpath.io/trusted-build-systems/github)、[用户与 API Token](https://docs.signpath.io/users)。Open Source Code Signing 版强制要求：Trusted Build System 验证与 Origin 验证必须启用（Origin 需配置仓库 URL 并限制分支，建议 `main`），提交者必须是 CI 用户，且签名工作流的所有 job 必须运行在 GitHub 托管 runner 上。
+
 - [ ] SignPath Foundation/open-source 计划申请已获批准；
 - [ ] Organization、Project 和 GitHub.com Trusted Build System 已创建并绑定本仓库；
 - [ ] PE Artifact Configuration 以 GitHub artifact 的外层 `<zip-file>` 为根，只接收工作流列明的 single/portable 相对路径并返回相同结构；
