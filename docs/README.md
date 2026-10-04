@@ -34,7 +34,7 @@
 - [语言与语言包](LANGUAGE-PACKS.md)：45 门语言、136 个工具目录和 data-only 语言包；
 - [Provider 插件指南](PROVIDER-PLUGINS.md)：schema 2、精确工具绑定和第三方 ZIP 信任边界；
 - [开发指南](DEVELOPMENT.md)：仓库布局、D 盘构建环境和质量门禁；
-- [分发说明](DISTRIBUTION.md)：WinUI 单文件、便携 ZIP、per-user MSI、SignPath 与校验细节；
+- [分发说明](DISTRIBUTION.md)：WinUI 单文件、便携 ZIP、per-user MSI、自签名与校验细节；
 - [发布指南](RELEASING.md)：PR、tag、GitHub prerelease 与回读检查；
 - [变更记录](CHANGELOG.md)：版本级开发日志；
 - [阶段交接](HANDOFF.md)：当前分支继续工作的短版上下文。

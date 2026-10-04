@@ -15,7 +15,7 @@
 </p>
 
 > [!IMPORTANT]
-> `v0.0.1` 是首个 Windows x64 测试版本，面向验证而非生产部署。目标 GitHub prerelease 必须同时提供三类经过 SignPath OSS 流程处理的主资产：`AutoEnvPlus-win-x64.exe`、`AutoEnvPlus-win-x64-portable.zip` 和 `AutoEnvPlus-win-x64.msi`。如果 [GitHub Releases](https://github.com/yeyouyby/autoenvplus/releases) 尚无这三个文件及校验文件，表示预发布尚未完成；仓库中的工作流定义、本地构建或未签候选都不等于已经发布。
+> `v0.0.1` 是首个 Windows x64 测试版本，面向验证而非生产部署。目标 GitHub prerelease 必须同时提供三类经过发布工作流签名处理的主资产：`AutoEnvPlus-win-x64.exe`、`AutoEnvPlus-win-x64-portable.zip` 和 `AutoEnvPlus-win-x64.msi`。如果 [GitHub Releases](https://github.com/yeyouyby/autoenvplus/releases) 尚无这三个文件及校验文件，表示预发布尚未完成；仓库中的工作流定义、本地构建或未签候选都不等于已经发布。签名使用自签名测试证书，Windows 会显示“未知发布者”，这是测试版的预期行为。
 
 ## 为什么是 AutoEnvPlus
 
@@ -67,7 +67,7 @@ AutoEnvPlus 不把开发环境简化成一组 PATH 编辑器。它使用固定�
 | `AutoEnvPlus-win-x64-portable.zip` | 普通 WinUI EXE + DLL 自包含目录，包含 `cli\autoenvplus.exe` 与原生 Shim。必须完整解压并保留目录结构；CLI 只是这个便携包和 MSI 内的辅助组件，不是第四类独立资产。 |
 | `AutoEnvPlus-win-x64.msi` | per-user Windows Installer，提供开始菜单入口、应用和功能中的卸载及 major upgrade。卸载只移除程序文件，保留用户配置、受管数据根和已经安装的语言工具。 |
 
-发布工作流要求单文件 EXE 和便携/MSI 内第一方 PE 通过 SignPath Authenticode 验证，并在已签 payload 上构建、再签 MSI 外层。ZIP 容器本身不能做 Authenticode 签名；其发布者身份来自内部第一方 PE 的有效签名，ZIP 字节完整性由 `.sha256` 和 `SHA256SUMS.txt` 校验。SignPath 外部审批、项目配置和一次 tag 工作流成功回读完成前，不能声称当前下载已经签名。
+发布工作流要求单文件 EXE 和便携/MSI 内第一方 PE 通过签名复检（自签名证书 + RFC3161 时间戳，指纹精确匹配），并在已签 payload 上构建、再签 MSI 外层。ZIP 容器本身不能做 Authenticode 签名；其发布者身份来自内部第一方 PE 的有效签名，ZIP 字节完整性由 `.sha256` 和 `SHA256SUMS.txt` 校验。签名证书配置和一次 tag 工作流成功回读完成前，不能声称当前下载已经签名。
 
 ### 从源码运行
 
@@ -106,7 +106,7 @@ dotnet run --project src\AutoEnvPlus.App -p:Platform=x64
 - **插件是 data-only，但资产仍是代码。** 声明式插件不能携带 DLL、脚本、任意命令或安装钩子，下载得到的第三方 `.exe` 仍需要用户独立判断其可信度。
 - **来源不等于代理。** Provider 来源属于 `languageToolId + providerId + slotId`；HTTP(S) 代理和 `NO_PROXY` 是独立传输设置，改变网络路径不会建立发布者信任。
 - **精确身份贯穿三层选择。** 新终端会话、项目 `[tool-identities]` 和全局 profile 都可以保存成对的 Runtime ID 与 Provider ID；解析不会把同版本的另一个 Provider 当作等价替代。
-- **当前仍是预览。** SignPath OSS 外部审批/配置和首个签名 tag 发布仍需权威回读；完整 Windows 10/11 安装升级 E2E、全量可访问性验收、插件签名/撤销通道和 ARM64 应用构建也尚未完成。
+- **当前仍是预览。** 发布证书配置和首个签名 tag 发布仍需权威回读；自签名测试证书不受 Windows 信任，后续可切换到受信任 CA。完整 Windows 10/11 安装升级 E2E、全量可访问性验收、插件签名/撤销通道和 ARM64 应用构建也尚未完成。
 
 完整威胁边界、验证链和已知残余风险见 [安全模型](docs/SECURITY.md)。发现安全问题时，请避免在公开 Issue 中披露可利用细节；先查看仓库的安全报告渠道或联系维护者。
 

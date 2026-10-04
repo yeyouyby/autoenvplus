@@ -14,7 +14,7 @@
 | `AutoEnvPlus-win-x64-portable.zip` | 需要可移动的完整目录，以及 `cli\autoenvplus.exe` 和原生 Shim。先完整解压，再运行根目录 `AutoEnvPlus.App.exe`。 |
 | `AutoEnvPlus-win-x64.msi` | 需要 per-user 安装、开始菜单和“应用和功能”卸载。卸载保留用户设置、受管数据和已安装工具。 |
 
-`v0.0.1` 的三个主资产缺一不可，并必须通过发布工作流的 SignPath 门禁。单文件 EXE 与 MSI 外层可直接检查 Authenticode；便携 ZIP 应同时核对 ZIP SHA-256，并在解压后检查其中第一方 EXE/DLL 的签名。工作流尚未成功发布并回读前，不要把本地候选或 CI artifact 当成正式预发布资产。
+`v0.0.1` 的三个主资产缺一不可，并必须通过发布工作流的签名门禁。单文件 EXE 与 MSI 外层可直接检查 Authenticode；便携 ZIP 应同时核对 ZIP SHA-256，并在解压后检查其中第一方 EXE/DLL 的签名。签名使用自签名测试证书，Windows 显示“未知发布者”属预期。工作流尚未成功发布并回读前，不要把本地候选或 CI artifact 当成正式预发布资产。
 
 ### 从源码运行
 

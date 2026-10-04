@@ -170,19 +170,19 @@ WinUI 先选择运行时、环境名和离线/联网依赖模式，再展示参�
 
 ## AutoEnvPlus 自身分发链
 
-`v0.0.1` 的公开签名边界是 tag 驱动的 SignPath OSS 流程，不是仓库内 PFX。只有 `release-signing` GitHub environment 可以读取 `SIGNPATH_API_TOKEN`；普通 push、PR、fork PR 和 CI 只构建未签候选，不能接触 token 或提交签名请求。release workflow 还要求以下 repository/environment variables 全部存在：`SIGNPATH_ORGANIZATION_ID`、`SIGNPATH_PROJECT_SLUG`、`SIGNPATH_SIGNING_POLICY_SLUG`、`SIGNPATH_PE_ARTIFACT_CONFIGURATION_SLUG`、`SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG` 和 `SIGNPATH_EXPECTED_SIGNER_THUMBPRINT`。Artifact Configuration 必须以 GitHub artifact 外层 `<zip-file>` 为根；所有返回的 PE/MSI 必须具有有效 Authenticode 且匹配该 40 位证书 thumbprint。缺任一项即停止，不发布未签替代品。
+`v0.0.1` 的公开签名边界是 tag 驱动的自签名流程，不是仓库内 PFX。只有 `release-signing` GitHub environment 可以读取签名材料 secrets `AUTOENVPLUS_RELEASE_CERT_PFX_BASE64` 与 `AUTOENVPLUS_RELEASE_CERT_PASSWORD`；普通 push、PR、fork PR 和 CI 只构建未签候选，不能接触签名材料。release workflow 还要求 repository variable `AUTOENVPLUS_RELEASE_CERT_THUMBPRINT`（40 位 SHA-1 指纹）存在。所有 PE/MSI 的签名必须密码学完整且签名者指纹精确匹配该值。缺任一项即停止，不发布未签替代品。
 
-SignPath action 固定到 `SignPath/github-action-submit-signing-request` v2.2 的精确提交 `b9d91eadd323de506c0c81cf0c7fe7438f3360fd`。第一阶段只提交列明的第一方 PE：WinUI single-file、portable 中的 App EXE/App DLL/Core DLL、CLI EXE 与原生 Shim。返回目录必须包含每个预期普通文件且不能是 reparse point；工作流逐个要求 Authenticode 状态为 `Valid` 后才覆盖候选。随后重新计算 portable 树清单并压缩 ZIP，再用同一份已签 payload 构建 MSI。第二阶段单独提交 MSI 外层，要求 SignPath 恰好返回一个同名普通 MSI 且 Authenticode 有效。
+签名在 runner 上用 Windows SDK `signtool` 完成（SHA-256 文件摘要 + RFC3161 时间戳），证书私钥不离开 GitHub secrets 与离线备份。第一阶段只签列明的第一方 PE：WinUI single-file、portable 中的 App EXE/App DLL/Core DLL、CLI EXE 与原生 Shim；每个文件都必须是普通文件且不能是 reparse point。随后重新计算 portable 树清单并压缩 ZIP，再用同一份已签 payload 构建 MSI。第二阶段单独签 MSI 外层，复检签名并经 `msiexec /a` 提取比对内部 payload 与 portable 完全一致。
 
-三类资产的签名语义不同。`AutoEnvPlus-win-x64.exe` 与 `AutoEnvPlus-win-x64.msi` 本身有 Authenticode；`AutoEnvPlus-win-x64-portable.zip` 不是可 Authenticode 签名格式，所谓“SignPath-signed portable”只表示 ZIP 是在第一方 PE 全部验签后重新构建的。ZIP 容器字节由 `.sha256` 和聚合 `SHA256SUMS.txt` 保护，哈希仍不能单独证明发布者身份。单文件 bundle 会在运行时自解压原生库和 PRI/XBF，因此它不是无写盘沙箱；系统临时目录策略、磁盘空间和执行控制仍在可信计算基之外。
+三类资产的签名语义不同。`AutoEnvPlus-win-x64.exe` 与 `AutoEnvPlus-win-x64.msi` 本身有 Authenticode；`AutoEnvPlus-win-x64-portable.zip` 不是可 Authenticode 签名格式，所谓“signed portable”只表示 ZIP 是在第一方 PE 全部签名复检后重新构建的。ZIP 容器字节由 `.sha256` 和聚合 `SHA256SUMS.txt` 保护，哈希仍不能单独证明发布者身份。自签名证书不在 Windows 信任链内：`Get-AuthenticodeSignature` 对完好的自签名返回 `UnknownError` 而不是 `Valid`，用户侧会显示“未知发布者”；工作流按“签名完整 + 指纹匹配”验签，不声称受信任发布者身份。单文件 bundle 会在运行时自解压原生库和 PRI/XBF，因此它不是无写盘沙箱；系统临时目录策略、磁盘空间和执行控制仍在可信计算基之外。
 
 MSI 是 per-user 安装包，安装目录在当前用户范围。卸载由 MSI 拥有的组件清单约束，不删除独立于安装 payload 的用户设置、`AUTOENVPLUS_HOME` 受管根或已安装语言工具。这个保留策略降低误删风险，但也意味着卸载不等于擦除用户数据；需要清理数据时必须由用户另行审核目标。
 
-仓库保留旧 `publish-msix.ps1` 的 PFX/开发证书和 AppInstaller 验证路径作为遗留开发工具。开发证书不会自动进入 Windows 信任库，PFX 流程也不属于 `v0.0.1` 三类 GitHub 资产的 SignPath 主链；不能用本地 MSIX 成功替代 tag 流程的签名和回读证据。
+仓库保留旧 `publish-msix.ps1` 的 PFX/开发证书和 AppInstaller 验证路径作为遗留开发工具。开发证书不会自动进入 Windows 信任库，PFX 流程也不属于 `v0.0.1` 三类 GitHub 资产的自签名主链；不能用本地 MSIX 成功替代 tag 流程的签名和回读证据。
 
 ## 尚未完成
 
-- SignPath OSS 申请获批、组织/项目/Trusted Build System/Artifact Configuration/Signing Policy 的实际配置，以及首次签名 tag、证书和时间戳的 GitHub 下载回读；
+- 发布证书的离线备份保管、轮换和撤销流程，以及首次签名 tag、证书和时间戳的 GitHub 下载回读；
 - 可审计的密钥撤销在线更新通道；
 - 声明式插件包的独立签名信任根、受审计更新源、撤销列表和组织允许策略；当前 schema 2 是手动导入的静态 JSON，schema 1 仅保留兼容导入；
 - 托管运行时目录当前仍是“扫描后按字符串路径移动/删除”，同账户主动进程可在检查与操作间制造 rename/reparse 竞态；完整防护需要基于 Windows 目录句柄和禁止共享删除的实现；

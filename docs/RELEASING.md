@@ -1,6 +1,6 @@
 # AutoEnvPlus 发布指南
 
-本文是 `v0.0.1` 及后续 Windows x64 测试版的不可跳过检查表。文档和工作流定义不证明 PR、SignPath 审批、tag 或 GitHub prerelease 已存在；每个外部状态都必须回读。
+本文是 `v0.0.1` 及后续 Windows x64 测试版的不可跳过检查表。文档和工作流定义不证明 PR、tag 或 GitHub prerelease 已存在；每个外部状态都必须回读。
 
 ## 权威版本与资产
 
@@ -78,23 +78,18 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msi.ps1 `
 - [ ] MSI 卸载后程序文件被移除，而用户设置、受管根和已安装工具仍保留；
 - [ ] 本地候选明确标为未签，不能上传为 GitHub prerelease。
 
-## 4. SignPath OSS 外部配置
+## 4. 自签名发布证书配置
 
 在准备 tag 前完成并由另一名维护者复核：
 
-> 官方参考：[SignPath Foundation 申请](https://signpath.org/apply)、[文档站](https://docs.signpath.io)、[项目设置](https://docs.signpath.io/projects)、[Artifact Configuration 语法](https://docs.signpath.io/artifact-configuration/syntax)、[GitHub Trusted Build System](https://docs.signpath.io/trusted-build-systems/github)、[用户与 API Token](https://docs.signpath.io/users)。Open Source Code Signing 版强制要求：Trusted Build System 验证与 Origin 验证必须启用（Origin 需配置仓库 URL 并限制分支，建议 `main`），提交者必须是 CI 用户，且签名工作流的所有 job 必须运行在 GitHub 托管 runner 上。
+- [ ] 已生成专用自签名代码签名证书（Code Signing EKU、RSA ≥3072、SHA-256、多年有效期），私钥与 PFX 不进入仓库；
+- [ ] PFX 已离线备份（含密码）；丢失后无法以同一身份重签，只能换证书并更新指纹变量；
+- [ ] `release-signing` GitHub environment 已创建，必要时配置保护/审批；
+- [ ] environment secrets `AUTOENVPLUS_RELEASE_CERT_PFX_BASE64`（PFX 的 base64）与 `AUTOENVPLUS_RELEASE_CERT_PASSWORD` 已配置；
+- [ ] repository variable `AUTOENVPLUS_RELEASE_CERT_THUMBPRINT`（40 位十六进制 SHA-1 指纹）已配置；
+- [ ] PFX/密码只存在于 `release-signing` environment；PR/普通 CI 无法读取，日志与 artifact 不包含签名材料。
 
-- [ ] SignPath Foundation/open-source 计划申请已获批准；
-- [ ] Organization、Project 和 GitHub.com Trusted Build System 已创建并绑定本仓库；
-- [ ] PE Artifact Configuration 以 GitHub artifact 的外层 `<zip-file>` 为根，只接收工作流列明的 single/portable 相对路径并返回相同结构；
-- [ ] MSI Artifact Configuration 以外层 `<zip-file>` 为根，只返回一个 `AutoEnvPlus-win-x64.msi`；
-- [ ] Signing Policy、证书、时间戳和审批规则已审核；
-- [ ] `release-signing` GitHub environment 已配置必要保护/审批；
-- [ ] secret `SIGNPATH_API_TOKEN` 已配置；
-- [ ] variables `SIGNPATH_ORGANIZATION_ID`、`SIGNPATH_PROJECT_SLUG`、`SIGNPATH_SIGNING_POLICY_SLUG`、`SIGNPATH_PE_ARTIFACT_CONFIGURATION_SLUG`、`SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG`、`SIGNPATH_EXPECTED_SIGNER_THUMBPRINT` 全部配置；
-- [ ] token 不可用于 PR/fork PR，日志与 artifact 不包含 token 或其他签名凭据。
-
-任一项缺失时不得 tag。release workflow 也会 fail closed，不存在“先发未签 ZIP”的回退。
+任一项缺失时不得 tag。release workflow 也会 fail closed，不存在“先发未签 ZIP”的回退。自签名证书不受 Windows 信任，用户侧会显示“未知发布者”警告；这是测试版的预期行为，不得声称受信任发布者身份。
 
 ## 5. 手工体验与安装安全
 
@@ -114,7 +109,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msi.ps1 `
 - [ ] 从主题分支推送全部候选改动并创建 PR；
 - [ ] PR 正文包含范围、安全影响、测试证据、三类资产策略和已知限制；
 - [ ] `.github/workflows/ci.yml` 在候选 commit 上实际通过；
-- [ ] 确认 PR/普通 CI 只构建未签测试 artifact，不调用 SignPath；
+- [ ] 确认 PR/普通 CI 只构建未签测试 artifact，不接触签名材料；
 - [ ] 审查意见已解决，最终 diff 与本地验证 commit 一致；
 - [ ] PR 已合并并从 GitHub 回读 merge commit。
 
@@ -131,11 +126,11 @@ git tag -a v0.0.1 -m "AutoEnvPlus v0.0.1 test release"
 git push origin v0.0.1
 ```
 
-`.github/workflows/release.yml` 会验证 tag/仓库/版本，构建未签候选，强制检查 SignPath 配置，签第一方 PE，重建 portable，构建 MSI，签 MSI 外层，逐项验签，再生成七个文件。只有全部完成才创建或发布 prerelease；已有资产时拒绝覆盖或追加。
+`.github/workflows/release.yml` 会验证 tag/仓库/版本，构建未签候选，强制检查签名配置，用 signtool + RFC3161 时间戳签第一方 PE，逐项验签，重建 portable，构建 MSI，签 MSI 外层并复核其 payload，再生成七个文件。只有全部完成才创建或发布 prerelease；已有资产时拒绝覆盖或追加。
 
 - [ ] tag 指向已审核的精确 commit；
-- [ ] `release-signing` environment 审批和 SignPath 两次请求均成功；
-- [ ] 工作流日志确认所有列明 PE 和 MSI Authenticode 状态为 `Valid`；
+- [ ] `release-signing` environment 审批（如配置）与两次签名步骤均成功；
+- [ ] 工作流日志确认所有列明 PE 和 MSI 的 Authenticode 签名完整（`Valid` 或自签名预期的 `UnknownError`）且指纹精确匹配；
 - [ ] GitHub Release 标记为 **prerelease**，标题明确“test release”；
 - [ ] 资产恰好是三个主资产、三个 sidecar 和 `SHA256SUMS.txt`；
 - [ ] 没有独立 CLI、MSIX、AppInstaller、PFX、证书私钥、bundle manifest 或未签候选混入 Release；
@@ -147,13 +142,13 @@ git push origin v0.0.1
 - [ ] 检查 single-file EXE 与 MSI 的 Authenticode Subject、链、时间戳和状态；
 - [ ] 解压 portable，检查 App EXE/App DLL/Core DLL/CLI EXE/原生 Shim 的 Authenticode；
 - [ ] 在 Windows 10/11 至少各一台机器运行三类资产的适用流程；
-- [ ] 回读 tag、commit、prerelease 标记、工作流 URL、SignPath request 与残余风险；
+- [ ] 回读 tag、commit、prerelease 标记、工作流 URL、签名指纹与残余风险；
 - [ ] 发布后另开 PR，把 `CHANGELOG.md` 的“待发布”更新为真实日期；
 - [ ] 任何错误均停止分发，修复后递增版本，不静默替换相同版本资产。
 
 ## 失败处理
 
-- SignPath 配置缺失、请求超时、服务失败或签名无效：不创建公开 Release，不回退未签资产；
+- 签名配置缺失、signtool 失败、时间戳服务失败或签名无效：不创建公开 Release，不回退未签资产；
 - single-file/portable/MSI 任一缺失：整体发布失败，不做部分发布；
 - 哈希不一致：停止分发并调查构建、签名、重打包和上传链；
 - portable 内部 PE 未签但 ZIP 哈希正确：仍视为发布失败；

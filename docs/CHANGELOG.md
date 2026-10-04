@@ -26,7 +26,7 @@
 - 六域显式环境诊断、结构化 JSON 导出和有界脱敏活动记录；
 - data-only 语言包 schema 1，以及绑定 9 个桥接工具的 Runtime Provider schema 2；旧插件 schema 1 可兼容导入并规范化升级；
 - 三类 Windows x64 分发候选：WinUI self-contained single-file `AutoEnvPlus-win-x64.exe`、包含 CLI/Shim 的 `AutoEnvPlus-win-x64-portable.zip`，以及 per-user `AutoEnvPlus-win-x64.msi`；
-- tag 驱动的 SignPath OSS fail-closed 预发布流程，以及每个主资产的 SHA-256 sidecar 和聚合 `SHA256SUMS.txt`；遗留 MSIX/AppInstaller 脚本保留为开发/实验工具，不属于 `v0.0.1` 三类公开资产。
+- tag 驱动的自签名 fail-closed 预发布流程，以及每个主资产的 SHA-256 sidecar 和聚合 `SHA256SUMS.txt`；遗留 MSIX/AppInstaller 脚本保留为开发/实验工具，不属于 `v0.0.1` 三类公开资产。
 
 ### Security
 
@@ -38,7 +38,7 @@
 - 预览后输入复检、跨进程锁、原子/补偿写入、安全卸载引用扫描和精确 Provider 身份；
 - 代理、Provider 来源、活动日志和下载 URL 的凭据/query 脱敏；
 - 插件默认停用、严格 data-only 清单、精确 Provider 选择和第三方 checksum 信任提示；
-- SignPath token 仅限 `release-signing` environment；PR/普通 CI 不签名，缺少配置、任一 PE/MSI 验签失败或三类资产不齐时禁止未签名回退发布。
+- 发布签名材料（自签名证书 PFX 与密码）仅限 `release-signing` environment；PR/普通 CI 不签名，缺少配置、任一 PE/MSI 验签失败或三类资产不齐时禁止未签名回退发布。自签名测试证书不受 Windows 信任，用户侧显示“未知发布者”。
 
 ### Changed
 
@@ -48,7 +48,7 @@
 
 ### Known limitations
 
-- 测试版以 Windows x64 为主；SignPath OSS 外部审批/配置与首次签名 tag 回读、完整 Windows 10/11 安装升级 E2E、可访问性/缩放矩阵和 ARM64 应用尚未完成；
+- 测试版以 Windows x64 为主；发布证书配置与首次签名 tag 回读、完整 Windows 10/11 安装升级 E2E、可访问性/缩放矩阵和 ARM64 应用尚未完成；
 - WinUI single-file 可能把原生库和 PRI/XBF 自解压到 .NET bundle extraction/临时目录，不承诺绿色运行、完全无临时文件或完全无系统依赖；
 - 136 个工具目录中只有 9 个真实适配器；
 - 插件没有签名包、自动更新、撤销列表或组织允许策略；
@@ -63,4 +63,5 @@
 | 2026-07-15 | 加入统一受管根、安全缓存清理、活动记录、工作台与 .NET SDK 管理 |
 | 2026-07-17 | 完成语言/工具/Provider 目录、data-only 插件和项目工作台主流程，合并首个功能 PR |
 | 2026-07-18 | 在工作树中准备 `v0.0.1` 版本统一、Fluent UI 收口、安全修复、文档与 GitHub Actions；仍待最终提交、CI 和发布回读 |
-| 2026-07-20 | 收口 single-file、portable ZIP、per-user MSI 三类资产合同和强制 SignPath 工作流；外部审批、真实签名与 GitHub prerelease 仍待回读 |
+| 2026-07-20 | 收口 single-file、portable ZIP、per-user MSI 三类资产合同和强制签名工作流；真实签名与 GitHub prerelease 仍待回读 |
+| 2026-07-21 | 发布签名从 SignPath OSS 切换为自签名证书 + signtool + RFC3161 时间戳；CLI 新增 stdio MCP 服务器 |

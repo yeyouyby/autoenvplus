@@ -207,4 +207,4 @@ C/C++ 不是单个运行时。MSVC 激活还需要 `INCLUDE`、`LIB`、Windows S
 17. 本地 wheel 只能安装到受管根下的 Python 虚拟环境，执行前复检，失败时不虚假宣称事务回滚。
 18. `cpython`、`nodejs`、`eclipse-temurin`、`dotnet-sdk`、`msvc-build-tools`、`clang`、`gcc`、`cmake` 和 `ninja` 可通过默认停用的 schema 2 声明式 Provider 扩展来源；选择必须绑定精确 Provider，停用/删除插件不得卸载既有运行时，旧 schema 1 仅作为兼容导入格式。
 
-以上是产品验收目标；`v0.0.1` 的公开分发合同是 WinUI single-file EXE、完整 portable ZIP 和 per-user MSI 三类 x64 主资产，三者必须通过 SignPath 发布门禁。当前尚未完成 SignPath 外部审批/配置和真实 tag 回读，也未完成真实 Windows 11 主机上的完整端到端验证；本地未签候选或开发证书 MSIX 都不等同于已签名 GitHub prerelease。
+以上是产品验收目标；`v0.0.1` 的公开分发合同是 WinUI single-file EXE、完整 portable ZIP 和 per-user MSI 三类 x64 主资产，三者必须通过自签名发布门禁。当前尚未完成签名证书配置和真实 tag 回读，也未完成真实 Windows 11 主机上的完整端到端验证；本地未签候选或开发证书 MSIX 都不等同于已签名 GitHub prerelease。

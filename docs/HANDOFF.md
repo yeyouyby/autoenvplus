@@ -12,7 +12,7 @@
 - 当前分支正在并行收口功能、安全、Fluent UI、文档、打包和 GitHub 工作流；工作树不是干净基线；
 - `.github/workflows/ci.yml` 与 `release.yml` 已在工作树中定义，但只有 GitHub 实际运行和回读才能证明 CI/发布成功；
 - `v0.0.1` 的三类权威主资产是 `AutoEnvPlus-win-x64.exe`（WinUI single-file）、`AutoEnvPlus-win-x64-portable.zip`（含 CLI/Shim）和 `AutoEnvPlus-win-x64.msi`（per-user）；CLI 不单独作为第四类资产；
-- tag 工作流要求三类资产通过 SignPath 门禁，缺少配置或签名失败即停止；SignPath 外部审批/配置和真实 tag 回读尚不能由仓库内容证明；
+- tag 工作流要求三类资产通过自签名门禁，缺少配置或签名失败即停止；签名证书配置和真实 tag 回读尚不能由仓库内容证明；
 - README 和 docs 已把长功能矩阵、用户说明、开发日志、路线图和发布检查拆开；
 - 不应沿用此前阶段记录的固定测试通过数量，最终结果必须在候选 commit 上重新运行并记录；
 - 不得声称 PR、tag 或 GitHub prerelease 已存在，除非从 GitHub 权威状态回读确认。

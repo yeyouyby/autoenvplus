@@ -10,7 +10,7 @@ AutoEnvPlus `v0.0.1` 的主界面按工作流组织，而不是为每个运行�
 
 - 当前应用目标为 Windows 10/11 x64；
 - `v0.0.1` 是测试版本，先在非关键开发环境验证；
-- `v0.0.1` 只承认 GitHub Release 中三类同时存在的主资产：WinUI 单文件 EXE、完整便携 ZIP 和 per-user MSI；检查各自 SHA-256，并对 EXE/MSI 或便携包内第一方 PE 核对 SignPath Authenticode 签名；
+- `v0.0.1` 只承认 GitHub Release 中三类同时存在的主资产：WinUI 单文件 EXE、完整便携 ZIP 和 per-user MSI；检查各自 SHA-256，并对 EXE/MSI 或便携包内第一方 PE 核对发布签名（自签名测试证书，Windows 显示“未知发布者”属预期）；
 - 持久操作应先阅读预览，再确认版本、Provider、目录、哈希/签名证据和回滚边界。
 
 ## 页面加载与扫描

@@ -134,159 +134,110 @@ jobs:
             -ArtifactsRoot $env:AUTOENVPLUS_ARTIFACTS_ROOT `
             -NoRestore
 
-      - name: Validate required SignPath configuration
+      - name: Validate required release signing configuration
         shell: pwsh
         env:
-          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
-          SIGNPATH_PROJECT_SLUG: ${{ vars.SIGNPATH_PROJECT_SLUG }}
-          SIGNPATH_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
-          SIGNPATH_PE_ARTIFACT_CONFIGURATION_SLUG: ${{ vars.SIGNPATH_PE_ARTIFACT_CONFIGURATION_SLUG }}
-          SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG: ${{ vars.SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG }}
-          SIGNPATH_EXPECTED_SIGNER_THUMBPRINT: ${{ vars.SIGNPATH_EXPECTED_SIGNER_THUMBPRINT }}
+          AUTOENVPLUS_RELEASE_CERT_PFX_BASE64: ${{ secrets.AUTOENVPLUS_RELEASE_CERT_PFX_BASE64 }}
+          AUTOENVPLUS_RELEASE_CERT_PASSWORD: ${{ secrets.AUTOENVPLUS_RELEASE_CERT_PASSWORD }}
+          AUTOENVPLUS_RELEASE_CERT_THUMBPRINT: ${{ vars.AUTOENVPLUS_RELEASE_CERT_THUMBPRINT }}
         run: |
           $required = [ordered]@{
-            SIGNPATH_API_TOKEN = $env:SIGNPATH_API_TOKEN
-            SIGNPATH_ORGANIZATION_ID = $env:SIGNPATH_ORGANIZATION_ID
-            SIGNPATH_PROJECT_SLUG = $env:SIGNPATH_PROJECT_SLUG
-            SIGNPATH_SIGNING_POLICY_SLUG = $env:SIGNPATH_SIGNING_POLICY_SLUG
-            SIGNPATH_PE_ARTIFACT_CONFIGURATION_SLUG = $env:SIGNPATH_PE_ARTIFACT_CONFIGURATION_SLUG
-            SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG = $env:SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG
-            SIGNPATH_EXPECTED_SIGNER_THUMBPRINT = $env:SIGNPATH_EXPECTED_SIGNER_THUMBPRINT
+            AUTOENVPLUS_RELEASE_CERT_PFX_BASE64 = $env:AUTOENVPLUS_RELEASE_CERT_PFX_BASE64
+            AUTOENVPLUS_RELEASE_CERT_PASSWORD = $env:AUTOENVPLUS_RELEASE_CERT_PASSWORD
+            AUTOENVPLUS_RELEASE_CERT_THUMBPRINT = $env:AUTOENVPLUS_RELEASE_CERT_THUMBPRINT
           }
           $missing = @($required.GetEnumerator() | Where-Object { [string]::IsNullOrWhiteSpace($_.Value) } | ForEach-Object Key)
           if ($missing.Count -ne 0) {
-            throw "SignPath is not configured. Missing secret/variable names: $($missing -join ', '). Refusing to publish unsigned assets."
+            throw "Release signing is not configured. Missing secret/variable names: $($missing -join ', '). Refusing to publish unsigned assets."
           }
-          if ($env:SIGNPATH_EXPECTED_SIGNER_THUMBPRINT -notmatch '^[0-9a-fA-F]{40}$') {
-            throw 'SIGNPATH_EXPECTED_SIGNER_THUMBPRINT must be the 40-hex SHA-1 certificate thumbprint issued for this project.'
+          if ($env:AUTOENVPLUS_RELEASE_CERT_THUMBPRINT -notmatch '^[0-9a-fA-F]{40}$') {
+            throw 'AUTOENVPLUS_RELEASE_CERT_THUMBPRINT must be the 40-hex SHA-1 certificate thumbprint of the release signing certificate.'
           }
-          Write-Host 'SignPath configuration is present; signing is mandatory for this tag.'
+          try {
+            $pfxBytes = [Convert]::FromBase64String($env:AUTOENVPLUS_RELEASE_CERT_PFX_BASE64)
+          }
+          catch {
+            throw 'AUTOENVPLUS_RELEASE_CERT_PFX_BASE64 is not valid base64.'
+          }
+          if ($pfxBytes.Length -eq 0) {
+            throw 'AUTOENVPLUS_RELEASE_CERT_PFX_BASE64 decodes to an empty certificate.'
+          }
+          Write-Host 'Release signing configuration is present; signing is mandatory for this tag.'
 
-      - name: Stage first-party PE files for SignPath
-        shell: pwsh
-        run: |
-          $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
-          $portableRoot = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64'
-          $singlePath = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64.exe'
-          $signingRoot = Join-Path $artifactsRoot '.signing\pe'
-          $manifestPath = Join-Path $artifactsRoot '.signing\pe-input-manifest.txt'
-          if (-not (Test-Path -LiteralPath $singlePath -PathType Leaf)) {
-            throw "Single-file build did not produce $singlePath."
-          }
-          if (-not (Test-Path -LiteralPath $portableRoot -PathType Container)) {
-            throw "Portable build did not produce $portableRoot."
-          }
-          if (Test-Path -LiteralPath $signingRoot) {
-            Remove-Item -LiteralPath $signingRoot -Recurse -Force
-          }
-          New-Item -ItemType Directory -Path (Join-Path $signingRoot 'single') -Force | Out-Null
-          New-Item -ItemType Directory -Path (Join-Path $signingRoot 'portable\cli') -Force | Out-Null
-          $files = @(
-            @{ Source = $singlePath; Relative = 'single\AutoEnvPlus-win-x64.exe' },
-            @{ Source = Join-Path $portableRoot 'AutoEnvPlus.App.exe'; Relative = 'portable\AutoEnvPlus.App.exe' },
-            @{ Source = Join-Path $portableRoot 'AutoEnvPlus.App.dll'; Relative = 'portable\AutoEnvPlus.App.dll' },
-            @{ Source = Join-Path $portableRoot 'AutoEnvPlus.Core.dll'; Relative = 'portable\AutoEnvPlus.Core.dll' },
-            @{ Source = Join-Path $portableRoot 'cli\autoenvplus.exe'; Relative = 'portable\cli\autoenvplus.exe' },
-            @{ Source = Join-Path $portableRoot 'cli\autoenvplus-shim.exe'; Relative = 'portable\cli\autoenvplus-shim.exe' }
-          )
-          $manifest = [System.Collections.Generic.List[string]]::new()
-          foreach ($entry in $files) {
-            if (-not (Test-Path -LiteralPath $entry.Source -PathType Leaf)) {
-              throw "Required first-party PE is missing: $($entry.Source)"
-            }
-            $item = Get-Item -LiteralPath $entry.Source -Force
-            if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
-              throw "Refusing to sign a reparse-point file: $($entry.Source)"
-            }
-            $destination = Join-Path $signingRoot $entry.Relative
-            New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
-            Copy-Item -LiteralPath $entry.Source -Destination $destination -Force
-            $hash = (Get-FileHash -LiteralPath $entry.Source -Algorithm SHA256).Hash.ToLowerInvariant()
-            $manifest.Add("$($entry.Relative.Replace('\', '/')) $hash")
-          }
-          [System.IO.File]::WriteAllLines($manifestPath, $manifest, (New-Object System.Text.UTF8Encoding($false)))
-
-      - name: Upload unsigned PE bundle
-        id: upload-pe
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: AutoEnvPlus-${{ github.ref_name }}-unsigned-pe
-          path: ${{ env.AUTOENVPLUS_ARTIFACTS_ROOT }}/.signing/pe
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 2
-
-      - name: Submit PE signing request to SignPath
-        id: sign-pe
-        uses: SignPath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd # v2.2
-        with:
-          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-          organization-id: '${{ vars.SIGNPATH_ORGANIZATION_ID }}'
-          project-slug: '${{ vars.SIGNPATH_PROJECT_SLUG }}'
-          signing-policy-slug: '${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}'
-          artifact-configuration-slug: '${{ vars.SIGNPATH_PE_ARTIFACT_CONFIGURATION_SLUG }}'
-          github-artifact-id: '${{ steps.upload-pe.outputs.artifact-id }}'
-          github-token: '${{ github.token }}'
-          wait-for-completion: 'true'
-          wait-for-completion-timeout-in-seconds: '1800'
-          service-unavailable-timeout-in-seconds: '600'
-          download-signed-artifact-timeout-in-seconds: '900'
-          output-artifact-directory: '${{ env.AUTOENVPLUS_ARTIFACTS_ROOT }}/.signing/signed-pe'
-          skip-decompress: 'false'
-
-      - name: Verify signed PE bundle and merge it into payloads
+      - name: Sign first-party PE files
         shell: pwsh
         env:
-          SIGNPATH_EXPECTED_SIGNER_THUMBPRINT: ${{ vars.SIGNPATH_EXPECTED_SIGNER_THUMBPRINT }}
+          AUTOENVPLUS_RELEASE_CERT_PFX_BASE64: ${{ secrets.AUTOENVPLUS_RELEASE_CERT_PFX_BASE64 }}
+          AUTOENVPLUS_RELEASE_CERT_PASSWORD: ${{ secrets.AUTOENVPLUS_RELEASE_CERT_PASSWORD }}
         run: |
           $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
           $portableRoot = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64'
           $singlePath = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64.exe'
-          $signedRoot = Join-Path $artifactsRoot '.signing\signed-pe'
           $files = @(
-            @{ Signed = 'single\AutoEnvPlus-win-x64.exe'; Destination = $singlePath },
-            @{ Signed = 'portable\AutoEnvPlus.App.exe'; Destination = Join-Path $portableRoot 'AutoEnvPlus.App.exe' },
-            @{ Signed = 'portable\AutoEnvPlus.App.dll'; Destination = Join-Path $portableRoot 'AutoEnvPlus.App.dll' },
-            @{ Signed = 'portable\AutoEnvPlus.Core.dll'; Destination = Join-Path $portableRoot 'AutoEnvPlus.Core.dll' },
-            @{ Signed = 'portable\cli\autoenvplus.exe'; Destination = Join-Path $portableRoot 'cli\autoenvplus.exe' },
-            @{ Signed = 'portable\cli\autoenvplus-shim.exe'; Destination = Join-Path $portableRoot 'cli\autoenvplus-shim.exe' }
+            $singlePath,
+            (Join-Path $portableRoot 'AutoEnvPlus.App.exe'),
+            (Join-Path $portableRoot 'AutoEnvPlus.App.dll'),
+            (Join-Path $portableRoot 'AutoEnvPlus.Core.dll'),
+            (Join-Path $portableRoot 'cli\autoenvplus.exe'),
+            (Join-Path $portableRoot 'cli\autoenvplus-shim.exe')
           )
-          if (-not (Test-Path -LiteralPath $signedRoot -PathType Container)) {
-            throw "SignPath returned no signed PE directory: $signedRoot"
+          foreach ($file in $files) {
+            if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
+              throw "Required first-party PE is missing: $file"
+            }
+            $item = Get-Item -LiteralPath $file -Force
+            if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+              throw "Refusing to sign a reparse-point file: $file"
+            }
           }
-          $expectedSignerThumbprint = $null
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'autoenvplus-release-signing.pfx'
+          [System.IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:AUTOENVPLUS_RELEASE_CERT_PFX_BASE64))
+          $signtool = @(
+            Get-ChildItem -LiteralPath 'C:\Program Files (x86)\Windows Kits\10\bin' -Filter signtool.exe -Recurse -ErrorAction SilentlyContinue |
+              Where-Object FullName -like '*\x64\*' |
+              Sort-Object FullName -Descending
+          )[0].FullName
+          if (-not $signtool) {
+            throw 'signtool.exe was not found in the Windows SDK.'
+          }
+          & $signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $pfxPath /p $env:AUTOENVPLUS_RELEASE_CERT_PASSWORD @files
+          if ($LASTEXITCODE -ne 0) {
+            throw "signtool failed to sign the first-party PE files (exit code $LASTEXITCODE)."
+          }
+          Remove-Item -LiteralPath $pfxPath -Force
+          Write-Host 'Signed all first-party PE files with the release certificate.'
+
+      - name: Verify signed PE files
+        shell: pwsh
+        env:
+          AUTOENVPLUS_RELEASE_CERT_THUMBPRINT: ${{ vars.AUTOENVPLUS_RELEASE_CERT_THUMBPRINT }}
+        run: |
+          $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
+          $portableRoot = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64'
+          $files = @(
+            @{ Path = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64.exe'; Label = 'AutoEnvPlus-win-x64.exe' },
+            @{ Path = Join-Path $portableRoot 'AutoEnvPlus.App.exe'; Label = 'portable\AutoEnvPlus.App.exe' },
+            @{ Path = Join-Path $portableRoot 'AutoEnvPlus.App.dll'; Label = 'portable\AutoEnvPlus.App.dll' },
+            @{ Path = Join-Path $portableRoot 'AutoEnvPlus.Core.dll'; Label = 'portable\AutoEnvPlus.Core.dll' },
+            @{ Path = Join-Path $portableRoot 'cli\autoenvplus.exe'; Label = 'portable\cli\autoenvplus.exe' },
+            @{ Path = Join-Path $portableRoot 'cli\autoenvplus-shim.exe'; Label = 'portable\cli\autoenvplus-shim.exe' }
+          )
           foreach ($entry in $files) {
-            $signedPath = Join-Path $signedRoot $entry.Signed
-            if (-not (Test-Path -LiteralPath $signedPath -PathType Leaf)) {
-              throw "SignPath output is missing expected file: $($entry.Signed)"
+            $signature = Get-AuthenticodeSignature -LiteralPath $entry.Path
+            if ($signature.Status -notin @(
+                [System.Management.Automation.SignatureStatus]::Valid,
+                [System.Management.Automation.SignatureStatus]::UnknownError) -or
+              $null -eq $signature.SignerCertificate) {
+              throw "Authenticode verification failed for '$($entry.Label)': status=$($signature.Status)"
             }
-            $signedItem = Get-Item -LiteralPath $signedPath -Force
-            if (($signedItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
-              throw "SignPath output contains a reparse-point file: $signedPath"
-            }
-            $signature = Get-AuthenticodeSignature -LiteralPath $signedPath
-            if ($signature.Status -ne [System.Management.Automation.SignatureStatus]::Valid -or $null -eq $signature.SignerCertificate) {
-              throw "Authenticode verification failed for SignPath output '$($entry.Signed)': status=$($signature.Status), signer=$($signature.SignerCertificate.Subject)"
-            }
-            $thumbprint = $signature.SignerCertificate.Thumbprint
             if (-not [string]::Equals(
-                $env:SIGNPATH_EXPECTED_SIGNER_THUMBPRINT,
-                $thumbprint,
+                $env:AUTOENVPLUS_RELEASE_CERT_THUMBPRINT,
+                $signature.SignerCertificate.Thumbprint,
                 [System.StringComparison]::OrdinalIgnoreCase)) {
-              throw "SignPath returned an unexpected PE signer certificate for $($entry.Signed)."
+              throw "Unexpected signer certificate for $($entry.Label): $($signature.SignerCertificate.Thumbprint)"
             }
-            if ([string]::IsNullOrWhiteSpace($expectedSignerThumbprint)) {
-              $expectedSignerThumbprint = $thumbprint
-            }
-            elseif (-not [string]::Equals($expectedSignerThumbprint, $thumbprint, [System.StringComparison]::OrdinalIgnoreCase)) {
-              throw "SignPath returned mixed signer certificates for the PE bundle."
-            }
-            New-Item -ItemType Directory -Path (Split-Path -Parent $entry.Destination) -Force | Out-Null
-            Copy-Item -LiteralPath $signedPath -Destination $entry.Destination -Force
           }
-          "AUTOENVPLUS_SIGNER_THUMBPRINT=$expectedSignerThumbprint" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          Write-Host 'All required first-party PE files have valid Authenticode signatures.'
+          Write-Host 'All first-party PE files are signed by the release certificate.'
 
       - name: Create signed portable ZIP and checksums
         shell: pwsh
@@ -325,77 +276,62 @@ jobs:
             -PortableRoot (Join-Path $env:AUTOENVPLUS_ARTIFACTS_ROOT 'AutoEnvPlus-win-x64') `
             -RequireSignedPayload
 
-      - name: Stage MSI for SignPath
+      - name: Sign MSI
         shell: pwsh
+        env:
+          AUTOENVPLUS_RELEASE_CERT_PFX_BASE64: ${{ secrets.AUTOENVPLUS_RELEASE_CERT_PFX_BASE64 }}
+          AUTOENVPLUS_RELEASE_CERT_PASSWORD: ${{ secrets.AUTOENVPLUS_RELEASE_CERT_PASSWORD }}
         run: |
           $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
           $msiPath = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64.msi'
           if (-not (Test-Path -LiteralPath $msiPath -PathType Leaf)) {
             throw "MSI build did not produce $msiPath."
           }
-          $msiSigningRoot = Join-Path $artifactsRoot '.signing\msi'
-          if (Test-Path -LiteralPath $msiSigningRoot) { Remove-Item -LiteralPath $msiSigningRoot -Recurse -Force }
-          New-Item -ItemType Directory -Path $msiSigningRoot -Force | Out-Null
-          Copy-Item -LiteralPath $msiPath -Destination (Join-Path $msiSigningRoot 'AutoEnvPlus-win-x64.msi') -Force
+          $msiItem = Get-Item -LiteralPath $msiPath -Force
+          if (($msiItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Refusing to sign a reparse-point MSI: $msiPath"
+          }
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'autoenvplus-release-signing.pfx'
+          [System.IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:AUTOENVPLUS_RELEASE_CERT_PFX_BASE64))
+          $signtool = @(
+            Get-ChildItem -LiteralPath 'C:\Program Files (x86)\Windows Kits\10\bin' -Filter signtool.exe -Recurse -ErrorAction SilentlyContinue |
+              Where-Object FullName -like '*\x64\*' |
+              Sort-Object FullName -Descending
+          )[0].FullName
+          if (-not $signtool) {
+            throw 'signtool.exe was not found in the Windows SDK.'
+          }
+          & $signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $pfxPath /p $env:AUTOENVPLUS_RELEASE_CERT_PASSWORD $msiPath
+          if ($LASTEXITCODE -ne 0) {
+            throw "signtool failed to sign the MSI (exit code $LASTEXITCODE)."
+          }
+          Remove-Item -LiteralPath $pfxPath -Force
+          Write-Host 'Signed the MSI with the release certificate.'
 
-      - name: Upload unsigned MSI
-        id: upload-msi
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: AutoEnvPlus-${{ github.ref_name }}-unsigned-msi
-          path: ${{ env.AUTOENVPLUS_ARTIFACTS_ROOT }}/.signing/msi/AutoEnvPlus-win-x64.msi
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 2
-
-      - name: Submit MSI signing request to SignPath
-        id: sign-msi
-        uses: SignPath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd # v2.2
-        with:
-          api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-          organization-id: '${{ vars.SIGNPATH_ORGANIZATION_ID }}'
-          project-slug: '${{ vars.SIGNPATH_PROJECT_SLUG }}'
-          signing-policy-slug: '${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}'
-          artifact-configuration-slug: '${{ vars.SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG }}'
-          github-artifact-id: '${{ steps.upload-msi.outputs.artifact-id }}'
-          github-token: '${{ github.token }}'
-          wait-for-completion: 'true'
-          wait-for-completion-timeout-in-seconds: '1800'
-          service-unavailable-timeout-in-seconds: '600'
-          download-signed-artifact-timeout-in-seconds: '900'
-          output-artifact-directory: '${{ env.AUTOENVPLUS_ARTIFACTS_ROOT }}/.signing/signed-msi'
-          skip-decompress: 'false'
-
-      - name: Verify signed MSI and stage release assets
+      - name: Verify signed MSI and payload
         shell: pwsh
+        env:
+          AUTOENVPLUS_RELEASE_CERT_THUMBPRINT: ${{ vars.AUTOENVPLUS_RELEASE_CERT_THUMBPRINT }}
         run: |
           $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
-          $signedRoot = Join-Path $artifactsRoot '.signing\signed-msi'
-          $signedCandidates = @(Get-ChildItem -LiteralPath $signedRoot -File -Recurse -Filter 'AutoEnvPlus-win-x64.msi' -ErrorAction SilentlyContinue)
-          if ($signedCandidates.Count -ne 1) {
-            throw "SignPath must return exactly one AutoEnvPlus-win-x64.msi; found $($signedCandidates.Count)."
-          }
-          $signedMsi = $signedCandidates[0]
-          if (($signedMsi.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
-            throw "SignPath returned a reparse-point MSI: $($signedMsi.FullName)"
-          }
-          $signature = Get-AuthenticodeSignature -LiteralPath $signedMsi.FullName
-          if ($signature.Status -ne [System.Management.Automation.SignatureStatus]::Valid -or $null -eq $signature.SignerCertificate) {
-            throw "Authenticode verification failed for signed MSI: status=$($signature.Status), signer=$($signature.SignerCertificate.Subject)"
-          }
-          if ([string]::IsNullOrWhiteSpace($env:AUTOENVPLUS_SIGNER_THUMBPRINT) -or
-              -not [string]::Equals(
-                $env:AUTOENVPLUS_SIGNER_THUMBPRINT,
-                $signature.SignerCertificate.Thumbprint,
-                [System.StringComparison]::OrdinalIgnoreCase)) {
-            throw 'The MSI signer does not match the verified PE signer.'
-          }
+          $portableRoot = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64'
           $msiPath = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64.msi'
-          Copy-Item -LiteralPath $signedMsi.FullName -Destination $msiPath -Force
+          $signature = Get-AuthenticodeSignature -LiteralPath $msiPath
+          if ($signature.Status -notin @(
+              [System.Management.Automation.SignatureStatus]::Valid,
+              [System.Management.Automation.SignatureStatus]::UnknownError) -or
+            $null -eq $signature.SignerCertificate) {
+            throw "Authenticode verification failed for the signed MSI: status=$($signature.Status)"
+          }
+          if (-not [string]::Equals(
+              $env:AUTOENVPLUS_RELEASE_CERT_THUMBPRINT,
+              $signature.SignerCertificate.Thumbprint,
+              [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "The MSI signer does not match the release certificate: $($signature.SignerCertificate.Thumbprint)"
+          }
           $msiHash = (Get-FileHash -LiteralPath $msiPath -Algorithm SHA256).Hash.ToLowerInvariant()
           Set-Content -LiteralPath "$msiPath.sha256" -Value "$msiHash *$(Split-Path $msiPath -Leaf)" -Encoding ASCII
 
-          $portableRoot = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64'
           $extractRoot = Join-Path $artifactsRoot '.signing\msi-administrative-extract'
           $extractLog = Join-Path $artifactsRoot '.signing\msi-administrative-extract.log'
           if (Test-Path -LiteralPath $extractRoot) { Remove-Item -LiteralPath $extractRoot -Recurse -Force }
@@ -517,11 +453,11 @@ jobs:
       - name: Revalidate downloaded signed assets
         shell: pwsh
         env:
-          SIGNPATH_EXPECTED_SIGNER_THUMBPRINT: ${{ vars.SIGNPATH_EXPECTED_SIGNER_THUMBPRINT }}
+          AUTOENVPLUS_RELEASE_CERT_THUMBPRINT: ${{ vars.AUTOENVPLUS_RELEASE_CERT_THUMBPRINT }}
         run: |
           $releaseRoot = [System.IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE 'release'))
-          if ($env:SIGNPATH_EXPECTED_SIGNER_THUMBPRINT -notmatch '^[0-9a-fA-F]{40}$') {
-            throw 'The publish job requires repository variable SIGNPATH_EXPECTED_SIGNER_THUMBPRINT as 40 hex characters.'
+          if ($env:AUTOENVPLUS_RELEASE_CERT_THUMBPRINT -notmatch '^[0-9a-fA-F]{40}$') {
+            throw 'The publish job requires repository variable AUTOENVPLUS_RELEASE_CERT_THUMBPRINT as 40 hex characters.'
           }
           $expectedNames = @(
             'AutoEnvPlus-win-x64.exe',
@@ -583,16 +519,19 @@ jobs:
           foreach ($name in @('AutoEnvPlus-win-x64.exe', 'AutoEnvPlus-win-x64.msi')) {
             $path = Join-Path $releaseRoot $name
             $signature = Get-AuthenticodeSignature -LiteralPath $path
-            if ($signature.Status -ne [System.Management.Automation.SignatureStatus]::Valid -or $null -eq $signature.SignerCertificate) {
-              throw "Downloaded $name does not have a valid Authenticode signature: $($signature.Status)."
+            if ($signature.Status -notin @(
+                [System.Management.Automation.SignatureStatus]::Valid,
+                [System.Management.Automation.SignatureStatus]::UnknownError) -or
+              $null -eq $signature.SignerCertificate) {
+              throw "Downloaded $name does not have an intact Authenticode signature: $($signature.Status)."
             }
             if ([string]::IsNullOrWhiteSpace($expectedSignerThumbprint)) {
               $expectedSignerThumbprint = $signature.SignerCertificate.Thumbprint
               if (-not [string]::Equals(
-                  $env:SIGNPATH_EXPECTED_SIGNER_THUMBPRINT,
+                  $env:AUTOENVPLUS_RELEASE_CERT_THUMBPRINT,
                   $expectedSignerThumbprint,
                   [System.StringComparison]::OrdinalIgnoreCase)) {
-                throw 'The downloaded release signer does not match SIGNPATH_EXPECTED_SIGNER_THUMBPRINT.'
+                throw 'The downloaded release signer does not match AUTOENVPLUS_RELEASE_CERT_THUMBPRINT.'
               }
             }
             elseif (-not [string]::Equals(
@@ -617,7 +556,10 @@ jobs:
               throw "Portable ZIP is missing signed first-party PE: $relativePath"
             }
             $signature = Get-AuthenticodeSignature -LiteralPath $path
-            if ($signature.Status -ne [System.Management.Automation.SignatureStatus]::Valid -or $null -eq $signature.SignerCertificate) {
+            if ($signature.Status -notin @(
+                [System.Management.Automation.SignatureStatus]::Valid,
+                [System.Management.Automation.SignatureStatus]::UnknownError) -or
+              $null -eq $signature.SignerCertificate) {
               throw "Portable ZIP contains an invalid first-party PE signature for ${relativePath}: $($signature.Status)."
             }
             if (-not [string]::Equals(

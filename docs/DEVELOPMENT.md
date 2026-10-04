@@ -106,7 +106,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msi.ps1 `
   -BuildCacheRoot D:\codex
 ```
 
-本地脚本默认只生成候选，不能建立发布者身份。公开 tag 流程会把第一方 PE 交给 SignPath、用已签 payload 重建 portable/MSI、再签 MSI 外层；PR 和普通 CI 不接触 `SIGNPATH_API_TOKEN`。完整签名与身份验证细节见 [分发说明](DISTRIBUTION.md)。
+本地脚本默认只生成候选，不能建立发布者身份。公开 tag 流程会用自签名证书签第一方 PE、用已签 payload 重建 portable/MSI、再签 MSI 外层；PR 和普通 CI 不接触签名材料。完整签名与身份验证细节见 [分发说明](DISTRIBUTION.md)。
 
 ## 测试原则
 

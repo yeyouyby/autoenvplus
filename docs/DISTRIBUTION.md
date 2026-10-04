@@ -2,7 +2,7 @@
 
 ## v0.0.1 状态
 
-`v0.0.1` 是 Windows 10/11 x64 测试版候选，产品版本为 `0.0.1`，目标 tag 为 `v0.0.1`。仓库已经定义三类构建和强制 SignPath 发布流程，但仓库内容本身不能证明 SignPath OSS 申请已批准、外部项目已配置或 GitHub prerelease 已发布。只有 tag 工作流成功且从 GitHub 回读签名与资产后，才能把它描述为已签名发布。
+`v0.0.1` 是 Windows 10/11 x64 测试版候选，产品版本为 `0.0.1`，目标 tag 为 `v0.0.1`。仓库已经定义三类构建和强制自签名发布流程，但仓库内容本身不能证明签名证书已配置或 GitHub prerelease 已发布。只有 tag 工作流成功且从 GitHub 回读签名与资产后，才能把它描述为已签名发布。
 
 权威 GitHub Release 主资产只有三类：
 
@@ -76,9 +76,9 @@ artifacts\AutoEnvPlus-win-x64\
 
 GUI 使用普通 EXE + DLL 布局，必须完整解压；只复制 `AutoEnvPlus.App.exe` 不可运行。CLI 是 `cli\autoenvplus.exe`，原生 Shim 同样必须保留在 `cli` 子目录及受管安装流程预期的位置。
 
-`eng\publish.ps1` 的本地压缩输出和 tag 工作流都使用权威名称 `AutoEnvPlus-win-x64-portable.zip`。tag 工作流使用 `-NoArchive` 先构建目录，把其中列明的第一方 PE 交给 SignPath 并验签，重新生成逐文件清单后再压缩。
+`eng\publish.ps1` 的本地压缩输出和 tag 工作流都使用权威名称 `AutoEnvPlus-win-x64-portable.zip`。tag 工作流使用 `-NoArchive` 先构建目录，把其中列明的第一方 PE 签名并复检，重新生成逐文件清单后再压缩。
 
-ZIP 格式不能承载 Authenticode。发布时所谓“SignPath-signed portable”准确含义是内部第一方 App/CLI/Core/Shim PE 已通过 Authenticode 验证；ZIP 容器本身由 `.sha256` 和聚合清单保护。哈希能检测字节变化，但不能独立建立发布者身份。
+ZIP 格式不能承载 Authenticode。发布时所谓“signed portable”准确含义是内部第一方 App/CLI/Core/Shim PE 已通过签名复检；ZIP 容器本身由 `.sha256` 和聚合清单保护。哈希能检测字节变化，但不能独立建立发布者身份。
 
 ## per-user MSI
 
@@ -108,28 +108,28 @@ MSI 具备以下明确边界：
 - 卸载只移除 MSI 拥有的程序文件和快捷方式，保留用户配置、`AUTOENVPLUS_HOME` 受管数据根和已安装语言工具；
 - 不承诺自动更新；新测试版仍需用户从对应 GitHub Release 获取。
 
-本地构建默认可以产生未签候选。`-RequireSignedPayload` 可要求 portable 中列明的第一方 PE 已有有效 Authenticode。tag 工作流总是先合并 SignPath 已签 payload，再构建 MSI，最后单独签 MSI 外层。
+本地构建默认可以产生未签候选。`-RequireSignedPayload` 可要求 portable 中列明的第一方 PE 已有有效 Authenticode。tag 工作流总是先签第一方 PE，再构建 MSI，最后单独签 MSI 外层。
 
-## SignPath OSS 发布门禁
+## 自签名发布门禁
 
-`.github\workflows\release.yml` 只监听版本 tag，并在 `release-signing` environment 中运行。正式启用前，维护者必须先通过 SignPath Foundation/open-source 计划审批，在 SignPath 配置 Organization、Project、GitHub.com Trusted Build System、PE/MSI Artifact Configuration 和 Signing Policy，再设置：
+`.github\workflows\release.yml` 只监听版本 tag，并在 `release-signing` environment 中运行。维护者必须先生成专用自签名代码签名证书（Code Signing EKU、RSA ≥3072、SHA-256），导出 PFX 并离线备份，再配置：
 
-- GitHub secret：`SIGNPATH_API_TOKEN`；
-- GitHub variables：`SIGNPATH_ORGANIZATION_ID`、`SIGNPATH_PROJECT_SLUG`、`SIGNPATH_SIGNING_POLICY_SLUG`、`SIGNPATH_PE_ARTIFACT_CONFIGURATION_SLUG`、`SIGNPATH_MSI_ARTIFACT_CONFIGURATION_SLUG`、`SIGNPATH_EXPECTED_SIGNER_THUMBPRINT`。
+- GitHub environment secrets（`release-signing`）：`AUTOENVPLUS_RELEASE_CERT_PFX_BASE64`（PFX 的 base64）与 `AUTOENVPLUS_RELEASE_CERT_PASSWORD`；
+- GitHub repository variable：`AUTOENVPLUS_RELEASE_CERT_THUMBPRINT`（40 位 SHA-1 指纹）。
 
-`SIGNPATH_EXPECTED_SIGNER_THUMBPRINT` 是 SignPath 为本项目签发证书的 40 位 SHA-1 thumbprint；每个 PE 与 MSI 都必须精确匹配。GitHub `upload-artifact` 会提供外层 ZIP，因此 PE 和 MSI Artifact Configuration 都必须以 `<zip-file>` 为根并只允许工作流列明的内部路径。任一值缺失、路径漂移或证书不匹配都会在签名前/发布前失败，不会降级发布未签资产。普通 PR、fork PR、push CI 和手工本地构建不读取 `SIGNPATH_API_TOKEN`，也不提交签名请求。
+`AUTOENVPLUS_RELEASE_CERT_THUMBPRINT` 是发布证书的精确身份；每个 PE 与 MSI 的签名者指纹都必须与之匹配。任一值缺失、PFX 无效或指纹不匹配都会在签名前/发布前失败，不会降级发布未签资产。普通 PR、fork PR、push CI 和手工本地构建不读取签名材料。
 
 签名顺序固定为：
 
 1. 构建未签 portable 目录和 WinUI single-file；
-2. 提交 single-file 以及 portable 中 App EXE/App DLL/Core DLL/CLI EXE/原生 Shim；
-3. 等待 SignPath 完成，下载后逐个要求 Authenticode `Valid`，拒绝缺失文件与 reparse point；
-4. 合并已签 PE，重建 portable `SHA256SUMS.txt` 和 `AutoEnvPlus-win-x64-portable.zip`；
+2. 用 signtool（SHA-256 + RFC3161 时间戳）签 single-file 以及 portable 中 App EXE/App DLL/Core DLL/CLI EXE/原生 Shim；
+3. 逐个复检签名完整性与指纹，拒绝缺失文件与 reparse point；
+4. 重建 portable `SHA256SUMS.txt` 和 `AutoEnvPlus-win-x64-portable.zip`；
 5. 从已签 portable payload 构建 MSI；
-6. 单独提交 MSI 外层，下载后要求唯一同名普通文件且 Authenticode `Valid`；
+6. 单独签 MSI 外层，复检签名并经 `msiexec /a` 提取比对内部 payload 与 portable 完全一致；
 7. 生成三个 sidecar 与聚合 `SHA256SUMS.txt`，确认七个文件齐全后才创建/发布 GitHub prerelease。
 
-SignPath Action 固定到 `SignPath/github-action-submit-signing-request` v2.2 的提交 `b9d91eadd323de506c0c81cf0c7fe7438f3360fd`。签名请求、下载或本地验签任一失败都会阻断发布。
+自签名证书不在 Windows 信任链内：`Get-AuthenticodeSignature` 对完好的自签名返回 `UnknownError`（未受信任）而不是 `Valid`，用户侧会显示“未知发布者”。工作流按此语义验签：签名必须密码学完整（非 `NotSigned`/`HashMismatch`）且指纹精确匹配。signtool 签名、复检或 MSI payload 比对任一失败都会阻断发布。
 
 ## 用户验证
 
@@ -150,7 +150,7 @@ Get-AuthenticodeSignature .\AutoEnvPlus-win-x64.msi
 
 仓库仍保留 `eng\publish-msix.ps1`、AppxManifest 与 AppInstaller profile，用于开发验证或后续实验。该脚本支持短期开发证书和显式 PFX 模式，并执行包身份/CMS/Authenticode/AppInstaller 交叉检查；开发证书默认不受信任，也不会自动写入证书库。
 
-MSIX 与 AppInstaller 不属于 `v0.0.1` 三类权威 GitHub Release 资产，tag 的 SignPath 主流程不会发布它们。AppInstaller 的 stable `latest` URI 也不构成 prerelease-to-prerelease 更新承诺。不能用本地开发 MSIX 或旧 PFX 脚本成功替代三类 SignPath 资产的实际回读。
+MSIX 与 AppInstaller 不属于 `v0.0.1` 三类权威 GitHub Release 资产，tag 的自签名主流程不会发布它们。AppInstaller 的 stable `latest` URI 也不构成 prerelease-to-prerelease 更新承诺。不能用本地开发 MSIX 或旧 PFX 脚本成功替代三类签名资产的实际回读。
 
 ## 数据、许可证与构建位置
 

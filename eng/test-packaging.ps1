@@ -438,12 +438,18 @@ try {
 
     $releaseWorkflow = [System.IO.File]::ReadAllText(
         (Join-Path $repositoryRoot '.github\workflows\release.yml'))
-    Assert-Equal $releaseWorkflow.Contains(
-        'SignPath/github-action-submit-signing-request@b9d91eadd323de506c0c81cf0c7fe7438f3360fd') `
-        $true `
-        'Release workflow pins SignPath action'
-    Assert-Equal $releaseWorkflow.Contains('SIGNPATH_EXPECTED_SIGNER_THUMBPRINT') $true `
-        'Release workflow pins the expected signer certificate'
+    Assert-Equal ($releaseWorkflow.Contains('SignPath') -or $releaseWorkflow.Contains('SIGNPATH')) $false `
+        'Release workflow no longer references SignPath'
+    Assert-Equal $releaseWorkflow.Contains('AUTOENVPLUS_RELEASE_CERT_THUMBPRINT') $true `
+        'Release workflow pins the expected signer certificate thumbprint'
+    Assert-Equal $releaseWorkflow.Contains('AUTOENVPLUS_RELEASE_CERT_PFX_BASE64') $true `
+        'Release workflow reads the release certificate PFX secret'
+    Assert-Equal $releaseWorkflow.Contains('AUTOENVPLUS_RELEASE_CERT_PASSWORD') $true `
+        'Release workflow reads the release certificate password secret'
+    Assert-Equal $releaseWorkflow.Contains('signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256') $true `
+        'Release workflow signs with signtool SHA-256 and an RFC3161 timestamp'
+    Assert-Equal $releaseWorkflow.Contains('SignatureStatus]::UnknownError') $true `
+        'Release workflow accepts the self-signed UnknownError verification status'
     Assert-Equal $releaseWorkflow.Contains('-RequireSignedPayload') $true `
         'MSI release requires signed embedded payload'
 

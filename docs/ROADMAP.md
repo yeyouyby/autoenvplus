@@ -41,18 +41,18 @@
 - [x] Python Sigstore、Node.js OpenPGP、Temurin detached signature 和 .NET SHA-512 evidence；
 - [x] HTTPS/URI/大小边界、安全解压、reparse point 防护、原子状态和脱敏；
 - [x] WinUI single-file、完整 portable ZIP 与 per-user MSI 三类 x64 构建路径；
-- [x] GitHub Windows CI 与 tag 驱动、SignPath fail-closed 的 prerelease 工作流定义。
+- [x] GitHub Windows CI 与 tag 驱动、自签名 fail-closed 的 prerelease 工作流定义。
 
 ### 发布门禁
 
 - [ ] 最终代码和安全审查无发布阻断项；
 - [ ] Windows CI 在候选 commit 上实际通过；
 - [ ] Windows 10/11 真机启动、缩放、主题、高对比度、键盘和屏幕阅读器验收；
-- [ ] SignPath OSS 组织/项目、Trusted Build System、PE/MSI Artifact Configuration、Signing Policy 与 release-signing environment 实际配置并获批；
+- [ ] 自签名发布证书、`release-signing` environment secrets 与指纹 variable 实际配置；
 - [ ] `AutoEnvPlus-win-x64.exe`、`AutoEnvPlus-win-x64-portable.zip`、`AutoEnvPlus-win-x64.msi` 三个主资产及其 sidecar/聚合 SHA-256 从 GitHub 下载回读通过；
 - [ ] 单文件 EXE、便携包内第一方 PE、MSI 内 payload 与 MSI 外层 Authenticode 回读通过；
 - [ ] `v0.0.1` tag 与 GitHub prerelease 实际创建并回读；
-- [ ] 三类主资产缺一、SignPath 失败或签名复检失败时均不发布，且没有未签名回退。
+- [ ] 三类主资产缺一、签名失败或签名复检失败时均不发布，且没有未签名回退。
 
 ## v0.0.x 稳定化
 
@@ -63,7 +63,7 @@
 - [ ] 基于 Windows 目录句柄进一步降低同账户 rename/reparse 竞态；
 - [ ] 缩短长下载持有的运行时事务锁范围；
 - [ ] 完善错误恢复、诊断建议和用户可理解的证据摘要；
-- [ ] 完成 SignPath 发布者证书、可信时间戳、轮换和撤销流程的运行记录与维护策略。
+- [ ] 完成发布证书轮换、撤销和（可选的）受信任 CA 迁移流程的运行记录与维护策略。
 
 ## v0.1 产品扩展
 
