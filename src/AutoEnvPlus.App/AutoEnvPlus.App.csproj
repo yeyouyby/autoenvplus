@@ -27,7 +27,7 @@
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260529003" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260921001" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AutoEnvPlus.Core\AutoEnvPlus.Core.csproj" />
