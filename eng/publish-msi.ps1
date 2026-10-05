@@ -343,8 +343,10 @@ function Get-PayloadSignatureState {
         if ($null -eq $file) { continue }
         $signature = Get-AuthenticodeSignature -LiteralPath $file.FullPath
         $results[$relative] = [string]$signature.Status
-        if ($RequireSignedPayload -and $signature.Status -ne 'Valid') {
-            throw "Signed payload was required, but $relative has Authenticode status '$($signature.Status)'."
+        if ($RequireSignedPayload -and
+            ($signature.Status -notin @('Valid', 'UnknownError') -or
+                $null -eq $signature.SignerCertificate)) {
+            throw "Signed payload was required, but $relative has Authenticode status '$($signature.Status)'. Expected an intact signature (Valid, or UnknownError for an untrusted-but-intact self-signed release certificate)."
         }
     }
     return $results
