@@ -1,8 +1,11 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Directory.Build.props" />
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <IsRestoreable>false</IsRestoreable>
     <NativeShimOutput>$(MSBuildProjectDirectory)\bin\$(Configuration)\win-x64\autoenvplus-shim.exe</NativeShimOutput>
+    <NativeShimResource>$(MSBuildProjectDirectory)\native-shim.rc</NativeShimResource>
+    <NativeShimIcon>$(MSBuildThisFileDirectory)..\..\assets\branding\autoenvplus.ico</NativeShimIcon>
   </PropertyGroup>
 
   <Target Name="Restore" />
@@ -15,10 +18,10 @@
 
   <Target
     Name="Build"
-    Inputs="$(MSBuildProjectDirectory)\native-shim.cpp;$(MSBuildProjectDirectory)\build-native.cmd"
+    Inputs="$(MSBuildProjectDirectory)\native-shim.cpp;$(NativeShimResource);$(NativeShimIcon);$(MSBuildProjectDirectory)\build-native.cmd;$(MSBuildThisFileDirectory)..\..\Directory.Build.props"
     Outputs="$(NativeShimOutput)">
     <Exec
-      Command="&quot;$(MSBuildProjectDirectory)\build-native.cmd&quot; &quot;$(MSBuildProjectDirectory)\native-shim.cpp&quot; &quot;$(NativeShimOutput)&quot;" />
+      Command="&quot;$(MSBuildProjectDirectory)\build-native.cmd&quot; &quot;$(MSBuildProjectDirectory)\native-shim.cpp&quot; &quot;$(NativeShimOutput)&quot; &quot;$(NativeShimResource)&quot; &quot;$(AutoEnvPlusVersionMajor)&quot; &quot;$(AutoEnvPlusVersionMinor)&quot; &quot;$(AutoEnvPlusVersionPatch)&quot; &quot;$(AutoEnvPlusVersionRevision)&quot; &quot;$(NativeShimIcon)&quot;" />
   </Target>
 
   <Target Name="Clean">

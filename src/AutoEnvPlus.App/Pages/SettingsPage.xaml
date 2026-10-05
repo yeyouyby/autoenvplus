@@ -4,12 +4,72 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <ScrollViewer>
-        <StackPanel Padding="{StaticResource PagePadding}" Spacing="20">
-            <Grid ColumnSpacing="12">
+        <StackPanel
+            x:Name="LayoutRoot"
+            Padding="{StaticResource PagePadding}"
+            Spacing="20">
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup>
+                    <VisualState x:Name="CompactLayout">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="0" />
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="SettingsHeaderActions.(Grid.Row)" Value="1" />
+                            <Setter Target="SettingsHeaderActions.(Grid.Column)" Value="0" />
+                            <Setter Target="SettingsHeaderActions.HorizontalAlignment" Value="Left" />
+                            <Setter Target="SettingsHeaderActions.Margin" Value="0,12,0,0" />
+
+                            <Setter Target="AppearancePrimaryColumn.Width" Value="*" />
+                            <Setter Target="AppearanceBackdropColumn.Width" Value="0" />
+                            <Setter Target="AppearanceDensityColumn.Width" Value="0" />
+                            <Setter Target="AppearanceBackdropRow.Height" Value="Auto" />
+                            <Setter Target="AppearanceDensityRow.Height" Value="Auto" />
+                            <Setter Target="BackdropField.(Grid.Row)" Value="1" />
+                            <Setter Target="BackdropField.(Grid.Column)" Value="0" />
+                            <Setter Target="DensityField.(Grid.Row)" Value="2" />
+                            <Setter Target="DensityField.(Grid.Column)" Value="0" />
+
+                            <Setter Target="PowerShellActions.Orientation" Value="Vertical" />
+                            <Setter Target="PowerShellActions.HorizontalAlignment" Value="Left" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="WideLayout">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="760" />
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="SettingsHeaderActions.(Grid.Row)" Value="0" />
+                            <Setter Target="SettingsHeaderActions.(Grid.Column)" Value="1" />
+                            <Setter Target="SettingsHeaderActions.HorizontalAlignment" Value="Stretch" />
+                            <Setter Target="SettingsHeaderActions.Margin" Value="0" />
+
+                            <Setter Target="AppearancePrimaryColumn.Width" Value="*" />
+                            <Setter Target="AppearanceBackdropColumn.Width" Value="*" />
+                            <Setter Target="AppearanceDensityColumn.Width" Value="*" />
+                            <Setter Target="AppearanceBackdropRow.Height" Value="0" />
+                            <Setter Target="AppearanceDensityRow.Height" Value="0" />
+                            <Setter Target="BackdropField.(Grid.Row)" Value="0" />
+                            <Setter Target="BackdropField.(Grid.Column)" Value="1" />
+                            <Setter Target="DensityField.(Grid.Row)" Value="0" />
+                            <Setter Target="DensityField.(Grid.Column)" Value="2" />
+
+                            <Setter Target="PowerShellActions.Orientation" Value="Horizontal" />
+                            <Setter Target="PowerShellActions.HorizontalAlignment" Value="Stretch" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+
+            <Grid ColumnSpacing="12" RowSpacing="12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <StackPanel Spacing="4">
                     <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="设置" />
                     <TextBlock
@@ -18,6 +78,7 @@
                         TextWrapping="Wrap" />
                 </StackPanel>
                 <StackPanel
+                    x:Name="SettingsHeaderActions"
                     Grid.Column="1"
                     VerticalAlignment="Bottom"
                     Orientation="Horizontal"
@@ -26,6 +87,7 @@
                         x:Name="SettingsProgress"
                         Width="20"
                         Height="20"
+                        AutomationProperties.Name="设置保存进度"
                         IsActive="False" />
                     <Button
                         x:Name="SaveSettingsButton"
@@ -42,6 +104,7 @@
 
             <InfoBar
                 x:Name="SettingsInfo"
+                AutomationProperties.LiveSetting="Polite"
                 IsClosable="False"
                 IsOpen="False" />
 
@@ -76,6 +139,7 @@
                             Text="当前窗口背景" />
                         <TextBlock
                             x:Name="EffectiveBackdropText"
+                            AutomationProperties.LiveSetting="Polite"
                             FontWeight="SemiBold"
                             IsTextSelectionEnabled="True" />
                         <TextBlock
@@ -85,28 +149,42 @@
                             TextWrapping="Wrap" />
                         <Grid Margin="0,10,0,0" ColumnSpacing="12" RowSpacing="10">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition x:Name="AppearancePrimaryColumn" Width="*" />
+                                <ColumnDefinition x:Name="AppearanceBackdropColumn" Width="*" />
+                                <ColumnDefinition x:Name="AppearanceDensityColumn" Width="*" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel Spacing="4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition x:Name="AppearanceBackdropRow" Height="0" />
+                                <RowDefinition x:Name="AppearanceDensityRow" Height="0" />
+                            </Grid.RowDefinitions>
+                            <StackPanel x:Name="ThemeField" Spacing="4">
                                 <TextBlock Text="主题" />
                                 <ComboBox
                                     x:Name="ThemePicker"
+                                    AutomationProperties.Name="主题"
                                     HorizontalAlignment="Stretch"
                                     DisplayMemberPath="Label" />
                             </StackPanel>
-                            <StackPanel Grid.Column="1" Spacing="4">
+                            <StackPanel
+                                x:Name="BackdropField"
+                                Grid.Column="1"
+                                Spacing="4">
                                 <TextBlock Text="窗口材质" />
                                 <ComboBox
                                     x:Name="BackdropPicker"
+                                    AutomationProperties.Name="窗口材质"
                                     HorizontalAlignment="Stretch"
                                     DisplayMemberPath="Label" />
                             </StackPanel>
-                            <StackPanel Grid.Column="2" Spacing="4">
+                            <StackPanel
+                                x:Name="DensityField"
+                                Grid.Column="2"
+                                Spacing="4">
                                 <TextBlock Text="界面密度" />
                                 <ComboBox
                                     x:Name="DensityPicker"
+                                    AutomationProperties.Name="界面密度"
                                     HorizontalAlignment="Stretch"
                                     DisplayMemberPath="Label" />
                             </StackPanel>
@@ -121,6 +199,7 @@
                         <TextBlock Text="启动页面" />
                         <ComboBox
                             x:Name="StartupDestinationPicker"
+                            AutomationProperties.Name="启动页面"
                             HorizontalAlignment="Stretch"
                             DisplayMemberPath="Label" />
                     </StackPanel>
@@ -139,6 +218,7 @@
                         <TextBlock Text="默认语言可见性" />
                         <ComboBox
                             x:Name="LanguageVisibilityPicker"
+                            AutomationProperties.Name="默认语言可见性"
                             HorizontalAlignment="Stretch"
                             DisplayMemberPath="Label" />
                     </StackPanel>
@@ -160,6 +240,7 @@
                         <TextBlock Text="默认并发连接数" />
                         <ComboBox
                             x:Name="DefaultConnectionsPicker"
+                            AutomationProperties.Name="默认并发连接数"
                             HorizontalAlignment="Stretch"
                             DisplayMemberPath="Label" />
                     </StackPanel>
@@ -167,6 +248,7 @@
                         <TextBlock Text="单文件默认上限（GB）" />
                         <NumberBox
                             x:Name="MaxDownloadGbNumber"
+                            AutomationProperties.Name="单文件默认上限（GB）"
                             Minimum="1"
                             Maximum="1024"
                             SpinButtonPlacementMode="Compact" />
@@ -184,12 +266,14 @@
                         <TextBlock Text="HTTP 代理" />
                         <TextBox
                             x:Name="HttpProxyTextBox"
+                            AutomationProperties.Name="HTTP 代理"
                             PlaceholderText="http://proxy.example:8080" />
                     </StackPanel>
                     <StackPanel Spacing="4">
                         <TextBlock Text="HTTPS 代理" />
                         <TextBox
                             x:Name="HttpsProxyTextBox"
+                            AutomationProperties.Name="HTTPS 代理"
                             PlaceholderText="http://proxy.example:8080" />
                     </StackPanel>
                     <StackPanel Spacing="4">
@@ -197,6 +281,7 @@
                         <TextBox
                             x:Name="NoProxyTextBox"
                             AcceptsReturn="True"
+                            AutomationProperties.Name="不使用代理的地址"
                             MinHeight="72"
                             PlaceholderText="localhost, 127.0.0.1, *.internal"
                             TextWrapping="Wrap" />
@@ -226,6 +311,7 @@
                         <TextBlock Text="活动日志保留天数" />
                         <NumberBox
                             x:Name="LogRetentionNumber"
+                            AutomationProperties.Name="活动日志保留天数"
                             Minimum="1"
                             Maximum="365"
                             SpinButtonPlacementMode="Compact" />
@@ -286,6 +372,7 @@
                     <InfoBar
                         x:Name="ManagedRootInfo"
                         Grid.Row="2"
+                        AutomationProperties.LiveSetting="Polite"
                         IsClosable="False"
                         IsOpen="False" />
                 </Grid>
@@ -316,6 +403,7 @@
                     </StackPanel>
 
                     <StackPanel
+                        x:Name="PowerShellActions"
                         Grid.Row="1"
                         Orientation="Horizontal"
                         Spacing="8">
@@ -352,6 +440,7 @@
                             x:Name="PowerShellProgress"
                             Width="20"
                             Height="20"
+                            AutomationProperties.Name="PowerShell 集成操作进度"
                             IsActive="False" />
                     </StackPanel>
                 </Grid>
@@ -359,6 +448,7 @@
 
             <InfoBar
                 x:Name="PowerShellInfo"
+                AutomationProperties.LiveSetting="Polite"
                 IsClosable="False"
                 IsOpen="False" />
 
@@ -369,6 +459,7 @@
                         MinHeight="150"
                         MaxHeight="280"
                         AcceptsReturn="True"
+                        AutomationProperties.Name="PowerShell 集成摘要预览"
                         FontFamily="Consolas"
                         IsReadOnly="True"
                         TextWrapping="Wrap" />
@@ -379,6 +470,7 @@
                         MinHeight="220"
                         MaxHeight="420"
                         AcceptsReturn="True"
+                        AutomationProperties.Name="PowerShell Profile 预览"
                         FontFamily="Consolas"
                         IsReadOnly="True"
                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
@@ -392,6 +484,7 @@
                         MinHeight="220"
                         MaxHeight="420"
                         AcceptsReturn="True"
+                        AutomationProperties.Name="PowerShell 模块预览"
                         FontFamily="Consolas"
                         IsReadOnly="True"
                         ScrollViewer.HorizontalScrollBarVisibility="Auto"

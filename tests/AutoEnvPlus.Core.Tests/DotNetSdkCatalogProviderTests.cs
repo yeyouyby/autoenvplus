@@ -111,6 +111,47 @@ public sealed class DotNetSdkCatalogProviderTests
         Assert.Null(asset.ArchiveRootDirectory);
     }
 
+    [Fact]
+    public async Task GetReleasesAsync_RejectsDeclaredMetadataOverByteLimit()
+    {
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+        {
+            HttpResponseMessage response = StubHttpMessageHandler.Text("{}", "application/json");
+            response.Content.Headers.ContentLength = DotNetSdkCatalogProvider.MaximumMetadataBytes + 1L;
+            return response;
+        }));
+        DotNetSdkCatalogProvider provider = new(
+            client,
+            RuntimeArchitecture.X64,
+            new Uri("https://example.test/dotnet/releases-index.json"));
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(
+            () => provider.GetReleasesAsync());
+
+        Assert.Contains("byte limit", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GetReleasesAsync_RejectsExcessiveChannelCount()
+    {
+        string channels = string.Join(
+            ',',
+            Enumerable.Repeat("{}", DotNetSdkCatalogProvider.MaximumChannelEntries + 1));
+        using HttpClient client = new(new StubHttpMessageHandler(
+            _ => StubHttpMessageHandler.Text(
+                $"{{\"releases-index\":[{channels}]}}",
+                "application/json")));
+        DotNetSdkCatalogProvider provider = new(
+            client,
+            RuntimeArchitecture.X64,
+            new Uri("https://example.test/dotnet/releases-index.json"));
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(
+            () => provider.GetReleasesAsync());
+
+        Assert.Contains("channels", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static HttpClient CreateClient(
         bool includeStable = true,
         bool includeX64 = true)

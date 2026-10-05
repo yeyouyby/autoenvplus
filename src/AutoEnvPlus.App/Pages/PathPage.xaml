@@ -3,7 +3,54 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <Grid Padding="{StaticResource PagePadding}" RowSpacing="14">
+    <Page.Resources>
+        <Style x:Key="StretchPathListViewItemStyle" TargetType="ListViewItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+    </Page.Resources>
+
+    <Grid
+        x:Name="LayoutRoot"
+        Padding="{StaticResource PagePadding}"
+        RowSpacing="14">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="CompactLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="PathHeaderActions.(Grid.Row)" Value="1" />
+                        <Setter Target="PathHeaderActions.(Grid.Column)" Value="0" />
+                        <Setter Target="PathHeaderActions.HorizontalAlignment" Value="Left" />
+                        <Setter Target="PathHeaderActions.Margin" Value="0,12,0,0" />
+                        <Setter Target="CommandRouteHeader.Visibility" Value="Collapsed" />
+                        <Setter Target="PathDirectoryHeader.Visibility" Value="Collapsed" />
+                        <Setter Target="SnapshotActions.(Grid.Row)" Value="1" />
+                        <Setter Target="SnapshotActions.(Grid.Column)" Value="0" />
+                        <Setter Target="SnapshotActions.HorizontalAlignment" Value="Left" />
+                        <Setter Target="SnapshotActions.Margin" Value="0,10,0,0" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="760" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="PathHeaderActions.(Grid.Row)" Value="0" />
+                        <Setter Target="PathHeaderActions.(Grid.Column)" Value="1" />
+                        <Setter Target="PathHeaderActions.HorizontalAlignment" Value="Stretch" />
+                        <Setter Target="PathHeaderActions.Margin" Value="0" />
+                        <Setter Target="CommandRouteHeader.Visibility" Value="Visible" />
+                        <Setter Target="PathDirectoryHeader.Visibility" Value="Visible" />
+                        <Setter Target="SnapshotActions.(Grid.Row)" Value="0" />
+                        <Setter Target="SnapshotActions.(Grid.Column)" Value="1" />
+                        <Setter Target="SnapshotActions.HorizontalAlignment" Value="Stretch" />
+                        <Setter Target="SnapshotActions.Margin" Value="0" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -11,11 +58,15 @@
             <RowDefinition />
         </Grid.RowDefinitions>
 
-        <Grid ColumnSpacing="12">
+        <Grid ColumnSpacing="12" RowSpacing="12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
             <StackPanel Spacing="4">
                 <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="PATH 与命令" />
                 <TextBlock
@@ -24,11 +75,13 @@
                     TextWrapping="Wrap" />
                 <TextBlock
                     x:Name="ShimStateText"
+                    AutomationProperties.LiveSetting="Polite"
                     FontWeight="SemiBold"
                     Text="正在读取 Shim 路由状态…"
                     TextWrapping="Wrap" />
             </StackPanel>
             <StackPanel
+                x:Name="PathHeaderActions"
                 Grid.Column="1"
                 VerticalAlignment="Bottom"
                 Orientation="Horizontal"
@@ -56,6 +109,7 @@
         <InfoBar
             x:Name="SummaryInfo"
             Grid.Row="1"
+            AutomationProperties.LiveSetting="Polite"
             IsClosable="False"
             IsOpen="True" />
 
@@ -84,9 +138,15 @@
 
         <Pivot Grid.Row="3">
             <PivotItem Header="命令路由">
-                <ListView x:Name="CommandRouteList" SelectionMode="None">
+                <ListView
+                    x:Name="CommandRouteList"
+                    ItemContainerStyle="{StaticResource StretchPathListViewItemStyle}"
+                    SelectionMode="None">
                     <ListView.Header>
-                        <Grid Padding="12,8" ColumnSpacing="12">
+                        <Grid
+                            x:Name="CommandRouteHeader"
+                            Padding="12,8"
+                            ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="100" />
                                 <ColumnDefinition />
@@ -99,20 +159,77 @@
                     </ListView.Header>
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Grid Padding="12,8" ColumnSpacing="12">
+                            <Grid Padding="12,8" ColumnSpacing="12" RowSpacing="3">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition />
-                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition x:Name="CommandNameColumn" Width="100" />
+                                    <ColumnDefinition x:Name="CommandWinnerColumn" />
+                                    <ColumnDefinition x:Name="CommandStateColumn" Width="150" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock FontWeight="SemiBold" Text="{Binding Command}" />
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition x:Name="CommandWinnerRow" Height="0" />
+                                    <RowDefinition x:Name="CommandStateRow" Height="0" />
+                                </Grid.RowDefinitions>
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup>
+                                        <VisualState x:Name="CompactCommandRouteItem">
+                                            <VisualState.StateTriggers>
+                                                <AdaptiveTrigger MinWindowWidth="0" />
+                                            </VisualState.StateTriggers>
+                                            <VisualState.Setters>
+                                                <Setter Target="CommandNameColumn.Width" Value="*" />
+                                                <Setter Target="CommandWinnerColumn.Width" Value="0" />
+                                                <Setter Target="CommandStateColumn.Width" Value="0" />
+                                                <Setter Target="CommandWinnerRow.Height" Value="Auto" />
+                                                <Setter Target="CommandStateRow.Height" Value="Auto" />
+                                                <Setter Target="CommandNameText.(Grid.ColumnSpan)" Value="3" />
+                                                <Setter Target="CommandWinnerText.(Grid.Row)" Value="1" />
+                                                <Setter Target="CommandWinnerText.(Grid.Column)" Value="0" />
+                                                <Setter Target="CommandWinnerText.(Grid.ColumnSpan)" Value="3" />
+                                                <Setter Target="CommandWinnerText.TextTrimming" Value="None" />
+                                                <Setter Target="CommandWinnerText.TextWrapping" Value="WrapWholeWords" />
+                                                <Setter Target="CommandStateText.(Grid.Row)" Value="2" />
+                                                <Setter Target="CommandStateText.(Grid.Column)" Value="0" />
+                                                <Setter Target="CommandStateText.(Grid.ColumnSpan)" Value="3" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="WideCommandRouteItem">
+                                            <VisualState.StateTriggers>
+                                                <AdaptiveTrigger MinWindowWidth="760" />
+                                            </VisualState.StateTriggers>
+                                            <VisualState.Setters>
+                                                <Setter Target="CommandNameColumn.Width" Value="100" />
+                                                <Setter Target="CommandWinnerColumn.Width" Value="*" />
+                                                <Setter Target="CommandStateColumn.Width" Value="150" />
+                                                <Setter Target="CommandWinnerRow.Height" Value="0" />
+                                                <Setter Target="CommandStateRow.Height" Value="0" />
+                                                <Setter Target="CommandNameText.(Grid.ColumnSpan)" Value="1" />
+                                                <Setter Target="CommandWinnerText.(Grid.Row)" Value="0" />
+                                                <Setter Target="CommandWinnerText.(Grid.Column)" Value="1" />
+                                                <Setter Target="CommandWinnerText.(Grid.ColumnSpan)" Value="1" />
+                                                <Setter Target="CommandWinnerText.TextTrimming" Value="CharacterEllipsis" />
+                                                <Setter Target="CommandWinnerText.TextWrapping" Value="NoWrap" />
+                                                <Setter Target="CommandStateText.(Grid.Row)" Value="0" />
+                                                <Setter Target="CommandStateText.(Grid.Column)" Value="2" />
+                                                <Setter Target="CommandStateText.(Grid.ColumnSpan)" Value="1" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
                                 <TextBlock
+                                    x:Name="CommandNameText"
+                                    FontWeight="SemiBold"
+                                    Text="{Binding Command}"
+                                    TextWrapping="Wrap" />
+                                <TextBlock
+                                    x:Name="CommandWinnerText"
                                     Grid.Column="1"
                                     IsTextSelectionEnabled="True"
                                     Text="{Binding Winner}"
                                     TextTrimming="CharacterEllipsis"
                                     ToolTipService.ToolTip="{Binding Winner}" />
                                 <TextBlock
+                                    x:Name="CommandStateText"
                                     Grid.Column="2"
                                     Text="{Binding State}"
                                     TextWrapping="Wrap" />
@@ -126,9 +243,13 @@
                 <ListView
                     x:Name="PathList"
                     IsItemClickEnabled="False"
+                    ItemContainerStyle="{StaticResource StretchPathListViewItemStyle}"
                     SelectionMode="None">
                     <ListView.Header>
-                        <Grid Padding="12,8" ColumnSpacing="12">
+                        <Grid
+                            x:Name="PathDirectoryHeader"
+                            Padding="12,8"
+                            ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="52" />
                                 <ColumnDefinition Width="110" />
@@ -143,21 +264,95 @@
                     </ListView.Header>
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Grid Padding="12,8" ColumnSpacing="12">
+                            <Grid Padding="12,8" ColumnSpacing="12" RowSpacing="3">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="52" />
-                                    <ColumnDefinition Width="110" />
-                                    <ColumnDefinition />
-                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition x:Name="PathIndexColumn" Width="52" />
+                                    <ColumnDefinition x:Name="PathScopeColumn" Width="110" />
+                                    <ColumnDefinition x:Name="PathValueColumn" />
+                                    <ColumnDefinition x:Name="PathStatusColumn" Width="120" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding Index}" />
-                                <TextBlock Grid.Column="1" Text="{Binding Scope}" />
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition x:Name="PathScopeRow" Height="0" />
+                                    <RowDefinition x:Name="PathValueRow" Height="0" />
+                                    <RowDefinition x:Name="PathStatusRow" Height="0" />
+                                </Grid.RowDefinitions>
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup>
+                                        <VisualState x:Name="CompactPathItem">
+                                            <VisualState.StateTriggers>
+                                                <AdaptiveTrigger MinWindowWidth="0" />
+                                            </VisualState.StateTriggers>
+                                            <VisualState.Setters>
+                                                <Setter Target="PathIndexColumn.Width" Value="*" />
+                                                <Setter Target="PathScopeColumn.Width" Value="0" />
+                                                <Setter Target="PathValueColumn.Width" Value="0" />
+                                                <Setter Target="PathStatusColumn.Width" Value="0" />
+                                                <Setter Target="PathScopeRow.Height" Value="Auto" />
+                                                <Setter Target="PathValueRow.Height" Value="Auto" />
+                                                <Setter Target="PathStatusRow.Height" Value="Auto" />
+                                                <Setter Target="PathIndexText.(Grid.ColumnSpan)" Value="4" />
+                                                <Setter Target="PathScopeText.(Grid.Row)" Value="1" />
+                                                <Setter Target="PathScopeText.(Grid.Column)" Value="0" />
+                                                <Setter Target="PathScopeText.(Grid.ColumnSpan)" Value="4" />
+                                                <Setter Target="PathValueText.(Grid.Row)" Value="2" />
+                                                <Setter Target="PathValueText.(Grid.Column)" Value="0" />
+                                                <Setter Target="PathValueText.(Grid.ColumnSpan)" Value="4" />
+                                                <Setter Target="PathValueText.TextTrimming" Value="None" />
+                                                <Setter Target="PathValueText.TextWrapping" Value="WrapWholeWords" />
+                                                <Setter Target="PathStatusText.(Grid.Row)" Value="3" />
+                                                <Setter Target="PathStatusText.(Grid.Column)" Value="0" />
+                                                <Setter Target="PathStatusText.(Grid.ColumnSpan)" Value="4" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="WidePathItem">
+                                            <VisualState.StateTriggers>
+                                                <AdaptiveTrigger MinWindowWidth="760" />
+                                            </VisualState.StateTriggers>
+                                            <VisualState.Setters>
+                                                <Setter Target="PathIndexColumn.Width" Value="52" />
+                                                <Setter Target="PathScopeColumn.Width" Value="110" />
+                                                <Setter Target="PathValueColumn.Width" Value="*" />
+                                                <Setter Target="PathStatusColumn.Width" Value="120" />
+                                                <Setter Target="PathScopeRow.Height" Value="0" />
+                                                <Setter Target="PathValueRow.Height" Value="0" />
+                                                <Setter Target="PathStatusRow.Height" Value="0" />
+                                                <Setter Target="PathIndexText.(Grid.ColumnSpan)" Value="1" />
+                                                <Setter Target="PathScopeText.(Grid.Row)" Value="0" />
+                                                <Setter Target="PathScopeText.(Grid.Column)" Value="1" />
+                                                <Setter Target="PathScopeText.(Grid.ColumnSpan)" Value="1" />
+                                                <Setter Target="PathValueText.(Grid.Row)" Value="0" />
+                                                <Setter Target="PathValueText.(Grid.Column)" Value="2" />
+                                                <Setter Target="PathValueText.(Grid.ColumnSpan)" Value="1" />
+                                                <Setter Target="PathValueText.TextTrimming" Value="CharacterEllipsis" />
+                                                <Setter Target="PathValueText.TextWrapping" Value="NoWrap" />
+                                                <Setter Target="PathStatusText.(Grid.Row)" Value="0" />
+                                                <Setter Target="PathStatusText.(Grid.Column)" Value="3" />
+                                                <Setter Target="PathStatusText.(Grid.ColumnSpan)" Value="1" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
                                 <TextBlock
+                                    x:Name="PathIndexText"
+                                    Text="{Binding Index}"
+                                    TextWrapping="Wrap" />
+                                <TextBlock
+                                    x:Name="PathScopeText"
+                                    Grid.Column="1"
+                                    Text="{Binding Scope}"
+                                    TextWrapping="Wrap" />
+                                <TextBlock
+                                    x:Name="PathValueText"
                                     Grid.Column="2"
                                     Text="{Binding Path}"
                                     TextTrimming="CharacterEllipsis"
                                     ToolTipService.ToolTip="{Binding Path}" />
-                                <TextBlock Grid.Column="3" Text="{Binding Status}" />
+                                <TextBlock
+                                    x:Name="PathStatusText"
+                                    Grid.Column="3"
+                                    Text="{Binding Status}"
+                                    TextWrapping="Wrap" />
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
@@ -172,11 +367,15 @@
                         <RowDefinition />
                     </Grid.RowDefinitions>
 
-                    <Grid ColumnSpacing="12">
+                    <Grid ColumnSpacing="12" RowSpacing="10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <StackPanel Spacing="2">
                             <TextBlock
                                 FontSize="16"
@@ -188,6 +387,7 @@
                                 TextWrapping="Wrap" />
                         </StackPanel>
                         <StackPanel
+                            x:Name="SnapshotActions"
                             Grid.Column="1"
                             Orientation="Horizontal"
                             Spacing="8">
@@ -218,6 +418,7 @@
                     <TextBlock
                         x:Name="SnapshotSummaryText"
                         Grid.Row="1"
+                        AutomationProperties.LiveSetting="Polite"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                         Text="正在读取 PATH 快照…"
                         TextWrapping="Wrap" />
@@ -261,6 +462,7 @@
                         <TextBlock
                             x:Name="SnapshotEmptyText"
                             Padding="10,6"
+                            AutomationProperties.LiveSetting="Polite"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             Text="尚未创建 PATH 快照。" />
                     </Grid>

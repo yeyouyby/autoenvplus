@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json;
 using AutoEnvPlus.Core.Installation;
+using AutoEnvPlus.Core.Networking;
 using AutoEnvPlus.Core.Runtimes;
 
 namespace AutoEnvPlus.Core.Providers.Java;
@@ -12,6 +13,10 @@ public sealed class AdoptiumCatalogProvider : IArchiveRuntimeProvider
 {
     public const string ProviderName = "adoptium-temurin";
     public const string SigningKeyFingerprint = "3B04D753C9050D9A5D343F39843C48A565F8F04B";
+    internal const int MaximumCatalogBytes = 8 * 1024 * 1024;
+    internal const int MaximumReleaseEntries = 100;
+
+    private const int MaximumBinariesPerRelease = 64;
 
     private static readonly Uri DefaultBaseUri = new("https://api.adoptium.net/v3/");
     private static readonly Uri SigningKeyUri = new(
@@ -61,19 +66,23 @@ public sealed class AdoptiumCatalogProvider : IArchiveRuntimeProvider
             + "&page=0&page_size=20&project=jdk&sort_method=DATE&sort_order=DESC&vendor=eclipse";
 
         Uri requestUri = new(_baseUri, relativeUri);
-        using HttpResponseMessage response = await _httpClient.GetAsync(
+        using JsonDocument document = await BoundedHttpResponseReader.GetJsonAsync(
+            _httpClient,
             requestUri,
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-        using JsonDocument document = await JsonDocument.ParseAsync(
-            stream,
+            MaximumCatalogBytes,
+            maximumDepth: 32,
+            description: "Adoptium release catalog",
             cancellationToken: cancellationToken).ConfigureAwait(false);
 
         if (document.RootElement.ValueKind != JsonValueKind.Array)
         {
             throw new InvalidDataException("The Adoptium release response is not a JSON array.");
+        }
+
+        if (document.RootElement.GetArrayLength() > MaximumReleaseEntries)
+        {
+            throw new InvalidDataException(
+                $"The Adoptium release catalog contains more than {MaximumReleaseEntries} releases.");
         }
 
         List<RuntimeRelease> releases = [];
@@ -156,6 +165,12 @@ public sealed class AdoptiumCatalogProvider : IArchiveRuntimeProvider
             || binaries.ValueKind != JsonValueKind.Array)
         {
             return false;
+        }
+
+        if (binaries.GetArrayLength() > MaximumBinariesPerRelease)
+        {
+            throw new InvalidDataException(
+                $"An Adoptium release contains more than {MaximumBinariesPerRelease} binaries.");
         }
 
         JsonElement? matchingBinary = null;

@@ -121,22 +121,34 @@ public sealed class ManagedSegmentedDownloaderTests : IDisposable
     }
 
     [Fact]
-    public async Task DownloadAsync_UsesLastModifiedAsSegmentEntityIdentity()
+    public async Task DownloadAsync_LastModifiedOnlyFallsBackWithoutCombiningInconsistentRanges()
     {
-        byte[] payload = Enumerable.Range(0, 20).Select(value => (byte)value).ToArray();
+        byte[] rangePayload = Enumerable.Range(0, 20).Select(value => (byte)value).ToArray();
+        byte[] fullPayload = Enumerable.Range(100, 20).Select(value => (byte)value).ToArray();
         DateTimeOffset lastModified = new(2026, 7, 15, 1, 2, 3, TimeSpan.Zero);
+        int rangeGets = 0;
+        int fullGets = 0;
         using HttpClient client = new(new StubHttpMessageHandler(request =>
         {
             if (request.Method == HttpMethod.Head)
             {
-                return CreateHead(payload.Length, null, lastModified);
+                return CreateHead(rangePayload.Length, null, lastModified);
             }
 
-            RangeItemHeaderValue requested = Assert.Single(request.Headers.Range!.Ranges);
-            Assert.Equal(lastModified, request.Headers.IfRange?.Date);
-            long from = Assert.IsType<long>(requested.From);
-            long to = Assert.IsType<long>(requested.To);
-            return CreateRange(payload, from, to, null, lastModified);
+            if (request.Headers.Range is not null)
+            {
+                rangeGets++;
+                Assert.Null(request.Headers.IfRange);
+                RangeItemHeaderValue requested = Assert.Single(request.Headers.Range.Ranges);
+                long from = Assert.IsType<long>(requested.From);
+                long to = Assert.IsType<long>(requested.To);
+                return CreateRange(rangePayload, from, to, null, lastModified);
+            }
+
+            fullGets++;
+            HttpResponseMessage full = StubHttpMessageHandler.Bytes(fullPayload);
+            full.Content.Headers.LastModified = lastModified;
+            return full;
         }));
 
         SegmentedDownloadResult result = await new ManagedSegmentedDownloader(client, _root)
@@ -146,8 +158,11 @@ public sealed class ManagedSegmentedDownloaderTests : IDisposable
                 2,
                 1_024));
 
-        Assert.Equal(DownloadTransferMode.Segmented, result.TransferMode);
-        Assert.Equal(payload, File.ReadAllBytes(result.FilePath));
+        Assert.Equal(DownloadTransferMode.SingleStream, result.TransferMode);
+        Assert.Equal(DownloadFallbackReason.StableEntityUnavailable, result.FallbackReason);
+        Assert.Equal(1, rangeGets);
+        Assert.Equal(1, fullGets);
+        Assert.Equal(fullPayload, File.ReadAllBytes(result.FilePath));
     }
 
     [Fact]

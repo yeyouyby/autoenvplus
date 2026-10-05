@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">AutoEnvPlus mark</title>
+  <desc id="description">A routed letter A with a plus sign, representing environment paths and extensibility.</desc>
+  <rect x="24" y="24" width="464" height="464" rx="104" fill="#171A21"/>
+  <path d="M130 368 L234 132" fill="none" stroke="#55A7FF" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M234 132 L338 368" fill="none" stroke="#42D392" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M169 282 H300" fill="none" stroke="#F6C453" stroke-width="38" stroke-linecap="round"/>
+  <path d="M342 198 H422 M382 158 V238" fill="none" stroke="#FFFFFF" stroke-width="32" stroke-linecap="round"/>
+</svg>

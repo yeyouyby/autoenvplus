@@ -1,4 +1,6 @@
-# AutoEnvPlus 安全模型
+# AutoEnvPlus v0.0.1 安全模型
+
+本文描述测试版候选的信任边界、验证链和已知残余风险；它不构成“没有漏洞”的保证。用户入口见 [文档首页](README.md)，可执行能力与当前限制见 [功能清单](FEATURES.md)。
 
 ## 运行时安装信任链
 
@@ -58,7 +60,7 @@ SHA-256 6494e21ea73fa7ee769f85f57d5a3e6a08725eae1e38c755fc3517c9e6bc0b66
 信任快照 2026-07-14
 ```
 
-底层密码学管线使用固定 NuGet `Sigstore.Net 1.0.3`（源码提交 `d592bc978c6a27cc46e502da9792a1b6ec1c588f`），`packages.lock.json` 固定包及传递依赖内容哈希。源码审计发现该版本自带 `TufClient` 会在线下载第 14 版 root 后只做自签名检查，缺少完整 root 轮换、过期、回滚及 target length/hash 验证；它的默认身份解析也不适用于 Python 的 RFC822 SAN，SCT 路径只比较 log ID。AutoEnvPlus 因此注入拒绝联网的 TUF 实现、始终显式传入内置 trusted root，并在调用底层管线前后独立执行邮件/OIDC、trusted-root 时间窗口、canonicalized body 与完整 SCT 签名验证。不能改回库的默认网络 TUF 路径。
+底层密码学管线使用固定 NuGet `Sigstore.Net 1.0.3`（源码提交 `d592bc978c6a27cc46e502da9792a1b6ec1c588f`），各项目的 `packages.lock.json` 固定直接包及传递依赖内容哈希。源码审计发现该版本自带 `TufClient` 会在线下载第 14 版 root 后只做自签名检查，缺少完整 root 轮换、过期、回滚及 target length/hash 验证；它的默认身份解析也不适用于 Python 的 RFC822 SAN，SCT 路径只比较 log ID。AutoEnvPlus 因此注入拒绝联网的 TUF 实现、始终显式传入内置 trusted root，并在调用底层管线前后独立执行邮件/OIDC、trusted-root 时间窗口、canonicalized body 与完整 SCT 签名验证。不能改回库的默认网络 TUF 路径。
 
 当前离线真实夹具与在线验证均覆盖 Python 3.14.6：manifest SHA-256 `610e427f32889496c08584f0397d2d1d649ed0096be8bcb4341bbe2d3c27138c`，PythonCore x64 ZIP SHA-256 `75afa83f93b284d19040e24bc440ab741c09582c0d5310504d607a4e08c3dbaf`。更新 trusted root 时必须固定新的官方提交和文件 SHA-256，复核 CA/Rekor/CT 时间窗口，更新真实 bundle 夹具，并重新运行身份、manifest 篡改、SET、inclusion proof、checkpoint 与 SCT 失败测试。
 
@@ -110,13 +112,13 @@ Microsoft release metadata 在当前实现中是 checksum 来源，不是 AutoEn
 
 ## 声明式 Provider 插件边界
 
-Runtime Provider 插件是 schema 1 JSON 数据，不是进程内扩展代码。公开契约支持 Python、Node.js、Java、.NET SDK、MSVC、LLVM、MinGW、CMake 和 Ninja。导入器只读取本地普通 `.json` 文件，限制大小并拒绝重解析点，随后用严格解析器拒绝未知字段、重复属性、注释、尾随逗号、超限 release/asset、非 HTTPS URI、URI user-info/query/fragment、路径逃逸、非 ZIP 文件名和非 `.exe` 入口。机器可读契约见 [JSON Schema](../schemas/runtime-provider-plugin.schema.json)，完整使用边界见 [Provider 插件指南](PROVIDER-PLUGINS.md)。
+Runtime Provider 插件的当前公开格式是 schema 2 JSON 数据，不是进程内扩展代码；旧 schema 1 `runtimeKind` 清单只作为兼容导入格式，并在导入时映射到精确 `languageToolId`、规范化保存为 schema 2。公开契约支持 CPython、Node.js、Eclipse Temurin、.NET SDK、MSVC Build Tools、Clang、GCC/WinLibs、CMake 和 Ninja 这 9 个已桥接工具。导入器只读取本地普通 `.json` 文件，限制大小并拒绝重解析点，随后用严格解析器拒绝未知字段、重复属性、注释、尾随逗号、超限 release/asset、非 HTTPS URI、URI user-info/query/fragment、路径逃逸、非 ZIP 文件名和非 `.exe` 入口。机器可读契约见 [JSON Schema](../schemas/runtime-provider-plugin.schema.json)，完整使用边界见 [Provider 插件指南](PROVIDER-PLUGINS.md)。
 
 清单不能声明 DLL、程序集、脚本、任意命令、安装/卸载参数、注册表或环境变量写入、PATH 修改、服务、计划任务、安装后钩子、自定义 WinGet ID 或任意目标目录。导入只把规范化 JSON 原子复制到 `<managed-root>\plugins\runtime-providers\<id>.json`，初始状态固定为停用；用户必须在 WinUI 或 CLI 中再次显式启用。启用集合单独原子写入 `<managed-root>\state\runtime-provider-plugins.json`，进程内门闩和受管 lock 文件覆盖导入、状态变化及删除。损坏的已启用清单、悬空启用 ID 或损坏 state 会让插件 Registry fail closed，而不是静默忽略并继续安装。
 
 启用后仍要求精确 Provider 选择。第三方 Provider ID 固定为 `plugin:<id>`；未启用、类别不匹配或版本/架构不存在时直接失败，不回退到同类别内置 Provider 或其他插件。目标固定为 `<managed-root>\runtimes\<kind>\plugins\<plugin-id>\<version>\<architecture>`，运行时 ID、托管注册表和项目锁保存实际 Provider。相同版本/架构的多个来源互不覆盖，WinUI 不自动把冲突来源设为全局默认。停用只阻止后续目录查询和新安装；删除只移除插件清单与启用状态。两者都不卸载已经登记的运行时、不改项目锁，也不删除共享下载缓存。
 
-插件 asset 必须声明 HTTPS `downloadUri`、HTTPS `checksumSourceUri` 及恰好一个 SHA-256/SHA-512。AutoEnvPlus 会确认下载字节与插件 JSON 中的哈希完全一致，但两个值都由插件作者选择，所以这只能证明“字节匹配该第三方声明”，不能证明发布者身份。schema 1 不抓取、解析或验证 `checksumSourceUri` 的响应；它只是让用户核对插件作者声称的独立 checksum 页面或清单。它与下载 URL 相同时界面会提示证据更弱。声明式插件不继承 python.org Sigstore、Node.js OpenPGP 或 Temurin detached signature 的成功结论，UI/CLI 必须显示“插件声明的 checksum 引用”，不能写成 “Verified by”。
+插件 asset 必须声明 HTTPS `downloadUri`、HTTPS `checksumSourceUri` 及恰好一个 SHA-256/SHA-512。AutoEnvPlus 会确认下载字节与插件 JSON 中的哈希完全一致，但两个值都由插件作者选择，所以这只能证明“字节匹配该第三方声明”，不能证明发布者身份。schema 2（以及兼容导入的 schema 1）不抓取、解析或验证 `checksumSourceUri` 的响应；它只是让用户核对插件作者声称的独立 checksum 页面或清单。它与下载 URL 相同时界面会提示证据更弱。声明式插件不继承 python.org Sigstore、Node.js OpenPGP 或 Temurin detached signature 的成功结论，UI/CLI 必须显示“插件声明的 checksum 引用”，不能写成 “Verified by”。
 
 插件的显式 asset URL 不经过内置 Provider 镜像改写，只使用类别对应的受管代理与 `NO_PROXY`；C/C++ 五类共用 `runtime-cpp`。这可防止把官方 API base/release-index 语义错误套到第三方路径，但代理仍只改变传输路径，不增加发布者信任。
 
@@ -160,7 +162,7 @@ pip/npm 等包工具的来源同样遵循各生态自身的 TLS、包索引和�
 
 WinUI 先选择运行时、环境名和离线/联网依赖模式，再展示参数化的 venv 与 pip 命令、wheel、目录和回滚边界。计划包含自身完整性 SHA-256，以及受管 Python、wheel 和已有环境 Python 的规范路径、长度、时间与内容 SHA-256。执行开始时重新生成计划并比较；新建环境后、调用 pip 前再次复检关键文件。计划、网络设置或输入发生变化时拒绝沿用旧确认。stdout/stderr 始终被 drain 以免子进程堵塞，每路只在内存保留末尾 65,536 字符并携带独立截断标志；WinUI 不得把该尾部显示成完整日志。
 
-托管运行时状态使用固定锁序：运行时事务锁先于注册表或全局 profile 的文件锁。注册、全局选择、安装补偿事务和卸载在同一跨进程事务域内重新读取状态；卸载不能依据过期预览跳过新引用，全局选择也不能在运行时被移除后写出悬空 selector。状态、锁文件、临时文件及现有祖先都拒绝 reparse point。当前 global/project selector schema 尚不持久化 Provider 身份，因此同版本多 Provider 时必须失败关闭，只有会话级 RuntimeId/ProviderId pin 能精确执行。
+托管运行时状态使用固定锁序：运行时事务锁先于注册表或全局 profile 的文件锁。注册、全局选择、安装补偿事务和卸载在同一跨进程事务域内重新读取状态；卸载不能依据过期预览跳过新引用，全局选择也不能在运行时被移除后写出悬空 selector。状态、锁文件、临时文件及现有祖先都拒绝 reparse point。当前三层选择都能持久或传递精确 Provider 身份：全局 profile schema 2 保存 selector、Runtime ID 与 Provider ID，项目 `autoenvplus.toml` 的 `[tool-identities]` 保存成对的 Runtime ID/Provider ID，新终端会话通过受控环境变量传递同一对身份。存在精确身份时，同版本的另一个 Provider 不能作为等价替代；身份缺失、悬空或不匹配时必须失败关闭。
 
 托管注册表在解析前限制为 4 MiB/4,096 个安装条目，全局 profile 限制为 256 KiB/64 个选择；Core 的原子写入和原生 Shim 的读取执行相同边界。原生 Shim 读取项目 `autoenvplus.toml` 时还施加 256 KiB 上限。超限文件按损坏状态处理，不尝试部分解析或截断后继续执行。
 
@@ -168,17 +170,21 @@ WinUI 先选择运行时、环境名和离线/联网依赖模式，再展示参�
 
 ## AutoEnvPlus 自身分发链
 
-MSIX 发布脚本不从包清单或更新元数据自报的 Publisher 推断信任。生产模式要求显式 PFX、密码和 Publisher，加载证书后验证私钥、有效期、digital-signature key usage、code-signing EKU、非 CA 属性，并要求 Publisher 与证书规范 Subject 按字节表现完全一致。缺少任一输入时在构建前失败，不能自动降级为未签名包。MSIX 使用 SHA-256 签名；指定 `TimestampUri` 时同时要求 RFC 3161/SHA-256 时间戳。
+`v0.0.1` 的公开签名边界是 tag 驱动的自签名流程，不是仓库内 PFX。只有 `release-signing` GitHub environment 可以读取签名材料 secrets `AUTOENVPLUS_RELEASE_CERT_PFX_BASE64` 与 `AUTOENVPLUS_RELEASE_CERT_PASSWORD`；普通 push、PR、fork PR 和 CI 只构建未签候选，不能接触签名材料。release workflow 还要求 repository variable `AUTOENVPLUS_RELEASE_CERT_THUMBPRINT`（40 位 SHA-1 指纹）存在。所有 PE/MSI 的签名必须密码学完整且签名者指纹精确匹配该值。缺任一项即停止，不发布未签替代品。
 
-打包后重新读取 `AppxSignature.p7x`，去掉 PKCX 包装并执行 SignedCms 密码学验签，再核对签名者指纹。随后使用 MakeAppx 解包并把清单 Name、Publisher、四段版本和 x64 架构与 AppInstaller 的 MainPackage 及命令参数逐项比较。AppInstaller 还必须通过仓库内固定的封闭安全 profile schema：只允许一个 `MainPackage`、固定的更新设置和 2018 namespace，未知/重复元素、未知属性、强制降级、非 HTTPS URI、DTD 与外部实体全部安全失败。生产证书还必须通过系统 Authenticode 信任链验证；开发证书只允许完成密码学验证，不会被写入 Windows 信任库，私钥和 PFX 在签名后删除，因此生成物只是开发测试签名，不能作为生产签名发布。
+签名在 runner 上用 Windows SDK `signtool` 完成（SHA-256 文件摘要 + RFC3161 时间戳），证书私钥不离开 GitHub secrets 与离线备份。第一阶段只签列明的第一方 PE：WinUI single-file、portable 中的 App EXE/App DLL/Core DLL、CLI EXE 与原生 Shim；每个文件都必须是普通文件且不能是 reparse point。随后重新计算 portable 树清单并压缩 ZIP，再用同一份已签 payload 构建 MSI。第二阶段单独签 MSI 外层，复检签名并经 `msiexec /a` 提取比对内部 payload 与 portable 完全一致。
 
-AppInstaller 本身是 XML，当前 Windows SDK SignTool 不识别为可 Authenticode 签名格式。其安全边界是 HTTPS 分发和目标 MSIX 的 Publisher 签名：元数据只能选择与声明 Name、Publisher 和架构一致且签名有效的包，不能凭一个被篡改的 URL 授权不同发布者。SHA-256 sidecar 用于发布审计，不冒充 Windows 自动执行的元数据签名。
+三类资产的签名语义不同。`AutoEnvPlus-win-x64.exe` 与 `AutoEnvPlus-win-x64.msi` 本身有 Authenticode；`AutoEnvPlus-win-x64-portable.zip` 不是可 Authenticode 签名格式，所谓“signed portable”只表示 ZIP 是在第一方 PE 全部签名复检后重新构建的。ZIP 容器字节由 `.sha256` 和聚合 `SHA256SUMS.txt` 保护，哈希仍不能单独证明发布者身份。自签名证书不在 Windows 信任链内：`Get-AuthenticodeSignature` 对完好的自签名返回 `UnknownError` 而不是 `Valid`，用户侧会显示“未知发布者”；工作流按“签名完整 + 指纹匹配”验签，不声称受信任发布者身份。单文件 bundle 会在运行时自解压原生库和 PRI/XBF，因此它不是无写盘沙箱；系统临时目录策略、磁盘空间和执行控制仍在可信计算基之外。
+
+MSI 是 per-user 安装包，安装目录在当前用户范围。卸载由 MSI 拥有的组件清单约束，不删除独立于安装 payload 的用户设置、`AUTOENVPLUS_HOME` 受管根或已安装语言工具。这个保留策略降低误删风险，但也意味着卸载不等于擦除用户数据；需要清理数据时必须由用户另行审核目标。
+
+仓库保留旧 `publish-msix.ps1` 的 PFX/开发证书和 AppInstaller 验证路径作为遗留开发工具。开发证书不会自动进入 Windows 信任库，PFX 流程也不属于 `v0.0.1` 三类 GitHub 资产的自签名主链；不能用本地 MSIX 成功替代 tag 流程的签名和回读证据。
 
 ## 尚未完成
 
-- 正式 AutoEnvPlus 发布者证书、可信时间戳和证书撤销/轮换流程；
+- 发布证书的离线备份保管、轮换和撤销流程，以及首次签名 tag、证书和时间戳的 GitHub 下载回读；
 - 可审计的密钥撤销在线更新通道；
-- 声明式插件包的独立签名信任根、受审计更新源、撤销列表和组织允许策略；schema 1 当前是手动导入的静态 JSON；
+- 声明式插件包的独立签名信任根、受审计更新源、撤销列表和组织允许策略；当前 schema 2 是手动导入的静态 JSON，schema 1 仅保留兼容导入；
 - 托管运行时目录当前仍是“扫描后按字符串路径移动/删除”，同账户主动进程可在检查与操作间制造 rename/reparse 竞态；完整防护需要基于 Windows 目录句柄和禁止共享删除的实现；
 - 运行时安装事务锁当前覆盖网络下载，长下载会让其他进程在 5 秒后失败、同进程调用等待到完成或取消；后续应拆分下载阶段与短状态提交阶段；
 - pip 在内容复检后仍按路径启动 Python，同账户主动替换在哈希与 CreateProcess 之间存在竞态；完整防护需要私有执行副本或稳定文件身份/句柄策略；

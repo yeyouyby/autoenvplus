@@ -1,5 +1,23 @@
 <Project>
   <PropertyGroup>
+    <AutoEnvPlusProductVersion>0.0.1</AutoEnvPlusProductVersion>
+    <AutoEnvPlusPackageVersion>$(AutoEnvPlusProductVersion).0</AutoEnvPlusPackageVersion>
+    <AutoEnvPlusReleaseTag>v$(AutoEnvPlusProductVersion)</AutoEnvPlusReleaseTag>
+    <AutoEnvPlusReleaseStage>preview</AutoEnvPlusReleaseStage>
+    <AutoEnvPlusRepositoryUrl>https://github.com/yeyouyby/autoenvplus</AutoEnvPlusRepositoryUrl>
+    <AutoEnvPlusVersionMajor>$([System.Version]::Parse('$(AutoEnvPlusPackageVersion)').Major)</AutoEnvPlusVersionMajor>
+    <AutoEnvPlusVersionMinor>$([System.Version]::Parse('$(AutoEnvPlusPackageVersion)').Minor)</AutoEnvPlusVersionMinor>
+    <AutoEnvPlusVersionPatch>$([System.Version]::Parse('$(AutoEnvPlusPackageVersion)').Build)</AutoEnvPlusVersionPatch>
+    <AutoEnvPlusVersionRevision>$([System.Version]::Parse('$(AutoEnvPlusPackageVersion)').Revision)</AutoEnvPlusVersionRevision>
+    <Version>$(AutoEnvPlusProductVersion)</Version>
+    <VersionPrefix>$(AutoEnvPlusProductVersion)</VersionPrefix>
+    <PackageVersion>$(AutoEnvPlusProductVersion)</PackageVersion>
+    <AssemblyVersion>$(AutoEnvPlusPackageVersion)</AssemblyVersion>
+    <FileVersion>$(AutoEnvPlusPackageVersion)</FileVersion>
+    <InformationalVersion>$(AutoEnvPlusProductVersion)</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <RepositoryUrl>$(AutoEnvPlusRepositoryUrl)</RepositoryUrl>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -7,4 +25,7 @@
     <Deterministic>true</Deterministic>
     <PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
   </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="AutoEnvPlusReleaseStage" Value="$(AutoEnvPlusReleaseStage)" />
+  </ItemGroup>
 </Project>

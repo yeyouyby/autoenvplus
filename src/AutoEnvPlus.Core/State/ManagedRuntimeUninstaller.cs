@@ -135,7 +135,7 @@ public sealed class ManagedRuntimeUninstaller
         string trashPath = Path.GetFullPath(plan.TrashPath);
         EnsureChildPath(Path.Combine(_managedRoot, ".trash"), trashPath, "trash path");
         bool moved = false;
-        bool registryRemoved = false;
+        bool registryAttempted = false;
         try
         {
             ManagedPathSafety.EnsureOrdinaryDirectoryTree(
@@ -150,6 +150,7 @@ public sealed class ManagedRuntimeUninstaller
                     Path.GetDirectoryName(trashPath)!,
                     "runtime trash directory");
                 ManagedPathSafety.EnsureNoReparsePointInPath(trashPath);
+                cancellationToken.ThrowIfCancellationRequested();
                 Directory.Move(installRoot, trashPath);
                 moved = true;
                 ManagedPathSafety.EnsureOrdinaryDirectoryTree(
@@ -159,24 +160,34 @@ public sealed class ManagedRuntimeUninstaller
                     allowMissing: false);
             }
 
-            RegistryLoadResult updated = await _registry.RemoveWithinTransactionAsync(
-                current.Id,
-                cancellationToken).ConfigureAwait(false);
+            registryAttempted = true;
+            RegistryLoadResult updated;
+            try
+            {
+                updated = await _registry.RemoveWithinTransactionAsync(
+                    current.Id,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                registryAttempted = false;
+                throw;
+            }
+
             if (updated.Errors.Count > 0)
             {
                 throw new InvalidDataException(string.Join("; ", updated.Errors));
             }
-
-            registryRemoved = true;
         }
         catch (OperationCanceledException exception)
         {
-            if (!TryRestoreMovedRuntime(
-                    _managedRoot,
-                    installRoot,
-                    trashPath,
-                    moved,
-                    out string? restoreError))
+            string? restoreError = await RestoreFailedUninstallAsync(
+                current,
+                installRoot,
+                trashPath,
+                moved,
+                registryAttempted).ConfigureAwait(false);
+            if (restoreError is not null)
             {
                 throw new IOException(restoreError, exception);
             }
@@ -187,18 +198,18 @@ public sealed class ManagedRuntimeUninstaller
             or UnauthorizedAccessException
             or InvalidDataException)
         {
-            bool restored = TryRestoreMovedRuntime(
-                _managedRoot,
+            string? restoreError = await RestoreFailedUninstallAsync(
+                current,
                 installRoot,
                 trashPath,
                 moved,
-                out string? restoreError);
+                registryAttempted).ConfigureAwait(false);
 
             return new ManagedRuntimeUninstallResult(
                 false,
-                registryRemoved,
+                registryAttempted && restoreError is not null,
                 Directory.Exists(trashPath),
-                restored ? exception.Message : $"{exception.Message} {restoreError}");
+                restoreError is null ? exception.Message : $"{exception.Message} {restoreError}");
         }
 
         transactionLock.Dispose();
@@ -221,6 +232,69 @@ public sealed class ManagedRuntimeUninstaller
         }
 
         return new ManagedRuntimeUninstallResult(true, true, pendingCleanup, null);
+    }
+
+    private async Task<string?> RestoreFailedUninstallAsync(
+        ManagedRuntimeEntry runtime,
+        string installRoot,
+        string trashPath,
+        bool moved,
+        bool registryAttempted)
+    {
+        if (!TryRestoreMovedRuntime(
+                _managedRoot,
+                installRoot,
+                trashPath,
+                moved,
+                out string? fileRestoreError))
+        {
+            return fileRestoreError;
+        }
+
+        if (!registryAttempted)
+        {
+            return null;
+        }
+
+        try
+        {
+            RegistryLoadResult restored = await _registry.UpsertWithinTransactionAsync(
+                runtime,
+                CancellationToken.None).ConfigureAwait(false);
+            if (restored.Errors.Count > 0)
+            {
+                return "The runtime files were restored, but the registry pre-state could not be restored: "
+                    + string.Join("; ", restored.Errors);
+            }
+
+            return null;
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidDataException)
+        {
+            // The upsert can itself commit and then fail a post-commit safety
+            // check. Read back the authoritative state before declaring that
+            // manual recovery is required.
+            try
+            {
+                RegistryLoadResult current = await _registry.LoadWithinTransactionAsync(
+                    CancellationToken.None).ConfigureAwait(false);
+                if (current.Errors.Count == 0
+                    && current.Entries.Any(entry => EntriesEquivalent(entry, runtime)))
+                {
+                    return null;
+                }
+            }
+            catch (Exception readException) when (readException is IOException
+                or UnauthorizedAccessException
+                or InvalidDataException)
+            {
+            }
+
+            return "The runtime files were restored, but the registry pre-state could not be restored: "
+                + exception.Message;
+        }
     }
 
     private static ManagedRuntimeUninstallResult ReferencedFailure(
@@ -251,6 +325,7 @@ public sealed class ManagedRuntimeUninstaller
             return false;
         }
 
+        bool movedBack = false;
         try
         {
             ManagedPathSafety.EnsureOrdinaryDirectoryTree(
@@ -264,11 +339,20 @@ public sealed class ManagedRuntimeUninstaller
                 "runtime restore parent");
             ManagedPathSafety.EnsureNoReparsePointInPath(installRoot);
             Directory.Move(trashPath, installRoot);
+            movedBack = true;
+            ManagedPathSafety.EnsureOrdinaryDirectoryTree(
+                managedRoot,
+                installRoot,
+                "restored runtime",
+                allowMissing: false);
             return true;
         }
         catch
         {
-            error = RestoreFailure(trashPath);
+            error = movedBack
+                ? "The runtime was moved back to its install root, but the restored path "
+                    + $"'{installRoot}' could not be verified safely. Manual recovery is required."
+                : RestoreFailure(trashPath);
             return false;
         }
     }

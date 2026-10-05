@@ -7,8 +7,60 @@
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
             </ResourceDictionary.MergedDictionaries>
+
             <Thickness x:Key="PagePadding">32,24,32,32</Thickness>
+            <Thickness x:Key="DashboardCardPadding">18</Thickness>
             <CornerRadius x:Key="CardCornerRadius">8</CornerRadius>
+            <CornerRadius x:Key="ControlCornerRadius">6</CornerRadius>
+            <CornerRadius x:Key="CompactBadgeCornerRadius">4</CornerRadius>
+
+            <Style x:Key="DashboardCardStyle" TargetType="Border">
+                <Setter Property="Padding" Value="{StaticResource DashboardCardPadding}" />
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="{StaticResource CardCornerRadius}" />
+            </Style>
+
+            <Style x:Key="DashboardIconButtonStyle" TargetType="Button">
+                <Setter Property="Width" Value="40" />
+                <Setter Property="Height" Value="40" />
+                <Setter Property="MinWidth" Value="40" />
+                <Setter Property="MinHeight" Value="40" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+            </Style>
+
+            <Style x:Key="DashboardQuickActionButtonStyle" TargetType="Button">
+                <Setter Property="MinHeight" Value="42" />
+                <Setter Property="Padding" Value="12,0" />
+                <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            </Style>
+
+            <Style
+                x:Key="DashboardSectionTitleTextBlockStyle"
+                BasedOn="{StaticResource SubtitleTextBlockStyle}"
+                TargetType="TextBlock">
+                <Setter Property="FontSize" Value="18" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+
+            <Style x:Key="DashboardMetricTextBlockStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="24" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+
+            <Style x:Key="ShellVersionBadgeStyle" TargetType="Border">
+                <Setter Property="Padding" Value="7,2" />
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="{StaticResource CompactBadgeCornerRadius}" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

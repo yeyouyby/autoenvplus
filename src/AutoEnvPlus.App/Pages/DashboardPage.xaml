@@ -1,13 +1,21 @@
 <Page
     x:Class="AutoEnvPlus.App.Pages.DashboardPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    AutomationProperties.Name="概览内容"
+    NavigationCacheMode="Disabled">
 
-    <ScrollViewer>
+    <ScrollViewer
+        HorizontalScrollBarVisibility="Disabled"
+        HorizontalScrollMode="Disabled"
+        VerticalScrollBarVisibility="Auto"
+        VerticalScrollMode="Auto">
         <Grid
             x:Name="LayoutRoot"
+            MaxWidth="1440"
             Padding="{StaticResource PagePadding}"
-            RowSpacing="18">
+            HorizontalAlignment="Stretch"
+            RowSpacing="20">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -108,46 +116,88 @@
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
+                <VisualStateGroup x:Name="ToolbarLayoutStates">
+                    <VisualState x:Name="CompactToolbar">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="0" />
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="DashboardActions.(Grid.Row)" Value="1" />
+                            <Setter Target="DashboardActions.(Grid.Column)" Value="0" />
+                            <Setter Target="DashboardActions.HorizontalAlignment" Value="Left" />
+                            <Setter Target="DashboardActions.Margin" Value="0,8,0,0" />
+                            <Setter Target="DashboardActionsColumn.Width" Value="0" />
+                            <Setter Target="DashboardActionsRow.Height" Value="Auto" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="WideToolbar">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="720" />
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="DashboardActions.(Grid.Row)" Value="0" />
+                            <Setter Target="DashboardActions.(Grid.Column)" Value="1" />
+                            <Setter Target="DashboardActions.HorizontalAlignment" Value="Right" />
+                            <Setter Target="DashboardActions.Margin" Value="0" />
+                            <Setter Target="DashboardActionsColumn.Width" Value="Auto" />
+                            <Setter Target="DashboardActionsRow.Height" Value="0" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
             </VisualStateManager.VisualStateGroups>
 
-            <Grid ColumnSpacing="12">
+            <Grid ColumnSpacing="12" RowSpacing="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
-                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition x:Name="DashboardActionsColumn" Width="0" />
                 </Grid.ColumnDefinitions>
-                <StackPanel Spacing="4">
-                    <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="概览" />
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition x:Name="DashboardActionsRow" Height="Auto" />
+                </Grid.RowDefinitions>
+                <StackPanel Spacing="2">
+                    <TextBlock
+                        Style="{StaticResource DashboardSectionTitleTextBlockStyle}"
+                        Text="环境快照" />
                     <TextBlock
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="语言工具、项目环境、命令路由、下载和存储状态"
+                        Text="语言工具、项目、命令路由、传输与存储状态"
                         TextWrapping="Wrap" />
                 </StackPanel>
                 <StackPanel
+                    x:Name="DashboardActions"
                     Grid.Column="1"
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
-                    Spacing="10">
+                    Spacing="8">
                     <ProgressRing
                         x:Name="RefreshProgress"
                         Width="20"
                         Height="20"
+                        AutomationProperties.Name="正在更新环境快照"
                         IsActive="False" />
                     <Button
                         x:Name="QuickRefreshButton"
-                        Width="40"
-                        Height="40"
+                        AutomationProperties.HelpText="读取受管状态，不检查 PATH、命令或缓存目录。"
                         AutomationProperties.Name="快速刷新概览"
                         Click="OnQuickRefreshClicked"
-                        ToolTipService.ToolTip="只读取 AutoEnvPlus 受管状态">
+                        Style="{StaticResource DashboardIconButtonStyle}"
+                        ToolTipService.ToolTip="快速刷新">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="F5" />
+                        </Button.KeyboardAccelerators>
                         <FontIcon FontSize="16" Glyph="&#xE72C;" />
                     </Button>
                     <Button
                         x:Name="FullScanButton"
-                        Width="40"
-                        Height="40"
+                        AutomationProperties.HelpText="只读检查 PATH、命令版本、运行时和缓存体积。"
                         AutomationProperties.Name="完整扫描环境"
                         Click="OnFullScanClicked"
+                        Style="{StaticResource DashboardIconButtonStyle}"
                         ToolTipService.ToolTip="检查 PATH、命令版本和缓存体积">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="R" Modifiers="Control,Shift" />
+                        </Button.KeyboardAccelerators>
                         <FontIcon FontSize="16" Glyph="&#xE721;" />
                     </Button>
                 </StackPanel>
@@ -159,9 +209,14 @@
                 IsClosable="False"
                 IsOpen="True"
                 Severity="Informational"
-                Title="正在载入概览快照" />
+                AutomationProperties.LiveSetting="Polite"
+                Title="正在读取上次概览" />
 
-            <Grid Grid.Row="2" ColumnSpacing="8" RowSpacing="8">
+            <StackPanel Grid.Row="2" Spacing="8">
+                <TextBlock
+                    Style="{StaticResource DashboardSectionTitleTextBlockStyle}"
+                    Text="快捷入口" />
+                <Grid ColumnSpacing="8" RowSpacing="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
                     <ColumnDefinition />
@@ -179,36 +234,48 @@
                     x:Name="RuntimeQuickAction"
                     AutomationProperties.Name="管理语言工具"
                     Click="OnNavigateClicked"
-                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource DashboardQuickActionButtonStyle}"
                     Tag="languages">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
                         <FontIcon Glyph="&#xE950;" />
-                        <TextBlock Text="语言工具" />
-                    </StackPanel>
+                        <TextBlock Grid.Column="1" Text="语言工具" TextTrimming="CharacterEllipsis" />
+                    </Grid>
                 </Button>
                 <Button
                     x:Name="ProjectsQuickAction"
                     Grid.Column="1"
                     AutomationProperties.Name="打开项目环境"
                     Click="OnNavigateClicked"
-                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource DashboardQuickActionButtonStyle}"
                     Tag="projects">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
                         <FontIcon Glyph="&#xE8B7;" />
-                        <TextBlock Text="项目环境" />
-                    </StackPanel>
+                        <TextBlock Grid.Column="1" Text="项目环境" TextTrimming="CharacterEllipsis" />
+                    </Grid>
                 </Button>
                 <Button
                     x:Name="NetworkQuickAction"
                     Grid.Row="1"
                     AutomationProperties.Name="配置命令版本"
                     Click="OnNavigateClicked"
-                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource DashboardQuickActionButtonStyle}"
                     Tag="path">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
                         <FontIcon Glyph="&#xE8A5;" />
-                        <TextBlock Text="命令版本" />
-                    </StackPanel>
+                        <TextBlock Grid.Column="1" Text="命令版本" TextTrimming="CharacterEllipsis" />
+                    </Grid>
                 </Button>
                 <Button
                     x:Name="DownloadsQuickAction"
@@ -216,24 +283,32 @@
                     Grid.Column="1"
                     AutomationProperties.Name="打开下载中心"
                     Click="OnNavigateClicked"
-                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource DashboardQuickActionButtonStyle}"
                     Tag="downloads">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
                         <FontIcon Glyph="&#xE896;" />
-                        <TextBlock Text="下载中心" />
-                    </StackPanel>
+                        <TextBlock Grid.Column="1" Text="下载中心" TextTrimming="CharacterEllipsis" />
+                    </Grid>
                 </Button>
                 <Button
                     x:Name="PathQuickAction"
                     Grid.Row="2"
                     AutomationProperties.Name="检查 PATH"
                     Click="OnNavigateClicked"
-                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource DashboardQuickActionButtonStyle}"
                     Tag="path">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
                         <FontIcon Glyph="&#xE8A5;" />
-                        <TextBlock Text="检查 PATH" />
-                    </StackPanel>
+                        <TextBlock Grid.Column="1" Text="检查 PATH" TextTrimming="CharacterEllipsis" />
+                    </Grid>
                 </Button>
                 <Button
                     x:Name="StorageQuickAction"
@@ -241,24 +316,32 @@
                     Grid.Column="1"
                     AutomationProperties.Name="管理缓存和存储"
                     Click="OnNavigateClicked"
-                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource DashboardQuickActionButtonStyle}"
                     Tag="storage">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
                         <FontIcon Glyph="&#xEDA2;" />
-                        <TextBlock Text="缓存与存储" />
-                    </StackPanel>
+                        <TextBlock Grid.Column="1" Text="缓存与存储" TextTrimming="CharacterEllipsis" />
+                    </Grid>
                 </Button>
                 <Button
                     x:Name="DoctorQuickAction"
                     Grid.Row="3"
                     AutomationProperties.Name="运行环境诊断"
                     Click="OnNavigateClicked"
-                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource DashboardQuickActionButtonStyle}"
                     Tag="doctor">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
                         <FontIcon Glyph="&#xE9D9;" />
-                        <TextBlock Text="环境诊断" />
-                    </StackPanel>
+                        <TextBlock Grid.Column="1" Text="环境诊断" TextTrimming="CharacterEllipsis" />
+                    </Grid>
                 </Button>
                 <Button
                     x:Name="ActivityQuickAction"
@@ -266,26 +349,35 @@
                     Grid.Column="1"
                     AutomationProperties.Name="查看活动记录"
                     Click="OnNavigateClicked"
-                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource DashboardQuickActionButtonStyle}"
                     Tag="activity">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
                         <FontIcon Glyph="&#xE823;" />
-                        <TextBlock Text="活动记录" />
-                    </StackPanel>
+                        <TextBlock Grid.Column="1" Text="活动记录" TextTrimming="CharacterEllipsis" />
+                    </Grid>
                 </Button>
                 <Button
                     x:Name="PluginsQuickAction"
                     Grid.Row="4"
                     AutomationProperties.Name="管理语言包与 Provider"
                     Click="OnNavigateClicked"
-                    HorizontalAlignment="Stretch"
+                    Style="{StaticResource DashboardQuickActionButtonStyle}"
                     Tag="languages">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
                         <FontIcon Glyph="&#xE943;" />
-                        <TextBlock Text="语言包与 Provider" />
-                    </StackPanel>
+                        <TextBlock Grid.Column="1" Text="语言包与 Provider" TextTrimming="CharacterEllipsis" />
+                    </Grid>
                 </Button>
-            </Grid>
+                </Grid>
+            </StackPanel>
 
             <Grid Grid.Row="3">
                 <Grid.ColumnDefinitions>
@@ -297,12 +389,7 @@
                     <RowDefinition x:Name="OverviewSecondaryRow" Height="0" />
                 </Grid.RowDefinitions>
 
-                <Border
-                    Padding="18"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{StaticResource CardCornerRadius}">
+                <Border Style="{StaticResource DashboardCardStyle}">
                     <Grid RowSpacing="12">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -314,7 +401,7 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Spacing="2">
-                                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="语言工具状态" />
+                                <TextBlock Style="{StaticResource DashboardSectionTitleTextBlockStyle}" Text="语言工具状态" />
                                 <TextBlock
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                     Text="托管版本、全局选择与发现状态"
@@ -324,6 +411,7 @@
                                 Grid.Column="1"
                                 AutomationProperties.Name="打开语言工具页面"
                                 Click="OnNavigateClicked"
+                                Style="{StaticResource DashboardIconButtonStyle}"
                                 Tag="languages"
                                 ToolTipService.ToolTip="打开语言工具页面">
                                 <SymbolIcon Symbol="Forward" />
@@ -343,16 +431,20 @@
                             </ListView.ItemContainerStyle>
                             <ListView.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid Padding="0,7" ColumnSpacing="10">
+                                    <Grid Padding="0,7" ColumnSpacing="10" RowSpacing="2">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="90" />
-                                            <ColumnDefinition Width="130" />
+                                            <ColumnDefinition Width="110" />
                                             <ColumnDefinition />
                                         </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
                                         <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
                                         <TextBlock Grid.Column="1" Text="{Binding Version}" TextTrimming="CharacterEllipsis" />
                                         <TextBlock
-                                            Grid.Column="2"
+                                            Grid.Row="1"
+                                            Grid.ColumnSpan="2"
                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                             Text="{Binding Detail}"
                                             TextTrimming="CharacterEllipsis"
@@ -367,18 +459,14 @@
                 <Border
                     x:Name="OverviewSecondary"
                     Grid.Column="1"
-                    Padding="18"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{StaticResource CardCornerRadius}">
+                    Style="{StaticResource DashboardCardStyle}">
                     <Grid RowSpacing="14">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="PATH 健康度" />
+                        <TextBlock Style="{StaticResource DashboardSectionTitleTextBlockStyle}" Text="PATH 健康度" />
                         <Grid Grid.Row="1" ColumnSpacing="12" RowSpacing="10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition />
@@ -389,19 +477,19 @@
                                 <RowDefinition />
                             </Grid.RowDefinitions>
                             <StackPanel>
-                                <TextBlock x:Name="PathDirectoryCountText" FontSize="24" FontWeight="SemiBold" Text="—" />
+                                <TextBlock x:Name="PathDirectoryCountText" Style="{StaticResource DashboardMetricTextBlockStyle}" Text="—" />
                                 <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="PATH 目录" />
                             </StackPanel>
                             <StackPanel Grid.Column="1">
-                                <TextBlock x:Name="PathMissingCountText" FontSize="24" FontWeight="SemiBold" Text="—" />
+                                <TextBlock x:Name="PathMissingCountText" Style="{StaticResource DashboardMetricTextBlockStyle}" Text="—" />
                                 <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="失效目录" />
                             </StackPanel>
                             <StackPanel Grid.Row="1">
-                                <TextBlock x:Name="PathDuplicateCountText" FontSize="24" FontWeight="SemiBold" Text="—" />
+                                <TextBlock x:Name="PathDuplicateCountText" Style="{StaticResource DashboardMetricTextBlockStyle}" Text="—" />
                                 <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="重复目录" />
                             </StackPanel>
                             <StackPanel Grid.Row="1" Grid.Column="1">
-                                <TextBlock x:Name="PathConflictCountText" FontSize="24" FontWeight="SemiBold" Text="—" />
+                                <TextBlock x:Name="PathConflictCountText" Style="{StaticResource DashboardMetricTextBlockStyle}" Text="—" />
                                 <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="命令冲突" />
                             </StackPanel>
                         </Grid>
@@ -417,11 +505,7 @@
 
             <Border
                 Grid.Row="4"
-                Padding="18"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{StaticResource CardCornerRadius}">
+                Style="{StaticResource DashboardCardStyle}">
                 <Grid ColumnSpacing="18">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -433,15 +517,12 @@
                         FontSize="26"
                         Glyph="&#xEDA2;" />
                     <StackPanel Grid.Column="1" Spacing="4">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="缓存与受管数据" />
-                            <TextBlock
-                                x:Name="StorageUsageText"
-                                VerticalAlignment="Center"
-                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                FontWeight="SemiBold"
-                                Text="正在统计…" />
-                        </StackPanel>
+                        <TextBlock Style="{StaticResource DashboardSectionTitleTextBlockStyle}" Text="缓存与受管数据" />
+                        <TextBlock
+                            x:Name="StorageUsageText"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                            FontWeight="SemiBold"
+                            Text="正在读取…" />
                         <TextBlock
                             x:Name="StorageDetailText"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -457,6 +538,7 @@
                         VerticalAlignment="Center"
                         AutomationProperties.Name="打开缓存与存储页面"
                         Click="OnNavigateClicked"
+                        Style="{StaticResource DashboardIconButtonStyle}"
                         Tag="storage"
                         ToolTipService.ToolTip="打开缓存与存储页面">
                         <SymbolIcon Symbol="Forward" />
@@ -466,11 +548,7 @@
 
             <Border
                 Grid.Row="5"
-                Padding="18"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{StaticResource CardCornerRadius}">
+                Style="{StaticResource DashboardCardStyle}">
                 <Grid x:Name="NetworkDownloadLayout" ColumnSpacing="18">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -488,7 +566,7 @@
                         FontSize="26"
                         Glyph="&#xE774;" />
                     <StackPanel Grid.Column="1" Spacing="3">
-                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="全局代理" />
+                        <TextBlock Style="{StaticResource DashboardSectionTitleTextBlockStyle}" Text="全局代理" />
                         <TextBlock
                             x:Name="NetworkProfileText"
                             FontWeight="SemiBold"
@@ -503,7 +581,7 @@
                         x:Name="NetworkDownloadPanel"
                         Grid.Column="2"
                         Spacing="3">
-                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="受管传输" />
+                        <TextBlock Style="{StaticResource DashboardSectionTitleTextBlockStyle}" Text="受管传输" />
                         <TextBlock
                             x:Name="DownloadLibraryText"
                             FontWeight="SemiBold"
@@ -523,6 +601,7 @@
                         <Button
                             AutomationProperties.Name="打开代理设置"
                             Click="OnNavigateClicked"
+                            Style="{StaticResource DashboardIconButtonStyle}"
                             Tag="settings"
                             ToolTipService.ToolTip="打开代理设置">
                             <FontIcon Glyph="&#xE774;" />
@@ -530,6 +609,7 @@
                         <Button
                             AutomationProperties.Name="打开下载中心页面"
                             Click="OnNavigateClicked"
+                            Style="{StaticResource DashboardIconButtonStyle}"
                             Tag="downloads"
                             ToolTipService.ToolTip="打开下载中心页面">
                             <FontIcon Glyph="&#xE896;" />
@@ -540,11 +620,7 @@
 
             <Border
                 Grid.Row="6"
-                Padding="18"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{StaticResource CardCornerRadius}">
+                Style="{StaticResource DashboardCardStyle}">
                 <Grid ColumnSpacing="18">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -556,7 +632,7 @@
                         FontSize="26"
                         Glyph="&#xE943;" />
                     <StackPanel Grid.Column="1" Spacing="4">
-                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="语言包与 Provider" />
+                        <TextBlock Style="{StaticResource DashboardSectionTitleTextBlockStyle}" Text="语言包与 Provider" />
                         <TextBlock
                             x:Name="PluginSummaryText"
                             FontWeight="SemiBold"
@@ -573,6 +649,7 @@
                         VerticalAlignment="Center"
                         AutomationProperties.Name="打开语言包与 Provider"
                         Click="OnNavigateClicked"
+                        Style="{StaticResource DashboardIconButtonStyle}"
                         Tag="languages"
                         ToolTipService.ToolTip="打开语言包与 Provider">
                         <SymbolIcon Symbol="Forward" />
@@ -590,12 +667,7 @@
                     <RowDefinition x:Name="DetailsSecondaryRow" Height="0" />
                 </Grid.RowDefinitions>
 
-                <Border
-                    Padding="18"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{StaticResource CardCornerRadius}">
+                <Border Style="{StaticResource DashboardCardStyle}">
                     <Grid RowSpacing="10">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -606,11 +678,12 @@
                                 <ColumnDefinition />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="最近项目" />
+                            <TextBlock Style="{StaticResource DashboardSectionTitleTextBlockStyle}" Text="最近项目" />
                             <Button
                                 Grid.Column="1"
                                 AutomationProperties.Name="打开项目环境页面"
                                 Click="OnNavigateClicked"
+                                Style="{StaticResource DashboardIconButtonStyle}"
                                 Tag="projects"
                                 ToolTipService.ToolTip="打开项目环境页面">
                                 <SymbolIcon Symbol="Forward" />
@@ -674,11 +747,7 @@
                 <Border
                     x:Name="DetailsSecondary"
                     Grid.Column="1"
-                    Padding="18"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{StaticResource CardCornerRadius}">
+                    Style="{StaticResource DashboardCardStyle}">
                     <Grid RowSpacing="10">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -689,11 +758,12 @@
                                 <ColumnDefinition />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="最近活动" />
+                            <TextBlock Style="{StaticResource DashboardSectionTitleTextBlockStyle}" Text="最近活动" />
                             <Button
                                 Grid.Column="1"
                                 AutomationProperties.Name="打开活动记录页面"
                                 Click="OnNavigateClicked"
+                                Style="{StaticResource DashboardIconButtonStyle}"
                                 Tag="activity"
                                 ToolTipService.ToolTip="打开活动记录页面">
                                 <SymbolIcon Symbol="Forward" />

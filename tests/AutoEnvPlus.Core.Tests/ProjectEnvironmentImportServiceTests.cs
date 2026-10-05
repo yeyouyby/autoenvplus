@@ -35,6 +35,26 @@ public sealed class ProjectEnvironmentImportServiceTests : IDisposable
         Assert.Contains(result.Warnings, warning => warning.Contains("compound range", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void Discover_NestedUnrelatedMarkerDoesNotHideParentDeclaration()
+    {
+        string project = Directory.CreateDirectory(Path.Combine(_root, "parent-project")).FullName;
+        string nested = Directory.CreateDirectory(Path.Combine(project, "src", "feature")).FullName;
+        File.WriteAllText(Path.Combine(project, ".python-version"), "3.13.5\n");
+        File.WriteAllText(
+            Path.Combine(nested, "package.json"),
+            "{\"name\":\"nested-package-without-runtime-engine\"}");
+
+        ProjectEnvironmentImportResult result = new ProjectEnvironmentImportService().Discover(nested);
+
+        Assert.True(result.Found);
+        Assert.Equal(project, result.ProjectRoot);
+        Assert.Equal(VersionSelector.Parse("3.13.5"), result.Selections[RuntimeKind.Python]);
+        Assert.DoesNotContain(result.Sources, source => source.SourcePath.StartsWith(
+            nested,
+            StringComparison.OrdinalIgnoreCase));
+    }
+
     [Theory]
     [InlineData("lts/*", "lts")]
     [InlineData("node", "latest")]
@@ -58,6 +78,43 @@ public sealed class ProjectEnvironmentImportServiceTests : IDisposable
         ProjectEnvironmentImportResult result = new ProjectEnvironmentImportService().ImportDirectory(project);
 
         Assert.Equal(VersionSelector.Parse(expected), result.Selections[RuntimeKind.NodeJs]);
+    }
+
+    [Fact]
+    public void ImportDirectory_RejectsOversizedAndInvalidUtf8MarkersWithoutHidingValidOnes()
+    {
+        string project = Directory.CreateDirectory(Path.Combine(_root, "bounded-markers")).FullName;
+        File.WriteAllBytes(
+            Path.Combine(project, ".python-version"),
+            new byte[ProjectEnvironmentImportService.MaximumVersionMarkerBytes + 1]);
+        File.WriteAllBytes(
+            Path.Combine(project, ".nvmrc"),
+            [0xC3, 0x28]);
+        File.WriteAllText(Path.Combine(project, ".java-version"), "21\n");
+        File.WriteAllBytes(
+            Path.Combine(project, "package.json"),
+            [0x7B, 0x22, 0xC3, 0x28, 0x22, 0x7D]);
+        File.WriteAllBytes(
+            Path.Combine(project, "global.json"),
+            new byte[ProjectEnvironmentImportService.MaximumJsonMarkerBytes + 1]);
+
+        ProjectEnvironmentImportResult result = new ProjectEnvironmentImportService()
+            .ImportDirectory(project);
+
+        Assert.True(result.Found);
+        Assert.Equal(VersionSelector.Parse("21"), result.Selections[RuntimeKind.Java]);
+        Assert.False(result.Selections.ContainsKey(RuntimeKind.Python));
+        Assert.False(result.Selections.ContainsKey(RuntimeKind.NodeJs));
+        Assert.False(result.Selections.ContainsKey(RuntimeKind.DotNet));
+        Assert.Contains(result.Warnings, warning => warning.Contains(
+            $"{ProjectEnvironmentImportService.MaximumVersionMarkerBytes}-byte limit",
+            StringComparison.Ordinal));
+        Assert.True(result.Warnings.Count(warning => warning.Contains(
+            "valid UTF-8",
+            StringComparison.Ordinal)) >= 2);
+        Assert.Contains(result.Warnings, warning => warning.Contains(
+            $"{ProjectEnvironmentImportService.MaximumJsonMarkerBytes}-byte limit",
+            StringComparison.Ordinal));
     }
 
     [Fact]

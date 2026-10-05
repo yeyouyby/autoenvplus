@@ -229,15 +229,16 @@ public sealed partial class LanguageDetailPage : Page
                 .ToArray();
             PackageManagerSummary.Text = packageManagers.Length == 0
                 ? "此语言目录没有声明包管理工具。"
-                : string.Join(" · ", packageManagers);
+                : "目录声明的包管理工具：" + string.Join(" · ", packageManagers);
 
             await RenderMirrorSourcesAsync();
             RenderProviderPlugins(await pluginsTask);
             SetOperationState(
                 false,
                 "语言详情已就绪",
-                $"{_toolRows.Length} 个工具 · {_toolRows.Count(row => row.IsDetected)} 个已检测 · "
-                + $"{_toolRows.Count(row => row.IsManagedInstall)} 个可管理安装",
+                $"{_toolRows.Length} 个语言工具 · {_toolRows.Count(row => row.IsDetected)} 个已检测 · "
+                + $"{_toolRows.Count(row => row.IsManagedInstall)} 个 AutoEnvPlus 安装适配器 · "
+                + $"{_toolRows.Count(row => !row.IsManagedInstall)} 个目录元数据项",
                 InfoBarSeverity.Success);
         }
         catch (OperationCanceledException)
@@ -273,6 +274,8 @@ public sealed partial class LanguageDetailPage : Page
             ? []
             : registry.Where(entry => entry.Kind == bridge.RuntimeKind)
                 .OrderByDescending(entry => entry.Version)
+                .ThenBy(entry => entry.ProviderId, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(entry => entry.Architecture)
                 .ToArray();
         ToolchainComponent? component = ToolchainComponentFor(tool.Id);
         string? discoverySummary = null;
@@ -323,7 +326,13 @@ public sealed partial class LanguageDetailPage : Page
 
         string versionSummary = discoverySummary
             ?? (managed.Length > 0
-                ? $"托管版本：{string.Join(", ", managed.Select(entry => entry.Version).Take(5))}"
+                ? $"AutoEnvPlus 受管版本（{managed.Length}）："
+                    + string.Join(
+                        "；",
+                        managed.Take(4).Select(entry =>
+                            $"{entry.Version} / {entry.ProviderId} / "
+                            + $"{ArchitectureLabel(entry.Architecture)} / {entry.Id}"))
+                    + (managed.Length > 4 ? "；…" : string.Empty)
                 : pathDetected
                     ? $"PATH：{string.Join(", ", tool.DiscoveryCommands.Where(_detectedCommands.Contains))}"
                     : "未发现托管版本或 PATH 入口");
@@ -341,15 +350,9 @@ public sealed partial class LanguageDetailPage : Page
             }
         }
 
-        ToolManagementKind management = bridge?.RuntimeKind is RuntimeKind.Python
-            or RuntimeKind.NodeJs
-            or RuntimeKind.Java
-            or RuntimeKind.DotNet
-                ? ToolManagementKind.OfficialArchive
-                : component is not null
-                    ? ToolManagementKind.WinGet
-                    : ToolManagementKind.None;
+        ToolManagementKind management = LanguageToolUiPolicy.GetManagementKind(tool);
         return new ToolRow(
+            _language,
             tool,
             pathDetected,
             versionSummary,
@@ -418,6 +421,293 @@ public sealed partial class LanguageDetailPage : Page
             EndOperation();
         }
     }
+
+    private async void OnUninstallManagedRuntimeClicked(object sender, RoutedEventArgs args)
+    {
+        if (sender is not Button { Tag: ToolRow row }
+            || row.ManagedEntries.Count == 0
+            || _operationCancellation is not null)
+        {
+            return;
+        }
+
+        ManagedRuntimeEntry? selectedEntry = null;
+        CancellationToken cancellationToken = BeginOperation();
+        try
+        {
+            selectedEntry = await SelectManagedRuntimeForUninstallAsync(row);
+            if (selectedEntry is null)
+            {
+                SetOperationState(
+                    false,
+                    "受管版本卸载已取消",
+                    "运行时注册表、全局选择和项目引用均未修改。");
+                return;
+            }
+
+            SetOperationState(
+                true,
+                "正在检查运行时引用",
+                RuntimeIdentitySummary(selectedEntry));
+            ManagedRuntimeUninstaller uninstaller = new(_managedRoot);
+            ManagedRuntimeUninstallPlan plan = await uninstaller.CreatePlanAsync(
+                selectedEntry.Id,
+                cancellationToken);
+            bool confirmed = await ConfirmManagedRuntimeUninstallAsync(plan);
+            if (!confirmed)
+            {
+                if (plan.IsReferenced)
+                {
+                    SetOperationState(
+                        false,
+                        "运行时受引用保护",
+                        $"发现 {plan.References.Count} 个全局或项目引用；未提供强制卸载，任何文件和状态都未修改。",
+                        InfoBarSeverity.Warning);
+                    await LogRuntimeUninstallAsync(
+                        selectedEntry,
+                        ActivityStatus.Failed,
+                        $"引用保护阻止卸载（{plan.References.Count} 个引用）。");
+                }
+                else
+                {
+                    SetOperationState(
+                        false,
+                        "受管版本卸载已取消",
+                        "确认已关闭；运行时注册表、全局选择和项目引用均未修改。");
+                    await LogRuntimeUninstallAsync(
+                        selectedEntry,
+                        ActivityStatus.Cancelled,
+                        "用户在最终确认前取消。");
+                }
+
+                return;
+            }
+
+            SetOperationState(
+                true,
+                "正在卸载受管运行时",
+                RuntimeIdentitySummary(plan.Runtime));
+            ManagedRuntimeUninstallResult result = await uninstaller.ExecuteAsync(
+                plan,
+                force: false,
+                cancellationToken: cancellationToken);
+            if (!result.Success)
+            {
+                bool recoveryIncomplete = result.RemovedFromRegistry
+                    || result.PendingTrashCleanup;
+                SetOperationState(
+                    false,
+                    recoveryIncomplete
+                        ? "卸载未完成，需要检查受管状态"
+                        : "受管运行时未卸载",
+                    recoveryIncomplete
+                        ? "服务报告注册表恢复或隔离目录清理未完全完成；请保留当前状态并运行诊断。"
+                        : "计划已变化、出现新引用或受管路径未通过安全检查；请刷新后重新检查。",
+                    InfoBarSeverity.Error);
+                await LogRuntimeUninstallAsync(
+                    plan.Runtime,
+                    ActivityStatus.Failed,
+                    recoveryIncomplete
+                        ? "一致性恢复或隔离目录清理未完全完成。"
+                        : "提交时的引用或状态复核未通过。");
+                return;
+            }
+
+            _operationCancellation?.Dispose();
+            _operationCancellation = null;
+            CancelOperationButton.IsEnabled = false;
+            SetOperationState(
+                false,
+                result.PendingTrashCleanup ? "运行时已移除，隔离目录待清理" : "受管运行时已卸载",
+                RuntimeIdentitySummary(plan.Runtime)
+                + (result.PendingTrashCleanup
+                    ? "；注册表已移除，但隔离目录仍等待系统释放后清理。"
+                    : "；受管文件和注册表项已移除。"),
+                result.PendingTrashCleanup
+                    ? InfoBarSeverity.Warning
+                    : InfoBarSeverity.Success);
+            await LogRuntimeUninstallAsync(
+                plan.Runtime,
+                ActivityStatus.Succeeded,
+                result.PendingTrashCleanup
+                    ? "注册表已移除；隔离目录清理待完成。"
+                    : "受管文件和注册表项已移除。");
+            try
+            {
+                await RefreshToolRowsAsync(CancellationToken.None);
+            }
+            catch (Exception exception) when (IsExpectedException(exception)
+                || exception is OperationCanceledException)
+            {
+                SetOperationState(
+                    false,
+                    "运行时已卸载，列表刷新失败",
+                    RuntimeIdentitySummary(plan.Runtime)
+                    + "；卸载提交已成功，请重新打开语言页面刷新当前列表。",
+                    InfoBarSeverity.Warning);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            SetOperationState(
+                false,
+                "受管版本卸载已取消",
+                "取消请求已处理；若提交已经开始，服务会尝试恢复一致状态。请刷新列表确认当前状态。",
+                InfoBarSeverity.Informational);
+            if (selectedEntry is not null)
+            {
+                await LogRuntimeUninstallAsync(
+                    selectedEntry,
+                    ActivityStatus.Cancelled,
+                    "操作取消；提交开始后由服务执行一致性恢复。");
+            }
+        }
+        catch (Exception exception) when (IsExpectedException(exception))
+        {
+            ShowSafeError("无法卸载受管运行时", exception);
+            if (selectedEntry is not null)
+            {
+                await LogRuntimeUninstallAsync(
+                    selectedEntry,
+                    ActivityStatus.Failed,
+                    "创建或执行卸载计划失败。");
+            }
+        }
+        finally
+        {
+            EndOperation();
+        }
+    }
+
+    private async Task<ManagedRuntimeEntry?> SelectManagedRuntimeForUninstallAsync(ToolRow row)
+    {
+        ManagedRuntimeChoice[] choices = row.ManagedEntries
+            .Select(entry => new ManagedRuntimeChoice(entry))
+            .ToArray();
+        ComboBox selector = new()
+        {
+            Header = "受管 Runtime（精确 ID / Provider）",
+            ItemsSource = choices,
+            DisplayMemberPath = nameof(ManagedRuntimeChoice.Label),
+            SelectedIndex = choices.Length == 0 ? -1 : 0,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        ContentDialog dialog = new()
+        {
+            XamlRoot = XamlRoot,
+            Title = $"选择要卸载的 {row.DisplayName} 版本",
+            Content = new StackPanel
+            {
+                MaxWidth = 680,
+                Spacing = 10,
+                Children =
+                {
+                    selector,
+                    new InfoBar
+                    {
+                        IsClosable = false,
+                        IsOpen = true,
+                        Severity = InfoBarSeverity.Informational,
+                        Title = "仅列出 AutoEnvPlus 受管注册项",
+                        Message = "外部安装和仅由目录声明的工具不会出现在此列表。下一步会检查全局配置、已知项目清单和锁文件引用。",
+                    },
+                },
+            },
+            PrimaryButtonText = "检查引用",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        return await dialog.ShowAsync() == ContentDialogResult.Primary
+            ? (selector.SelectedItem as ManagedRuntimeChoice)?.Entry
+            : null;
+    }
+
+    private async Task<bool> ConfirmManagedRuntimeUninstallAsync(
+        ManagedRuntimeUninstallPlan plan)
+    {
+        StackPanel content = new()
+        {
+            MaxWidth = 680,
+            Spacing = 8,
+            Children =
+            {
+                Detail("Runtime ID", plan.Runtime.Id),
+                Detail("Provider ID", plan.Runtime.ProviderId),
+                Detail("版本 / 架构", $"{plan.Runtime.Version} / {ArchitectureLabel(plan.Runtime.Architecture)}"),
+                Detail("受管安装目录", plan.Runtime.InstallRoot),
+            },
+        };
+        if (plan.IsReferenced)
+        {
+            content.Children.Add(new InfoBar
+            {
+                IsClosable = false,
+                IsOpen = true,
+                Severity = InfoBarSeverity.Warning,
+                Title = $"引用保护：{plan.References.Count} 个引用",
+                Message = "此页面不会强制卸载被引用的运行时。请先更改全局选择或项目固定，再重新创建计划。",
+            });
+            foreach (RuntimeReference reference in plan.References)
+            {
+                content.Children.Add(Detail(
+                    ReferenceKindName(reference.Kind),
+                    $"{reference.Owner} · {reference.Detail}"));
+            }
+        }
+        else
+        {
+            content.Children.Add(new InfoBar
+            {
+                IsClosable = false,
+                IsOpen = true,
+                Severity = InfoBarSeverity.Warning,
+                Title = "未发现引用，仍会在提交前复核",
+                Message = "只删除该 Runtime ID 的 AutoEnvPlus 受管目录和注册项；不会卸载外部软件、修改 PATH 或静默强制执行。",
+            });
+        }
+
+        ContentDialog confirmation = new()
+        {
+            XamlRoot = XamlRoot,
+            Title = plan.IsReferenced ? "无法卸载被引用的受管运行时" : "确认卸载受管运行时",
+            Content = new ScrollViewer
+            {
+                MaxHeight = 520,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Content = content,
+            },
+            CloseButtonText = plan.IsReferenced ? "返回" : "取消",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (!plan.IsReferenced)
+        {
+            confirmation.PrimaryButtonText = "卸载受管版本";
+        }
+
+        return await confirmation.ShowAsync() == ContentDialogResult.Primary
+            && !plan.IsReferenced;
+    }
+
+    private static Task LogRuntimeUninstallAsync(
+        ManagedRuntimeEntry entry,
+        ActivityStatus status,
+        string outcome) => AppActivityLog.TryWriteAsync(
+            ActivityOperationType.RuntimeUninstall,
+            status,
+            $"{entry.Id} / {entry.ProviderId} / {ArchitectureLabel(entry.Architecture)}：{outcome}",
+            []);
+
+    private static string RuntimeIdentitySummary(ManagedRuntimeEntry entry) =>
+        $"{entry.Version} · Runtime ID {entry.Id} · Provider {entry.ProviderId} · "
+        + ArchitectureLabel(entry.Architecture);
+
+    private static string ReferenceKindName(RuntimeReferenceKind kind) => kind switch
+    {
+        RuntimeReferenceKind.GlobalProfile => "全局版本选择",
+        RuntimeReferenceKind.ProjectManifest => "项目清单引用",
+        RuntimeReferenceKind.ProjectLock => "项目锁文件引用",
+        _ => kind.ToString(),
+    };
 
     private async void OnSwitchGlobalVersionClicked(object sender, RoutedEventArgs args)
     {
@@ -994,6 +1284,10 @@ public sealed partial class LanguageDetailPage : Page
             .ThenBy(row => row.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToArray();
         ToolList.ItemsSource = _toolRows;
+        ToolList.Visibility = _toolRows.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+        EmptyToolState.Visibility = _toolRows.Length == 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
         OverviewToolCount.Text = _toolRows.Length.ToString();
         OverviewDetectedCount.Text = _toolRows.Count(row => row.IsDetected).ToString();
         OverviewManagedCount.Text = _toolRows.Count(row => row.IsManagedInstall).ToString();
@@ -1514,7 +1808,12 @@ public sealed partial class LanguageDetailPage : Page
                         candidate => candidate.Id.Equals(
                             source.Owner.SlotId,
                             StringComparison.OrdinalIgnoreCase));
-                    rows.Add(new MirrorRow(tool, provider, source, slot?.UserOverridable ?? true));
+                    rows.Add(new MirrorRow(
+                        _language,
+                        tool,
+                        provider,
+                        source,
+                        slot?.UserOverridable ?? true));
                 }
             }
         }
@@ -1526,7 +1825,7 @@ public sealed partial class LanguageDetailPage : Page
             .ToArray();
         MirrorList.ItemsSource = ordered;
         MirrorList.Visibility = ordered.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
-        EmptyMirrorText.Visibility = ordered.Length == 0
+        EmptyMirrorState.Visibility = ordered.Length == 0
             ? Visibility.Visible
             : Visibility.Collapsed;
         MirrorInfo.Message = ordered.Length == 0
@@ -1775,7 +2074,7 @@ public sealed partial class LanguageDetailPage : Page
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         ProviderPluginRow[] rows = result.Plugins
             .Where(plugin => toolIds.Contains(plugin.Manifest.LanguageToolId))
-            .Select(plugin => new ProviderPluginRow(plugin))
+            .Select(plugin => new ProviderPluginRow(_language, plugin))
             .OrderBy(row => row.DisplayName, StringComparer.CurrentCultureIgnoreCase)
             .ToArray();
         ProviderPluginList.ItemsSource = rows;
@@ -2080,12 +2379,14 @@ public sealed partial class LanguageDetailPage : Page
         or InvalidDataException
         or InvalidOperationException
         or NotSupportedException
+        or KeyNotFoundException
         or IOException
         or UnauthorizedAccessException
         or RuntimeProviderPluginException
         or ProviderSourcePreferenceException
         or LanguagePackException
-        or System.ComponentModel.Win32Exception;
+        or System.ComponentModel.Win32Exception
+        or System.Security.SecurityException;
 
     private static StackPanel Detail(string label, string value) => new()
     {
@@ -2135,13 +2436,6 @@ public sealed partial class LanguageDetailPage : Page
         _ => origin.ToString(),
     };
 
-    private enum ToolManagementKind
-    {
-        None,
-        OfficialArchive,
-        WinGet,
-    }
-
     private enum VersionSelectionScope
     {
         Global,
@@ -2173,9 +2467,21 @@ public sealed partial class LanguageDetailPage : Page
                 : $"精确切换到 {Entry.Id} / {Entry.ProviderId}，不修改 PATH。";
     }
 
+    private sealed record ManagedRuntimeChoice(ManagedRuntimeEntry Entry)
+    {
+        public string Label => $"{Entry.Version} · Runtime ID {Entry.Id} · "
+            + $"Provider {Entry.ProviderId} · {ArchitectureLabel(Entry.Architecture)}";
+    }
+
+    private sealed record ToolMetadataLink(
+        string Label,
+        Uri NavigateUri,
+        string AutomationName);
+
     private sealed class ToolRow
     {
         public ToolRow(
+            LanguageDefinition language,
             LanguageToolDefinition tool,
             bool detected,
             string versionSummary,
@@ -2191,12 +2497,38 @@ public sealed partial class LanguageDetailPage : Page
             ToolchainComponent = toolchainComponent;
             ManagementKind = managementKind;
             ManagedEntries = managedEntries;
+            HierarchySummary = $"Language {LanguageLabel(language)} → Language Tool {tool.DisplayName} [{tool.Id}]";
             RoleSummary = string.Join(" · ", tool.Roles.Select(RoleName));
-            CapabilitySummary = BuildCapabilitySummary(tool.Capabilities);
-            ProviderSummary = "Provider：" + string.Join(
-                " · ",
-                tool.Providers.Select(provider => BuildProviderSummary(
-                    LanguageToolProviderProfile.Create(tool, provider))));
+            CatalogCapabilitySummary = BuildCapabilitySummary(tool.Capabilities);
+            ToolMetadataSummary = $"目录元数据：厂商 {tool.Vendor} · 许可证 {tool.License} · "
+                + $"Windows {WindowsSupportName(tool.WindowsSupport)}";
+            OperationSummary = managementKind switch
+            {
+                ToolManagementKind.OfficialArchive =>
+                    $"AutoEnvPlus 操作：官方归档安装、精确版本选择和受管卸载 · 已注册 {managedEntries.Count} 个受管版本",
+                ToolManagementKind.WinGet =>
+                    "AutoEnvPlus 操作：固定 WinGet 白名单安装 / 修复；厂商安装不作为 AutoEnvPlus 受管运行时卸载",
+                _ => "AutoEnvPlus 操作：未接通安装、切换或卸载适配器",
+            };
+            ProviderSummary = tool.Providers.Count == 0
+                ? "Provider（目录声明）：无"
+                : "Provider（目录声明）：" + string.Join(
+                    " · ",
+                    tool.Providers.Select(provider => BuildProviderSummary(
+                        LanguageToolProviderProfile.Create(tool, provider))));
+            MetadataLinks =
+            [
+                new ToolMetadataLink("厂商网站", tool.Homepage, $"打开 {tool.Vendor} 网站"),
+                new ToolMetadataLink(
+                    "许可证参考",
+                    LanguageToolUiPolicy.GetLicenseReferenceUri(tool),
+                    $"打开 {tool.License} 许可证参考"),
+                new ToolMetadataLink("官方主页", tool.Homepage, $"打开 {tool.DisplayName} 官方主页"),
+                new ToolMetadataLink(
+                    "手动安装（厂商主页）",
+                    tool.Homepage,
+                    $"打开 {tool.DisplayName} 厂商主页以查找手动安装说明"),
+            ];
         }
 
         public LanguageToolDefinition Tool { get; }
@@ -2210,11 +2542,19 @@ public sealed partial class LanguageDetailPage : Page
 
         public string RoleSummary { get; }
 
+        public string HierarchySummary { get; }
+
         public string VersionSummary { get; }
 
-        public string CapabilitySummary { get; }
+        public string CatalogCapabilitySummary { get; }
+
+        public string ToolMetadataSummary { get; }
+
+        public string OperationSummary { get; }
 
         public string ProviderSummary { get; }
+
+        public IReadOnlyList<ToolMetadataLink> MetadataLinks { get; }
 
         public RuntimeKind? RuntimeKind { get; }
 
@@ -2232,6 +2572,10 @@ public sealed partial class LanguageDetailPage : Page
             ? Visibility.Visible
             : Visibility.Collapsed;
 
+        public Visibility MetadataVisibility => IsManagedInstall
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+
         public Visibility ManageActionVisibility => IsManagedInstall
             ? Visibility.Visible
             : Visibility.Collapsed;
@@ -2241,9 +2585,21 @@ public sealed partial class LanguageDetailPage : Page
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
+        public Visibility UninstallActionVisibility => ManagedEntries.Count > 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
         public string ManageActionText => ManagementKind == ToolManagementKind.WinGet
             ? "安装 / 修复"
-            : "选择版本";
+            : "安装版本";
+
+        public string AutomationName => $"{DisplayName}。{OperationSummary}。{VersionSummary}";
+
+        public string SwitchActionAutomationName => $"选择 {DisplayName} 版本与生效范围";
+
+        public string UninstallActionAutomationName => $"卸载 {DisplayName} 的 AutoEnvPlus 受管版本";
+
+        public string ManageActionAutomationName => $"{ManageActionText}：{DisplayName}";
 
         private static string BuildCapabilitySummary(LanguageToolCapabilities capabilities)
         {
@@ -2258,7 +2614,9 @@ public sealed partial class LanguageDetailPage : Page
             if (capabilities.Debug) values.Add("调试");
             if (capabilities.Format) values.Add("格式化");
             if (capabilities.Lint) values.Add("静态检查");
-            return values.Count == 0 ? "能力：目录信息" : "能力：" + string.Join(" · ", values);
+            return values.Count == 0
+                ? "目录声明能力：仅元数据"
+                : "目录声明能力：" + string.Join(" · ", values);
         }
 
         private static string BuildProviderSummary(LanguageToolProviderProfile profile)
@@ -2272,9 +2630,28 @@ public sealed partial class LanguageDetailPage : Page
             if (capabilities.SourceConfiguration) values.Add("可配置源");
             if (capabilities.CacheManagement) values.Add("缓存");
             if (capabilities.VirtualEnvironment) values.Add("虚拟环境");
-            return $"{profile.ProviderDisplayName} [{profile.Identity.ScopedId}："
-                + string.Join("/", values) + "]";
+            return $"{profile.ProviderDisplayName} [{profile.Identity.ScopedId} · "
+                + $"{ProviderAdapterName(profile.AdapterKind)} · {string.Join("/", values)}]";
         }
+
+        private static string ProviderAdapterName(ToolProviderAdapterKind kind) => kind switch
+        {
+            ToolProviderAdapterKind.ManagedArchive => "AutoEnvPlus 归档适配器",
+            ToolProviderAdapterKind.WinGet => "AutoEnvPlus WinGet 适配器",
+            _ => "目录 Provider",
+        };
+
+        private static string WindowsSupportName(LanguageToolWindowsSupport support) => support switch
+        {
+            LanguageToolWindowsSupport.Native => "原生",
+            LanguageToolWindowsSupport.Wsl => "WSL",
+            LanguageToolWindowsSupport.Conditional => "有条件支持",
+            LanguageToolWindowsSupport.Unsupported => "不支持",
+            _ => support.ToString(),
+        };
+
+        private static string LanguageLabel(LanguageDefinition language) =>
+            $"{language.DisplayName} [{language.Id}]";
 
         private static string RoleName(LanguageToolRole role) => role switch
         {
@@ -2299,16 +2676,20 @@ public sealed partial class LanguageDetailPage : Page
     private sealed class MirrorRow
     {
         public MirrorRow(
+            LanguageDefinition language,
             LanguageToolDefinition tool,
             LanguageToolProviderDefinition provider,
             ResolvedProviderSource source,
             bool userOverridable)
         {
+            Language = language;
             Tool = tool;
             Provider = provider;
             Source = source;
             UserOverridable = userOverridable;
         }
+
+        public LanguageDefinition Language { get; }
 
         public LanguageToolDefinition Tool { get; }
 
@@ -2324,7 +2705,10 @@ public sealed partial class LanguageDetailPage : Page
 
         public string DisplayName => Source.DisplayName;
 
-        public string Ownership => $"{Tool.DisplayName} / {Provider.DisplayName} / {Source.Owner.SlotId} · "
+        public string Ownership => $"Language {Language.DisplayName} [{Language.Id}] → "
+            + $"Language Tool {Tool.DisplayName} [{Tool.Id}] → "
+            + $"Provider {Provider.DisplayName} [{Provider.Id}] → "
+            + $"Provider Source {Source.DisplayName} [{Source.Owner.SlotId}] · "
             + Source.Origin switch
             {
                 ProviderSourceOrigin.CatalogDefault => "Provider 默认",
@@ -2339,9 +2723,13 @@ public sealed partial class LanguageDetailPage : Page
 
         public bool CanEdit => Source.Origin == ProviderSourceOrigin.Custom || UserOverridable;
 
+        public string AutomationName => $"{Ownership}。{Purpose}";
+
         public string PrimaryActionText => Source.Origin == ProviderSourceOrigin.Custom
             ? Source.IsEnabled ? "停用" : "启用"
             : "编辑";
+
+        public string PrimaryActionAutomationName => $"{PrimaryActionText} Provider Source：{DisplayName}";
 
         public Visibility SecondaryActionVisibility => Source.Origin is ProviderSourceOrigin.UserOverride
             or ProviderSourceOrigin.Custom
@@ -2364,7 +2752,9 @@ public sealed partial class LanguageDetailPage : Page
         public string Label => $"{Tool.DisplayName} / {Provider.DisplayName}";
     }
 
-    private sealed class ProviderPluginRow(RuntimeProviderPluginDescriptor descriptor)
+    private sealed class ProviderPluginRow(
+        LanguageDefinition language,
+        RuntimeProviderPluginDescriptor descriptor)
     {
         public string Id { get; } = descriptor.Id;
 
@@ -2374,10 +2764,17 @@ public sealed partial class LanguageDetailPage : Page
 
         public string ToggleText => IsEnabled ? "停用" : "启用";
 
-        public string Detail { get; } = $"{descriptor.Manifest.LanguageToolId}/{descriptor.ProviderId} · "
+        public string Detail { get; } = $"Language {language.DisplayName} [{language.Id}] → "
+            + $"Language Tool {descriptor.Manifest.LanguageToolId} → Provider {descriptor.ProviderId} · "
             + $"适配器 {descriptor.Manifest.Kind} · "
             + $"{descriptor.Manifest.Vendor} · {descriptor.Manifest.Releases.Count} 个版本 · "
             + (descriptor.IsEnabled ? "已启用" : "已停用");
+
+        public string AutomationName => $"{DisplayName}。{Detail}";
+
+        public string ToggleAutomationName => $"{ToggleText} Provider 插件：{DisplayName}";
+
+        public string DeleteAutomationName => $"删除 Provider 插件：{DisplayName}";
     }
 
     private sealed class ProjectEnvironmentRow(ProjectVirtualEnvironment environment)

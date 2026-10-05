@@ -13,6 +13,18 @@ public sealed class NativeShimContractTests : IDisposable
         $"AutoEnvPlus-NativeShim-{Guid.NewGuid():N}");
 
     [Fact]
+    public void NativeShim_EmbedsAuthoritativeProductVersion()
+    {
+        string native = Path.Combine(AppContext.BaseDirectory, "autoenvplus-shim.exe");
+        Assert.True(File.Exists(native), $"Native Shim was not copied to test output: {native}");
+
+        FileVersionInfo version = FileVersionInfo.GetVersionInfo(native);
+        Assert.Equal("0.0.1.0", version.FileVersion);
+        Assert.Equal("0.0.1.0", version.ProductVersion);
+        Assert.Equal("AutoEnvPlus", version.ProductName);
+    }
+
+    [Fact]
     public async Task NativeShim_UsesSessionProjectGlobalPriorityAndForwardsExitCode()
     {
         TestEnvironment environment = await CreateEnvironmentAsync();
@@ -266,6 +278,119 @@ public sealed class NativeShimContractTests : IDisposable
 
         Assert.Equal(70, excessiveProfileSelections.ExitCode);
         Assert.Contains("selection limit", excessiveProfileSelections.StandardError, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task NativeShim_RejectsCaseInsensitiveDuplicateRuntimeIdsLikeCore()
+    {
+        TestEnvironment environment = await CreateEnvironmentAsync();
+        string pythonRoot = Path.Combine(
+            environment.ManagedRoot,
+            "runtimes",
+            "python",
+            "3.12.8",
+            "x64");
+        object CreateItem(string id, string version) => new
+        {
+            id,
+            providerId = "test-provider",
+            kind = "Python",
+            version,
+            architecture = "X64",
+            installRoot = pythonRoot,
+            executableRelativePath = "python.cmd",
+            packageHash = new string('a', 64),
+            packageHashAlgorithm = "Sha256",
+            installedAtUtc = DateTimeOffset.UtcNow,
+            channels = new[] { "latest" },
+        };
+        string registryPath = Path.Combine(
+            environment.ManagedRoot,
+            "state",
+            "installations.json");
+        await File.WriteAllTextAsync(
+            registryPath,
+            JsonSerializer.Serialize(new
+            {
+                schemaVersion = 2,
+                installations = new[]
+                {
+                    CreateItem("Duplicate-Runtime", "3.12.8"),
+                    CreateItem("duplicate-runtime", "3.13.5"),
+                },
+            }));
+
+        RegistryLoadResult core = await new ManagedRuntimeRegistry(
+            environment.ManagedRoot).LoadAsync();
+        ProcessResult native = await RunAsync(
+            environment.Shim,
+            environment.Project,
+            ["12"]);
+
+        string coreError = Assert.Single(core.Errors);
+        Assert.Contains("duplicate runtime ID", coreError, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(70, native.ExitCode);
+        Assert.Contains("duplicate runtime ID", native.StandardError, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(native.StandardOutput);
+        Assert.DoesNotContain(pythonRoot, native.StandardError, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Duplicate-Runtime", native.StandardError, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task NativeShim_RejectsEquivalentProviderVersionPrecedenceLikeCore()
+    {
+        TestEnvironment environment = await CreateEnvironmentAsync();
+        string pythonRoot = Path.Combine(
+            environment.ManagedRoot,
+            "runtimes",
+            "python",
+            "3.12.8",
+            "x64");
+        object CreateItem(string id, string providerId, string version) => new
+        {
+            id,
+            providerId,
+            kind = "Python",
+            version,
+            architecture = "X64",
+            installRoot = pythonRoot,
+            executableRelativePath = "python.cmd",
+            packageHash = new string('a', 64),
+            packageHashAlgorithm = "Sha256",
+            installedAtUtc = DateTimeOffset.UtcNow,
+            channels = new[] { "latest" },
+        };
+        string registryPath = Path.Combine(
+            environment.ManagedRoot,
+            "state",
+            "installations.json");
+        await File.WriteAllTextAsync(
+            registryPath,
+            JsonSerializer.Serialize(new
+            {
+                schemaVersion = 2,
+                installations = new[]
+                {
+                    CreateItem("first-runtime", "Test-Provider", "3.12.8+first"),
+                    CreateItem("replacement-runtime", "test-provider", "3.12.8+replacement"),
+                },
+            }));
+
+        RegistryLoadResult core = await new ManagedRuntimeRegistry(
+            environment.ManagedRoot).LoadAsync();
+        ProcessResult native = await RunAsync(
+            environment.Shim,
+            environment.Project,
+            ["12"]);
+
+        string coreError = Assert.Single(core.Errors);
+        Assert.Contains("equivalent versions", coreError, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(70, native.ExitCode);
+        Assert.Contains("equivalent versions", native.StandardError, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(native.StandardOutput);
+        Assert.DoesNotContain(pythonRoot, native.StandardError, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("first-runtime", native.StandardError, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("replacement-runtime", native.StandardError, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

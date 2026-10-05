@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using AutoEnvPlus.Core.Cryptography;
+using AutoEnvPlus.Core.Networking;
 using AutoEnvPlus.Core.Providers;
 using Org.BouncyCastle.Bcpg;
 using Org.BouncyCastle.Bcpg.OpenPgp;
@@ -16,8 +18,8 @@ public interface IDetachedPackageSignatureVerifier
 
 public sealed class OpenPgpDetachedPackageSignatureVerifier : IDetachedPackageSignatureVerifier
 {
-    private const int MaximumSignatureBytes = 65_536;
-    private const int MaximumPublicKeyBytes = 262_144;
+    internal const int MaximumSignatureBytes = 65_536;
+    internal const int MaximumPublicKeyBytes = 262_144;
     private const int StreamBufferBytes = 81_920;
 
     private readonly HttpClient _httpClient;
@@ -52,6 +54,8 @@ public sealed class OpenPgpDetachedPackageSignatureVerifier : IDetachedPackageSi
         }
 
         string hashAlgorithm = GetHashAlgorithmName(signature.HashAlgorithm);
+        DateTimeOffset signatureTime = AsUtc(signature.CreationTime);
+        ValidatePackageSignatureTime(signatureTime);
         byte[] publicKeyBytes = await GetPublicKeyAsync(
             requirement,
             cancellationToken).ConfigureAwait(false);
@@ -59,13 +63,7 @@ public sealed class OpenPgpDetachedPackageSignatureVerifier : IDetachedPackageSi
             publicKeyBytes,
             signature.KeyId,
             requirement.ExpectedPrimaryKeyFingerprint);
-        if (primaryKey.IsRevoked() || signingKey.IsRevoked())
-        {
-            throw new InvalidDataException("The package signature uses a revoked OpenPGP key.");
-        }
-
-        DateTimeOffset signatureTime = AsUtc(signature.CreationTime);
-        ValidateSignatureTime(signatureTime, signingKey);
+        OpenPgpSigningKeyValidator.Validate(primaryKey, signingKey, signatureTime);
 
         try
         {
@@ -129,38 +127,13 @@ public sealed class OpenPgpDetachedPackageSignatureVerifier : IDetachedPackageSi
     private async Task<byte[]> DownloadLimitedAsync(
         Uri uri,
         int maximumBytes,
-        CancellationToken cancellationToken)
-    {
-        using HttpResponseMessage response = await _httpClient.GetAsync(
+        CancellationToken cancellationToken) =>
+        await BoundedHttpResponseReader.GetBytesAsync(
+            _httpClient,
             uri,
-            HttpCompletionOption.ResponseHeadersRead,
+            maximumBytes,
+            "OpenPGP signature or public key",
             cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        if (response.Content.Headers.ContentLength is long contentLength
-            && contentLength > maximumBytes)
-        {
-            throw new InvalidDataException(
-                $"The OpenPGP response exceeds the {maximumBytes}-byte limit.");
-        }
-
-        await using Stream source = await response.Content.ReadAsStreamAsync(
-            cancellationToken).ConfigureAwait(false);
-        using MemoryStream target = new();
-        byte[] buffer = new byte[16_384];
-        int read;
-        while ((read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
-        {
-            if (target.Length + read > maximumBytes)
-            {
-                throw new InvalidDataException(
-                    $"The OpenPGP response exceeds the {maximumBytes}-byte limit.");
-            }
-
-            target.Write(buffer, 0, read);
-        }
-
-        return target.ToArray();
-    }
 
     private static PgpSignature ParseDetachedSignature(byte[] bytes)
     {
@@ -237,22 +210,8 @@ public sealed class OpenPgpDetachedPackageSignatureVerifier : IDetachedPackageSi
         }
     }
 
-    private static void ValidateSignatureTime(
-        DateTimeOffset signatureTime,
-        PgpPublicKey signingKey)
+    private static void ValidatePackageSignatureTime(DateTimeOffset signatureTime)
     {
-        DateTimeOffset keyCreated = AsUtc(signingKey.CreationTime);
-        if (signatureTime < keyCreated.AddMinutes(-5))
-        {
-            throw new InvalidDataException("The package signature predates its signing key.");
-        }
-
-        long validSeconds = signingKey.GetValidSeconds();
-        if (validSeconds > 0 && signatureTime > keyCreated.AddSeconds(validSeconds).AddMinutes(5))
-        {
-            throw new InvalidDataException("The package signature was created after its signing key expired.");
-        }
-
         if (signatureTime > DateTimeOffset.UtcNow.AddMinutes(10))
         {
             throw new InvalidDataException("The package signature creation time is in the future.");

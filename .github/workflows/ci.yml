@@ -1,0 +1,255 @@
+name: Windows CI
+
+on:
+  push:
+    branches:
+      - main
+      - "codex/**"
+      - "feature/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autoenvplus-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AUTOENVPLUS_BUILD_CACHE_ROOT: ${{ vars.AUTOENVPLUS_BUILD_CACHE_ROOT || format('{0}/.build-cache', github.workspace) }}
+  AUTOENVPLUS_ARTIFACTS_ROOT: ${{ vars.AUTOENVPLUS_ARTIFACTS_ROOT || format('{0}/artifacts', github.workspace) }}
+
+jobs:
+  build-test-package:
+    name: Build, test, and package three variants
+    runs-on: windows-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Configure isolated build caches
+        shell: pwsh
+        run: |
+          $root = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_BUILD_CACHE_ROOT)
+          $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
+          [System.IO.Directory]::CreateDirectory($artifactsRoot) | Out-Null
+          "AUTOENVPLUS_ARTIFACTS_ROOT=$artifactsRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $values = [ordered]@{
+            AUTOENVPLUS_BUILD_CACHE_ROOT = $root
+            NUGET_PACKAGES = Join-Path $root '.nuget\packages'
+            NUGET_HTTP_CACHE_PATH = Join-Path $root '.nuget\v3-cache'
+            NUGET_PLUGINS_CACHE_PATH = Join-Path $root '.nuget\plugins-cache'
+            DOTNET_CLI_HOME = Join-Path $root '.dotnet'
+            TEMP = Join-Path $root 'tmp'
+            TMP = Join-Path $root 'tmp'
+            DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
+            DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+          }
+          foreach ($entry in $values.GetEnumerator()) {
+            if ($entry.Key -notin @('DOTNET_SKIP_FIRST_TIME_EXPERIENCE', 'DOTNET_CLI_TELEMETRY_OPTOUT')) {
+              [System.IO.Directory]::CreateDirectory($entry.Value) | Out-Null
+            }
+            "$($entry.Key)=$($entry.Value)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+
+      - name: Install repository .NET SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          global-json-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.AUTOENVPLUS_BUILD_CACHE_ROOT }}/.nuget/packages
+          key: nuget-win-x64-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            nuget-win-x64-
+
+      - name: Read authoritative release version
+        shell: pwsh
+        run: |
+          Import-Module .\eng\AutoEnvPlus.Packaging.psm1 -Force
+          $version = Get-AutoEnvPlusVersionInfo
+          "AUTOENVPLUS_PRODUCT_VERSION=$($version.ProductVersion)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "AUTOENVPLUS_PACKAGE_VERSION=$($version.PackageVersion)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "AUTOENVPLUS_RELEASE_TAG=$($version.ReleaseTag)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Restore locked dependencies
+        shell: pwsh
+        run: dotnet restore AutoEnvPlus.sln --locked-mode -p:Platform=x64 -r win-x64
+
+      - name: Verify formatting
+        shell: pwsh
+        run: dotnet format AutoEnvPlus.sln --verify-no-changes --no-restore
+
+      - name: Run Core and native Shim tests
+        shell: pwsh
+        run: dotnet test tests\AutoEnvPlus.Core.Tests\AutoEnvPlus.Core.Tests.csproj -c Release -p:Platform=x64 -r win-x64 --no-restore -m:1 --collect:"XPlat Code Coverage"
+
+      - name: Summarize test coverage
+        shell: pwsh
+        run: |
+          $coverageFiles = @(Get-ChildItem -LiteralPath 'tests\AutoEnvPlus.Core.Tests\TestResults' -Recurse -Filter 'coverage.cobertura.xml' -ErrorAction SilentlyContinue)
+          if ($coverageFiles.Count -eq 0) {
+            Write-Host 'No coverage report was produced; skipping the coverage summary.'
+            exit 0
+          }
+          $latest = @($coverageFiles | Sort-Object LastWriteTime -Descending)[0]
+          [xml]$report = Get-Content -LiteralPath $latest.FullName -Raw
+          $lineRate = [double]$report.coverage.'line-rate' * 100.0
+          $branchRate = [double]$report.coverage.'branch-rate' * 100.0
+          $invariant = [System.Globalization.CultureInfo]::InvariantCulture
+          $summary = @(
+            '## Test coverage',
+            '',
+            '| Metric | Coverage |',
+            '|--------|---------:|',
+            ('| Lines | ' + $lineRate.ToString('0.##', $invariant) + '% |'),
+            ('| Branches | ' + $branchRate.ToString('0.##', $invariant) + '% |')
+          )
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value ($summary -join "`n") -Encoding utf8
+
+      - name: Build WinUI application
+        shell: pwsh
+        run: dotnet build src\AutoEnvPlus.App\AutoEnvPlus.App.csproj -c Release -p:Platform=x64 -r win-x64 --self-contained true --no-restore -m:1
+
+      - name: Rebuild native Shim explicitly
+        shell: pwsh
+        run: dotnet msbuild src\AutoEnvPlus.Shim\AutoEnvPlus.Shim.proj /t:Rebuild /p:Configuration=Release /p:Platform=x64
+
+      - name: Run packaging contract tests
+        shell: pwsh
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\test-packaging.ps1
+
+      - name: Prepare portable candidate
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish.ps1 `
+            -Configuration Release `
+            -Version $env:AUTOENVPLUS_PRODUCT_VERSION `
+            -BuildCacheRoot $env:AUTOENVPLUS_BUILD_CACHE_ROOT `
+            -ArtifactsRoot $env:AUTOENVPLUS_ARTIFACTS_ROOT `
+            -NoRestore
+
+      - name: Prepare WinUI single-file candidate
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-single-file.ps1 `
+            -Configuration Release `
+            -BuildCacheRoot $env:AUTOENVPLUS_BUILD_CACHE_ROOT `
+            -ArtifactsRoot $env:AUTOENVPLUS_ARTIFACTS_ROOT `
+            -NoRestore
+
+      - name: Prepare unsigned MSI candidate
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msi.ps1 `
+            -Configuration Release `
+            -Version $env:AUTOENVPLUS_PRODUCT_VERSION `
+            -BuildCacheRoot $env:AUTOENVPLUS_BUILD_CACHE_ROOT `
+            -ArtifactsRoot $env:AUTOENVPLUS_ARTIFACTS_ROOT `
+            -PortableRoot (Join-Path $env:AUTOENVPLUS_ARTIFACTS_ROOT 'AutoEnvPlus-win-x64')
+
+      - name: Stage and verify the three CI candidates
+        shell: pwsh
+        run: |
+          $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
+          $ciRoot = Join-Path $artifactsRoot 'ci'
+          if (Test-Path -LiteralPath $ciRoot) { Remove-Item -LiteralPath $ciRoot -Recurse -Force }
+          New-Item -ItemType Directory -Path $ciRoot -Force | Out-Null
+          $sources = [ordered]@{
+            'AutoEnvPlus-win-x64.exe' = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64.exe'
+            'AutoEnvPlus-win-x64-portable.zip' = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64-portable.zip'
+            'AutoEnvPlus-win-x64.msi' = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64.msi'
+          }
+          foreach ($entry in $sources.GetEnumerator()) {
+            if (-not (Test-Path -LiteralPath $entry.Value -PathType Leaf)) {
+              throw "CI candidate build is missing $($entry.Key): $($entry.Value)"
+            }
+            $destination = Join-Path $ciRoot $entry.Key
+            Copy-Item -LiteralPath $entry.Value -Destination $destination -Force
+            $hash = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()
+            [System.IO.File]::WriteAllText("$destination.sha256", "$hash *$($entry.Key)`r`n", [System.Text.Encoding]::ASCII)
+          }
+          $expectedNames = @(
+            'AutoEnvPlus-win-x64.exe',
+            'AutoEnvPlus-win-x64.exe.sha256',
+            'AutoEnvPlus-win-x64-portable.zip',
+            'AutoEnvPlus-win-x64-portable.zip.sha256',
+            'AutoEnvPlus-win-x64.msi',
+            'AutoEnvPlus-win-x64.msi.sha256'
+          )
+          $entries = @(Get-ChildItem -LiteralPath $ciRoot -Force)
+          $invalid = @($entries | Where-Object { $_.PSIsContainer -or $_.Name -notin $expectedNames })
+          $missing = @($expectedNames | Where-Object { -not (Test-Path -LiteralPath (Join-Path $ciRoot $_) -PathType Leaf) })
+          if ($invalid.Count -ne 0 -or $missing.Count -ne 0 -or $entries.Count -ne $expectedNames.Count) {
+            throw "CI candidate staging has an invalid file set. Missing=[$($missing -join ', ')]; unexpected=[$(($invalid.Name | Sort-Object) -join ', ')]."
+          }
+
+          $invariant = [System.Globalization.CultureInfo]::InvariantCulture
+          $rows = New-Object System.Collections.Generic.List[string]
+          foreach ($entry in $sources.GetEnumerator()) {
+            $item = Get-Item -LiteralPath $entry.Value
+            $hash = (Get-FileHash -LiteralPath $entry.Value -Algorithm SHA256).Hash.ToLowerInvariant()
+            $rows.Add(('| {0} | {1} MiB | `{2}` |' -f $entry.Key, ([math]::Round($item.Length / 1MB, 2)).ToString($invariant), $hash))
+          }
+          $summary = @(
+            '## CI build summary',
+            '',
+            ("Product version: {0} (package {1})" -f $env:AUTOENVPLUS_PRODUCT_VERSION, $env:AUTOENVPLUS_PACKAGE_VERSION),
+            '',
+            '| Asset | Size | SHA-256 |',
+            '|-------|-----:|---------|'
+          ) + $rows
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value ($summary -join "`n") -Encoding utf8
+
+      - name: Ensure dependency lock files did not drift
+        shell: pwsh
+        run: |
+          $lockStatus = @(git status --porcelain=v1 --untracked-files=all -- ':(glob)**/packages.lock.json')
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to inspect NuGet lock-file status.'
+          }
+          if ($lockStatus.Count -ne 0) {
+            $lockStatus | ForEach-Object { Write-Host $_ }
+            throw 'NuGet lock files changed or were generated during the build.'
+          }
+
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: AutoEnvPlus-ci-failure-diagnostics
+          path: |
+            tests/AutoEnvPlus.Core.Tests/TestResults
+            ${{ env.AUTOENVPLUS_ARTIFACTS_ROOT }}/AutoEnvPlus-win-x64.exe.bundle-manifest.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload three unsigned CI candidates
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ vars.AUTOENVPLUS_CI_ARTIFACT_NAME || 'AutoEnvPlus-win-x64-ci-candidates' }}
+          path: ${{ env.AUTOENVPLUS_ARTIFACTS_ROOT }}/ci/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: ${{ vars.AUTOENVPLUS_ARTIFACT_RETENTION_DAYS || 14 }}
+
+  lint-workflows:
+    name: Lint GitHub Actions workflows
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Run actionlint
+        uses: rhysd/actionlint@914e7df21a07ef503a81201c76d2b11c789d3fca # v1.7.12

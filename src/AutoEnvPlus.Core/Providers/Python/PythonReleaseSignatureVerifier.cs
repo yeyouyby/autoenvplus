@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using AutoEnvPlus.Core.Networking;
 using AutoEnvPlus.Core.Providers;
 using Dev.Sigstore.Bundle.V1;
 using Dev.Sigstore.Common.V1;
@@ -1003,40 +1004,12 @@ public sealed class PythonReleaseSignatureVerifier : IPythonReleaseSignatureVeri
         int maximumBytes,
         CancellationToken cancellationToken)
     {
-        using HttpResponseMessage response = await _httpClient.GetAsync(
+        return await BoundedHttpResponseReader.GetBytesAsync(
+            _httpClient,
             uri,
-            HttpCompletionOption.ResponseHeadersRead,
+            maximumBytes,
+            "Python Sigstore bundle",
             cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        if (response.Content.Headers.ContentLength is long length && length > maximumBytes)
-        {
-            throw new InvalidDataException(
-                $"The Python Sigstore bundle exceeds the {maximumBytes}-byte limit.");
-        }
-
-        await using Stream source = await response.Content
-            .ReadAsStreamAsync(cancellationToken)
-            .ConfigureAwait(false);
-        using MemoryStream destination = new();
-        byte[] buffer = new byte[81_920];
-        while (true)
-        {
-            int read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
-            if (read == 0)
-            {
-                break;
-            }
-
-            if (destination.Length + read > maximumBytes)
-            {
-                throw new InvalidDataException(
-                    $"The Python Sigstore bundle exceeds the {maximumBytes}-byte limit.");
-            }
-
-            destination.Write(buffer, 0, read);
-        }
-
-        return destination.ToArray();
     }
 
     private static void ValidatePythonOrgUris(Uri manifestUri, Uri bundleUri)

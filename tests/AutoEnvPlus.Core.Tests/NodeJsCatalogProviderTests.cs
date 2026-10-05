@@ -113,6 +113,45 @@ public sealed class NodeJsCatalogProviderTests
         await Assert.ThrowsAsync<InvalidDataException>(() => provider.GetAssetAsync(release));
     }
 
+    [Fact]
+    public async Task GetReleasesAsync_RejectsDeclaredCatalogOverByteLimit()
+    {
+        using HttpClient client = new(new StubHttpMessageHandler(_ =>
+        {
+            HttpResponseMessage response = StubHttpMessageHandler.Text("[]", "application/json");
+            response.Content.Headers.ContentLength = NodeJsCatalogProvider.MaximumCatalogBytes + 1L;
+            return response;
+        }));
+        NodeJsCatalogProvider provider = new(
+            client,
+            new Uri("https://example.test/dist/"),
+            new StubSignatureVerifier(string.Empty));
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(
+            () => provider.GetReleasesAsync());
+
+        Assert.Contains("byte limit", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GetReleasesAsync_RejectsExcessiveReleaseCount()
+    {
+        string catalog = "[" + string.Join(
+            ',',
+            Enumerable.Repeat("{}", NodeJsCatalogProvider.MaximumReleaseEntries + 1)) + "]";
+        using HttpClient client = new(new StubHttpMessageHandler(
+            _ => StubHttpMessageHandler.Text(catalog, "application/json")));
+        NodeJsCatalogProvider provider = new(
+            client,
+            new Uri("https://example.test/dist/"),
+            new StubSignatureVerifier(string.Empty));
+
+        InvalidDataException exception = await Assert.ThrowsAsync<InvalidDataException>(
+            () => provider.GetReleasesAsync());
+
+        Assert.Contains("releases", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private sealed class StubSignatureVerifier(string content) : INodeReleaseSignatureVerifier
     {
         public Uri? RequestedUri { get; private set; }

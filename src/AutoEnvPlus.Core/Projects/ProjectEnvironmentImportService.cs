@@ -21,6 +21,13 @@ public sealed record ProjectEnvironmentImportResult(
 
 public sealed class ProjectEnvironmentImportService
 {
+    internal const int MaximumVersionMarkerBytes = 16 * 1024;
+    internal const int MaximumJsonMarkerBytes = 256 * 1024;
+
+    private static readonly Encoding StrictUtf8 = new UTF8Encoding(
+        encoderShouldEmitUTF8Identifier: false,
+        throwOnInvalidBytes: true);
+
     private static readonly string[] MarkerFiles =
     [
         ".python-version",
@@ -38,11 +45,17 @@ public sealed class ProjectEnvironmentImportService
         DirectoryInfo? directory = File.Exists(fullPath)
             ? new FileInfo(fullPath).Directory
             : new DirectoryInfo(fullPath);
+        List<string> warnings = [];
         while (directory is not null)
         {
             if (MarkerFiles.Any(file => File.Exists(Path.Combine(directory.FullName, file))))
             {
-                return ImportDirectory(directory.FullName);
+                ProjectEnvironmentImportResult candidate = ImportDirectory(directory.FullName);
+                warnings.AddRange(candidate.Warnings);
+                if (candidate.Found)
+                {
+                    return candidate with { Warnings = warnings };
+                }
             }
 
             directory = directory.Parent;
@@ -52,7 +65,7 @@ public sealed class ProjectEnvironmentImportService
             null,
             new Dictionary<RuntimeKind, VersionSelector>(),
             [],
-            []);
+            warnings);
     }
 
     public ProjectEnvironmentImportResult ImportDirectory(string projectRoot)
@@ -168,7 +181,20 @@ public sealed class ProjectEnvironmentImportService
             return;
         }
 
-        string? raw = File.ReadLines(path)
+        if (!TryReadUtf8Marker(
+                path,
+                MaximumVersionMarkerBytes,
+                "version marker",
+                warnings,
+                out string content))
+        {
+            return;
+        }
+
+        string? raw = content
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Split('\n')
             .Select(line => line.Trim())
             .FirstOrDefault(line => line.Length > 0 && !line.StartsWith('#'));
         if (raw is null)
@@ -200,7 +226,17 @@ public sealed class ProjectEnvironmentImportService
 
         try
         {
-            using JsonDocument document = JsonDocument.Parse(File.ReadAllBytes(path));
+            if (!TryReadUtf8Marker(
+                    path,
+                    MaximumJsonMarkerBytes,
+                    "package.json marker",
+                    warnings,
+                    out string content))
+            {
+                return;
+            }
+
+            using JsonDocument document = JsonDocument.Parse(content);
             if (!document.RootElement.TryGetProperty("engines", out JsonElement engines)
                 || engines.ValueKind != JsonValueKind.Object
                 || !engines.TryGetProperty("node", out JsonElement node)
@@ -245,7 +281,17 @@ public sealed class ProjectEnvironmentImportService
 
         try
         {
-            using JsonDocument document = JsonDocument.Parse(File.ReadAllBytes(path));
+            if (!TryReadUtf8Marker(
+                    path,
+                    MaximumJsonMarkerBytes,
+                    "global.json marker",
+                    warnings,
+                    out string content))
+            {
+                return;
+            }
+
+            using JsonDocument document = JsonDocument.Parse(content);
             if (document.RootElement.TryGetProperty("sdk", out JsonElement sdk)
                 && sdk.ValueKind == JsonValueKind.Object
                 && sdk.TryGetProperty("version", out JsonElement version)
@@ -380,4 +426,80 @@ public sealed class ProjectEnvironmentImportService
 
     private static string ToolName(RuntimeKind kind) =>
         ProjectManifestService.GetCanonicalToolName(kind);
+
+    private static bool TryReadUtf8Marker(
+        string path,
+        int maximumBytes,
+        string description,
+        List<string> warnings,
+        out string content)
+    {
+        try
+        {
+            content = ReadBoundedUtf8File(path, maximumBytes, description);
+            return true;
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidDataException
+            or NotSupportedException)
+        {
+            content = string.Empty;
+            warnings.Add($"Unable to read {path}: {exception.Message}");
+            return false;
+        }
+    }
+
+    private static string ReadBoundedUtf8File(
+        string path,
+        int maximumBytes,
+        string description)
+    {
+        using FileStream stream = new(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            16_384,
+            FileOptions.SequentialScan);
+        if (stream.Length > maximumBytes)
+        {
+            throw new InvalidDataException(
+                $"The {description} exceeds the {maximumBytes}-byte limit.");
+        }
+
+        byte[] bytes = new byte[maximumBytes + 1];
+        int offset = 0;
+        while (offset < bytes.Length)
+        {
+            int read = stream.Read(bytes, offset, bytes.Length - offset);
+            if (read == 0)
+            {
+                break;
+            }
+
+            offset += read;
+        }
+
+        if (offset > maximumBytes || stream.ReadByte() != -1)
+        {
+            throw new InvalidDataException(
+                $"The {description} exceeds the {maximumBytes}-byte limit.");
+        }
+
+        int textOffset = offset >= Encoding.UTF8.Preamble.Length
+            && bytes.AsSpan(0, offset).StartsWith(Encoding.UTF8.Preamble)
+                ? Encoding.UTF8.Preamble.Length
+                : 0;
+        try
+        {
+            return StrictUtf8.GetString(bytes, textOffset, offset - textOffset);
+        }
+        catch (DecoderFallbackException exception)
+        {
+            throw new InvalidDataException(
+                $"The {description} must use valid UTF-8.",
+                exception);
+        }
+    }
 }

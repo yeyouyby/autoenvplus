@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AutoEnvPlus.Cli;
 using AutoEnvPlus.Core.Discovery;
 using AutoEnvPlus.Core.Diagnostics;
 using AutoEnvPlus.Core.Downloads;
@@ -88,6 +89,7 @@ static async Task<int> DispatchAsync(string[] args, CancellationToken cancellati
         "toolchain" => await RunToolchainAsync(commandArgs, cancellationToken),
         "project" => await RunProjectAsync(commandArgs, cancellationToken),
         "resolve" => RunResolve(commandArgs),
+        "mcp" => await AutoEnvPlusMcpServer.RunAsync(cancellationToken),
         "help" or "--help" or "-h" => ShowHelp(),
         _ => UnknownCommand(args[0]),
     };
@@ -254,10 +256,7 @@ static async Task<int> RunCatalogAsync(string[] args, CancellationToken cancella
         return 2;
     }
 
-    EffectiveNetworkSettings catalogNetwork =
-        ToolchainRuntimeProviderPolicy.RequiresExplicitPlugin(catalogKind)
-            ? effectiveNetworkSettings! with { Mirror = null }
-            : effectiveNetworkSettings!;
+    EffectiveNetworkSettings catalogNetwork = effectiveNetworkSettings! with { Mirror = null };
     using HttpClient client = NetworkHttpClientFactory.Create(
         catalogNetwork,
         TimeSpan.FromSeconds(30));
@@ -267,7 +266,6 @@ static async Task<int> RunCatalogAsync(string[] args, CancellationToken cancella
         architecture,
         args,
         null,
-        catalogNetwork.Mirror,
         managedRoot!,
         cancellationToken);
     if (providerResolution.Selection is not CliProviderSelection selection)
@@ -402,7 +400,7 @@ static async Task<int> RunInstallAsync(string[] args, CancellationToken cancella
         || !RuntimeVersion.TryParse(args[1], out RuntimeVersion? requestedVersion))
     {
         Console.Error.WriteLine(
-            "Usage: autoenvplus install <python|node|java|dotnet|msvc|llvm|mingw|cmake|ninja> <exact-version> [--provider official-id|plugin:id] [--arch x64|x86|arm64] [--root directory] [--yes]");
+            "Usage: autoenvplus install <python|node|java|dotnet|msvc|llvm|mingw|cmake|ninja> <exact-version> [--provider official-id|plugin:id] [--arch x64|x86|arm64] [--root directory] [--accept-non-default-source] [--yes]");
         return 1;
     }
 
@@ -430,10 +428,7 @@ static async Task<int> RunInstallAsync(string[] args, CancellationToken cancella
         return 2;
     }
 
-    EffectiveNetworkSettings installNetwork =
-        ToolchainRuntimeProviderPolicy.RequiresExplicitPlugin(catalogKind)
-            ? effectiveNetworkSettings! with { Mirror = null }
-            : effectiveNetworkSettings!;
+    EffectiveNetworkSettings installNetwork = effectiveNetworkSettings! with { Mirror = null };
     using HttpClient client = NetworkHttpClientFactory.Create(
         installNetwork,
         TimeSpan.FromMinutes(10));
@@ -443,7 +438,6 @@ static async Task<int> RunInstallAsync(string[] args, CancellationToken cancella
         architecture,
         args,
         requestedVersion,
-        installNetwork.Mirror,
         managedRoot!,
         cancellationToken);
     if (providerResolution.Selection is not CliProviderSelection selection
@@ -451,6 +445,14 @@ static async Task<int> RunInstallAsync(string[] args, CancellationToken cancella
     {
         Console.Error.WriteLine(
             providerResolution.Error ?? "No archive provider is available.");
+        return 1;
+    }
+
+    if (selection.ManagedSource is CliManagedInstallSourceSelection managedSource
+        && CliManagedInstallSourcePolicy.GetAcceptanceError(managedSource, args)
+            is string sourceAcceptanceError)
+    {
+        Console.Error.WriteLine(sourceAcceptanceError);
         return 1;
     }
 
@@ -481,13 +483,20 @@ static async Task<int> RunInstallAsync(string[] args, CancellationToken cancella
     Console.WriteLine("Install plan");
     Console.WriteLine($"  Runtime:     {release.Kind} {release.Version} ({release.Architecture})");
     Console.WriteLine($"  Provider:    {release.ProviderId}");
+    if (selection.ManagedSource is CliManagedInstallSourceSelection installSource)
+    {
+        Console.WriteLine($"  Source ID:   {installSource.SourceId}");
+        Console.WriteLine($"  Source URL:  {installSource.Endpoint.AbsoluteUri}");
+        Console.WriteLine($"  Source type: {installSource.Origin}");
+    }
+
     Console.WriteLine($"  Download:    {FormatProviderUri(asset.DownloadUri, selection.IsThirdParty)}");
     Console.WriteLine($"  {asset.HashAlgorithm.DisplayName()}:     {asset.PackageHash}");
     foreach (PackageVerification verification in asset.Verifications)
     {
-        string evidenceLabel = selection.IsThirdParty
-            ? "Declared reference"
-            : "Verified by";
+        string evidenceLabel = CliInstallPlanPresentation.GetVerificationEvidenceLabel(
+            release.Kind,
+            selection.IsThirdParty);
         Console.WriteLine(
             $"  {evidenceLabel}: {verification.Kind} {verification.Algorithm} from {verification.SourceUri}");
     }
@@ -2446,8 +2455,23 @@ static async Task<int> RunShellAsync(string[] args, CancellationToken cancellati
         prefixArguments);
     if (snapshotPath is not null)
     {
+        profilePath ??= PowerShellIntegrationManager.GetDefaultWindowsPowerShellProfilePath();
+        PowerShellRollbackPreview preview = await manager.PreviewRollbackAsync(
+            snapshotPath,
+            profilePath,
+            cancellationToken);
+        if (!preview.Success)
+        {
+            Console.Error.WriteLine(preview.Error);
+            return 2;
+        }
+
         Console.WriteLine("PowerShell Profile rollback plan");
-        Console.WriteLine($"  Snapshot: {Path.GetFullPath(snapshotPath)}");
+        Console.WriteLine($"  Snapshot: {preview.SnapshotPath}");
+        Console.WriteLine($"  Target:   {preview.ProfilePath}");
+        Console.WriteLine(preview.DeletesProfile
+            ? "  Action:   Delete the Profile created by AutoEnvPlus"
+            : "  Action:   Restore the exact pre-install Profile bytes");
         if (!args.Contains("--yes", StringComparer.OrdinalIgnoreCase))
         {
             Console.WriteLine("Preview only: no Profile was changed. Add --yes to restore this snapshot.");
@@ -2456,6 +2480,7 @@ static async Task<int> RunShellAsync(string[] args, CancellationToken cancellati
 
         PowerShellIntegrationResult rollback = await manager.RollbackAsync(
             snapshotPath,
+            profilePath,
             cancellationToken);
         if (!rollback.Success)
         {
@@ -3722,19 +3747,19 @@ static IRuntimeCatalogProvider? CreateProvider(
     RuntimeArchitecture architecture,
     string[] args,
     RuntimeVersion? requestedVersion,
-    Uri? mirror,
+    Uri? providerEndpoint,
     out string? error)
 {
     error = null;
     if (runtime.Equals("python", StringComparison.OrdinalIgnoreCase))
     {
-        return new PythonOrgCatalogProvider(client, architecture, mirror);
+        return new PythonOrgCatalogProvider(client, architecture, providerEndpoint);
     }
 
     if (runtime.Equals("node", StringComparison.OrdinalIgnoreCase)
         || runtime.Equals("nodejs", StringComparison.OrdinalIgnoreCase))
     {
-        return new NodeJsCatalogProvider(client, mirror);
+        return new NodeJsCatalogProvider(client, providerEndpoint);
     }
 
     if (runtime.Equals("java", StringComparison.OrdinalIgnoreCase))
@@ -3749,12 +3774,12 @@ static IRuntimeCatalogProvider? CreateProvider(
             return null;
         }
 
-        return new AdoptiumCatalogProvider(client, feature, architecture, mirror);
+        return new AdoptiumCatalogProvider(client, feature, architecture, providerEndpoint);
     }
 
     if (runtime.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
     {
-        return new DotNetSdkCatalogProvider(client, architecture, mirror);
+        return new DotNetSdkCatalogProvider(client, architecture, providerEndpoint);
     }
 
     error = "The runtime provider must be python, node, java, or dotnet.";
@@ -3767,7 +3792,6 @@ static async Task<CliProviderResolution> ResolveCatalogProviderAsync(
     RuntimeArchitecture architecture,
     string[] args,
     RuntimeVersion? requestedVersion,
-    Uri? officialMirror,
     string managedRoot,
     CancellationToken cancellationToken)
 {
@@ -3807,17 +3831,32 @@ static async Task<CliProviderResolution> ResolveCatalogProviderAsync(
         && (requestedProvider is null
             || requestedProvider.Equals(officialProviderId, StringComparison.OrdinalIgnoreCase)))
     {
+        CliManagedInstallSourceResolution sourceResolution =
+            await CliManagedInstallSourceResolver.ResolveAsync(
+                managedRoot,
+                expectedKind,
+                cancellationToken);
+        if (sourceResolution.Selection is not CliManagedInstallSourceSelection managedSource)
+        {
+            return new(
+                null,
+                sourceResolution.Error ?? "No managed install source is available.");
+        }
+
         IRuntimeCatalogProvider? provider = CreateProvider(
             runtime,
             client,
             architecture,
             args,
             requestedVersion,
-            officialMirror,
+            managedSource.Endpoint,
             out string? error);
         return provider is null
             ? new(null, error ?? "No built-in runtime provider is available.")
-            : new(new CliProviderSelection(provider, IsThirdParty: false), null);
+            : new(new CliProviderSelection(
+                provider,
+                IsThirdParty: false,
+                managedSource), null);
     }
 
     if (requestedProvider is null)
@@ -3867,7 +3906,10 @@ static async Task<CliProviderResolution> ResolveCatalogProviderAsync(
                 "The selected provider plugin does not support the requested runtime kind.");
         }
 
-        return new(new CliProviderSelection(provider, IsThirdParty: true), null);
+        return new(new CliProviderSelection(
+            provider,
+            IsThirdParty: true,
+            ManagedSource: null), null);
     }
     catch (RuntimeProviderPluginException exception)
     {
@@ -4196,7 +4238,7 @@ static int ShowHelp()
     Console.WriteLine("  autoenvplus doctor [--json]");
     Console.WriteLine("  autoenvplus list [--managed] [--json] [--root directory]");
     Console.WriteLine("  autoenvplus catalog <python|node|java|dotnet|msvc|llvm|mingw|cmake|ninja> [--provider official-id|plugin:id] [catalog options]");
-    Console.WriteLine("  autoenvplus install <python|node|java|dotnet|msvc|llvm|mingw|cmake|ninja> <exact-version> [--provider official-id|plugin:id] [--arch value] [--root directory] [--yes]");
+    Console.WriteLine("  autoenvplus install <python|node|java|dotnet|msvc|llvm|mingw|cmake|ninja> <exact-version> [--provider official-id|plugin:id] [--arch value] [--root directory] [--accept-non-default-source] [--yes]");
     Console.WriteLine("    Toolchain archive kinds require --provider plugin:<id>; toolchain install remains the WinGet workflow.");
     Console.WriteLine("  autoenvplus uninstall <managed-runtime-id> [--root directory] [--force] [--yes]");
     Console.WriteLine("  autoenvplus use <python|node|java|dotnet|msvc|llvm|mingw|cmake|ninja> <selector> --global [--runtime-id id --provider id] [--root directory]");
@@ -4213,7 +4255,7 @@ static int ShowHelp()
     Console.WriteLine("  autoenvplus shim install [--root directory] [--yes]");
     Console.WriteLine("  autoenvplus shim rollback <snapshot-file> [--root directory]");
     Console.WriteLine("  autoenvplus shell powershell [--profile file] [--install-profile --yes] [--root directory]");
-    Console.WriteLine("  autoenvplus shell powershell --rollback <snapshot-file> [--root directory] [--yes]");
+    Console.WriteLine("  autoenvplus shell powershell --rollback <snapshot-file> [--profile file] [--root directory] [--yes]");
     Console.WriteLine("  autoenvplus storage list [--json]");
     Console.WriteLine("  autoenvplus storage migrate <pip|npm|pnpm|yarn|nuget|nuget-http|nuget-plugins|maven|gradle|vcpkg|conan> <destination> [--root directory] [--yes]");
     Console.WriteLine("  autoenvplus storage rollback <snapshot-file> [--root directory] [--yes]");
@@ -4227,6 +4269,9 @@ static int ShowHelp()
     Console.WriteLine("  autoenvplus project cmake-preset <path> [--instance id] [--host x64|x86] [--target value] [--write --yes]");
     Console.WriteLine("  autoenvplus project cmake-preset <path> --rollback <snapshot-file> [--root directory] [--yes]");
     Console.WriteLine("  autoenvplus resolve <runtime> <selector> [installed-version ...]");
+    Console.WriteLine("  autoenvplus mcp");
+    Console.WriteLine("    Start a stdio MCP server exposing the CLI as callable tools (doctor, list_runtimes,");
+    Console.WriteLine("    catalog, provider_list, which, and a generic cli tool for every command).");
     return 0;
 }
 
@@ -4261,7 +4306,8 @@ internal sealed record CliProviderListView(
 
 internal sealed record CliProviderSelection(
     IRuntimeCatalogProvider Provider,
-    bool IsThirdParty);
+    bool IsThirdParty,
+    CliManagedInstallSourceSelection? ManagedSource);
 
 internal sealed record CliProviderResolution(
     CliProviderSelection? Selection,

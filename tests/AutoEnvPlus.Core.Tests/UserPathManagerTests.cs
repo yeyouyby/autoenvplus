@@ -194,5 +194,22 @@ public sealed class UserPathManagerTests : IDisposable
             Values[name] = value;
             return Task.CompletedTask;
         }
+
+        public Task<bool> CompareExchangeAsync(
+            string name,
+            string? expectedValue,
+            string? value,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            string? current = Get(name);
+            if (!string.Equals(current, expectedValue, StringComparison.Ordinal))
+            {
+                return Task.FromResult(false);
+            }
+
+            Values[name] = value;
+            return Task.FromResult(true);
+        }
     }
 }

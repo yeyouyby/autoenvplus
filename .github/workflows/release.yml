@@ -1,0 +1,622 @@
+name: Publish signed prerelease
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autoenvplus-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AUTOENVPLUS_BUILD_CACHE_ROOT: ${{ vars.AUTOENVPLUS_BUILD_CACHE_ROOT || format('{0}/.build-cache', github.workspace) }}
+  AUTOENVPLUS_ARTIFACTS_ROOT: ${{ vars.AUTOENVPLUS_ARTIFACTS_ROOT || format('{0}/artifacts', github.workspace) }}
+
+jobs:
+  build-sign:
+    name: Build and sign release assets
+    runs-on: windows-latest
+    permissions:
+      actions: read
+      contents: read
+    environment:
+      name: release-signing
+    timeout-minutes: 210
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Configure isolated build caches
+        shell: pwsh
+        run: |
+          $root = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_BUILD_CACHE_ROOT)
+          $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
+          [System.IO.Directory]::CreateDirectory($artifactsRoot) | Out-Null
+          "AUTOENVPLUS_ARTIFACTS_ROOT=$artifactsRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $values = [ordered]@{
+            AUTOENVPLUS_BUILD_CACHE_ROOT = $root
+            NUGET_PACKAGES = Join-Path $root '.nuget\packages'
+            NUGET_HTTP_CACHE_PATH = Join-Path $root '.nuget\v3-cache'
+            NUGET_PLUGINS_CACHE_PATH = Join-Path $root '.nuget\plugins-cache'
+            DOTNET_CLI_HOME = Join-Path $root '.dotnet'
+            TEMP = Join-Path $root 'tmp'
+            TMP = Join-Path $root 'tmp'
+            DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
+            DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+          }
+          foreach ($entry in $values.GetEnumerator()) {
+            if ($entry.Key -notin @('DOTNET_SKIP_FIRST_TIME_EXPERIENCE', 'DOTNET_CLI_TELEMETRY_OPTOUT')) {
+              [System.IO.Directory]::CreateDirectory($entry.Value) | Out-Null
+            }
+            "$($entry.Key)=$($entry.Value)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+
+      - name: Install repository .NET SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          global-json-file: global.json
+
+      - name: Verify tag and export release version
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_TYPE -ne 'tag' -or -not $env:GITHUB_REF_NAME.StartsWith('v', [System.StringComparison]::Ordinal)) {
+            throw "This workflow only signs version tags; received '$env:GITHUB_REF'."
+          }
+          Import-Module .\eng\AutoEnvPlus.Packaging.psm1 -Force
+          $version = Get-AutoEnvPlusVersionInfo
+          if ($env:GITHUB_REF_NAME -ne $version.ReleaseTag) {
+            throw "Tag '$env:GITHUB_REF_NAME' does not match Directory.Build.props tag '$($version.ReleaseTag)'."
+          }
+          if ($version.ReleaseStage -ne 'preview') {
+            throw "The v0.0.1 workflow only publishes preview builds; found release stage '$($version.ReleaseStage)'."
+          }
+          $workflowRepositoryUrl = "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY"
+          if (-not [string]::Equals(
+              $workflowRepositoryUrl,
+              $version.RepositoryUrl,
+              [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Directory.Build.props repository URL '$($version.RepositoryUrl)' does not match workflow repository '$workflowRepositoryUrl'."
+          }
+          "AUTOENVPLUS_PRODUCT_VERSION=$($version.ProductVersion)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "AUTOENVPLUS_PACKAGE_VERSION=$($version.PackageVersion)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Require tagged commit to be merged into main
+        shell: pwsh
+        run: |
+          git show-ref --verify --quiet refs/remotes/origin/main
+          if ($LASTEXITCODE -ne 0) {
+            throw 'The checkout does not contain refs/remotes/origin/main; refusing to sign an unverified tag.'
+          }
+          git merge-base --is-ancestor $env:GITHUB_SHA refs/remotes/origin/main
+          if ($LASTEXITCODE -ne 0) {
+            throw "Tagged commit $env:GITHUB_SHA is not an ancestor of origin/main."
+          }
+
+      - name: Restore locked dependencies
+        shell: pwsh
+        run: dotnet restore AutoEnvPlus.sln --locked-mode -p:Platform=x64 -r win-x64
+
+      - name: Verify formatting
+        shell: pwsh
+        run: dotnet format AutoEnvPlus.sln --verify-no-changes --no-restore
+
+      - name: Run release tests
+        shell: pwsh
+        run: |
+          dotnet test tests\AutoEnvPlus.Core.Tests\AutoEnvPlus.Core.Tests.csproj -c Release -p:Platform=x64 -r win-x64 --no-restore -m:1
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\test-packaging.ps1
+
+      - name: Build unsigned portable payload
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish.ps1 `
+            -Configuration Release `
+            -Version $env:AUTOENVPLUS_PRODUCT_VERSION `
+            -BuildCacheRoot $env:AUTOENVPLUS_BUILD_CACHE_ROOT `
+            -ArtifactsRoot $env:AUTOENVPLUS_ARTIFACTS_ROOT `
+            -NoArchive `
+            -NoRestore
+
+      - name: Build unsigned WinUI single-file executable
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-single-file.ps1 `
+            -Configuration Release `
+            -BuildCacheRoot $env:AUTOENVPLUS_BUILD_CACHE_ROOT `
+            -ArtifactsRoot $env:AUTOENVPLUS_ARTIFACTS_ROOT `
+            -NoRestore
+
+      - name: Validate required release signing configuration
+        shell: pwsh
+        env:
+          AUTOENVPLUS_RELEASE_CERT_PFX_BASE64: ${{ secrets.AUTOENVPLUS_RELEASE_CERT_PFX_BASE64 }}
+          AUTOENVPLUS_RELEASE_CERT_PASSWORD: ${{ secrets.AUTOENVPLUS_RELEASE_CERT_PASSWORD }}
+          AUTOENVPLUS_RELEASE_CERT_THUMBPRINT: ${{ vars.AUTOENVPLUS_RELEASE_CERT_THUMBPRINT }}
+        run: |
+          $required = [ordered]@{
+            AUTOENVPLUS_RELEASE_CERT_PFX_BASE64 = $env:AUTOENVPLUS_RELEASE_CERT_PFX_BASE64
+            AUTOENVPLUS_RELEASE_CERT_PASSWORD = $env:AUTOENVPLUS_RELEASE_CERT_PASSWORD
+            AUTOENVPLUS_RELEASE_CERT_THUMBPRINT = $env:AUTOENVPLUS_RELEASE_CERT_THUMBPRINT
+          }
+          $missing = @($required.GetEnumerator() | Where-Object { [string]::IsNullOrWhiteSpace($_.Value) } | ForEach-Object Key)
+          if ($missing.Count -ne 0) {
+            throw "Release signing is not configured. Missing secret/variable names: $($missing -join ', '). Refusing to publish unsigned assets."
+          }
+          if ($env:AUTOENVPLUS_RELEASE_CERT_THUMBPRINT -notmatch '^[0-9a-fA-F]{40}$') {
+            throw 'AUTOENVPLUS_RELEASE_CERT_THUMBPRINT must be the 40-hex SHA-1 certificate thumbprint of the release signing certificate.'
+          }
+          try {
+            $pfxBytes = [Convert]::FromBase64String($env:AUTOENVPLUS_RELEASE_CERT_PFX_BASE64)
+          }
+          catch {
+            throw 'AUTOENVPLUS_RELEASE_CERT_PFX_BASE64 is not valid base64.'
+          }
+          if ($pfxBytes.Length -eq 0) {
+            throw 'AUTOENVPLUS_RELEASE_CERT_PFX_BASE64 decodes to an empty certificate.'
+          }
+          Write-Host 'Release signing configuration is present; signing is mandatory for this tag.'
+
+      - name: Sign first-party PE files
+        shell: pwsh
+        env:
+          AUTOENVPLUS_RELEASE_CERT_PFX_BASE64: ${{ secrets.AUTOENVPLUS_RELEASE_CERT_PFX_BASE64 }}
+          AUTOENVPLUS_RELEASE_CERT_PASSWORD: ${{ secrets.AUTOENVPLUS_RELEASE_CERT_PASSWORD }}
+        run: |
+          $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
+          $portableRoot = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64'
+          $singlePath = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64.exe'
+          $files = @(
+            $singlePath,
+            (Join-Path $portableRoot 'AutoEnvPlus.App.exe'),
+            (Join-Path $portableRoot 'AutoEnvPlus.App.dll'),
+            (Join-Path $portableRoot 'AutoEnvPlus.Core.dll'),
+            (Join-Path $portableRoot 'cli\autoenvplus.exe'),
+            (Join-Path $portableRoot 'cli\autoenvplus-shim.exe')
+          )
+          foreach ($file in $files) {
+            if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
+              throw "Required first-party PE is missing: $file"
+            }
+            $item = Get-Item -LiteralPath $file -Force
+            if (($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+              throw "Refusing to sign a reparse-point file: $file"
+            }
+          }
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'autoenvplus-release-signing.pfx'
+          [System.IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:AUTOENVPLUS_RELEASE_CERT_PFX_BASE64))
+          $signtool = @(
+            Get-ChildItem -LiteralPath 'C:\Program Files (x86)\Windows Kits\10\bin' -Filter signtool.exe -Recurse -ErrorAction SilentlyContinue |
+              Where-Object FullName -like '*\x64\*' |
+              Sort-Object FullName -Descending
+          )[0].FullName
+          if (-not $signtool) {
+            throw 'signtool.exe was not found in the Windows SDK.'
+          }
+          & $signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $pfxPath /p $env:AUTOENVPLUS_RELEASE_CERT_PASSWORD @files
+          if ($LASTEXITCODE -ne 0) {
+            throw "signtool failed to sign the first-party PE files (exit code $LASTEXITCODE)."
+          }
+          Remove-Item -LiteralPath $pfxPath -Force
+          Write-Host 'Signed all first-party PE files with the release certificate.'
+
+      - name: Verify signed PE files
+        shell: pwsh
+        env:
+          AUTOENVPLUS_RELEASE_CERT_THUMBPRINT: ${{ vars.AUTOENVPLUS_RELEASE_CERT_THUMBPRINT }}
+        run: |
+          $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
+          $portableRoot = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64'
+          $files = @(
+            @{ Path = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64.exe'; Label = 'AutoEnvPlus-win-x64.exe' },
+            @{ Path = Join-Path $portableRoot 'AutoEnvPlus.App.exe'; Label = 'portable\AutoEnvPlus.App.exe' },
+            @{ Path = Join-Path $portableRoot 'AutoEnvPlus.App.dll'; Label = 'portable\AutoEnvPlus.App.dll' },
+            @{ Path = Join-Path $portableRoot 'AutoEnvPlus.Core.dll'; Label = 'portable\AutoEnvPlus.Core.dll' },
+            @{ Path = Join-Path $portableRoot 'cli\autoenvplus.exe'; Label = 'portable\cli\autoenvplus.exe' },
+            @{ Path = Join-Path $portableRoot 'cli\autoenvplus-shim.exe'; Label = 'portable\cli\autoenvplus-shim.exe' }
+          )
+          foreach ($entry in $files) {
+            $signature = Get-AuthenticodeSignature -LiteralPath $entry.Path
+            if ($signature.Status -notin @(
+                [System.Management.Automation.SignatureStatus]::Valid,
+                [System.Management.Automation.SignatureStatus]::UnknownError) -or
+              $null -eq $signature.SignerCertificate) {
+              throw "Authenticode verification failed for '$($entry.Label)': status=$($signature.Status)"
+            }
+            if (-not [string]::Equals(
+                $env:AUTOENVPLUS_RELEASE_CERT_THUMBPRINT,
+                $signature.SignerCertificate.Thumbprint,
+                [System.StringComparison]::OrdinalIgnoreCase)) {
+              throw "Unexpected signer certificate for $($entry.Label): $($signature.SignerCertificate.Thumbprint)"
+            }
+          }
+          Write-Host 'All first-party PE files are signed by the release certificate.'
+
+      - name: Create signed portable ZIP and checksums
+        shell: pwsh
+        run: |
+          $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
+          $portableRoot = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64'
+          $portableTreeChecksum = Join-Path $portableRoot 'SHA256SUMS.txt'
+          $portableZip = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64-portable.zip'
+          $portableZipHash = "$portableZip.sha256"
+          if (Test-Path -LiteralPath $portableZip) { Remove-Item -LiteralPath $portableZip -Force }
+          if (Test-Path -LiteralPath $portableZipHash) { Remove-Item -LiteralPath $portableZipHash -Force }
+          $treeLines = Get-ChildItem -LiteralPath $portableRoot -File -Recurse |
+            Where-Object FullName -ne $portableTreeChecksum |
+            Sort-Object FullName |
+            ForEach-Object {
+              $relative = $_.FullName.Substring($portableRoot.Length).TrimStart('\', '/').Replace('\', '/')
+              $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              "$hash *$relative"
+            }
+          [System.IO.File]::WriteAllLines($portableTreeChecksum, $treeLines, (New-Object System.Text.UTF8Encoding($false)))
+          Compress-Archive -Path (Join-Path $portableRoot '*') -DestinationPath $portableZip -CompressionLevel Optimal
+          $hash = (Get-FileHash -LiteralPath $portableZip -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -LiteralPath $portableZipHash -Value "$hash *$(Split-Path $portableZip -Leaf)" -Encoding ASCII
+          $singlePath = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64.exe'
+          $singleHash = (Get-FileHash -LiteralPath $singlePath -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -LiteralPath "$singlePath.sha256" -Value "$singleHash *$(Split-Path $singlePath -Leaf)" -Encoding ASCII
+
+      - name: Build MSI from signed portable payload
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msi.ps1 `
+            -Configuration Release `
+            -Version $env:AUTOENVPLUS_PRODUCT_VERSION `
+            -BuildCacheRoot $env:AUTOENVPLUS_BUILD_CACHE_ROOT `
+            -ArtifactsRoot $env:AUTOENVPLUS_ARTIFACTS_ROOT `
+            -PortableRoot (Join-Path $env:AUTOENVPLUS_ARTIFACTS_ROOT 'AutoEnvPlus-win-x64') `
+            -RequireSignedPayload
+
+      - name: Sign MSI
+        shell: pwsh
+        env:
+          AUTOENVPLUS_RELEASE_CERT_PFX_BASE64: ${{ secrets.AUTOENVPLUS_RELEASE_CERT_PFX_BASE64 }}
+          AUTOENVPLUS_RELEASE_CERT_PASSWORD: ${{ secrets.AUTOENVPLUS_RELEASE_CERT_PASSWORD }}
+        run: |
+          $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
+          $msiPath = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64.msi'
+          if (-not (Test-Path -LiteralPath $msiPath -PathType Leaf)) {
+            throw "MSI build did not produce $msiPath."
+          }
+          $msiItem = Get-Item -LiteralPath $msiPath -Force
+          if (($msiItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            throw "Refusing to sign a reparse-point MSI: $msiPath"
+          }
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'autoenvplus-release-signing.pfx'
+          [System.IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:AUTOENVPLUS_RELEASE_CERT_PFX_BASE64))
+          $signtool = @(
+            Get-ChildItem -LiteralPath 'C:\Program Files (x86)\Windows Kits\10\bin' -Filter signtool.exe -Recurse -ErrorAction SilentlyContinue |
+              Where-Object FullName -like '*\x64\*' |
+              Sort-Object FullName -Descending
+          )[0].FullName
+          if (-not $signtool) {
+            throw 'signtool.exe was not found in the Windows SDK.'
+          }
+          & $signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $pfxPath /p $env:AUTOENVPLUS_RELEASE_CERT_PASSWORD $msiPath
+          if ($LASTEXITCODE -ne 0) {
+            throw "signtool failed to sign the MSI (exit code $LASTEXITCODE)."
+          }
+          Remove-Item -LiteralPath $pfxPath -Force
+          Write-Host 'Signed the MSI with the release certificate.'
+
+      - name: Verify signed MSI and payload
+        shell: pwsh
+        env:
+          AUTOENVPLUS_RELEASE_CERT_THUMBPRINT: ${{ vars.AUTOENVPLUS_RELEASE_CERT_THUMBPRINT }}
+        run: |
+          $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
+          $portableRoot = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64'
+          $msiPath = Join-Path $artifactsRoot 'AutoEnvPlus-win-x64.msi'
+          $signature = Get-AuthenticodeSignature -LiteralPath $msiPath
+          if ($signature.Status -notin @(
+              [System.Management.Automation.SignatureStatus]::Valid,
+              [System.Management.Automation.SignatureStatus]::UnknownError) -or
+            $null -eq $signature.SignerCertificate) {
+            throw "Authenticode verification failed for the signed MSI: status=$($signature.Status)"
+          }
+          if (-not [string]::Equals(
+              $env:AUTOENVPLUS_RELEASE_CERT_THUMBPRINT,
+              $signature.SignerCertificate.Thumbprint,
+              [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "The MSI signer does not match the release certificate: $($signature.SignerCertificate.Thumbprint)"
+          }
+          $msiHash = (Get-FileHash -LiteralPath $msiPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -LiteralPath "$msiPath.sha256" -Value "$msiHash *$(Split-Path $msiPath -Leaf)" -Encoding ASCII
+
+          $extractRoot = Join-Path $artifactsRoot '.signing\msi-administrative-extract'
+          $extractLog = Join-Path $artifactsRoot '.signing\msi-administrative-extract.log'
+          if (Test-Path -LiteralPath $extractRoot) { Remove-Item -LiteralPath $extractRoot -Recurse -Force }
+          New-Item -ItemType Directory -Path $extractRoot -Force | Out-Null
+          $msiexec = Join-Path $env:WINDIR 'System32\msiexec.exe'
+          $msiProcess = Start-Process -FilePath $msiexec -ArgumentList @(
+            '/a',
+            ('"{0}"' -f $msiPath),
+            '/qn',
+            ('TARGETDIR="{0}"' -f $extractRoot),
+            '/l*v',
+            ('"{0}"' -f $extractLog)
+          ) -Wait -PassThru -WindowStyle Hidden
+          if ($msiProcess.ExitCode -ne 0) {
+            throw "Administrative extraction of the signed MSI failed with exit code $($msiProcess.ExitCode). See $extractLog."
+          }
+          $installedApp = @(Get-ChildItem -LiteralPath $extractRoot -File -Recurse -Filter 'AutoEnvPlus.App.exe')
+          if ($installedApp.Count -ne 1) {
+            throw "Signed MSI extraction must contain exactly one AutoEnvPlus.App.exe; found $($installedApp.Count)."
+          }
+          $installedRoot = $installedApp[0].Directory.FullName
+          $portableFiles = @(Get-ChildItem -LiteralPath $portableRoot -File -Recurse)
+          $installedFiles = @(Get-ChildItem -LiteralPath $installedRoot -File -Recurse)
+          $installedByPath = @{}
+          foreach ($file in $installedFiles) {
+            $relative = $file.FullName.Substring($installedRoot.Length).TrimStart('\', '/').Replace('\', '/')
+            if ($installedByPath.ContainsKey($relative)) {
+              throw "Signed MSI extraction contains a duplicate payload path: $relative"
+            }
+            $installedByPath[$relative] = $file.FullName
+          }
+          if ($installedByPath.Count -ne $portableFiles.Count) {
+            throw "Signed MSI payload file count ($($installedByPath.Count)) does not match the verified portable payload ($($portableFiles.Count))."
+          }
+          foreach ($file in $portableFiles) {
+            $relative = $file.FullName.Substring($portableRoot.Length).TrimStart('\', '/').Replace('\', '/')
+            if (-not $installedByPath.ContainsKey($relative)) {
+              throw "Signed MSI extraction is missing portable payload file: $relative"
+            }
+            $portableHash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
+            $installedHash = (Get-FileHash -LiteralPath $installedByPath[$relative] -Algorithm SHA256).Hash
+            if (-not [string]::Equals($portableHash, $installedHash, [System.StringComparison]::OrdinalIgnoreCase)) {
+              throw "Signed MSI payload differs from the verified portable payload: $relative"
+            }
+          }
+          Remove-Item -LiteralPath $extractRoot -Recurse -Force
+          Write-Host "Signed MSI verified; signer subject: $($signature.SignerCertificate.Subject)"
+
+      - name: Verify final assets and aggregate checksums
+        shell: pwsh
+        run: |
+          $artifactsRoot = [System.IO.Path]::GetFullPath($env:AUTOENVPLUS_ARTIFACTS_ROOT)
+          $releaseRoot = Join-Path $artifactsRoot 'release'
+          if (Test-Path -LiteralPath $releaseRoot) { Remove-Item -LiteralPath $releaseRoot -Recurse -Force }
+          New-Item -ItemType Directory -Path $releaseRoot -Force | Out-Null
+          $required = @(
+            'AutoEnvPlus-win-x64.exe',
+            'AutoEnvPlus-win-x64.exe.sha256',
+            'AutoEnvPlus-win-x64-portable.zip',
+            'AutoEnvPlus-win-x64-portable.zip.sha256',
+            'AutoEnvPlus-win-x64.msi',
+            'AutoEnvPlus-win-x64.msi.sha256'
+          )
+          foreach ($name in $required) {
+            $source = Join-Path $artifactsRoot $name
+            if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
+              throw "Final signed release asset is missing: $source"
+            }
+            Copy-Item -LiteralPath $source -Destination $releaseRoot -Force
+          }
+          $checksumPath = Join-Path $releaseRoot 'SHA256SUMS.txt'
+          $checksums = Get-ChildItem -LiteralPath $releaseRoot -File |
+            Where-Object FullName -ne $checksumPath |
+            Sort-Object Name |
+            ForEach-Object {
+              $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              "$hash *$($_.Name)"
+            }
+          [System.IO.File]::WriteAllLines($checksumPath, $checksums, (New-Object System.Text.UTF8Encoding($false)))
+          Write-Host 'All three signed release variants are present.'
+
+      - name: Ensure dependency lock files did not drift
+        shell: pwsh
+        run: |
+          $lockStatus = @(git status --porcelain=v1 --untracked-files=all -- ':(glob)**/packages.lock.json')
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Unable to inspect NuGet lock-file status.'
+          }
+          if ($lockStatus.Count -ne 0) {
+            $lockStatus | ForEach-Object { Write-Host $_ }
+            throw 'NuGet lock files changed or were generated during the build.'
+          }
+
+      - name: Upload signed release workflow artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ vars.AUTOENVPLUS_RELEASE_ARTIFACT_NAME || format('AutoEnvPlus-{0}-signed-release', github.ref_name) }}
+          path: ${{ env.AUTOENVPLUS_ARTIFACTS_ROOT }}/release/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: ${{ vars.AUTOENVPLUS_RELEASE_RETENTION_DAYS || 30 }}
+
+  publish:
+    name: Verify and publish prerelease
+    needs: build-sign
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: write
+
+    steps:
+      - name: Download signed release workflow artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ vars.AUTOENVPLUS_RELEASE_ARTIFACT_NAME || format('AutoEnvPlus-{0}-signed-release', github.ref_name) }}
+          path: release
+
+      - name: Revalidate downloaded signed assets
+        shell: pwsh
+        env:
+          AUTOENVPLUS_RELEASE_CERT_THUMBPRINT: ${{ vars.AUTOENVPLUS_RELEASE_CERT_THUMBPRINT }}
+        run: |
+          $releaseRoot = [System.IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE 'release'))
+          if ($env:AUTOENVPLUS_RELEASE_CERT_THUMBPRINT -notmatch '^[0-9a-fA-F]{40}$') {
+            throw 'The publish job requires repository variable AUTOENVPLUS_RELEASE_CERT_THUMBPRINT as 40 hex characters.'
+          }
+          $expectedNames = @(
+            'AutoEnvPlus-win-x64.exe',
+            'AutoEnvPlus-win-x64.exe.sha256',
+            'AutoEnvPlus-win-x64-portable.zip',
+            'AutoEnvPlus-win-x64-portable.zip.sha256',
+            'AutoEnvPlus-win-x64.msi',
+            'AutoEnvPlus-win-x64.msi.sha256',
+            'SHA256SUMS.txt'
+          )
+          $entries = @(Get-ChildItem -LiteralPath $releaseRoot -Force)
+          $unexpected = @($entries | Where-Object { $_.Name -notin $expectedNames -or $_.PSIsContainer })
+          $missing = @($expectedNames | Where-Object { -not (Test-Path -LiteralPath (Join-Path $releaseRoot $_) -PathType Leaf) })
+          if ($unexpected.Count -ne 0 -or $missing.Count -ne 0 -or $entries.Count -ne $expectedNames.Count) {
+            throw "Downloaded release artifact has an invalid file set. Missing=[$($missing -join ', ')]; unexpected=[$(($unexpected.Name | Sort-Object) -join ', ')]."
+          }
+
+          foreach ($assetName in @(
+              'AutoEnvPlus-win-x64.exe',
+              'AutoEnvPlus-win-x64-portable.zip',
+              'AutoEnvPlus-win-x64.msi')) {
+            $assetPath = Join-Path $releaseRoot $assetName
+            $sidecarPath = "$assetPath.sha256"
+            $line = ([System.IO.File]::ReadAllText($sidecarPath)).Trim()
+            $match = [regex]::Match($line, '^([0-9a-fA-F]{64}) \*([^\\/]+)$', [System.Text.RegularExpressions.RegexOptions]::CultureInvariant)
+            if (-not $match.Success -or $match.Groups[2].Value -cne $assetName) {
+              throw "Invalid SHA-256 sidecar format for $assetName."
+            }
+            $actualHash = (Get-FileHash -LiteralPath $assetPath -Algorithm SHA256).Hash
+            if (-not [string]::Equals($actualHash, $match.Groups[1].Value, [System.StringComparison]::OrdinalIgnoreCase)) {
+              throw "SHA-256 sidecar mismatch for $assetName."
+            }
+          }
+
+          $aggregateLines = [System.IO.File]::ReadAllLines((Join-Path $releaseRoot 'SHA256SUMS.txt'))
+          $aggregate = @{}
+          foreach ($line in $aggregateLines) {
+            $match = [regex]::Match($line, '^([0-9a-fA-F]{64}) \*([^\\/]+)$', [System.Text.RegularExpressions.RegexOptions]::CultureInvariant)
+            if (-not $match.Success -or $aggregate.ContainsKey($match.Groups[2].Value)) {
+              throw "Invalid or duplicate SHA256SUMS.txt entry: $line"
+            }
+            $aggregate[$match.Groups[2].Value] = $match.Groups[1].Value
+          }
+          $aggregateTargets = @($expectedNames | Where-Object { $_ -ne 'SHA256SUMS.txt' })
+          if ($aggregate.Count -ne $aggregateTargets.Count) {
+            throw "SHA256SUMS.txt has $($aggregate.Count) entries; expected $($aggregateTargets.Count)."
+          }
+          foreach ($name in $aggregateTargets) {
+            if (-not $aggregate.ContainsKey($name)) {
+              throw "SHA256SUMS.txt is missing $name."
+            }
+            $actualHash = (Get-FileHash -LiteralPath (Join-Path $releaseRoot $name) -Algorithm SHA256).Hash
+            if (-not [string]::Equals($actualHash, $aggregate[$name], [System.StringComparison]::OrdinalIgnoreCase)) {
+              throw "SHA256SUMS.txt mismatch for $name."
+            }
+          }
+
+          $expectedSignerThumbprint = $null
+          foreach ($name in @('AutoEnvPlus-win-x64.exe', 'AutoEnvPlus-win-x64.msi')) {
+            $path = Join-Path $releaseRoot $name
+            $signature = Get-AuthenticodeSignature -LiteralPath $path
+            if ($signature.Status -notin @(
+                [System.Management.Automation.SignatureStatus]::Valid,
+                [System.Management.Automation.SignatureStatus]::UnknownError) -or
+              $null -eq $signature.SignerCertificate) {
+              throw "Downloaded $name does not have an intact Authenticode signature: $($signature.Status)."
+            }
+            if ([string]::IsNullOrWhiteSpace($expectedSignerThumbprint)) {
+              $expectedSignerThumbprint = $signature.SignerCertificate.Thumbprint
+              if (-not [string]::Equals(
+                  $env:AUTOENVPLUS_RELEASE_CERT_THUMBPRINT,
+                  $expectedSignerThumbprint,
+                  [System.StringComparison]::OrdinalIgnoreCase)) {
+                throw 'The downloaded release signer does not match AUTOENVPLUS_RELEASE_CERT_THUMBPRINT.'
+              }
+            }
+            elseif (-not [string]::Equals(
+                $expectedSignerThumbprint,
+                $signature.SignerCertificate.Thumbprint,
+                [System.StringComparison]::OrdinalIgnoreCase)) {
+              throw 'The downloaded MSI signer does not match the single-file executable signer.'
+            }
+          }
+
+          $verifyRoot = Join-Path $env:RUNNER_TEMP 'autoenvplus-portable-verify'
+          if (Test-Path -LiteralPath $verifyRoot) { Remove-Item -LiteralPath $verifyRoot -Recurse -Force }
+          Expand-Archive -LiteralPath (Join-Path $releaseRoot 'AutoEnvPlus-win-x64-portable.zip') -DestinationPath $verifyRoot
+          foreach ($relativePath in @(
+              'AutoEnvPlus.App.exe',
+              'AutoEnvPlus.App.dll',
+              'AutoEnvPlus.Core.dll',
+              'cli\autoenvplus.exe',
+              'cli\autoenvplus-shim.exe')) {
+            $path = Join-Path $verifyRoot $relativePath
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+              throw "Portable ZIP is missing signed first-party PE: $relativePath"
+            }
+            $signature = Get-AuthenticodeSignature -LiteralPath $path
+            if ($signature.Status -notin @(
+                [System.Management.Automation.SignatureStatus]::Valid,
+                [System.Management.Automation.SignatureStatus]::UnknownError) -or
+              $null -eq $signature.SignerCertificate) {
+              throw "Portable ZIP contains an invalid first-party PE signature for ${relativePath}: $($signature.Status)."
+            }
+            if (-not [string]::Equals(
+                $expectedSignerThumbprint,
+                $signature.SignerCertificate.Thumbprint,
+                [System.StringComparison]::OrdinalIgnoreCase)) {
+              throw "Portable ZIP signer does not match the other release assets for $relativePath."
+            }
+          }
+          Remove-Item -LiteralPath $verifyRoot -Recurse -Force
+
+      - name: Publish immutable GitHub prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $releaseRoot = Join-Path $env:GITHUB_WORKSPACE 'release'
+          $assets = @(Get-ChildItem -LiteralPath $releaseRoot -File | Sort-Object Name)
+          if ($assets.Count -ne 7) {
+            throw "Expected exactly seven release assets (three assets, three sidecars, SHA256SUMS.txt); found $($assets.Count)."
+          }
+          $assetPaths = @($assets | Select-Object -ExpandProperty FullName)
+          $previousErrorActionPreference = $ErrorActionPreference
+          try {
+            $ErrorActionPreference = 'Continue'
+            $releaseJson = gh release view $tag --json assets,isDraft 2>$null
+            $releaseViewExitCode = $LASTEXITCODE
+          }
+          finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+          }
+          if ($releaseViewExitCode -eq 0) {
+            $release = ($releaseJson -join [Environment]::NewLine) | ConvertFrom-Json
+            $existingAssetNames = @($release.assets | ForEach-Object name)
+            if (-not $release.isDraft -or $existingAssetNames.Count -ne 0) {
+              $formattedNames = ($existingAssetNames | Sort-Object) -join ', '
+              throw "Release $tag already exists in a non-empty or non-draft state (draft=$($release.isDraft), assets=$formattedNames); refusing to replace or extend it."
+            }
+          }
+          else {
+            gh release create $tag `
+              --verify-tag `
+              --draft `
+              --prerelease `
+              --generate-notes `
+              --title "AutoEnvPlus $tag (test release)"
+            if ($LASTEXITCODE -ne 0) {
+              throw "Unable to create draft GitHub release $tag."
+            }
+          }
+          gh release upload $tag @assetPaths
+          if ($LASTEXITCODE -ne 0) {
+            throw "Unable to upload assets for GitHub release $tag."
+          }
+          gh release edit $tag --draft=false --prerelease --title "AutoEnvPlus $tag (test release)"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Assets were uploaded, but GitHub release $tag could not be published as a prerelease."
+          }

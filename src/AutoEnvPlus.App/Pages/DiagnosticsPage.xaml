@@ -3,7 +3,82 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <Grid Padding="{StaticResource PagePadding}" RowSpacing="14">
+    <Page.Resources>
+        <Style x:Key="StretchDiagnosticListViewItemStyle" TargetType="ListViewItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+    </Page.Resources>
+
+    <Grid
+        x:Name="LayoutRoot"
+        Padding="{StaticResource PagePadding}"
+        RowSpacing="14">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup>
+                <VisualState x:Name="CompactLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="DiagnosticHeaderActions.(Grid.Row)" Value="1" />
+                        <Setter Target="DiagnosticHeaderActions.(Grid.Column)" Value="0" />
+                        <Setter Target="DiagnosticHeaderActions.HorizontalAlignment" Value="Left" />
+                        <Setter Target="DiagnosticHeaderActions.Margin" Value="0,12,0,0" />
+                        <Setter Target="DiagnosticHeaderActions.Orientation" Value="Vertical" />
+
+                        <Setter Target="ScopePrimaryColumn.Width" Value="*" />
+                        <Setter Target="ScopeSecondaryColumn.Width" Value="0" />
+                        <Setter Target="ScopeRow5.Height" Value="Auto" />
+                        <Setter Target="ScopeRow6.Height" Value="Auto" />
+                        <Setter Target="ScopeRow7.Height" Value="Auto" />
+                        <Setter Target="ManagedScopeCheckBox.(Grid.Row)" Value="1" />
+                        <Setter Target="ManagedScopeCheckBox.(Grid.Column)" Value="0" />
+                        <Setter Target="ProviderScopeCheckBox.(Grid.Row)" Value="2" />
+                        <Setter Target="ProjectScopeCheckBox.(Grid.Row)" Value="3" />
+                        <Setter Target="ProjectScopeCheckBox.(Grid.Column)" Value="0" />
+                        <Setter Target="StorageScopeCheckBox.(Grid.Row)" Value="4" />
+                        <Setter Target="ConnectivityScopeCheckBox.(Grid.Row)" Value="5" />
+                        <Setter Target="ConnectivityScopeCheckBox.(Grid.Column)" Value="0" />
+                        <Setter Target="ProjectPathPicker.(Grid.Row)" Value="6" />
+                        <Setter Target="ProjectPathPicker.(Grid.ColumnSpan)" Value="1" />
+                        <Setter Target="ScopeHintText.(Grid.Row)" Value="7" />
+                        <Setter Target="ScopeHintText.(Grid.ColumnSpan)" Value="1" />
+                        <Setter Target="CommandHeader.Visibility" Value="Collapsed" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="WideLayout">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="760" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="DiagnosticHeaderActions.(Grid.Row)" Value="0" />
+                        <Setter Target="DiagnosticHeaderActions.(Grid.Column)" Value="1" />
+                        <Setter Target="DiagnosticHeaderActions.HorizontalAlignment" Value="Stretch" />
+                        <Setter Target="DiagnosticHeaderActions.Margin" Value="0" />
+                        <Setter Target="DiagnosticHeaderActions.Orientation" Value="Horizontal" />
+
+                        <Setter Target="ScopePrimaryColumn.Width" Value="*" />
+                        <Setter Target="ScopeSecondaryColumn.Width" Value="*" />
+                        <Setter Target="ScopeRow5.Height" Value="0" />
+                        <Setter Target="ScopeRow6.Height" Value="0" />
+                        <Setter Target="ScopeRow7.Height" Value="0" />
+                        <Setter Target="ManagedScopeCheckBox.(Grid.Row)" Value="0" />
+                        <Setter Target="ManagedScopeCheckBox.(Grid.Column)" Value="1" />
+                        <Setter Target="ProviderScopeCheckBox.(Grid.Row)" Value="1" />
+                        <Setter Target="ProjectScopeCheckBox.(Grid.Row)" Value="1" />
+                        <Setter Target="ProjectScopeCheckBox.(Grid.Column)" Value="1" />
+                        <Setter Target="StorageScopeCheckBox.(Grid.Row)" Value="2" />
+                        <Setter Target="ConnectivityScopeCheckBox.(Grid.Row)" Value="2" />
+                        <Setter Target="ConnectivityScopeCheckBox.(Grid.Column)" Value="1" />
+                        <Setter Target="ProjectPathPicker.(Grid.Row)" Value="3" />
+                        <Setter Target="ProjectPathPicker.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="ScopeHintText.(Grid.Row)" Value="4" />
+                        <Setter Target="ScopeHintText.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="CommandHeader.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -11,11 +86,15 @@
             <RowDefinition />
         </Grid.RowDefinitions>
 
-        <Grid ColumnSpacing="12">
+        <Grid ColumnSpacing="12" RowSpacing="12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
             <StackPanel Spacing="4">
                 <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="环境诊断" />
                 <TextBlock
@@ -24,6 +103,7 @@
                     TextWrapping="Wrap" />
             </StackPanel>
             <StackPanel
+                x:Name="DiagnosticHeaderActions"
                 Grid.Column="1"
                 VerticalAlignment="Bottom"
                 Orientation="Horizontal"
@@ -32,6 +112,7 @@
                     x:Name="DiagnosticProgress"
                     Width="20"
                     Height="20"
+                    AutomationProperties.Name="诊断扫描进度"
                     IsActive="False" />
                 <Button
                     x:Name="ExportButton"
@@ -72,8 +153,8 @@
             IsExpanded="True">
             <Grid Padding="0,8,0,4" ColumnSpacing="20" RowSpacing="8">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition />
-                    <ColumnDefinition />
+                    <ColumnDefinition x:Name="ScopePrimaryColumn" />
+                    <ColumnDefinition x:Name="ScopeSecondaryColumn" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -81,6 +162,9 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition x:Name="ScopeRow5" Height="0" />
+                    <RowDefinition x:Name="ScopeRow6" Height="0" />
+                    <RowDefinition x:Name="ScopeRow7" Height="0" />
                 </Grid.RowDefinitions>
 
                 <CheckBox
@@ -119,6 +203,7 @@
                     Content="Provider 来源实时连接（较慢）" />
 
                 <Grid
+                    x:Name="ProjectPathPicker"
                     Grid.Row="3"
                     Grid.ColumnSpan="2"
                     ColumnSpacing="8">
@@ -148,6 +233,7 @@
                     x:Name="ScopeHintText"
                     Grid.Row="4"
                     Grid.ColumnSpan="2"
+                    AutomationProperties.LiveSetting="Polite"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     Text="已选择 3 个扫描域；不会遍历项目、缓存或访问网络。"
                     TextWrapping="Wrap" />
@@ -157,6 +243,7 @@
         <InfoBar
             x:Name="SummaryInfo"
             Grid.Row="2"
+            AutomationProperties.LiveSetting="Polite"
             IsClosable="False"
             IsOpen="True"
             Message="选择范围后开始扫描；所有检查均为只读。"
@@ -165,18 +252,77 @@
 
         <Pivot Grid.Row="3">
             <PivotItem Header="扫描摘要">
-                <ListView x:Name="ScopeList" SelectionMode="None">
+                <ListView
+                    x:Name="ScopeList"
+                    ItemContainerStyle="{StaticResource StretchDiagnosticListViewItemStyle}"
+                    SelectionMode="None">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Grid Padding="12,9" ColumnSpacing="12">
+                            <Grid Padding="12,9" ColumnSpacing="12" RowSpacing="3">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="180" />
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition />
+                                    <ColumnDefinition x:Name="ScopeNameColumn" Width="180" />
+                                    <ColumnDefinition x:Name="ScopeResultColumn" Width="100" />
+                                    <ColumnDefinition x:Name="ScopeDetailColumn" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock FontWeight="SemiBold" Text="{Binding Scope}" />
-                                <TextBlock Grid.Column="1" Text="{Binding Result}" />
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition x:Name="ScopeResultRow" Height="0" />
+                                    <RowDefinition x:Name="ScopeDetailRow" Height="0" />
+                                </Grid.RowDefinitions>
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup>
+                                        <VisualState x:Name="CompactScopeItem">
+                                            <VisualState.StateTriggers>
+                                                <AdaptiveTrigger MinWindowWidth="0" />
+                                            </VisualState.StateTriggers>
+                                            <VisualState.Setters>
+                                                <Setter Target="ScopeNameColumn.Width" Value="*" />
+                                                <Setter Target="ScopeResultColumn.Width" Value="0" />
+                                                <Setter Target="ScopeDetailColumn.Width" Value="0" />
+                                                <Setter Target="ScopeResultRow.Height" Value="Auto" />
+                                                <Setter Target="ScopeDetailRow.Height" Value="Auto" />
+                                                <Setter Target="ScopeNameText.(Grid.ColumnSpan)" Value="3" />
+                                                <Setter Target="ScopeResultText.(Grid.Row)" Value="1" />
+                                                <Setter Target="ScopeResultText.(Grid.Column)" Value="0" />
+                                                <Setter Target="ScopeResultText.(Grid.ColumnSpan)" Value="3" />
+                                                <Setter Target="ScopeDetailText.(Grid.Row)" Value="2" />
+                                                <Setter Target="ScopeDetailText.(Grid.Column)" Value="0" />
+                                                <Setter Target="ScopeDetailText.(Grid.ColumnSpan)" Value="3" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="WideScopeItem">
+                                            <VisualState.StateTriggers>
+                                                <AdaptiveTrigger MinWindowWidth="760" />
+                                            </VisualState.StateTriggers>
+                                            <VisualState.Setters>
+                                                <Setter Target="ScopeNameColumn.Width" Value="180" />
+                                                <Setter Target="ScopeResultColumn.Width" Value="100" />
+                                                <Setter Target="ScopeDetailColumn.Width" Value="*" />
+                                                <Setter Target="ScopeResultRow.Height" Value="0" />
+                                                <Setter Target="ScopeDetailRow.Height" Value="0" />
+                                                <Setter Target="ScopeNameText.(Grid.ColumnSpan)" Value="1" />
+                                                <Setter Target="ScopeResultText.(Grid.Row)" Value="0" />
+                                                <Setter Target="ScopeResultText.(Grid.Column)" Value="1" />
+                                                <Setter Target="ScopeResultText.(Grid.ColumnSpan)" Value="1" />
+                                                <Setter Target="ScopeDetailText.(Grid.Row)" Value="0" />
+                                                <Setter Target="ScopeDetailText.(Grid.Column)" Value="2" />
+                                                <Setter Target="ScopeDetailText.(Grid.ColumnSpan)" Value="1" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
                                 <TextBlock
+                                    x:Name="ScopeNameText"
+                                    FontWeight="SemiBold"
+                                    Text="{Binding Scope}"
+                                    TextWrapping="Wrap" />
+                                <TextBlock
+                                    x:Name="ScopeResultText"
+                                    Grid.Column="1"
+                                    Text="{Binding Result}"
+                                    TextWrapping="Wrap" />
+                                <TextBlock
+                                    x:Name="ScopeDetailText"
                                     Grid.Column="2"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                     Text="{Binding Detail}"
@@ -188,25 +334,80 @@
             </PivotItem>
 
             <PivotItem Header="问题">
-                <ListView x:Name="IssueList" SelectionMode="None">
+                <ListView
+                    x:Name="IssueList"
+                    ItemContainerStyle="{StaticResource StretchDiagnosticListViewItemStyle}"
+                    SelectionMode="None">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Grid Padding="12,10" ColumnSpacing="12">
+                            <Grid Padding="12,10" ColumnSpacing="12" RowSpacing="3">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="130" />
-                                    <ColumnDefinition Width="64" />
-                                    <ColumnDefinition />
+                                    <ColumnDefinition x:Name="IssueScopeColumn" Width="130" />
+                                    <ColumnDefinition x:Name="IssueSeverityColumn" Width="64" />
+                                    <ColumnDefinition x:Name="IssueDetailColumn" />
                                 </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition x:Name="IssueSeverityRow" Height="0" />
+                                    <RowDefinition x:Name="IssueDetailRow" Height="0" />
+                                </Grid.RowDefinitions>
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup>
+                                        <VisualState x:Name="CompactIssueItem">
+                                            <VisualState.StateTriggers>
+                                                <AdaptiveTrigger MinWindowWidth="0" />
+                                            </VisualState.StateTriggers>
+                                            <VisualState.Setters>
+                                                <Setter Target="IssueScopeColumn.Width" Value="*" />
+                                                <Setter Target="IssueSeverityColumn.Width" Value="0" />
+                                                <Setter Target="IssueDetailColumn.Width" Value="0" />
+                                                <Setter Target="IssueSeverityRow.Height" Value="Auto" />
+                                                <Setter Target="IssueDetailRow.Height" Value="Auto" />
+                                                <Setter Target="IssueScopeText.(Grid.ColumnSpan)" Value="3" />
+                                                <Setter Target="IssueSeverityText.(Grid.Row)" Value="1" />
+                                                <Setter Target="IssueSeverityText.(Grid.Column)" Value="0" />
+                                                <Setter Target="IssueSeverityText.(Grid.ColumnSpan)" Value="3" />
+                                                <Setter Target="IssueDetailPanel.(Grid.Row)" Value="2" />
+                                                <Setter Target="IssueDetailPanel.(Grid.Column)" Value="0" />
+                                                <Setter Target="IssueDetailPanel.(Grid.ColumnSpan)" Value="3" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="WideIssueItem">
+                                            <VisualState.StateTriggers>
+                                                <AdaptiveTrigger MinWindowWidth="760" />
+                                            </VisualState.StateTriggers>
+                                            <VisualState.Setters>
+                                                <Setter Target="IssueScopeColumn.Width" Value="130" />
+                                                <Setter Target="IssueSeverityColumn.Width" Value="64" />
+                                                <Setter Target="IssueDetailColumn.Width" Value="*" />
+                                                <Setter Target="IssueSeverityRow.Height" Value="0" />
+                                                <Setter Target="IssueDetailRow.Height" Value="0" />
+                                                <Setter Target="IssueScopeText.(Grid.ColumnSpan)" Value="1" />
+                                                <Setter Target="IssueSeverityText.(Grid.Row)" Value="0" />
+                                                <Setter Target="IssueSeverityText.(Grid.Column)" Value="1" />
+                                                <Setter Target="IssueSeverityText.(Grid.ColumnSpan)" Value="1" />
+                                                <Setter Target="IssueDetailPanel.(Grid.Row)" Value="0" />
+                                                <Setter Target="IssueDetailPanel.(Grid.Column)" Value="2" />
+                                                <Setter Target="IssueDetailPanel.(Grid.ColumnSpan)" Value="1" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
                                 <TextBlock
+                                    x:Name="IssueScopeText"
                                     FontWeight="SemiBold"
                                     Text="{Binding Scope}"
                                     TextWrapping="Wrap" />
                                 <TextBlock
+                                    x:Name="IssueSeverityText"
                                     Grid.Column="1"
                                     FontWeight="SemiBold"
                                     Foreground="{Binding SeverityBrush}"
                                     Text="{Binding Severity}" />
-                                <StackPanel Grid.Column="2" Spacing="3">
+                                <StackPanel
+                                    x:Name="IssueDetailPanel"
+                                    Grid.Column="2"
+                                    Spacing="3">
                                     <TextBlock
                                         FontWeight="SemiBold"
                                         Text="{Binding Title}"
@@ -226,9 +427,15 @@
             </PivotItem>
 
             <PivotItem Header="命令路由">
-                <ListView x:Name="CommandList" SelectionMode="None">
+                <ListView
+                    x:Name="CommandList"
+                    ItemContainerStyle="{StaticResource StretchDiagnosticListViewItemStyle}"
+                    SelectionMode="None">
                     <ListView.Header>
-                        <Grid Padding="12,8" ColumnSpacing="12">
+                        <Grid
+                            x:Name="CommandHeader"
+                            Padding="12,8"
+                            ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="110" />
                                 <ColumnDefinition />
@@ -241,20 +448,80 @@
                     </ListView.Header>
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Grid Padding="12,8" ColumnSpacing="12">
+                            <Grid Padding="12,8" ColumnSpacing="12" RowSpacing="3">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="110" />
-                                    <ColumnDefinition />
-                                    <ColumnDefinition Width="120" />
+                                    <ColumnDefinition x:Name="CommandNameColumn" Width="110" />
+                                    <ColumnDefinition x:Name="CommandWinnerColumn" />
+                                    <ColumnDefinition x:Name="CommandCandidateColumn" Width="120" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock FontWeight="SemiBold" Text="{Binding Command}" />
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition x:Name="CommandWinnerRow" Height="0" />
+                                    <RowDefinition x:Name="CommandCandidateRow" Height="0" />
+                                </Grid.RowDefinitions>
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup>
+                                        <VisualState x:Name="CompactCommandItem">
+                                            <VisualState.StateTriggers>
+                                                <AdaptiveTrigger MinWindowWidth="0" />
+                                            </VisualState.StateTriggers>
+                                            <VisualState.Setters>
+                                                <Setter Target="CommandNameColumn.Width" Value="*" />
+                                                <Setter Target="CommandWinnerColumn.Width" Value="0" />
+                                                <Setter Target="CommandCandidateColumn.Width" Value="0" />
+                                                <Setter Target="CommandWinnerRow.Height" Value="Auto" />
+                                                <Setter Target="CommandCandidateRow.Height" Value="Auto" />
+                                                <Setter Target="CommandNameText.(Grid.ColumnSpan)" Value="3" />
+                                                <Setter Target="CommandWinnerText.(Grid.Row)" Value="1" />
+                                                <Setter Target="CommandWinnerText.(Grid.Column)" Value="0" />
+                                                <Setter Target="CommandWinnerText.(Grid.ColumnSpan)" Value="3" />
+                                                <Setter Target="CommandWinnerText.TextTrimming" Value="None" />
+                                                <Setter Target="CommandWinnerText.TextWrapping" Value="WrapWholeWords" />
+                                                <Setter Target="CommandCandidateText.(Grid.Row)" Value="2" />
+                                                <Setter Target="CommandCandidateText.(Grid.Column)" Value="0" />
+                                                <Setter Target="CommandCandidateText.(Grid.ColumnSpan)" Value="3" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                        <VisualState x:Name="WideCommandItem">
+                                            <VisualState.StateTriggers>
+                                                <AdaptiveTrigger MinWindowWidth="760" />
+                                            </VisualState.StateTriggers>
+                                            <VisualState.Setters>
+                                                <Setter Target="CommandNameColumn.Width" Value="110" />
+                                                <Setter Target="CommandWinnerColumn.Width" Value="*" />
+                                                <Setter Target="CommandCandidateColumn.Width" Value="120" />
+                                                <Setter Target="CommandWinnerRow.Height" Value="0" />
+                                                <Setter Target="CommandCandidateRow.Height" Value="0" />
+                                                <Setter Target="CommandNameText.(Grid.ColumnSpan)" Value="1" />
+                                                <Setter Target="CommandWinnerText.(Grid.Row)" Value="0" />
+                                                <Setter Target="CommandWinnerText.(Grid.Column)" Value="1" />
+                                                <Setter Target="CommandWinnerText.(Grid.ColumnSpan)" Value="1" />
+                                                <Setter Target="CommandWinnerText.TextTrimming" Value="CharacterEllipsis" />
+                                                <Setter Target="CommandWinnerText.TextWrapping" Value="NoWrap" />
+                                                <Setter Target="CommandCandidateText.(Grid.Row)" Value="0" />
+                                                <Setter Target="CommandCandidateText.(Grid.Column)" Value="2" />
+                                                <Setter Target="CommandCandidateText.(Grid.ColumnSpan)" Value="1" />
+                                            </VisualState.Setters>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
                                 <TextBlock
+                                    x:Name="CommandNameText"
+                                    FontWeight="SemiBold"
+                                    Text="{Binding Command}"
+                                    TextWrapping="Wrap" />
+                                <TextBlock
+                                    x:Name="CommandWinnerText"
                                     Grid.Column="1"
                                     IsTextSelectionEnabled="True"
                                     Text="{Binding Winner}"
                                     TextTrimming="CharacterEllipsis"
                                     ToolTipService.ToolTip="{Binding Winner}" />
-                                <TextBlock Grid.Column="2" Text="{Binding CandidateText}" />
+                                <TextBlock
+                                    x:Name="CommandCandidateText"
+                                    Grid.Column="2"
+                                    Text="{Binding CandidateText}"
+                                    TextWrapping="Wrap" />
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
@@ -268,18 +535,81 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition />
                     </Grid.RowDefinitions>
-                    <ListView x:Name="RuntimeList" SelectionMode="None">
+                    <ListView
+                        x:Name="RuntimeList"
+                        ItemContainerStyle="{StaticResource StretchDiagnosticListViewItemStyle}"
+                        SelectionMode="None">
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Grid Padding="12,8" ColumnSpacing="12">
+                                <Grid Padding="12,8" ColumnSpacing="12" RowSpacing="3">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="160" />
-                                        <ColumnDefinition Width="130" />
-                                        <ColumnDefinition />
+                                        <ColumnDefinition x:Name="RuntimeNameColumn" Width="160" />
+                                        <ColumnDefinition x:Name="RuntimeVersionColumn" Width="130" />
+                                        <ColumnDefinition x:Name="RuntimePathColumn" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock FontWeight="SemiBold" Text="{Binding Runtime}" />
-                                    <TextBlock Grid.Column="1" Text="{Binding Version}" />
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition x:Name="RuntimeVersionRow" Height="0" />
+                                        <RowDefinition x:Name="RuntimePathRow" Height="0" />
+                                    </Grid.RowDefinitions>
+                                    <VisualStateManager.VisualStateGroups>
+                                        <VisualStateGroup>
+                                            <VisualState x:Name="CompactRuntimeItem">
+                                                <VisualState.StateTriggers>
+                                                    <AdaptiveTrigger MinWindowWidth="0" />
+                                                </VisualState.StateTriggers>
+                                                <VisualState.Setters>
+                                                    <Setter Target="RuntimeNameColumn.Width" Value="*" />
+                                                    <Setter Target="RuntimeVersionColumn.Width" Value="0" />
+                                                    <Setter Target="RuntimePathColumn.Width" Value="0" />
+                                                    <Setter Target="RuntimeVersionRow.Height" Value="Auto" />
+                                                    <Setter Target="RuntimePathRow.Height" Value="Auto" />
+                                                    <Setter Target="RuntimeNameText.(Grid.ColumnSpan)" Value="3" />
+                                                    <Setter Target="RuntimeVersionText.(Grid.Row)" Value="1" />
+                                                    <Setter Target="RuntimeVersionText.(Grid.Column)" Value="0" />
+                                                    <Setter Target="RuntimeVersionText.(Grid.ColumnSpan)" Value="3" />
+                                                    <Setter Target="RuntimePathText.(Grid.Row)" Value="2" />
+                                                    <Setter Target="RuntimePathText.(Grid.Column)" Value="0" />
+                                                    <Setter Target="RuntimePathText.(Grid.ColumnSpan)" Value="3" />
+                                                    <Setter Target="RuntimePathText.TextTrimming" Value="None" />
+                                                    <Setter Target="RuntimePathText.TextWrapping" Value="WrapWholeWords" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                            <VisualState x:Name="WideRuntimeItem">
+                                                <VisualState.StateTriggers>
+                                                    <AdaptiveTrigger MinWindowWidth="760" />
+                                                </VisualState.StateTriggers>
+                                                <VisualState.Setters>
+                                                    <Setter Target="RuntimeNameColumn.Width" Value="160" />
+                                                    <Setter Target="RuntimeVersionColumn.Width" Value="130" />
+                                                    <Setter Target="RuntimePathColumn.Width" Value="*" />
+                                                    <Setter Target="RuntimeVersionRow.Height" Value="0" />
+                                                    <Setter Target="RuntimePathRow.Height" Value="0" />
+                                                    <Setter Target="RuntimeNameText.(Grid.ColumnSpan)" Value="1" />
+                                                    <Setter Target="RuntimeVersionText.(Grid.Row)" Value="0" />
+                                                    <Setter Target="RuntimeVersionText.(Grid.Column)" Value="1" />
+                                                    <Setter Target="RuntimeVersionText.(Grid.ColumnSpan)" Value="1" />
+                                                    <Setter Target="RuntimePathText.(Grid.Row)" Value="0" />
+                                                    <Setter Target="RuntimePathText.(Grid.Column)" Value="2" />
+                                                    <Setter Target="RuntimePathText.(Grid.ColumnSpan)" Value="1" />
+                                                    <Setter Target="RuntimePathText.TextTrimming" Value="CharacterEllipsis" />
+                                                    <Setter Target="RuntimePathText.TextWrapping" Value="NoWrap" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                        </VisualStateGroup>
+                                    </VisualStateManager.VisualStateGroups>
                                     <TextBlock
+                                        x:Name="RuntimeNameText"
+                                        FontWeight="SemiBold"
+                                        Text="{Binding Runtime}"
+                                        TextWrapping="Wrap" />
+                                    <TextBlock
+                                        x:Name="RuntimeVersionText"
+                                        Grid.Column="1"
+                                        Text="{Binding Version}"
+                                        TextWrapping="Wrap" />
+                                    <TextBlock
+                                        x:Name="RuntimePathText"
                                         Grid.Column="2"
                                         IsTextSelectionEnabled="True"
                                         Text="{Binding Path}"
@@ -293,18 +623,78 @@
                         Grid.Row="1"
                         Style="{StaticResource SubtitleTextBlockStyle}"
                         Text="全局选择解析" />
-                    <ListView Grid.Row="2" x:Name="GlobalSelectionList" SelectionMode="None">
+                    <ListView
+                        x:Name="GlobalSelectionList"
+                        Grid.Row="2"
+                        ItemContainerStyle="{StaticResource StretchDiagnosticListViewItemStyle}"
+                        SelectionMode="None">
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <Grid Padding="12,8" ColumnSpacing="12">
+                                <Grid Padding="12,8" ColumnSpacing="12" RowSpacing="3">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="150" />
-                                        <ColumnDefinition Width="150" />
-                                        <ColumnDefinition />
+                                        <ColumnDefinition x:Name="SelectionRuntimeColumn" Width="150" />
+                                        <ColumnDefinition x:Name="SelectionSelectorColumn" Width="150" />
+                                        <ColumnDefinition x:Name="SelectionResolutionColumn" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock FontWeight="SemiBold" Text="{Binding Runtime}" />
-                                    <TextBlock Grid.Column="1" Text="{Binding Selector}" />
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition x:Name="SelectionSelectorRow" Height="0" />
+                                        <RowDefinition x:Name="SelectionResolutionRow" Height="0" />
+                                    </Grid.RowDefinitions>
+                                    <VisualStateManager.VisualStateGroups>
+                                        <VisualStateGroup>
+                                            <VisualState x:Name="CompactSelectionItem">
+                                                <VisualState.StateTriggers>
+                                                    <AdaptiveTrigger MinWindowWidth="0" />
+                                                </VisualState.StateTriggers>
+                                                <VisualState.Setters>
+                                                    <Setter Target="SelectionRuntimeColumn.Width" Value="*" />
+                                                    <Setter Target="SelectionSelectorColumn.Width" Value="0" />
+                                                    <Setter Target="SelectionResolutionColumn.Width" Value="0" />
+                                                    <Setter Target="SelectionSelectorRow.Height" Value="Auto" />
+                                                    <Setter Target="SelectionResolutionRow.Height" Value="Auto" />
+                                                    <Setter Target="SelectionRuntimeText.(Grid.ColumnSpan)" Value="3" />
+                                                    <Setter Target="SelectionSelectorText.(Grid.Row)" Value="1" />
+                                                    <Setter Target="SelectionSelectorText.(Grid.Column)" Value="0" />
+                                                    <Setter Target="SelectionSelectorText.(Grid.ColumnSpan)" Value="3" />
+                                                    <Setter Target="SelectionResolutionText.(Grid.Row)" Value="2" />
+                                                    <Setter Target="SelectionResolutionText.(Grid.Column)" Value="0" />
+                                                    <Setter Target="SelectionResolutionText.(Grid.ColumnSpan)" Value="3" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                            <VisualState x:Name="WideSelectionItem">
+                                                <VisualState.StateTriggers>
+                                                    <AdaptiveTrigger MinWindowWidth="760" />
+                                                </VisualState.StateTriggers>
+                                                <VisualState.Setters>
+                                                    <Setter Target="SelectionRuntimeColumn.Width" Value="150" />
+                                                    <Setter Target="SelectionSelectorColumn.Width" Value="150" />
+                                                    <Setter Target="SelectionResolutionColumn.Width" Value="*" />
+                                                    <Setter Target="SelectionSelectorRow.Height" Value="0" />
+                                                    <Setter Target="SelectionResolutionRow.Height" Value="0" />
+                                                    <Setter Target="SelectionRuntimeText.(Grid.ColumnSpan)" Value="1" />
+                                                    <Setter Target="SelectionSelectorText.(Grid.Row)" Value="0" />
+                                                    <Setter Target="SelectionSelectorText.(Grid.Column)" Value="1" />
+                                                    <Setter Target="SelectionSelectorText.(Grid.ColumnSpan)" Value="1" />
+                                                    <Setter Target="SelectionResolutionText.(Grid.Row)" Value="0" />
+                                                    <Setter Target="SelectionResolutionText.(Grid.Column)" Value="2" />
+                                                    <Setter Target="SelectionResolutionText.(Grid.ColumnSpan)" Value="1" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                        </VisualStateGroup>
+                                    </VisualStateManager.VisualStateGroups>
                                     <TextBlock
+                                        x:Name="SelectionRuntimeText"
+                                        FontWeight="SemiBold"
+                                        Text="{Binding Runtime}"
+                                        TextWrapping="Wrap" />
+                                    <TextBlock
+                                        x:Name="SelectionSelectorText"
+                                        Grid.Column="1"
+                                        Text="{Binding Selector}"
+                                        TextWrapping="Wrap" />
+                                    <TextBlock
+                                        x:Name="SelectionResolutionText"
                                         Grid.Column="2"
                                         Text="{Binding Resolution}"
                                         TextWrapping="Wrap" />

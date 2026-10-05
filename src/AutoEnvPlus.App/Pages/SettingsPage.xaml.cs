@@ -171,24 +171,32 @@ public sealed partial class SettingsPage : Page
             long maximumBytes = checked(
                 (long)Math.Round(RequiredNumber(MaxDownloadGbNumber, "单文件默认上限"))
                 * 1024 * 1024 * 1024);
-            AutoEnvPlusApplicationSettings settings = _loadedApplicationSettings with
-            {
-                StartupDestination = SelectedChoice<StartupDestination>(
-                    StartupDestinationPicker),
-                OverviewRefreshPolicy = OverviewRefreshPolicy.CachedOnly,
-                LanguageVisibilityPolicy = SelectedChoice<LanguageVisibilityPolicy>(
-                    LanguageVisibilityPicker),
-                DefaultDownloadConnections = SelectedChoice<int>(DefaultConnectionsPicker),
-                DefaultDownloadMaximumBytes = maximumBytes,
-                Theme = SelectedChoice<ApplicationThemePreference>(ThemePicker),
-                Backdrop = SelectedChoice<BackdropPreference>(BackdropPicker),
-                Density = SelectedChoice<InterfaceDensity>(DensityPicker),
-                LogRetentionDays = checked((int)Math.Round(RequiredNumber(
-                    LogRetentionNumber,
-                    "日志保留天数"))),
-                ShowExperimentalTools = ExperimentalToolsToggle.IsOn,
-            };
-            await _settingsStore.SaveAsync(settings);
+            StartupDestination startupDestination = SelectedChoice<StartupDestination>(
+                StartupDestinationPicker);
+            LanguageVisibilityPolicy languageVisibility =
+                SelectedChoice<LanguageVisibilityPolicy>(LanguageVisibilityPicker);
+            int downloadConnections = SelectedChoice<int>(DefaultConnectionsPicker);
+            ApplicationThemePreference theme = SelectedChoice<ApplicationThemePreference>(ThemePicker);
+            BackdropPreference backdrop = SelectedChoice<BackdropPreference>(BackdropPicker);
+            InterfaceDensity density = SelectedChoice<InterfaceDensity>(DensityPicker);
+            int logRetentionDays = checked((int)Math.Round(RequiredNumber(
+                LogRetentionNumber,
+                "日志保留天数")));
+            bool showExperimentalTools = ExperimentalToolsToggle.IsOn;
+            AutoEnvPlusApplicationSettings settings = await _settingsStore.UpdateAsync(current =>
+                current with
+                {
+                    StartupDestination = startupDestination,
+                    OverviewRefreshPolicy = OverviewRefreshPolicy.CachedOnly,
+                    LanguageVisibilityPolicy = languageVisibility,
+                    DefaultDownloadConnections = downloadConnections,
+                    DefaultDownloadMaximumBytes = maximumBytes,
+                    Theme = theme,
+                    Backdrop = backdrop,
+                    Density = density,
+                    LogRetentionDays = logRetentionDays,
+                    ShowExperimentalTools = showExperimentalTools,
+                });
             _loadedApplicationSettings = settings;
             ((App)Application.Current).UpdateCurrentSettings(settings);
             if (((App)Application.Current).MainWindowInstance is MainWindow mainWindow)
@@ -566,7 +574,9 @@ public sealed partial class SettingsPage : Page
         SetBusy(true);
         try
         {
-            PowerShellIntegrationResult result = await CreateManager().RollbackAsync(snapshotPath);
+            PowerShellIntegrationResult result = await CreateManager().RollbackAsync(
+                snapshotPath,
+                _profilePath);
             if (!result.Success)
             {
                 throw new InvalidOperationException(

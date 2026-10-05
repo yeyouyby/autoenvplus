@@ -1,4 +1,6 @@
-# AutoEnvPlus 技术架构
+# AutoEnvPlus v0.0.1 技术架构
+
+本文描述当前测试版候选的实现边界。产品行为以 [产品规格](PRODUCT.md) 为准，信任与残余风险以 [安全模型](SECURITY.md) 为准，文档导航见 [文档首页](README.md)。
 
 ## 组件边界
 
@@ -95,7 +97,7 @@ PowerShell 模块只修改当前进程的版本、`*_RUNTIME_ID` 与 `*_RUNTIME_
 - `Clear-AutoEnvPlusRuntime [runtime]`：清除一个或全部会话选择；
 - 导入时只在当前 PowerShell 进程中把受管 Shim 目录置于 PATH 前部，不修改用户或系统 PATH。
 
-Profile 使用固定的开始/结束标记管理单个块。安装计划会保留块外全部内容、清理重复受管块，并在写入前检查 Profile 与模块是否仍等于预览版本。实际写入顺序为模块原子写入、快照原子写入、Profile 原子替换。回滚只接受 `<managed-root>\state\powershell-profile-snapshots` 内、ID 与文件名一致的快照；Profile 出现较新修改时拒绝覆盖。
+Profile 使用固定的开始/结束标记管理单个块。安装计划会保留块外全部内容、清理重复受管块，并在写入前检查 Profile 与模块是否仍等于预览版本。实际写入顺序为模块原子写入、schema 2 字节快照原子写入、Profile 原子替换。快照或 Profile 提交失败时，事务会先核对当前字节仍等于本次写入，再删除新快照并恢复模块原始字节；补偿遇到并发修改时拒绝覆盖并明确报告不完整状态。回滚只接受 `<managed-root>\state\powershell-profile-snapshots` 内、ID 与文件名一致的快照；Profile 出现较新修改时拒绝覆盖。
 
 项目已激活终端是独立流程：服务读取最近的 `autoenvplus.toml`，同时解析 `[tools]` selector 与 `[tool-identities]` 中成对的 Runtime ID/Provider ID，从托管注册表预解析为精确条目，验证注册可执行文件和对应 Shim，再生成只读启动计划。WinUI 可选择 Windows Terminal 或 Windows PowerShell；选择 Windows Terminal 时只生成固定的 `wt.exe new-tab --startingDirectory <project-root> <powershell.exe> -NoLogo -NoExit` 参数，`wt.exe` 不可用则计划回退到 Windows PowerShell。CLI 默认请求 Windows PowerShell。WinUI/CLI 展示计划后，启动前重新计算 manifest SHA-256、重新加载注册表并比较宿主、参数和环境覆盖，任何变化都会拒绝旧计划。实际启动使用 `CreateProcessW` 和独立 Unicode 环境块；直接 PowerShell 使用 `CREATE_NEW_CONSOLE`，Windows Terminal 则继承同一个已审核环境块并在固定项目根打开 PowerShell 子 Shell。精确身份只写入新子进程环境，父进程、项目文件、全局 profile 与持久环境变量均不改变。
 
@@ -113,7 +115,7 @@ Profile 使用固定的开始/结束标记管理单个块。安装计划会保�
 
 `NetworkHttpClientFactory` 为显式 HTTP 操作创建独立 `HttpClientHandler`，按 scheme 选择代理并应用 host、端口、wildcard 或 CIDR `NO_PROXY`。代理策略不从 URI 提取凭据，也不拥有用户名/密码存储；它把 `CredentialCache.DefaultCredentials` 交给 Windows 网络栈，以便支持代理的集成身份认证。`ToolNetworkEnvironment` 只修改新建子进程的环境字典，先清理大小写两套 HTTP/HTTPS/NO_PROXY 变量并移除未建模的 `ALL_PROXY`，再写入有效值；pip 使用 `PIP_INDEX_URL`，npm/pnpm 使用 `NPM_CONFIG_REGISTRY`，Yarn 同时使用 `YARN_NPM_REGISTRY_SERVER` 与 npm registry 兼容变量。它不写用户级工具配置，子进程的代理认证能力由工具自身决定。
 
-当前调用链显式选择代理作用域：WinUI 语言详情与 CLI `catalog`/`install` 对 Python、Node.js、Java、.NET 使用 `runtime-python`、`runtime-node`、`runtime-java` 或 `runtime-dotnet` 兼容代理，声明式 MSVC/LLVM/MinGW/CMake/Ninja 使用 `runtime-cpp`；下载中心使用 `downloads`。CLI `tool`、wheel 联网模式和项目终端另从精确 `toolId/providerId` 读取 Provider 来源，并投影给 pip/npm 等明确支持的工具。其他已建模来源在没有专用执行器前不会自动影响普通终端程序。CLI `network show` 仍是代理兼容层的只读观察面，不是镜像编辑页面。
+当前调用链显式选择代理作用域：WinUI 语言详情与 CLI `catalog`/`install` 对 Python、Node.js、Java、.NET 使用 `runtime-python`、`runtime-node`、`runtime-java` 或 `runtime-dotnet` 兼容代理，声明式 MSVC/LLVM/MinGW/CMake/Ninja 使用 `runtime-cpp`；下载中心使用 `downloads`。CLI 的四个内置归档目录精确解析 `cpython/python-downloads`、`nodejs/nodejs-downloads`、`eclipse-temurin/adoptium-downloads` 和 `dotnet-sdk/dotnet-downloads`，不再读取兼容网络设置中的 runtime mirror；非默认来源安装在首次目录请求前要求 `--accept-non-default-source`。CLI `tool`、wheel 联网模式和项目终端另从精确 `toolId/providerId` 读取 Provider 来源，并投影给 pip/npm 等明确支持的工具。其他已建模来源在没有专用执行器前不会自动影响普通终端程序。CLI `network show` 仍是代理兼容层的只读观察面，不是镜像编辑页面。
 
 Provider 来源参数的含义不是统一“替换域名”：Python 接收 API base，Node.js 接收 distribution base，Adoptium 接收 API base，.NET 接收完整 release-index URI。下载中心的 URL 是用户显式资产地址，不受 Provider 来源重写。声明式插件的 asset URL 同样保持权威，只复用所属类别的代理与 `NO_PROXY`。因此模型没有跨 Provider 的全局镜像；83 个来源槽各自保留所属 `toolId/providerId` 的协议与路径语义。签名要求不会因来源变化而关闭；但 .NET 自定义 index 仍只有该 index 提供的 SHA-512 checksum evidence，没有独立发布者签名，不能描述为经过 Microsoft 身份验证。
 
@@ -211,6 +213,10 @@ C/C++ 语言详情重检时使用只读的“当前进程 PATH + 最新用户 PA
 
 系统设置变化优先使用 WinRT 事件；无包身份的 Windows 10 可能拒绝 `AccessibilitySettings.HighContrastChanged` 订阅，此时由 WinUI `ActualThemeChanged` 和两秒低频设置轮询补位。设置页只读显示当前实际选择及回退原因。Windows 10 22H2 build 19045 已通过隐藏启动与 UI Automation 验证，透明效果开启时实际选择 Desktop Acrylic；Windows 11 的 Mica 路径仍需在真实 Windows 11 主机上完成端到端验证。功能层不得依赖仅 Windows 11 存在的 API，使用新 API 前必须做能力检测。
 
-便携发布脚本生成 x64 unpackaged 自包含布局：GUI 携带 .NET 与 Windows App SDK，`cli` 子目录携带单文件自包含 CLI 和原生 Shim，并生成逐文件及 ZIP SHA-256。WinUI GUI 取自 RID 自包含 Build 布局，并强制检查 PRI 与 XBF；当前 Windows App SDK 的 `dotnet publish -o` 会漏掉这些 XAML 资源，不能直接作为可运行布局。
+`v0.0.1` 有三条互不混淆的 x64 分发路径。`publish-single-file.ps1` 用 .NET bundler 生成 unpackaged WinUI `AutoEnvPlus-win-x64.exe`，并以 bundle map 检查 Core、WinUI、Windows App SDK、PRI/XBF 与 CLR payload 均已进入单一分发文件；原生库和内容配置为 self-extract，因此运行时可能写入 .NET bundle extraction/临时目录。它是 GUI 主程序，不把 portable 中的 CLI/Shim 承诺扩展成单文件接口。
 
-MSIX 发布层复用该布局，在隔离 staging 中加入 Windows 10 build 17763 完整信任桌面清单、Fluent 资产、开始菜单注册和 CLI 执行别名。包名、Publisher、四段版本、发布 URI 和 AppInstaller URI 都是受验证参数。生产模式要求证书 Subject 精确匹配 Publisher，使用 SHA-256/RFC 3161 可选时间戳签名，并在输出前执行 CMS、Authenticode、解包身份和更新元数据交叉验证；开发模式使用 30 天临时证书且不修改信任库，只生成供本机开发测试的测试签名 MSIX。AppInstaller XML 由同一参数生成，更新安装最终由目标 MSIX 的相同 Publisher 代码签名授权。正式渠道仍需真实发布者证书、Windows 10/11 安装升级 E2E 与 WinGet 清单。
+`publish.ps1` 生成普通 WinUI EXE + DLL 的自包含目录，`cli` 子目录携带自包含 CLI 和无 CLR Shim，并对 PRI/XBF、许可证和逐文件清单做硬门禁。tag 流程先用 signtool 签该目录的第一方 PE（自签名证书 + RFC3161 时间戳），复检签名与指纹，重新生成树清单后才压缩为 `AutoEnvPlus-win-x64-portable.zip`。`publish-msi.ps1` 使用固定 WiX Toolset 版本和锁定包哈希，把同一个已签 portable payload 构建成 per-user MSI；稳定 UpgradeCode、版本化 ProductCode、开始菜单/ARP 元数据和 major-upgrade 规则都在构建输入中。MSI 卸载只拥有安装 payload，不拥有独立的用户配置、受管根或已安装语言工具。
+
+tag 工作流只在 `release-signing` environment 中执行两次签名：先签 single-file 与 portable/MSI 内第一方 PE，后签 MSI 外层。每次结果都用 `Get-AuthenticodeSignature` 复检签名完整性与证书指纹（自签名返回 `UnknownError` 属预期），缺少任一签名 secret/variable、文件、签名或三类最终资产都会失败关闭；普通 PR/CI 不接触签名材料。三个主资产、三个 sidecar 和聚合 `SHA256SUMS.txt` 齐全后才创建/发布 GitHub prerelease。工作流定义不证明签名证书已配置或某个 tag 已成功签名，外部状态必须回读。
+
+仓库仍保留 `publish-msix.ps1` 与 AppInstaller 验证链供遗留开发/实验打包，但 MSIX/AppInstaller 不属于 `v0.0.1` 的三类权威公开资产，也不参与该 tag 的自签名主流程。

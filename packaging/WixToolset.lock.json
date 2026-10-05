@@ -1,0 +1,8 @@
+{
+  "packageId": "WixToolset.Sdk",
+  "version": "4.0.6",
+  "source": "https://api.nuget.org/v3-flatcontainer/wixtoolset.sdk/4.0.6/wixtoolset.sdk.4.0.6.nupkg",
+  "sha256": "029C37C6490A810F61BCD375DD661ACE04C328640A9DADAEF1E7149BC14FF0F6",
+  "repositoryCommit": "73c897383236ddbbbc6ba257634013c1269ceec2",
+  "license": "Microsoft Reciprocal License (MS-RL)"
+}

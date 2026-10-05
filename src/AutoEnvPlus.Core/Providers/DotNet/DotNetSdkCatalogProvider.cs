@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json;
 using AutoEnvPlus.Core.Installation;
+using AutoEnvPlus.Core.Networking;
 using AutoEnvPlus.Core.Runtimes;
 
 namespace AutoEnvPlus.Core.Providers.DotNet;
@@ -10,6 +11,12 @@ namespace AutoEnvPlus.Core.Providers.DotNet;
 public sealed class DotNetSdkCatalogProvider : IArchiveRuntimeProvider
 {
     public const string ProviderName = "microsoft-dotnet-sdk";
+    internal const int MaximumMetadataBytes = 32 * 1024 * 1024;
+    internal const int MaximumChannelEntries = 128;
+    internal const int MaximumReleaseEntries = 4_096;
+
+    private const int MaximumSdksPerRelease = 64;
+    private const int MaximumFilesPerSdk = 256;
 
     private static readonly Uri DefaultIndexUri = new(
         "https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/releases-index.json");
@@ -49,6 +56,12 @@ public sealed class DotNetSdkCatalogProvider : IArchiveRuntimeProvider
         {
             throw new InvalidDataException(
                 "The Microsoft .NET release index does not contain a releases-index array.");
+        }
+
+        if (channels.GetArrayLength() > MaximumChannelEntries)
+        {
+            throw new InvalidDataException(
+                $"The Microsoft .NET release index contains more than {MaximumChannelEntries} channels.");
         }
 
         ChannelDescriptor[] supportedChannels = channels
@@ -135,6 +148,13 @@ public sealed class DotNetSdkCatalogProvider : IArchiveRuntimeProvider
                 $"The .NET {channel.Version} release metadata does not contain a releases array.");
         }
 
+        if (releases.GetArrayLength() > MaximumReleaseEntries)
+        {
+            throw new InvalidDataException(
+                $"The .NET {channel.Version} release metadata contains more than "
+                + $"{MaximumReleaseEntries} releases.");
+        }
+
         Dictionary<string, RuntimeRelease> parsed = new(StringComparer.Ordinal);
         foreach (JsonElement releaseElement in releases.EnumerateArray())
         {
@@ -181,6 +201,12 @@ public sealed class DotNetSdkCatalogProvider : IArchiveRuntimeProvider
             || files.ValueKind != JsonValueKind.Array)
         {
             return false;
+        }
+
+        if (files.GetArrayLength() > MaximumFilesPerSdk)
+        {
+            throw new InvalidDataException(
+                $"A Microsoft .NET SDK contains more than {MaximumFilesPerSdk} file descriptors.");
         }
 
         string expectedRid = _architecture switch
@@ -261,23 +287,13 @@ public sealed class DotNetSdkCatalogProvider : IArchiveRuntimeProvider
         Uri uri,
         CancellationToken cancellationToken)
     {
-        using HttpResponseMessage response = await _httpClient.GetAsync(
+        return await BoundedHttpResponseReader.GetJsonAsync(
+            _httpClient,
             uri,
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        if (response.Content.Headers.ContentLength is > 32 * 1024 * 1024)
-        {
-            throw new InvalidDataException(
-                $"The Microsoft .NET release metadata is unexpectedly large: {uri}");
-        }
-
-        await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken)
-            .ConfigureAwait(false);
-        return await JsonDocument.ParseAsync(
-            stream,
-            new JsonDocumentOptions { MaxDepth = 32 },
-            cancellationToken).ConfigureAwait(false);
+            MaximumMetadataBytes,
+            maximumDepth: 32,
+            description: "Microsoft .NET release metadata",
+            cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
     private static ChannelDescriptor? ParseChannel(JsonElement element)
@@ -318,6 +334,12 @@ public sealed class DotNetSdkCatalogProvider : IArchiveRuntimeProvider
         if (release.TryGetProperty("sdks", out JsonElement sdks)
             && sdks.ValueKind == JsonValueKind.Array)
         {
+            if (sdks.GetArrayLength() > MaximumSdksPerRelease)
+            {
+                throw new InvalidDataException(
+                    $"A Microsoft .NET release contains more than {MaximumSdksPerRelease} SDKs.");
+            }
+
             foreach (JsonElement sdk in sdks.EnumerateArray())
             {
                 yield return sdk;

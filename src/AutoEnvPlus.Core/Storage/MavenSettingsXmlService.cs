@@ -109,10 +109,37 @@ public sealed partial class MavenSettingsXmlService
             Serialize(document, DetectNewLine(before)));
     }
 
-    public async Task WriteAtomicallyAsync(
+    public Task WriteAtomicallyAsync(
         string settingsPath,
         string content,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) => WriteAtomicallyCoreAsync(
+            settingsPath,
+            expectedKnown: false,
+            expectedExisted: false,
+            expectedContent: null,
+            content,
+            cancellationToken);
+
+    internal Task WriteAtomicallyIfUnchangedAsync(
+        string settingsPath,
+        bool expectedExisted,
+        string? expectedContent,
+        string content,
+        CancellationToken cancellationToken = default) => WriteAtomicallyCoreAsync(
+            settingsPath,
+            expectedKnown: true,
+            expectedExisted,
+            expectedContent,
+            content,
+            cancellationToken);
+
+    private static async Task WriteAtomicallyCoreAsync(
+        string settingsPath,
+        bool expectedKnown,
+        bool expectedExisted,
+        string? expectedContent,
+        string content,
+        CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(settingsPath);
         ArgumentNullException.ThrowIfNull(content);
@@ -133,9 +160,21 @@ public sealed partial class MavenSettingsXmlService
             _ = StorageFileSafety.EnsureOrdinaryFileOrMissing(
                 temporary,
                 "Maven settings.xml temporary file");
-            _ = StorageFileSafety.EnsureOrdinaryFileOrMissing(
+            bool currentExists = StorageFileSafety.EnsureOrdinaryFileOrMissing(
                 fullPath,
                 "Maven settings.xml");
+            string? currentContent = currentExists ? File.ReadAllText(fullPath) : null;
+            if (expectedKnown
+                && (currentExists != expectedExisted
+                    || !string.Equals(
+                        currentContent,
+                        expectedContent,
+                        StringComparison.Ordinal)))
+            {
+                throw new InvalidOperationException(
+                    "Maven settings.xml changed before commit; the newer file was preserved.");
+            }
+
             File.Move(temporary, fullPath, overwrite: true);
         }
         finally

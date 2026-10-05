@@ -1,4 +1,5 @@
 using System.Text;
+using AutoEnvPlus.Core.Environment;
 
 namespace AutoEnvPlus.Core.Shell;
 
@@ -15,6 +16,8 @@ public enum CommandShimImplementation
 
 public sealed class CommandShimManager
 {
+    private readonly IReadOnlyList<string> _pathExtensions;
+
     private static readonly IReadOnlyDictionary<string, string> Commands =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -42,6 +45,21 @@ public sealed class CommandShimManager
             ["clang++.cmd"] = "clang++",
             ["g++.cmd"] = "g++",
         };
+
+    public CommandShimManager()
+        : this(PathExtensionPolicy.GetCurrent())
+    {
+    }
+
+    internal CommandShimManager(string? pathExtensions)
+        : this(PathExtensionPolicy.Parse(pathExtensions))
+    {
+    }
+
+    private CommandShimManager(IReadOnlyList<string> pathExtensions)
+    {
+        _pathExtensions = pathExtensions;
+    }
 
     public async Task<CommandShimInstallResult> InstallAsync(
         string managedRoot,
@@ -88,6 +106,7 @@ public sealed class CommandShimManager
 
         string shimDirectory = Path.Combine(fullManagedRoot, "shims");
         Directory.CreateDirectory(shimDirectory);
+        EnsureNoInterceptingAliases(shimDirectory);
         if (!string.IsNullOrWhiteSpace(nativeShimExecutable))
         {
             string native = Path.GetFullPath(nativeShimExecutable);
@@ -220,5 +239,30 @@ public sealed class CommandShimManager
             .Replace("%", "%%", StringComparison.Ordinal)
             .Replace("\"", "\"\"", StringComparison.Ordinal);
         return $"\"{escaped}\"";
+    }
+
+    private void EnsureNoInterceptingAliases(string shimDirectory)
+    {
+        foreach (string alias in Commands.Keys
+                     .Concat(ToolCommands.Keys)
+                     .Select(fileName => Path.GetFileNameWithoutExtension(fileName)
+                         ?? throw new InvalidOperationException("A Shim alias does not have a file name.")))
+        {
+            foreach (string extension in _pathExtensions)
+            {
+                if (extension.Equals(".exe", StringComparison.OrdinalIgnoreCase)
+                    || extension.Equals(".cmd", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string candidate = Path.Combine(shimDirectory, alias + extension);
+                if (File.Exists(candidate))
+                {
+                    throw new InvalidOperationException(
+                        $"The Shim directory contains an unmanaged '{alias}{extension}' file that can intercept the '{alias}' command. Remove or rename it before installing AutoEnvPlus Shims.");
+                }
+            }
+        }
     }
 }

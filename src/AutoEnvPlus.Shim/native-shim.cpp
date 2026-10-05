@@ -66,6 +66,36 @@ bool EqualsIgnoreCase(std::wstring_view left, std::wstring_view right) {
                right.data(), static_cast<int>(right.size()), TRUE) == CSTR_EQUAL;
 }
 
+int CompareIgnoreCase(std::wstring_view left, std::wstring_view right) {
+    const int comparison = CompareStringOrdinal(
+        left.data(), static_cast<int>(left.size()),
+        right.data(), static_cast<int>(right.size()), TRUE);
+    if (comparison == 0) {
+        throw ShimError("Unable to compare managed runtime identities.", 70);
+    }
+    return comparison - CSTR_EQUAL;
+}
+
+bool IsWhiteSpace(wchar_t character) {
+    WORD character_type = 0;
+    return GetStringTypeW(CT_CTYPE1, &character, 1, &character_type) != FALSE
+        && (character_type & C1_SPACE) != 0;
+}
+
+bool IsNullOrWhiteSpace(std::wstring_view value) {
+    return value.empty()
+        || std::all_of(value.begin(), value.end(), IsWhiteSpace);
+}
+
+std::wstring TrimWhiteSpace(std::wstring value) {
+    const auto first = std::find_if_not(value.begin(), value.end(), IsWhiteSpace);
+    if (first == value.end()) {
+        return {};
+    }
+    const auto last = std::find_if_not(value.rbegin(), value.rend(), IsWhiteSpace).base();
+    return std::wstring(first, last);
+}
+
 std::string WideToUtf8(std::wstring_view value) {
     if (value.empty()) {
         return {};
@@ -512,7 +542,9 @@ JsonObject ParseJsonFile(
 
 struct Installation {
     std::string id;
+    std::wstring id_ordinal;
     std::string provider;
+    std::wstring provider_ordinal;
     std::string kind;
     Version version;
     std::string architecture;
@@ -563,6 +595,49 @@ bool ValidPackageHash(std::string_view algorithm, std::string_view value) {
     return false;
 }
 
+void ValidateRegistryIdentityRules(const std::vector<Installation>& installations) {
+    std::vector<const Installation*> ordered;
+    ordered.reserve(installations.size());
+    for (const Installation& installation : installations) {
+        ordered.push_back(&installation);
+    }
+
+    std::sort(ordered.begin(), ordered.end(), [](const auto* left, const auto* right) {
+        return CompareIgnoreCase(left->id_ordinal, right->id_ordinal) < 0;
+    });
+    for (size_t index = 1; index < ordered.size(); ++index) {
+        if (EqualsIgnoreCase(ordered[index - 1]->id_ordinal, ordered[index]->id_ordinal)) {
+            throw ShimError(
+                "The managed runtime registry contains a duplicate runtime ID.", 70);
+        }
+    }
+
+    std::sort(ordered.begin(), ordered.end(), [](const auto* left, const auto* right) {
+        if (left->kind != right->kind) return left->kind < right->kind;
+        if (left->architecture != right->architecture) {
+            return left->architecture < right->architecture;
+        }
+        const int provider = CompareIgnoreCase(
+            left->provider_ordinal, right->provider_ordinal);
+        if (provider != 0) return provider < 0;
+        return left->version.Compare(right->version) < 0;
+    });
+    for (size_t index = 1; index < ordered.size(); ++index) {
+        const Installation& preceding = *ordered[index - 1];
+        const Installation& candidate = *ordered[index];
+        if (preceding.kind == candidate.kind
+            && preceding.architecture == candidate.architecture
+            && !EqualsIgnoreCase(preceding.id_ordinal, candidate.id_ordinal)
+            && EqualsIgnoreCase(preceding.provider_ordinal, candidate.provider_ordinal)
+            && preceding.version.Compare(candidate.version) == 0) {
+            throw ShimError(
+                "The managed runtime registry contains equivalent versions from the same "
+                "Provider, runtime kind, and architecture under different runtime IDs.",
+                70);
+        }
+    }
+}
+
 std::vector<Installation> LoadRegistry(const fs::path& managed_root) {
     const fs::path registry_path = managed_root / L"state" / L"installations.json";
     if (!FileExists(registry_path)) {
@@ -591,21 +666,30 @@ std::vector<Installation> LoadRegistry(const fs::path& managed_root) {
             throw ShimError("The managed runtime registry contains a non-object entry.", 70);
         }
         const JsonObject item = value.GetObject();
-        const std::string id = WideToUtf8(RequiredString(item, L"id"));
-        const std::string provider = WideToUtf8(RequiredString(item, L"providerId"));
+        const std::wstring id_value = RequiredString(item, L"id");
+        const std::wstring provider_value = RequiredString(item, L"providerId");
+        const std::string id = WideToUtf8(id_value);
+        const std::string provider = WideToUtf8(provider_value);
         const std::string kind = ToLowerAscii(WideToUtf8(RequiredString(item, L"kind")));
-        const std::string version_text = WideToUtf8(RequiredString(item, L"version"));
+        const std::string version_text = WideToUtf8(
+            TrimWhiteSpace(RequiredString(item, L"version")));
         const std::string architecture = ToLowerAscii(
             WideToUtf8(RequiredString(item, L"architecture")));
-        const fs::path install_root = FullPath(RequiredString(item, L"installRoot"));
-        const fs::path relative_executable = RequiredString(item, L"executableRelativePath");
+        const std::wstring install_root_value = RequiredString(item, L"installRoot");
+        const std::wstring executable_value = RequiredString(
+            item, L"executableRelativePath");
+        const fs::path install_root = FullPath(install_root_value);
+        const fs::path relative_executable = executable_value;
         const std::string package_hash = WideToUtf8(RequiredString(
             item, schema_version == 1 ? L"packageSha256" : L"packageHash"));
         const std::string package_hash_algorithm = schema_version == 1
             ? "sha256"
             : WideToUtf8(RequiredString(item, L"packageHashAlgorithm"));
         const std::optional<Version> version = Version::Parse(version_text);
-        if (id.empty() || provider.empty() || !KnownRuntimeKind(kind)
+        if (IsNullOrWhiteSpace(id_value) || IsNullOrWhiteSpace(provider_value)
+            || IsNullOrWhiteSpace(install_root_value)
+            || IsNullOrWhiteSpace(executable_value)
+            || !KnownRuntimeKind(kind)
             || !version || !KnownArchitecture(architecture)
             || !ValidPackageHash(package_hash_algorithm, package_hash)
             || !IsChildPath(managed_root, install_root)) {
@@ -625,10 +709,11 @@ std::vector<Installation> LoadRegistry(const fs::path& managed_root) {
             }
         }
         installations.push_back(Installation{
-            id, provider, kind, *version, architecture, install_root,
+            id, id_value, provider, provider_value, kind, *version, architecture, install_root,
             ResolveInside(install_root, relative_executable, "runtime executable"),
             std::move(channels)});
     }
+    ValidateRegistryIdentityRules(installations);
     return installations;
 }
 
@@ -968,9 +1053,9 @@ SelectedInstallation SelectInstallation(
 
     Installation* selected = nullptr;
     if (!runtime_id.empty()) {
-        const std::string normalized_id = ToLowerAscii(runtime_id);
+        const std::wstring normalized_id = Utf8ToWide(runtime_id);
         for (Installation& installation : registry) {
-            if (ToLowerAscii(installation.id) != normalized_id) continue;
+            if (!EqualsIgnoreCase(installation.id_ordinal, normalized_id)) continue;
             if (selected != nullptr) {
                 throw ShimError(
                     "The managed runtime registry contains more than one entry for the pinned "
@@ -986,7 +1071,7 @@ SelectedInstallation SelectInstallation(
                 69);
         }
         const bool provider_matches = provider_id.empty()
-            || ToLowerAscii(selected->provider) == ToLowerAscii(provider_id);
+            || EqualsIgnoreCase(selected->provider_ordinal, Utf8ToWide(provider_id));
         if (selected->kind != runtime_kind
             || selected->architecture != current_architecture
             || !constraint.Matches(selected->version, selected->channels)
@@ -1019,7 +1104,7 @@ SelectedInstallation SelectInstallation(
             69);
     }
     if (runtime_id.empty()) {
-        std::vector<std::string> providers;
+        std::vector<std::wstring> providers;
         for (const Installation& installation : registry) {
             if (installation.kind != runtime_kind
                 || installation.architecture != current_architecture
@@ -1027,10 +1112,10 @@ SelectedInstallation SelectInstallation(
                 || !constraint.Matches(installation.version, installation.channels)) {
                 continue;
             }
-            const std::string normalized_provider = ToLowerAscii(installation.provider);
-            if (std::find(providers.begin(), providers.end(), normalized_provider)
-                == providers.end()) {
-                providers.push_back(normalized_provider);
+            if (std::none_of(providers.begin(), providers.end(), [&](const auto& provider) {
+                    return EqualsIgnoreCase(provider, installation.provider_ordinal);
+                })) {
+                providers.push_back(installation.provider_ordinal);
             }
         }
         if (providers.size() > 1) {

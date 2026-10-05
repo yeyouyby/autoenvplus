@@ -4,12 +4,72 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <ScrollViewer>
-        <StackPanel Padding="{StaticResource PagePadding}" Spacing="18">
-            <Grid ColumnSpacing="12">
+        <StackPanel
+            x:Name="LayoutRoot"
+            Padding="{StaticResource PagePadding}"
+            Spacing="18">
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup>
+                    <VisualState x:Name="CompactLayout">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="0" />
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="ChooseProjectButton.(Grid.Row)" Value="1" />
+                            <Setter Target="ChooseProjectButton.(Grid.Column)" Value="0" />
+                            <Setter Target="ChooseProjectButton.HorizontalAlignment" Value="Left" />
+                            <Setter Target="ChooseProjectButton.Margin" Value="0,12,0,0" />
+                            <Setter Target="DiscoverVirtualEnvironmentsButton.(Grid.Row)" Value="1" />
+                            <Setter Target="DiscoverVirtualEnvironmentsButton.(Grid.Column)" Value="0" />
+                            <Setter Target="DiscoverVirtualEnvironmentsButton.HorizontalAlignment" Value="Left" />
+                            <Setter Target="DiscoverVirtualEnvironmentsButton.Margin" Value="0,12,0,0" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="WideLayout">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="760" />
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="ChooseProjectButton.(Grid.Row)" Value="0" />
+                            <Setter Target="ChooseProjectButton.(Grid.Column)" Value="1" />
+                            <Setter Target="ChooseProjectButton.HorizontalAlignment" Value="Stretch" />
+                            <Setter Target="ChooseProjectButton.Margin" Value="0" />
+                            <Setter Target="DiscoverVirtualEnvironmentsButton.(Grid.Row)" Value="0" />
+                            <Setter Target="DiscoverVirtualEnvironmentsButton.(Grid.Column)" Value="1" />
+                            <Setter Target="DiscoverVirtualEnvironmentsButton.HorizontalAlignment" Value="Stretch" />
+                            <Setter Target="DiscoverVirtualEnvironmentsButton.Margin" Value="0" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+                <VisualStateGroup>
+                    <VisualState x:Name="CompactProjectActions">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="0" />
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="ProjectActions.Orientation" Value="Vertical" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="WideProjectActions">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="1200" />
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="ProjectActions.Orientation" Value="Horizontal" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+
+            <Grid ColumnSpacing="12" RowSpacing="12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <StackPanel Spacing="4">
                     <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="项目环境" />
                     <TextBlock
@@ -18,6 +78,7 @@
                         TextWrapping="Wrap" />
                 </StackPanel>
                 <Button
+                    x:Name="ChooseProjectButton"
                     Grid.Column="1"
                     VerticalAlignment="Bottom"
                     Click="OnChooseProjectClicked"
@@ -26,6 +87,7 @@
 
             <InfoBar
                 x:Name="ProjectInfo"
+                AutomationProperties.LiveSetting="Polite"
                 IsClosable="False"
                 IsOpen="True"
                 Message="支持 .python-version、.nvmrc、.node-version、.java-version、package.json 和 global.json；项目终端不会修改全局 PATH。"
@@ -39,13 +101,21 @@
                 BorderThickness="1"
                 CornerRadius="{StaticResource CardCornerRadius}">
                 <StackPanel Spacing="12">
-                    <TextBlock x:Name="ProjectPathText" FontWeight="SemiBold" Text="—" TextWrapping="Wrap" />
+                    <TextBlock
+                        x:Name="ProjectPathText"
+                        AutomationProperties.LiveSetting="Polite"
+                        FontWeight="SemiBold"
+                        Text="—"
+                        TextWrapping="Wrap" />
                     <TextBlock
                         x:Name="ProjectDetailsText"
                         IsTextSelectionEnabled="True"
                         Text="选择一个项目后显示解析来源。"
                         TextWrapping="Wrap" />
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <StackPanel
+                        x:Name="ProjectActions"
+                        Orientation="Horizontal"
+                        Spacing="8">
                         <Button
                             x:Name="OpenProjectTerminalButton"
                             Click="OnOpenProjectTerminalClicked"
@@ -82,11 +152,15 @@
                 BorderThickness="1"
                 CornerRadius="{StaticResource CardCornerRadius}">
                 <StackPanel Spacing="12">
-                    <Grid ColumnSpacing="12">
+                    <Grid ColumnSpacing="12" RowSpacing="12">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
                         <StackPanel Spacing="3">
                             <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="项目虚拟环境" />
                             <TextBlock
@@ -110,16 +184,22 @@
 
                     <InfoBar
                         x:Name="VirtualEnvironmentInfo"
+                        AutomationProperties.LiveSetting="Polite"
                         IsClosable="False"
                         IsOpen="False" />
 
                     <StackPanel
                         x:Name="VirtualEnvironmentProgress"
+                        AutomationProperties.LiveSetting="Polite"
                         HorizontalAlignment="Center"
                         Orientation="Horizontal"
                         Spacing="10"
                         Visibility="Collapsed">
-                        <ProgressRing Width="20" Height="20" IsActive="True" />
+                        <ProgressRing
+                            Width="20"
+                            Height="20"
+                            AutomationProperties.Name="虚拟环境解析进度"
+                            IsActive="True" />
                         <TextBlock VerticalAlignment="Center" Text="正在读取有界候选路径…" />
                     </StackPanel>
 
@@ -143,16 +223,48 @@
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
-                                    <Grid ColumnSpacing="12">
+                                    <VisualStateManager.VisualStateGroups>
+                                        <VisualStateGroup>
+                                            <VisualState x:Name="CompactEnvironmentItem">
+                                                <VisualState.StateTriggers>
+                                                    <AdaptiveTrigger MinWindowWidth="0" />
+                                                </VisualState.StateTriggers>
+                                                <VisualState.Setters>
+                                                    <Setter Target="EnvironmentHealthColumn.Width" Value="0" />
+                                                    <Setter Target="EnvironmentHealthRow.Height" Value="Auto" />
+                                                    <Setter Target="EnvironmentHealthText.(Grid.Row)" Value="1" />
+                                                    <Setter Target="EnvironmentHealthText.(Grid.Column)" Value="0" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                            <VisualState x:Name="WideEnvironmentItem">
+                                                <VisualState.StateTriggers>
+                                                    <AdaptiveTrigger MinWindowWidth="760" />
+                                                </VisualState.StateTriggers>
+                                                <VisualState.Setters>
+                                                    <Setter Target="EnvironmentHealthColumn.Width" Value="Auto" />
+                                                    <Setter Target="EnvironmentHealthRow.Height" Value="0" />
+                                                    <Setter Target="EnvironmentHealthText.(Grid.Row)" Value="0" />
+                                                    <Setter Target="EnvironmentHealthText.(Grid.Column)" Value="1" />
+                                                </VisualState.Setters>
+                                            </VisualState>
+                                        </VisualStateGroup>
+                                    </VisualStateManager.VisualStateGroups>
+                                    <Grid ColumnSpacing="12" RowSpacing="3">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition />
-                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition x:Name="EnvironmentHealthColumn" Width="Auto" />
                                         </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition x:Name="EnvironmentHealthRow" Height="0" />
+                                        </Grid.RowDefinitions>
                                         <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextWrapping="Wrap" />
                                         <TextBlock
+                                            x:Name="EnvironmentHealthText"
                                             Grid.Column="1"
                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                            Text="{Binding HealthText}" />
+                                            Text="{Binding HealthText}"
+                                            TextWrapping="Wrap" />
                                     </Grid>
                                     <TextBlock
                                         Grid.Row="1"

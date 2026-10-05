@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json.Nodes;
 using AutoEnvPlus.Core.Providers;
 using AutoEnvPlus.Core.Projects;
@@ -52,6 +53,226 @@ public sealed class ProjectLockFileServiceTests : IDisposable
         Assert.False(result.Success);
         Assert.Single(result.Errors);
         Assert.False(File.Exists(Path.Combine(_root, ProjectLockFileService.LockFileName)));
+    }
+
+    [Fact]
+    public async Task CreateAsync_DefaultsToCurrentProcessArchitecture()
+    {
+        Directory.CreateDirectory(_root);
+        string manifest = Path.Combine(_root, "autoenvplus.toml");
+        File.WriteAllText(manifest, "[tools]\npython = \"3.13\"\n");
+        RuntimeArchitecture currentArchitecture = ProjectRuntimeArchitecture.Current;
+        RuntimeArchitecture otherArchitecture = currentArchitecture == RuntimeArchitecture.X86
+            ? RuntimeArchitecture.X64
+            : RuntimeArchitecture.X86;
+        ManagedRuntimeEntry other = CreateEntry(
+            RuntimeKind.Python,
+            "3.13.5",
+            "python.exe",
+            ["stable"],
+            runtimeId: $"python-other-{otherArchitecture}",
+            architecture: otherArchitecture);
+        ManagedRuntimeEntry current = CreateEntry(
+            RuntimeKind.Python,
+            "3.13.5",
+            "python.exe",
+            ["stable"],
+            runtimeId: $"python-current-{currentArchitecture}",
+            architecture: currentArchitecture);
+
+        ProjectLockResult result = await new ProjectLockFileService().CreateAsync(
+            manifest,
+            [other, current]);
+
+        Assert.True(result.Success);
+        Assert.Equal(currentArchitecture, Assert.Single(result.Document!.Runtimes).Architecture);
+    }
+
+    [Fact]
+    public async Task CreateAsync_UsesExplicitDefaultArchitectureForOrdinarySelector()
+    {
+        Directory.CreateDirectory(_root);
+        string manifest = Path.Combine(_root, "autoenvplus.toml");
+        File.WriteAllText(manifest, "[tools]\npython = \"3.13\"\n");
+        ManagedRuntimeEntry x64 = CreateEntry(
+            RuntimeKind.Python,
+            "3.13.9",
+            "python.exe",
+            ["stable"],
+            runtimeId: "python-newer-x64",
+            architecture: RuntimeArchitecture.X64);
+        ManagedRuntimeEntry x86 = CreateEntry(
+            RuntimeKind.Python,
+            "3.13.5",
+            "python.exe",
+            ["stable"],
+            runtimeId: "python-default-x86",
+            architecture: RuntimeArchitecture.X86);
+
+        ProjectLockResult result = await new ProjectLockFileService().CreateAsync(
+            manifest,
+            [x64, x86],
+            RuntimeArchitecture.X86);
+
+        Assert.True(result.Success);
+        ProjectLockEntry locked = Assert.Single(result.Document!.Runtimes);
+        Assert.Equal(RuntimeArchitecture.X86, locked.Architecture);
+        Assert.Equal(x86.Version, locked.ResolvedVersion);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ExactRuntimePinUsesInstalledEntryArchitecture()
+    {
+        Directory.CreateDirectory(_root);
+        ManagedRuntimeEntry pinned = CreateEntry(
+            RuntimeKind.Python,
+            "3.13.5",
+            "python.exe",
+            ["stable"],
+            providerId: "python-x86-provider",
+            runtimeId: "python-pinned-x86",
+            architecture: RuntimeArchitecture.X86);
+        string manifest = Path.Combine(_root, "autoenvplus.toml");
+        File.WriteAllText(
+            manifest,
+            $"[tools]\npython = \"3.13\"\n\n[tool-identities]\npython.runtime-id = \"{pinned.Id}\"\npython.provider-id = \"{pinned.ProviderId}\"\n");
+
+        ProjectLockResult result = await new ProjectLockFileService().CreateAsync(
+            manifest,
+            [pinned],
+            RuntimeArchitecture.X64);
+
+        Assert.True(result.Success);
+        ProjectLockEntry locked = Assert.Single(result.Document!.Runtimes);
+        Assert.Equal(RuntimeArchitecture.X86, locked.Architecture);
+        Assert.Equal(pinned.ProviderId, locked.ProviderId);
+    }
+
+    [Fact]
+    public async Task CreateAsync_AllowsMixedArchitecturesForExactRuntimePins()
+    {
+        Directory.CreateDirectory(_root);
+        ManagedRuntimeEntry python = CreateEntry(
+            RuntimeKind.Python,
+            "3.13.5",
+            "python.exe",
+            ["stable"],
+            providerId: "python-x86-provider",
+            runtimeId: "python-pinned-x86",
+            architecture: RuntimeArchitecture.X86);
+        ManagedRuntimeEntry node = CreateEntry(
+            RuntimeKind.NodeJs,
+            "24.18.0",
+            "node.exe",
+            ["lts"],
+            providerId: "node-x64-provider",
+            runtimeId: "node-pinned-x64",
+            architecture: RuntimeArchitecture.X64);
+        string manifest = Path.Combine(_root, "autoenvplus.toml");
+        File.WriteAllText(
+            manifest,
+            $"[tools]\npython = \"3.13\"\nnode = \"lts\"\n\n[tool-identities]\npython.runtime-id = \"{python.Id}\"\npython.provider-id = \"{python.ProviderId}\"\nnode.runtime-id = \"{node.Id}\"\nnode.provider-id = \"{node.ProviderId}\"\n");
+
+        ProjectLockResult result = await new ProjectLockFileService().CreateAsync(
+            manifest,
+            [python, node],
+            RuntimeArchitecture.X64);
+
+        Assert.True(result.Success);
+        Assert.Equal(2, result.Document!.Runtimes.Count);
+        Assert.Equal(
+            RuntimeArchitecture.X86,
+            result.Document.Runtimes.Single(entry => entry.Kind == RuntimeKind.Python).Architecture);
+        Assert.Equal(
+            RuntimeArchitecture.X64,
+            result.Document.Runtimes.Single(entry => entry.Kind == RuntimeKind.NodeJs).Architecture);
+    }
+
+    [Fact]
+    public async Task CreateAsync_RejectsArchitectureAny()
+    {
+        Directory.CreateDirectory(_root);
+        string manifest = Path.Combine(_root, "autoenvplus.toml");
+        File.WriteAllText(manifest, "[tools]\n");
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            new ProjectLockFileService().CreateAsync(
+                manifest,
+                [],
+                RuntimeArchitecture.Any));
+    }
+
+    [Fact]
+    public async Task CreateAsync_UsesOneManifestSnapshotForSelectionAndHash()
+    {
+        Directory.CreateDirectory(_root);
+        string manifest = Path.Combine(_root, "autoenvplus.toml");
+        File.WriteAllText(manifest, "[tools]\npython = \"3.13\"\n");
+        ManagedRuntimeEntry python = CreateEntry(
+            RuntimeKind.Python,
+            "3.13.5",
+            "python.exe",
+            ["stable"]);
+        ProjectLockFileService service = new((_, _) =>
+        {
+            File.WriteAllText(manifest, "[tools]\npython = \"3.14\"\n");
+            return Task.CompletedTask;
+        });
+
+        ProjectLockResult result = await service.CreateAsync(manifest, [python]);
+
+        Assert.True(result.Success);
+        Assert.Equal("3.13", Assert.Single(result.Document!.Runtimes).RequestedSelector);
+        Assert.False(await service.IsCurrentAsync(result.Document!, manifest));
+    }
+
+    [Fact]
+    public async Task CreateAsync_RejectsOversizedOrNonUtf8Manifest()
+    {
+        Directory.CreateDirectory(_root);
+        string manifest = Path.Combine(_root, "autoenvplus.toml");
+        File.WriteAllText(manifest, new string('#', ProjectLockFileService.MaximumManifestBytes + 1));
+        ProjectLockFileService service = new();
+
+        InvalidDataException oversized = await Assert.ThrowsAsync<InvalidDataException>(
+            () => service.CreateAsync(manifest, []));
+        Assert.Contains("byte limit", oversized.Message, StringComparison.OrdinalIgnoreCase);
+
+        File.WriteAllText(manifest, "[tools]\npython = \"3.13\"\n", Encoding.Unicode);
+        InvalidDataException encoding = await Assert.ThrowsAsync<InvalidDataException>(
+            () => service.CreateAsync(manifest, []));
+        Assert.Contains("UTF-8", encoding.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task LoadAsync_RejectsOversizedFileAndExcessiveRuntimeEntries()
+    {
+        Directory.CreateDirectory(_root);
+        string lockPath = Path.Combine(_root, ProjectLockFileService.LockFileName);
+        File.WriteAllBytes(lockPath, new byte[ProjectLockFileService.MaximumLockFileBytes + 1]);
+
+        ProjectLockResult oversized = await new ProjectLockFileService().LoadAsync(lockPath);
+
+        Assert.False(oversized.Success);
+        Assert.Contains(oversized.Errors, error =>
+            error.Contains("byte limit", StringComparison.OrdinalIgnoreCase));
+
+        lockPath = await CreateMutableLockAsync();
+        JsonObject root = JsonNode.Parse(await File.ReadAllTextAsync(lockPath))!.AsObject();
+        JsonNode template = root["runtimes"]!.AsArray()[0]!.DeepClone();
+        JsonArray runtimes = [];
+        for (int index = 0; index <= ProjectLockFileService.MaximumRuntimeEntries; index++)
+        {
+            runtimes.Add(template.DeepClone());
+        }
+
+        root["runtimes"] = runtimes;
+        await File.WriteAllTextAsync(lockPath, root.ToJsonString());
+        ProjectLockResult excessive = await new ProjectLockFileService().LoadAsync(lockPath);
+
+        Assert.False(excessive.Success);
+        Assert.Contains(excessive.Errors, error =>
+            error.Contains("at most", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -230,10 +451,16 @@ public sealed class ProjectLockFileServiceTests : IDisposable
         IReadOnlyCollection<string> channels,
         PackageHashAlgorithm hashAlgorithm = PackageHashAlgorithm.Sha256,
         string providerId = "test-provider",
-        string? runtimeId = null)
+        string? runtimeId = null,
+        RuntimeArchitecture architecture = RuntimeArchitecture.X64)
     {
         RuntimeVersion parsed = RuntimeVersion.Parse(version);
-        string installRoot = Path.Combine(_root, "managed", kind.ToString(), parsed.ToString(), "x64");
+        string installRoot = Path.Combine(
+            _root,
+            "managed",
+            kind.ToString(),
+            parsed.ToString(),
+            architecture.ToString().ToLowerInvariant());
         Directory.CreateDirectory(installRoot);
         File.WriteAllText(Path.Combine(installRoot, executable), string.Empty);
         return new ManagedRuntimeEntry(
@@ -241,7 +468,7 @@ public sealed class ProjectLockFileServiceTests : IDisposable
             providerId,
             kind,
             parsed,
-            RuntimeArchitecture.X64,
+            architecture,
             installRoot,
             executable,
             new string(

@@ -10,8 +10,21 @@
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>
+    <EnableMsixTooling>true</EnableMsixTooling>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\assets\branding\autoenvplus.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
+    <!-- Windows App SDK 1.8 supports unpackaged .NET bundles when MSIX tooling
+         embeds the WinUI PRI and every remaining payload is self-extracted. -->
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <DebugType>None</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260529003" />
@@ -23,16 +36,74 @@
       ReferenceOutputAssembly="false"
       AdditionalProperties="Platform=AnyCPU" />
   </ItemGroup>
+  <PropertyGroup>
+    <!-- The CLI project reference inherits the global RuntimeIdentifier, so its
+         binaries land in a RID subdirectory whenever this project builds with -r. -->
+    <AutoEnvPlusCliOutputRoot Condition="'$(RuntimeIdentifier)' != ''">..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\$(RuntimeIdentifier)\</AutoEnvPlusCliOutputRoot>
+    <AutoEnvPlusCliOutputRoot Condition="'$(RuntimeIdentifier)' == ''">..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\</AutoEnvPlusCliOutputRoot>
+  </PropertyGroup>
   <Target Name="CopyAutoEnvPlusCli" AfterTargets="Build">
     <ItemGroup>
-      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus.exe" />
-      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus.dll" />
-      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus.deps.json" />
-      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus.runtimeconfig.json" />
-      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\AutoEnvPlus.Core.dll" />
-      <AutoEnvPlusCliFiles Include="..\AutoEnvPlus.Cli\bin\$(Configuration)\net8.0\autoenvplus-shim.exe" />
+      <AutoEnvPlusCliFiles Include="$(AutoEnvPlusCliOutputRoot)autoenvplus.exe" />
+      <AutoEnvPlusCliFiles Include="$(AutoEnvPlusCliOutputRoot)autoenvplus.dll" />
+      <AutoEnvPlusCliFiles Include="$(AutoEnvPlusCliOutputRoot)autoenvplus.deps.json" />
+      <AutoEnvPlusCliFiles Include="$(AutoEnvPlusCliOutputRoot)autoenvplus.runtimeconfig.json" />
+      <AutoEnvPlusCliFiles Include="$(AutoEnvPlusCliOutputRoot)AutoEnvPlus.Core.dll" />
+      <AutoEnvPlusCliFiles Include="$(AutoEnvPlusCliOutputRoot)autoenvplus-shim.exe" />
     </ItemGroup>
     <MakeDir Directories="$(OutDir)cli" />
     <Copy SourceFiles="@(AutoEnvPlusCliFiles)" DestinationFolder="$(OutDir)cli" SkipUnchangedFiles="true" />
+  </Target>
+  <Target
+    Name="AutoEnvPlusAddSingleFileCompanions"
+    BeforeTargets="GenerateSingleFileBundle"
+    DependsOnTargets="PrepareForBundle"
+    Condition="'$(PublishSingleFile)' == 'true' and '$(AutoEnvPlusBundledCliPath)' != '' and '$(AutoEnvPlusBundledShimPath)' != ''">
+    <Error Condition="!Exists('$(AutoEnvPlusBundledCliPath)')" Text="Bundled CLI was not found: $(AutoEnvPlusBundledCliPath)" />
+    <Error Condition="!Exists('$(AutoEnvPlusBundledShimPath)')" Text="Bundled native Shim was not found: $(AutoEnvPlusBundledShimPath)" />
+    <ItemGroup>
+      <FilesToBundle Include="$(AutoEnvPlusBundledCliPath)">
+        <RelativePath>cli\autoenvplus.exe</RelativePath>
+        <TargetPath>cli\autoenvplus.exe</TargetPath>
+      </FilesToBundle>
+      <FilesToBundle Include="$(AutoEnvPlusBundledShimPath)">
+        <RelativePath>cli\autoenvplus-shim.exe</RelativePath>
+        <TargetPath>cli\autoenvplus-shim.exe</TargetPath>
+      </FilesToBundle>
+    </ItemGroup>
+  </Target>
+  <Target
+    Name="AutoEnvPlusAddSingleFileAssetPriCopy"
+    BeforeTargets="GenerateSingleFileBundle"
+    DependsOnTargets="PrepareForBundle"
+    Condition="'$(PublishSingleFile)' == 'true' and '$(AutoEnvPlusSingleFileAssetName)' != ''">
+    <!-- MRT Core locates the app's main PRI by the entry executable name
+         (<EXE>.pri) in the app base directory, which for a single-file bundle
+         is the extraction directory. Release assets rename the bundle EXE, so
+         ship a copy of the app PRI under the asset name or every ms-appx
+         resource lookup fails at startup with a XamlParseException. -->
+    <ItemGroup>
+      <FilesToBundle Include="$(OutputPath)$(AssemblyName).pri">
+        <RelativePath>$(AutoEnvPlusSingleFileAssetName).pri</RelativePath>
+        <TargetPath>$(AutoEnvPlusSingleFileAssetName).pri</TargetPath>
+      </FilesToBundle>
+    </ItemGroup>
+    <Error
+      Condition="!Exists('$(OutputPath)$(AssemblyName).pri')"
+      Text="The application PRI was not found under $(OutputPath); the single-file bundle cannot resolve ms-appx resources." />
+  </Target>
+  <Target
+    Name="AutoEnvPlusCaptureSingleFileBundleInputs"
+    AfterTargets="PrepareForBundle"
+    BeforeTargets="GenerateSingleFileBundle"
+    Condition="'$(PublishSingleFile)' == 'true' and '$(AutoEnvPlusBundleManifestPath)' != ''"
+    DependsOnTargets="PrepareForBundle;AutoEnvPlusAddSingleFileCompanions;AutoEnvPlusAddSingleFileAssetPriCopy">
+    <!-- Capture the exact SDK item set before GenerateBundle consumes it. This
+         is a verification sidecar only; the .NET SDK still creates the EXE. -->
+    <WriteLinesToFile
+      File="$(AutoEnvPlusBundleManifestPath)"
+      Lines="@(FilesToBundle->'%(RelativePath)|%(FullPath)|%(Extension)')"
+      Overwrite="true"
+      WriteOnlyWhenDifferent="false" />
   </Target>
 </Project>
