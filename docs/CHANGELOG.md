@@ -4,15 +4,13 @@
 
 ## Unreleased
 
+## 0.0.1 - 2026-10-05
+
+首个 Windows x64 测试版本，已作为 GitHub prerelease `v0.0.1` 发布并完成签名与资产回读。
+
 ### Added
 
 - `autoenvplus mcp`：stdio MCP（Model Context Protocol）服务器，把 CLI 暴露为可调用工具。六个工具：`doctor`、`list_runtimes`、`catalog`、`provider_list`、`which` 和通用 `cli`（可转发任意 CLI 命令，覆盖 install/uninstall/use/exec/tool/network/download/provider/plugin/shim/shell/storage/toolchain/project/resolve 全部功能）。每次工具调用都会启动真实 CLI 进程并返回退出码、stdout 与 stderr；协议支持 initialize/ping/tools 列表与调用、批处理与标准 JSON-RPC 错误码，并拒绝嵌套 MCP 递归。
-
-## 0.0.1 - 待发布
-
-首个 Windows x64 测试版本候选。这里描述仓库当前目标，不表示 PR、tag 或 GitHub prerelease 已经存在。
-
-### Added
 
 - WinUI 3 / Fluent 工作台，包含概览、语言、项目环境、下载中心、PATH 与命令、缓存与存储、环境诊断、活动记录和设置；
 - 固定“语言 -> 语言工具 -> Provider -> Provider 来源”模型；45 门内置语言、136 个工具条目、140 条工具作用域 Provider Profile 和 83 个 Provider 来源槽；
