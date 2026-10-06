@@ -36,9 +36,8 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
         _appWindowTitleBar = AppWindow.TitleBar;
         RootSurface.SizeChanged += OnRootSurfaceSizeChanged;
-        AppTitleBar.XamlRoot.Changed += OnTitleBarXamlRootChanged;
+        RootSurface.Loaded += OnRootSurfaceLoaded;
         Closed += OnWindowClosed;
-        UpdateTitleBarInsets(_appWindowTitleBar);
         ConfigureSettingsNavigationItem();
 
         _backdropManager = new WindowBackdropManager(
@@ -245,12 +244,29 @@ public sealed partial class MainWindow : Window
     private void OnRootSurfaceSizeChanged(object sender, SizeChangedEventArgs args) =>
         UpdateTitleBarInsets(_appWindowTitleBar);
 
+    private void OnRootSurfaceLoaded(object sender, RoutedEventArgs args)
+    {
+        // XamlRoot is only available once the window content is attached to the
+        // XAML tree; touching it from the constructor throws
+        // NullReferenceException before the window is ever shown.
+        if (AppTitleBar.XamlRoot is { } xamlRoot)
+        {
+            xamlRoot.Changed += OnTitleBarXamlRootChanged;
+            UpdateTitleBarInsets(_appWindowTitleBar);
+        }
+    }
+
     private void OnTitleBarXamlRootChanged(XamlRoot sender, XamlRootChangedEventArgs args) =>
         UpdateTitleBarInsets(_appWindowTitleBar);
 
     private void UpdateTitleBarInsets(AppWindowTitleBar titleBar)
     {
-        double scale = AppTitleBar.XamlRoot.RasterizationScale;
+        if (AppTitleBar.XamlRoot is not { } xamlRoot)
+        {
+            return;
+        }
+
+        double scale = xamlRoot.RasterizationScale;
         if (!double.IsFinite(scale) || scale <= 0)
         {
             scale = 1;
@@ -273,7 +289,11 @@ public sealed partial class MainWindow : Window
     {
         Closed -= OnWindowClosed;
         RootSurface.SizeChanged -= OnRootSurfaceSizeChanged;
-        AppTitleBar.XamlRoot.Changed -= OnTitleBarXamlRootChanged;
+        RootSurface.Loaded -= OnRootSurfaceLoaded;
+        if (AppTitleBar.XamlRoot is { } xamlRoot)
+        {
+            xamlRoot.Changed -= OnTitleBarXamlRootChanged;
+        }
     }
 
     private static ShellPageMetadata GetPageMetadata(string tag) => tag switch
