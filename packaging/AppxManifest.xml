@@ -9,7 +9,7 @@
   <Identity
     Name="yeyouyby.AutoEnvPlus"
     Publisher="CN=AutoEnvPlus Development"
-    Version="0.0.1.0"
+    Version="0.0.2.0"
     ProcessorArchitecture="x64" />
   <Properties>
     <DisplayName>AutoEnvPlus</DisplayName>

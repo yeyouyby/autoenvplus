@@ -4,9 +4,20 @@
 
 ## Unreleased
 
+## 0.0.2 - 待发布
+
+GUI 启动缺陷修复版。`v0.0.1` 的 GUI 存在启动即失败的缺陷（见下），本版本修复后重新发布。
+
+### Fixed
+
+- 修复 GUI 启动时 `MainWindow` 构造函数过早访问 `AppTitleBar.XamlRoot` 导致的 `NullReferenceException`：XamlRoot 在窗口内容接入 XAML 树之前为 null，异常从 `OnLaunched` 逃逸后被 WinUI 吞掉，留下一个无窗口的后台进程（任务管理器可见进程但界面永不出现）。现在所有 XamlRoot 相关工作推迟到 `RootSurface.Loaded` 事件执行；
+- 启动失败不再静默：任何启动异常都会写入 `%TEMP%\autoenvplus-startup-failure.log`、弹出原生错误对话框并退出进程，不再产生无窗口的幽灵进程。
+
 ## 0.0.1 - 2026-10-05
 
 首个 Windows x64 测试版本，已作为 GitHub prerelease `v0.0.1` 发布并完成签名与资产回读。
+
+> **已知缺陷**：`v0.0.1` 的 GUI（单文件 EXE、便携包和 MSI 中的 `AutoEnvPlus.App.exe`）因 `MainWindow` 构造函数中的 `NullReferenceException` 无法显示窗口——进程存活但界面永不出现。CLI 与原生 Shim 不受影响。请改用 `v0.0.2` 或更高版本。
 
 ### Added
 

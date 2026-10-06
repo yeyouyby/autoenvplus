@@ -11,10 +11,10 @@ public sealed class ProductIdentityPresentationPolicyTests
             ProductIdentityPresentationPolicy.FromAssembly(
                 typeof(ProductIdentityPresentationPolicyTests).Assembly);
 
-        Assert.Equal("0.0.1", identity.ProductVersion);
+        Assert.Equal("0.0.2", identity.ProductVersion);
         Assert.Equal("preview", identity.ReleaseStage);
-        Assert.Equal("v0.0.1 预览版", identity.DisplayVersion);
-        Assert.Equal("AutoEnvPlus v0.0.1 预览版", identity.WindowTitle);
+        Assert.Equal("v0.0.2 预览版", identity.DisplayVersion);
+        Assert.Equal("AutoEnvPlus v0.0.2 预览版", identity.WindowTitle);
         Assert.Equal(identity.WindowTitle, identity.AutomationName);
     }
 
