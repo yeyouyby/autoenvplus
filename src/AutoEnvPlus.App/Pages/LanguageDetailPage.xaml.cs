@@ -19,6 +19,7 @@ using AutoEnvPlus.Core.Settings;
 using AutoEnvPlus.Core.State;
 using AutoEnvPlus.Core.Toolchains;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
@@ -593,6 +594,7 @@ public sealed partial class LanguageDetailPage : Page
             SelectedIndex = choices.Length == 0 ? -1 : 0,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        AutomationProperties.SetName(selector, "受管 Runtime（精确 ID / Provider）");
         ContentDialog dialog = new()
         {
             XamlRoot = XamlRoot,
@@ -760,6 +762,7 @@ public sealed partial class LanguageDetailPage : Page
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 MinWidth = 420,
             };
+            AutomationProperties.SetName(versionPicker, "已安装版本");
             ComboBoxItem? firstSelectable = null;
             foreach (GlobalRuntimeVersionChoice choice in choices)
             {
@@ -801,6 +804,7 @@ public sealed partial class LanguageDetailPage : Page
                 SelectedIndex = 0,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
             };
+            AutomationProperties.SetName(scopePicker, "生效范围");
             TextBlock scopeDescription = new()
             {
                 Text = scopeChoices[0].Description,
@@ -1089,6 +1093,7 @@ public sealed partial class LanguageDetailPage : Page
             SelectedIndex = 0,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        AutomationProperties.SetName(hostPicker, "终端主机");
         TextBlock previewText = new()
         {
             IsTextSelectionEnabled = true,
@@ -1328,6 +1333,7 @@ public sealed partial class LanguageDetailPage : Page
             SelectedIndex = 0,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        AutomationProperties.SetName(selector, "安装来源");
         TextBlock detail = new()
         {
             Text = builtIn.Detail,
@@ -1494,6 +1500,7 @@ public sealed partial class LanguageDetailPage : Page
             SelectedIndex = 0,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        AutomationProperties.SetName(releasePicker, "要安装的版本");
         ContentDialog selectDialog = new()
         {
             XamlRoot = XamlRoot,
@@ -1740,6 +1747,7 @@ public sealed partial class LanguageDetailPage : Page
             SelectedIndex = 0,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        AutomationProperties.SetName(selector, "Provider 下载/元数据端点");
         ContentDialog dialog = new()
         {
             XamlRoot = XamlRoot,
@@ -2008,6 +2016,7 @@ public sealed partial class LanguageDetailPage : Page
             SelectedIndex = 0,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        AutomationProperties.SetName(providerPicker, "归属 Provider");
         TextBox slotId = new() { Header = "源 ID", PlaceholderText = "company-mirror" };
         TextBox displayName = new() { Header = "显示名称", PlaceholderText = "公司来源" };
         TextBox endpoint = new() { Header = "HTTPS 端点", PlaceholderText = "https://mirror.example/" };
@@ -2019,6 +2028,7 @@ public sealed partial class LanguageDetailPage : Page
             SelectedItem = ProviderMirrorEndpointKind.GenericDownload,
             HorizontalAlignment = HorizontalAlignment.Stretch,
         };
+        AutomationProperties.SetName(kindPicker, "端点类型");
         ContentDialog dialog = new()
         {
             XamlRoot = XamlRoot,

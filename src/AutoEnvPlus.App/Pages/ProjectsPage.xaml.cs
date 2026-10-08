@@ -8,6 +8,7 @@ using AutoEnvPlus.Core.Projects;
 using AutoEnvPlus.Core.State;
 using AutoEnvPlus.Core.Toolchains;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
@@ -374,6 +375,7 @@ public sealed partial class ProjectsPage : Page
                 SelectedIndex = 0,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
             };
+            AutomationProperties.SetName(hostSelector, "终端主机");
             TextBlock previewText = new()
             {
                 IsTextSelectionEnabled = true,
@@ -658,6 +660,7 @@ public sealed partial class ProjectsPage : Page
                 MinWidth = 500,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
             };
+            AutomationProperties.SetName(selector, "CMake MSVC 配置");
             ContentDialog selection = new()
             {
                 XamlRoot = XamlRoot,
