@@ -1,4 +1,5 @@
 using AutoEnvPlus.App.Downloads;
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Discovery;
 using AutoEnvPlus.Core.Diagnostics;
@@ -13,6 +14,7 @@ using AutoEnvPlus.Core.Runtimes;
 using AutoEnvPlus.Core.State;
 using AutoEnvPlus.Core.Storage;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using System.Runtime.InteropServices;
 
@@ -291,7 +293,7 @@ public sealed partial class DashboardPage : Page
         {
             OverviewInfo.Severity = InfoBarSeverity.Error;
             OverviewInfo.Title = "无法读取开发环境概览";
-            OverviewInfo.Message = exception.Message;
+            OverviewInfo.Message = CoreErrorText.Localize(exception.Message);
         }
         finally
         {
@@ -553,6 +555,9 @@ public sealed partial class DashboardPage : Page
 
     private void RenderSnapshot(OverviewSnapshot snapshot, bool cached)
     {
+        // A rendered snapshot replaces the first-run guidance button with the
+        // (hidden) cancel affordance so the InfoBar action slot stays coherent.
+        OverviewInfo.ActionButton = CancelScanButton;
         RuntimeOverviewList.ItemsSource = snapshot.Languages
             .Select(language => new RuntimeOverviewRow(
                 language.DisplayName,
@@ -689,7 +694,22 @@ public sealed partial class DashboardPage : Page
         ActivityEmptyText.Visibility = Visibility.Visible;
         OverviewInfo.Severity = InfoBarSeverity.Informational;
         OverviewInfo.Title = "尚无环境概览";
-        OverviewInfo.Message = "选择快速刷新读取受管状态，或选择完整扫描检查 PATH、版本和缓存。";
+        OverviewInfo.Message = "首次使用建议先快速刷新读取受管状态；完整扫描会额外检查 PATH、命令版本和缓存体积。";
+        // First-run guidance must be actionable: the refresh affordance is a
+        // small icon button in the header, easy for a new user to miss.
+        OverviewInfo.ActionButton = CreateFirstRunRefreshButton();
+    }
+
+    private Button CreateFirstRunRefreshButton()
+    {
+        Button button = new() { Content = "快速刷新" };
+        AutomationProperties.SetName(button, "首次快速刷新概览");
+        button.Click += async (_, _) =>
+        {
+            OverviewInfo.ActionButton = CancelScanButton;
+            await RefreshAsync(fullScan: false);
+        };
+        return button;
     }
 
     private static string CreateSnapshotTimestamp(OverviewSnapshot snapshot, bool cached)
@@ -707,7 +727,9 @@ public sealed partial class DashboardPage : Page
         FullScanButton.IsEnabled = !busy;
         RefreshProgress.IsActive = busy;
         // A full scan can walk every cache directory and take minutes; the
-        // cancel affordance must stay reachable while the scan runs.
+        // cancel affordance must stay reachable while the scan runs. The
+        // first-run guidance button must never stay attached while busy.
+        OverviewInfo.ActionButton = CancelScanButton;
         CancelScanButton.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
     }
 

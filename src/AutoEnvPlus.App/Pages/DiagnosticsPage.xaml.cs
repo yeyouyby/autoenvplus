@@ -1,5 +1,6 @@
 using AutoEnvPlus.App.Activity;
 using AutoEnvPlus.App.Diagnostics;
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Diagnostics;
 using AutoEnvPlus.Core.Environment;
@@ -87,7 +88,7 @@ public sealed partial class DiagnosticsPage : Page
         {
             SummaryInfo.Severity = InfoBarSeverity.Error;
             SummaryInfo.Title = "无法选择项目目录";
-            SummaryInfo.Message = exception.Message;
+            SummaryInfo.Message = CoreErrorText.Localize(exception.Message);
         }
     }
 
@@ -132,7 +133,7 @@ public sealed partial class DiagnosticsPage : Page
         {
             SummaryInfo.Severity = InfoBarSeverity.Error;
             SummaryInfo.Title = "无法导出诊断报告";
-            SummaryInfo.Message = exception.Message;
+            SummaryInfo.Message = CoreErrorText.Localize(exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.DiagnosticExport,
                 ActivityStatus.Failed,
@@ -176,7 +177,7 @@ public sealed partial class DiagnosticsPage : Page
         {
             SummaryInfo.Severity = InfoBarSeverity.Error;
             SummaryInfo.Title = "无法完成环境诊断";
-            SummaryInfo.Message = exception.Message;
+            SummaryInfo.Message = CoreErrorText.Localize(exception.Message);
         }
         finally
         {

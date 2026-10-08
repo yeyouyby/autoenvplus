@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using AutoEnvPlus.App.Activity;
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Storage;
@@ -55,7 +56,7 @@ public sealed partial class StoragePage : Page
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
             StorageInfo.Title = "无法刷新缓存与隔离区";
-            StorageInfo.Message = exception.Message;
+            StorageInfo.Message = CoreErrorText.Localize(exception.Message);
         }
     }
 
@@ -245,7 +246,7 @@ public sealed partial class StoragePage : Page
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
             StorageInfo.Title = "无法创建迁移计划";
-            StorageInfo.Message = exception.Message;
+            StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             return;
         }
 
@@ -335,7 +336,7 @@ public sealed partial class StoragePage : Page
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
             StorageInfo.Title = "缓存迁移失败";
-            StorageInfo.Message = exception.Message;
+            StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
@@ -385,7 +386,7 @@ public sealed partial class StoragePage : Page
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
             StorageInfo.Title = "无法创建安全清理计划";
-            StorageInfo.Message = exception.Message;
+            StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             return;
         }
         finally
@@ -477,7 +478,7 @@ public sealed partial class StoragePage : Page
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
             StorageInfo.Title = "缓存清理失败";
-            StorageInfo.Message = exception.Message;
+            StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
@@ -584,7 +585,7 @@ public sealed partial class StoragePage : Page
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
             StorageInfo.Title = "缓存恢复失败";
-            StorageInfo.Message = exception.Message;
+            StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
@@ -688,7 +689,7 @@ public sealed partial class StoragePage : Page
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
             StorageInfo.Title = "永久清空失败";
-            StorageInfo.Message = exception.Message;
+            StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
@@ -736,7 +737,7 @@ public sealed partial class StoragePage : Page
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
             StorageInfo.Title = "无法打开缓存目录";
-            StorageInfo.Message = exception.Message;
+            StorageInfo.Message = CoreErrorText.Localize(exception.Message);
         }
     }
 
@@ -816,7 +817,7 @@ public sealed partial class StoragePage : Page
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
             StorageInfo.Title = "存储配置回滚失败";
-            StorageInfo.Message = exception.Message;
+            StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(

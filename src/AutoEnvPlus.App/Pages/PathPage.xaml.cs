@@ -1,5 +1,6 @@
 using System.Globalization;
 using AutoEnvPlus.App.Activity;
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Shell;
@@ -191,7 +192,7 @@ public sealed partial class PathPage : Page
         {
             SummaryInfo.Severity = InfoBarSeverity.Error;
             SummaryInfo.Title = "无法启用命令切换";
-            SummaryInfo.Message = exception.Message;
+            SummaryInfo.Message = CoreErrorText.Localize(exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PathChange,
                 ActivityStatus.Failed,
@@ -288,7 +289,7 @@ public sealed partial class PathPage : Page
         {
             SummaryInfo.Severity = InfoBarSeverity.Error;
             SummaryInfo.Title = "无法回滚用户 PATH";
-            SummaryInfo.Message = exception.Message;
+            SummaryInfo.Message = CoreErrorText.Localize(exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PathRollback,
                 ActivityStatus.Failed,
