@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using AutoEnvPlus.App.Activity;
 using AutoEnvPlus.App.RuntimeCatalogs;
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Installation;
@@ -2452,8 +2453,8 @@ public sealed partial class LanguageDetailPage : Page
                 $"Provider 源设置未通过校验（{source.Error.Code}）。",
             LanguagePackException pack => $"语言包未通过校验（{pack.Code}）。",
             // The coordinator's message names the concrete failure class and
-            // is produced for user display; echo it verbatim.
-            ManagedInstallFailureException => exception.Message,
+            // is produced for user display; echo it verbatim (localized).
+            ManagedInstallFailureException => CoreErrorText.Localize(exception.Message),
             InvalidOperationException when exception.Message.StartsWith(
                 "WinGet 返回退出码 ",
                 StringComparison.Ordinal) => exception.Message,

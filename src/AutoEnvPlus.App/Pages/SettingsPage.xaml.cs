@@ -50,6 +50,7 @@ public sealed partial class SettingsPage : Page
         _profilePath = PowerShellIntegrationManager.GetDefaultWindowsPowerShellProfilePath();
         ProfilePathText.Text = _profilePath;
         InitializeApplicationSettingsChoices();
+        InitializeAboutSection();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         UpdateBackdropStatus();
@@ -68,6 +69,25 @@ public sealed partial class SettingsPage : Page
 
     private void OnUnloaded(object sender, RoutedEventArgs args) =>
         _backdropManager.StatusChanged -= OnBackdropStatusChanged;
+
+    private void InitializeAboutSection()
+    {
+        try
+        {
+            ProductIdentityPresentation identity =
+                ProductIdentityPresentationPolicy.FromAssembly(typeof(SettingsPage).Assembly);
+            AboutVersionText.Text = $"AutoEnvPlus {identity.DisplayVersion} · "
+                + (identity.ReleaseStage == "preview" ? "预览阶段" : "稳定阶段");
+        }
+        catch (InvalidOperationException)
+        {
+            AboutVersionText.Text = "AutoEnvPlus";
+        }
+
+        AboutManagedRootText.Text = _managedRoot is null
+            ? "受管根目录尚未配置。"
+            : $"受管根目录：{_managedRoot}";
+    }
 
     private void OnBackdropStatusChanged(object? sender, EventArgs args) =>
         UpdateBackdropStatus();

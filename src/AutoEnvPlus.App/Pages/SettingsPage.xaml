@@ -493,6 +493,45 @@
                         />
                 </PivotItem>
             </Pivot>
+
+            <Border
+                BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,1"
+                Padding="0,18">
+                <StackPanel Spacing="10">
+                    <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="关于 AutoEnvPlus" />
+                    <StackPanel Spacing="2">
+                        <TextBlock
+                            x:Name="AboutVersionText"
+                            FontWeight="SemiBold"
+                            IsTextSelectionEnabled="True" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            IsTextSelectionEnabled="True"
+                            Text="Windows 开发环境控制中心 · WinUI 3 · 许可证 GNU AGPL-3.0"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <HyperlinkButton
+                            AutomationProperties.Name="打开 GitHub 仓库"
+                            Content="GitHub 仓库"
+                            NavigateUri="https://github.com/yeyouyby/autoenvplus" />
+                        <HyperlinkButton
+                            AutomationProperties.Name="查看发布说明"
+                            Content="发布说明"
+                            NavigateUri="https://github.com/yeyouyby/autoenvplus/releases" />
+                        <HyperlinkButton
+                            AutomationProperties.Name="提交问题反馈"
+                            Content="问题反馈"
+                            NavigateUri="https://github.com/yeyouyby/autoenvplus/issues" />
+                    </StackPanel>
+                    <TextBlock
+                        x:Name="AboutManagedRootText"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        IsTextSelectionEnabled="True"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </Page>

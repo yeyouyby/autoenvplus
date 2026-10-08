@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using AutoEnvPlus.App.Activity;
 using AutoEnvPlus.App.Downloads;
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Downloads;
 using AutoEnvPlus.Core.Environment;
@@ -22,9 +23,11 @@ public sealed partial class DownloadsPage : Page
 {
     private readonly AppDownloadManager _manager;
     private readonly ObservableCollection<LibraryRow> _libraryRows = [];
+    private readonly List<(DateTimeOffset AtUtc, long Bytes)> _speedSamples = [];
     private bool _suppressFileNameTracking;
     private bool _fileNameEdited;
     private Guid? _lastCompletedTransfer;
+    private Guid _speedSamplesTransferId;
     private bool _pipInstallRunning;
     private bool _defaultsLoaded;
 
@@ -108,6 +111,11 @@ public sealed partial class DownloadsPage : Page
         if (string.IsNullOrWhiteSpace(fileName))
         {
             ShowError("无法开始下载", "请提供下载库内文件名。");
+            return;
+        }
+
+        if (!await ConfirmReplaceExistingFileAsync(fileName))
+        {
             return;
         }
 
@@ -226,6 +234,8 @@ public sealed partial class DownloadsPage : Page
             return;
         }
 
+        string importTargetPath = Path.Combine(_manager.LibraryRoot, file.Name);
+        bool importConflict = File.Exists(importTargetPath);
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
@@ -233,16 +243,34 @@ public sealed partial class DownloadsPage : Page
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"源文件\n{file.Path}\n\n下载库\n{_manager.LibraryRoot}\n\n文件将被复制，源文件不会移动或删除；导入后不会自动执行。",
+                Text = $"源文件\n{file.Path}\n\n下载库\n{_manager.LibraryRoot}\n\n"
+                    + "文件将被复制，源文件不会移动或删除；导入后不会自动执行。"
+                    + (importConflict
+                        ? $"\n\n注意：下载库中已存在同名文件；继续会先删除现有文件。"
+                        : string.Empty),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "复制并计算摘要",
+            PrimaryButtonText = importConflict ? "覆盖并复制" : "复制并计算摘要",
             CloseButtonText = "取消",
             DefaultButton = ContentDialogButton.Primary,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
         {
             return;
+        }
+
+        if (importConflict)
+        {
+            try
+            {
+                File.Delete(importTargetPath);
+            }
+            catch (Exception exception) when (exception is IOException
+                or UnauthorizedAccessException)
+            {
+                ShowError("无法覆盖现有文件", exception.Message);
+                return;
+            }
         }
 
         try
@@ -283,6 +311,49 @@ public sealed partial class DownloadsPage : Page
                 ActivityStatus.Failed,
                 $"本地包导入失败：{file.Name}；错误类型：{exception.GetType().Name}。",
                 [_manager.LibraryRoot]);
+        }
+    }
+
+    private async Task<bool> ConfirmReplaceExistingFileAsync(string fileName)
+    {
+        // The core library refuses to clobber an existing destination (a
+        // safety guarantee); without this pre-check the user only learns
+        // about the conflict after the whole transfer finishes.
+        string targetPath = Path.Combine(_manager.LibraryRoot, fileName);
+        if (!File.Exists(targetPath))
+        {
+            return true;
+        }
+
+        ContentDialog dialog = new()
+        {
+            XamlRoot = XamlRoot,
+            Title = "下载库中已存在同名文件",
+            Content = new TextBlock
+            {
+                IsTextSelectionEnabled = true,
+                Text = $"{targetPath}\n\n继续会先删除现有文件，再下载新内容；取消则不做任何更改。",
+                TextWrapping = TextWrapping.Wrap,
+            },
+            PrimaryButtonText = "覆盖现有文件",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return false;
+        }
+
+        try
+        {
+            File.Delete(targetPath);
+            return true;
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException)
+        {
+            ShowError("无法覆盖现有文件", exception.Message);
+            return false;
         }
     }
 
@@ -817,9 +888,12 @@ public sealed partial class DownloadsPage : Page
         }
 
         TransferTitleText.Text = $"{PhaseText(snapshot.Phase, snapshot.Error)} · {snapshot.FileName}";
-        TransferBytesText.Text = snapshot.TotalBytes is long total
-            ? $"{FormatBytes(snapshot.CompletedBytes)} / {FormatBytes(total)}"
+        string progressText = snapshot.TotalBytes is long total
+            ? $"{FormatBytes(snapshot.CompletedBytes)} / {FormatBytes(total)}（{(total > 0 ? snapshot.CompletedBytes * 100d / total : 0):F0}%）"
             : FormatBytes(snapshot.CompletedBytes);
+        TransferBytesText.Text = busy
+            ? progressText + ComputeSpeedAndEta(snapshot)
+            : progressText;
         TransferProgressBar.IsIndeterminate = busy && snapshot.TotalBytes is null;
         TransferProgressBar.Maximum = Math.Max(1, snapshot.TotalBytes ?? 1);
         TransferProgressBar.Value = Math.Min(
@@ -838,6 +912,65 @@ public sealed partial class DownloadsPage : Page
             RefreshLibrary();
         }
     }
+
+    private string ComputeSpeedAndEta(AppTransferSnapshot snapshot)
+    {
+        // Speed is measured in the page over a sliding window of progress
+        // samples; the core transfer service reports progress but not rates.
+        if (snapshot.Id != _speedSamplesTransferId)
+        {
+            _speedSamples.Clear();
+            _speedSamplesTransferId = snapshot.Id;
+        }
+
+        if (snapshot.Phase is not (ManagedTransferPhase.Downloading
+            or ManagedTransferPhase.Copying))
+        {
+            _speedSamples.Clear();
+            return string.Empty;
+        }
+
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        _speedSamples.Add((now, snapshot.CompletedBytes));
+        _speedSamples.RemoveAll(sample => now - sample.AtUtc > SpeedSampleWindow);
+
+        if (_speedSamples.Count < 2)
+        {
+            return string.Empty;
+        }
+
+        (DateTimeOffset firstAt, long firstBytes) = _speedSamples[0];
+        (DateTimeOffset lastAt, long lastBytes) = _speedSamples[^1];
+        double elapsedSeconds = (lastAt - firstAt).TotalSeconds;
+        if (elapsedSeconds < 1 || lastBytes < firstBytes)
+        {
+            return string.Empty;
+        }
+
+        double bytesPerSecond = (lastBytes - firstBytes) / elapsedSeconds;
+        if (bytesPerSecond <= 0)
+        {
+            return string.Empty;
+        }
+
+        string speed = $"{FormatBytes((long)bytesPerSecond)}/s";
+        if (snapshot.TotalBytes is not long total || total <= snapshot.CompletedBytes)
+        {
+            return $" · {speed}";
+        }
+
+        TimeSpan eta = TimeSpan.FromSeconds(
+            (total - snapshot.CompletedBytes) / bytesPerSecond);
+        return $" · {speed} · 剩余约 {FormatEta(eta)}";
+    }
+
+    private static string FormatEta(TimeSpan eta) => eta.TotalHours >= 1
+        ? $"{eta.TotalHours:F1} 小时"
+        : eta.TotalMinutes >= 1
+            ? $"{(int)eta.TotalMinutes} 分 {eta.Seconds} 秒"
+            : $"{eta.Seconds} 秒";
+
+    private static readonly TimeSpan SpeedSampleWindow = TimeSpan.FromSeconds(6);
 
     private async void RefreshLibrary()
     {
@@ -887,7 +1020,7 @@ public sealed partial class DownloadsPage : Page
     {
         DownloadInfo.Severity = InfoBarSeverity.Error;
         DownloadInfo.Title = title;
-        DownloadInfo.Message = message;
+        DownloadInfo.Message = CoreErrorText.Localize(message);
     }
 
     private static string PhaseText(ManagedTransferPhase phase, string? error) => error is not null

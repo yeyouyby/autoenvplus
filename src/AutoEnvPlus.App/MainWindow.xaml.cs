@@ -4,6 +4,7 @@ using AutoEnvPlus.App.Pages;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Settings;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -11,6 +12,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Windows.Graphics;
 using Windows.System;
+using WinRT.Interop;
 
 namespace AutoEnvPlus.App;
 
@@ -50,7 +52,7 @@ public sealed partial class MainWindow : Window
             RootSurface,
             applicationSettings.Backdrop);
         ApplyApplicationSettings(applicationSettings);
-        AppWindow.Resize(new SizeInt32(1180, 760));
+        ResizeWindowForDisplayScale();
         NavigateTo(ApplicationSettingsPresentationPolicy.GetStartupNavigationTag(
             applicationSettings.StartupDestination));
 
@@ -65,6 +67,41 @@ public sealed partial class MainWindow : Window
     private void OnDownloadStateChanged(object? sender, EventArgs args)
     {
         _ = DispatcherQueue.TryEnqueue(UpdateTransferBadge);
+    }
+
+    [DllImport("user32.dll")]
+    private static extern uint GetDpiForWindow(IntPtr hwnd);
+
+    private void ResizeWindowForDisplayScale()
+    {
+        // AppWindow.Resize works in physical pixels; a fixed 1180x760 looks
+        // 33% smaller on a 150% display. Scale the design size by the window
+        // DPI and clamp to the current monitor's work area.
+        const int DesignWidth = 1180;
+        const int DesignHeight = 760;
+        double scale = 1;
+        try
+        {
+            uint dpi = GetDpiForWindow(WindowNative.GetWindowHandle(this));
+            scale = dpi > 0 ? dpi / 96d : 1;
+        }
+        catch (EntryPointNotFoundException)
+        {
+            // Pre-Windows 10 1607: fall back to the unscaled design size.
+        }
+
+        int width = (int)(DesignWidth * scale);
+        int height = (int)(DesignHeight * scale);
+        DisplayArea area = DisplayArea.GetFromWindowId(
+            AppWindow.Id,
+            DisplayAreaFallback.Primary);
+        if (area.WorkArea.Width > 0)
+        {
+            width = Math.Min(width, area.WorkArea.Width);
+            height = Math.Min(height, area.WorkArea.Height);
+        }
+
+        AppWindow.Resize(new SizeInt32(width, height));
     }
 
     private void UpdateTransferBadge()
@@ -294,6 +331,9 @@ public sealed partial class MainWindow : Window
             VirtualKey.Number6 => "storage",
             VirtualKey.Number7 => "doctor",
             VirtualKey.Number8 => "activity",
+            // Ctrl+9 aliases Ctrl+0 so the navigation sequence Ctrl+1..9 has
+            // no dead key between the last page and settings.
+            VirtualKey.Number9 => "settings",
             VirtualKey.Number0 => "settings",
             _ => null,
         };

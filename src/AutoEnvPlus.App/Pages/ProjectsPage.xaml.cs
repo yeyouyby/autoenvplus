@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using AutoEnvPlus.App.Activity;
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Projects;
@@ -96,7 +97,7 @@ public sealed partial class ProjectsPage : Page
         {
             ProjectInfo.Severity = InfoBarSeverity.Error;
             ProjectInfo.Title = "无法读取项目环境";
-            ProjectInfo.Message = exception.Message;
+            ProjectInfo.Message = CoreErrorText.Localize(exception.Message);
         }
     }
 
@@ -219,7 +220,7 @@ public sealed partial class ProjectsPage : Page
                 VirtualEnvironmentInfo.IsOpen = true;
                 VirtualEnvironmentInfo.Severity = InfoBarSeverity.Error;
                 VirtualEnvironmentInfo.Title = "无法解析虚拟环境";
-                VirtualEnvironmentInfo.Message = exception.Message;
+                VirtualEnvironmentInfo.Message = CoreErrorText.Localize(exception.Message);
                 VirtualEnvironmentEmptyText.Text = "扫描失败；项目内容未被修改。";
                 VirtualEnvironmentEmptyText.Visibility = Visibility.Visible;
             }
@@ -330,7 +331,7 @@ public sealed partial class ProjectsPage : Page
         {
             ProjectInfo.Severity = InfoBarSeverity.Error;
             ProjectInfo.Title = "无法创建项目清单";
-            ProjectInfo.Message = exception.Message;
+            ProjectInfo.Message = CoreErrorText.Localize(exception.Message);
             if (_projectRoot is not null)
             {
                 await AppActivityLog.TryWriteAsync(
@@ -449,7 +450,7 @@ public sealed partial class ProjectsPage : Page
         {
             ProjectInfo.Severity = InfoBarSeverity.Error;
             ProjectInfo.Title = "无法打开项目终端";
-            ProjectInfo.Message = exception.Message;
+            ProjectInfo.Message = CoreErrorText.Localize(exception.Message);
         }
         finally
         {
@@ -614,7 +615,7 @@ public sealed partial class ProjectsPage : Page
         {
             ProjectInfo.Severity = InfoBarSeverity.Error;
             ProjectInfo.Title = "无法生成项目锁文件";
-            ProjectInfo.Message = exception.Message;
+            ProjectInfo.Message = CoreErrorText.Localize(exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.ProjectImport,
                 ActivityStatus.Failed,
@@ -732,7 +733,7 @@ public sealed partial class ProjectsPage : Page
         {
             ProjectInfo.Severity = InfoBarSeverity.Error;
             ProjectInfo.Title = "无法生成 CMake Preset";
-            ProjectInfo.Message = exception.Message;
+            ProjectInfo.Message = CoreErrorText.Localize(exception.Message);
             if (_projectRoot is not null)
             {
                 await AppActivityLog.TryWriteAsync(
@@ -884,7 +885,7 @@ public sealed partial class ProjectsPage : Page
         {
             ProjectInfo.Severity = InfoBarSeverity.Error;
             ProjectInfo.Title = "CMake Preset 回滚失败";
-            ProjectInfo.Message = exception.Message;
+            ProjectInfo.Message = CoreErrorText.Localize(exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.CMakePreset,
                 ActivityStatus.Failed,
