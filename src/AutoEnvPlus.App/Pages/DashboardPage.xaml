@@ -210,7 +210,16 @@
                 IsOpen="True"
                 Severity="Informational"
                 AutomationProperties.LiveSetting="Polite"
-                Title="正在读取上次概览" />
+                Title="正在读取上次概览">
+                <InfoBar.ActionButton>
+                    <Button
+                        x:Name="CancelScanButton"
+                        AutomationProperties.Name="取消当前扫描"
+                        Click="OnCancelScanClicked"
+                        Content="取消扫描"
+                        Visibility="Collapsed" />
+                </InfoBar.ActionButton>
+            </InfoBar>
 
             <StackPanel Grid.Row="2" Spacing="8">
                 <TextBlock

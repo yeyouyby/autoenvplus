@@ -53,9 +53,9 @@ public sealed partial class PathPage : Page
             new SwitchScopeRow("会话临时", "优先级 1", "只影响当前终端，不写入持久选择。"),
             new SwitchScopeRow("项目锁定", "优先级 2", "项目目录内按 autoenvplus.toml 解析。"),
             new SwitchScopeRow("全局默认", "优先级 3", "没有会话或项目选择时使用。"),
+            new SwitchScopeRow("自动选择", "优先级 4", "在满足要求的已安装版本中自动选择最高稳定版。"),
         };
         Loaded += OnPageLoaded;
-        LoadReport();
     }
 
     private async void OnPageLoaded(object sender, RoutedEventArgs args)
@@ -63,6 +63,7 @@ public sealed partial class PathPage : Page
         SetBusy(true);
         try
         {
+            await LoadReportAsync();
             await LoadSnapshotsAsync();
         }
         finally
@@ -71,10 +72,12 @@ public sealed partial class PathPage : Page
         }
     }
 
-    private void LoadReport()
+    private async Task LoadReportAsync()
     {
-        PathInspectionReport report = new PathInspector().InspectCurrent(
-            KnownCommands);
+        // The inspection walks every PATH entry and probes 18 commands across
+        // PATHEXT combinations; keep that filesystem work off the UI thread.
+        PathInspectionReport report = await Task.Run(
+            () => new PathInspector().InspectCurrent(KnownCommands));
 
         PathList.ItemsSource = report.Entries.Select(entry => new PathEntryRow(
             (entry.Index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -107,7 +110,7 @@ public sealed partial class PathPage : Page
         SetBusy(true);
         try
         {
-            LoadReport();
+            await LoadReportAsync();
             await LoadSnapshotsAsync();
         }
         finally
@@ -162,7 +165,7 @@ public sealed partial class PathPage : Page
                 throw new InvalidOperationException(result.Error ?? "用户 PATH 修改失败。");
             }
 
-            LoadReport();
+            await LoadReportAsync();
             SummaryInfo.Severity = InfoBarSeverity.Success;
             SummaryInfo.Title = "命令版本切换已启用";
             string implementation = shims.Implementation == CommandShimImplementation.NativeWin32
@@ -264,7 +267,7 @@ public sealed partial class PathPage : Page
                 return;
             }
 
-            LoadReport();
+            await LoadReportAsync();
             SummaryInfo.Severity = InfoBarSeverity.Success;
             SummaryInfo.Title = "用户 PATH 已回滚";
             SummaryInfo.Message = "已恢复快照写入前的用户 PATH；系统 PATH 和 Shim 文件未修改。请打开新终端。";

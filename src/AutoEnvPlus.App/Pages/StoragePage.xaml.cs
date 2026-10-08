@@ -71,7 +71,48 @@ public sealed partial class StoragePage : Page
     private async Task ReloadStorageAsync()
     {
         LoadLocations();
+        DiscoverLatestMigrationSnapshot();
         await RefreshCleanupItemsAsync();
+    }
+
+    private void DiscoverLatestMigrationSnapshot()
+    {
+        // Migration snapshots persist under the managed root; without this
+        // lookup the rollback affordance would stay dead after an app
+        // restart even though valid snapshots exist on disk.
+        if (_lastMigrationSnapshot is not null)
+        {
+            return;
+        }
+
+        try
+        {
+            string snapshotDirectory = Path.Combine(
+                _managedRoot,
+                "state",
+                "cache-migration-snapshots");
+            if (!Directory.Exists(snapshotDirectory))
+            {
+                return;
+            }
+
+            FileInfo? latest = new DirectoryInfo(snapshotDirectory)
+                .EnumerateFiles("*.json")
+                .OrderByDescending(file => file.LastWriteTimeUtc)
+                .FirstOrDefault();
+            if (latest is not null)
+            {
+                _lastMigrationSnapshot = latest.FullName;
+            }
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or NotSupportedException)
+        {
+            // A failed snapshot lookup must not block the rest of the page.
+        }
+
+        RollbackButton.IsEnabled = _lastMigrationSnapshot is not null;
     }
 
     private async Task RefreshAfterMutationAsync()
@@ -122,25 +163,36 @@ public sealed partial class StoragePage : Page
 
     private async void OnMeasureClicked(object sender, RoutedEventArgs args)
     {
-        SetBusy(true);
+        CancellationToken operationToken = BeginStorageOperation();
         StorageInfo.Severity = InfoBarSeverity.Informational;
         StorageInfo.Title = "正在计算缓存大小";
         try
         {
+            List<string> measurementErrors = [];
             foreach (CacheRow row in _rows)
             {
                 row.SizeText = row.Location.Exists ? "计算中…" : "目录不存在";
                 CacheDirectoryMeasurement measurement = await _service.MeasureAsync(
                     row.Location,
-                    _pageCancellation.Token);
+                    operationToken);
                 row.SizeText = measurement.Location.Exists
                     ? $"{FormatBytes(measurement.TotalBytes)} · {measurement.FileCount:N0} 文件"
                     : "目录不存在";
+                measurementErrors.AddRange(measurement.Errors);
             }
 
-            StorageInfo.Severity = InfoBarSeverity.Success;
-            StorageInfo.Title = "缓存统计完成";
-            StorageInfo.Message = "迁移事务将在复制和校验完成后才切换工具配置，原目录不会自动删除。";
+            if (measurementErrors.Count > 0)
+            {
+                StorageInfo.Severity = InfoBarSeverity.Warning;
+                StorageInfo.Title = "缓存统计完成（部分目录失败）";
+                StorageInfo.Message = string.Join("；", measurementErrors.Take(3));
+            }
+            else
+            {
+                StorageInfo.Severity = InfoBarSeverity.Success;
+                StorageInfo.Title = "缓存统计完成";
+                StorageInfo.Message = "迁移事务将在复制和校验完成后才切换工具配置，原目录不会自动删除。";
+            }
         }
         catch (OperationCanceledException)
         {
@@ -149,7 +201,7 @@ public sealed partial class StoragePage : Page
         }
         finally
         {
-            SetBusy(false);
+            EndStorageOperation();
         }
     }
 
@@ -204,7 +256,7 @@ public sealed partial class StoragePage : Page
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"源目录\n{plan.Source.DirectoryPath}\n\n目标目录\n{plan.DestinationPath}\n\n配置\n{plan.ConfigurationDescription}\n\n文件会逐个校验；切换前保存配置快照，原目录不会自动删除。",
+                Text = $"源目录\n{plan.Source.DirectoryPath}\n\n目标目录\n{plan.DestinationPath}\n\n配置\n{plan.ConfigurationDescription}\n\n文件会逐个校验；切换前保存配置快照，原目录不会自动删除。\n\n请先关闭正在使用该缓存的包管理器与构建进程；迁移不会冻结或枚举外部进程，复检之后仍持有旧配置的进程可能继续写入。",
                 TextWrapping = TextWrapping.Wrap,
             },
             PrimaryButtonText = "复制、校验并切换",
@@ -216,7 +268,7 @@ public sealed partial class StoragePage : Page
             return;
         }
 
-        SetBusy(true);
+        CancellationToken operationToken = BeginStorageOperation();
         bool terminalActivityWritten = false;
         try
         {
@@ -240,7 +292,7 @@ public sealed partial class StoragePage : Page
                 plan,
                 new WindowsUserEnvironmentVariableStore(),
                 progress,
-                _pageCancellation.Token);
+                operationToken);
             if (!result.Success)
             {
                 throw new InvalidOperationException(result.Error ?? "迁移失败。");
@@ -295,7 +347,7 @@ public sealed partial class StoragePage : Page
         }
         finally
         {
-            SetBusy(false);
+            EndStorageOperation();
         }
     }
 
@@ -348,7 +400,7 @@ public sealed partial class StoragePage : Page
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"缓存目录（保留）\n{plan.Source.DirectoryPath}\n\n安全隔离区\n{plan.TrashPath}\n\n影响\n{plan.FileCount:N0} 个文件 · {FormatBytes(plan.TotalBytes)} · {plan.TopLevelEntryCount:N0} 个顶层项\n\n内容将通过同卷重命名移入隔离区，缓存目录和工具配置保持不变。此阶段不会释放磁盘空间；可先恢复，或稍后单独确认永久清空。",
+                Text = $"缓存目录（保留）\n{plan.Source.DirectoryPath}\n\n安全隔离区\n{plan.TrashPath}\n\n影响\n{plan.FileCount:N0} 个文件 · {FormatBytes(plan.TotalBytes)} · {plan.TopLevelEntryCount:N0} 个顶层项\n\n内容将通过同卷重命名移入隔离区，缓存目录和工具配置保持不变。此阶段不会释放磁盘空间；可先恢复，或稍后单独确认永久清空。\n\n请先关闭正在使用该缓存的包管理器与构建进程；隔离不会冻结或枚举外部进程，占用中的文件可能使隔离失败。",
                 TextWrapping = TextWrapping.Wrap,
             },
             PrimaryButtonText = "移入安全隔离区",
@@ -715,14 +767,14 @@ public sealed partial class StoragePage : Page
             return;
         }
 
-        SetBusy(true);
+        CancellationToken rollbackToken = BeginStorageOperation();
         bool terminalActivityWritten = false;
         try
         {
             CacheMigrationResult result = await new CacheMigrationService(_managedRoot).RollbackAsync(
                 snapshot,
                 new WindowsUserEnvironmentVariableStore(),
-                _pageCancellation.Token);
+                rollbackToken);
             if (!result.Success)
             {
                 throw new InvalidOperationException(result.Error ?? "配置回滚失败。");
@@ -778,7 +830,7 @@ public sealed partial class StoragePage : Page
         }
         finally
         {
-            SetBusy(false);
+            EndStorageOperation();
         }
     }
 

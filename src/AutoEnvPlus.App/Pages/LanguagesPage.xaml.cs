@@ -397,6 +397,7 @@ public sealed partial class LanguagesPage : Page
         }
 
         SetBusy(true);
+        string? importErrorMessage = null;
         try
         {
             LanguagePackImportPreview preview = await _packStore.PreviewImportAsync(
@@ -417,24 +418,33 @@ public sealed partial class LanguagesPage : Page
             }
 
             await _packStore.ImportAsync(preview, _pageCancellation.Token);
-            StatusInfo.IsOpen = true;
-            StatusInfo.Severity = InfoBarSeverity.Success;
-            StatusInfo.Title = "语言包已导入并保持停用";
-            StatusInfo.Message = "显式启用后，新语言和工具才会进入有效目录。";
         }
         catch (LanguagePackException exception)
         {
-            StatusInfo.IsOpen = true;
-            StatusInfo.Severity = InfoBarSeverity.Error;
-            StatusInfo.Title = "无法导入语言包";
-            StatusInfo.Message = $"清单未通过安全校验（{exception.Code}）；内容未回显。";
+            importErrorMessage = $"清单未通过安全校验（{exception.Code}）；内容未回显。";
         }
         finally
         {
             SetBusy(false);
         }
 
+        // Refresh the list first so the final status below is not overwritten
+        // by RefreshAsync's own progress/success messages.
         await RefreshAsync(scanPath: false);
+
+        StatusInfo.IsOpen = true;
+        if (importErrorMessage is not null)
+        {
+            StatusInfo.Severity = InfoBarSeverity.Error;
+            StatusInfo.Title = "无法导入语言包";
+            StatusInfo.Message = importErrorMessage;
+        }
+        else
+        {
+            StatusInfo.Severity = InfoBarSeverity.Success;
+            StatusInfo.Title = "语言包已导入并保持停用";
+            StatusInfo.Message = "显式启用后，新语言和工具才会进入有效目录。";
+        }
     }
 
     private async void OnToggleLanguagePackClicked(object sender, RoutedEventArgs args)

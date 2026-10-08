@@ -706,6 +706,17 @@ public sealed partial class DashboardPage : Page
         QuickRefreshButton.IsEnabled = !busy;
         FullScanButton.IsEnabled = !busy;
         RefreshProgress.IsActive = busy;
+        // A full scan can walk every cache directory and take minutes; the
+        // cancel affordance must stay reachable while the scan runs.
+        CancelScanButton.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void OnCancelScanClicked(object sender, RoutedEventArgs args)
+    {
+        _refreshCancellation?.Cancel();
+        OverviewInfo.Severity = InfoBarSeverity.Informational;
+        OverviewInfo.Title = "正在取消扫描";
+        OverviewInfo.Message = "正在停止剩余检查；已完成的读取会被丢弃。";
     }
 
     private void RestoreActionFocus(object sender)

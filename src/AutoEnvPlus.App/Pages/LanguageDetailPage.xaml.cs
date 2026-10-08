@@ -1639,20 +1639,52 @@ public sealed partial class LanguageDetailPage : Page
                 cancellationToken);
         if (!result.Success)
         {
-            throw new InvalidOperationException(result.Error ?? "受管安装失败。");
+            // The coordinator's error already names the concrete failure
+            // class (hash mismatch, signature failure, registry conflict,
+            // disk); surface it instead of collapsing to a generic message.
+            throw new ManagedInstallFailureException(result.Error ?? "受管安装失败。");
         }
 
+        string hashEvidence = asset.PackageHash is { Length: > 0 } packageHash
+            ? $"已按 {asset.HashAlgorithm} 校验包完整性（{packageHash[..Math.Min(12, packageHash.Length)]}…）。"
+            : "包完整性校验已通过。";
+        string globalDefaultEvidence = setGlobalDefault
+            ? result.GlobalDefaultUpdated
+                ? "已设为全局默认版本。"
+                : "全局默认版本未变化。"
+            : string.Empty;
+        string pendingCleanupEvidence = result.PendingCleanup
+            ? "存在待清理的临时目录。"
+            : string.Empty;
         DetailStatusInfo.Severity = InfoBarSeverity.Success;
         DetailStatusInfo.Title = result.InstallOutcome == InstallOutcome.AlreadyInstalled
             ? "版本已确认"
             : "安装完成";
-        DetailStatusInfo.Message = $"{row.DisplayName} {selected.Release.Version} · "
-            + $"{selected.Release.ProviderId} · {result.InstallRoot}";
+        DetailStatusInfo.Message = string.Join(" ", new[]
+        {
+            $"{row.DisplayName} {selected.Release.Version} · {selected.Release.ProviderId} · {result.InstallRoot}",
+            hashEvidence,
+            globalDefaultEvidence,
+            pendingCleanupEvidence,
+        }.Where(part => part.Length > 0));
         await AppActivityLog.TryWriteAsync(
             ActivityOperationType.RuntimeInstall,
             ActivityStatus.Succeeded,
             $"已从 {_language.DisplayName} 详情安装 {row.DisplayName} {selected.Release.Version}。",
             [result.InstallRoot ?? plan.DestinationRoot]);
+        try
+        {
+            // Close the feedback loop: without this refresh the row's managed
+            // version summary and the switch/uninstall buttons stay stale
+            // until the user manually rescans.
+            await RefreshToolRowsAsync(CancellationToken.None);
+            InventoryUpdated?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception exception) when (IsExpectedException(exception)
+            || exception is OperationCanceledException)
+        {
+            DetailStatusInfo.Message += " 列表刷新失败；请重新打开语言页面。";
+        }
     }
 
     private async Task<Uri> SelectManagedProviderEndpointAsync(
@@ -1898,9 +1930,33 @@ public sealed partial class LanguageDetailPage : Page
             return;
         }
 
+        bool isCustomDeletion = row.Source.Origin == ProviderSourceOrigin.Custom;
+        ContentDialog confirmation = new()
+        {
+            XamlRoot = XamlRoot,
+            Title = isCustomDeletion
+                ? $"删除自定义源 {row.DisplayName}"
+                : $"恢复内置默认源 {row.DisplayName}",
+            Content = new TextBlock
+            {
+                IsTextSelectionEnabled = true,
+                Text = isCustomDeletion
+                    ? $"将删除自定义源\n{row.Endpoint}\n\n删除后该 Provider 的这个来源槽不再可用；已安装的运行时不受影响。"
+                    : $"将丢弃对内置来源槽的覆盖\n当前值：{row.Endpoint}\n\n恢复为目录声明的默认端点；已安装的运行时不受影响。",
+                TextWrapping = TextWrapping.Wrap,
+            },
+            PrimaryButtonText = isCustomDeletion ? "删除自定义源" : "恢复默认",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
         try
         {
-            if (row.Source.Origin == ProviderSourceOrigin.Custom)
+            if (isCustomDeletion)
             {
                 await _sourceStore.DeleteCustomSourceAsync(
                     _availableCatalog,
@@ -1915,6 +1971,13 @@ public sealed partial class LanguageDetailPage : Page
                     _pageCancellation.Token);
             }
 
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.SettingsChange,
+                ActivityStatus.Succeeded,
+                isCustomDeletion
+                    ? $"已删除 {_language.DisplayName} 的 Provider 自定义源 {row.DisplayName}。"
+                    : $"已恢复 {_language.DisplayName} 的 Provider 内置默认源 {row.DisplayName}。",
+                [row.Source.Owner.ToString()]);
             await RenderMirrorSourcesAsync();
         }
         catch (Exception exception) when (exception is ProviderSourcePreferenceException
@@ -2153,6 +2216,11 @@ public sealed partial class LanguageDetailPage : Page
             }
 
             await _pluginStore.ImportAsync(preview, _pageCancellation.Token);
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.ProviderPluginImport,
+                ActivityStatus.Succeeded,
+                $"已导入 {_language.DisplayName} 的 Provider 插件 {preview.Manifest.DisplayName}（保持停用）。",
+                [preview.Manifest.LanguageToolId]);
             RenderProviderPlugins(await _pluginStore.ListAsync(_pageCancellation.Token));
         }
         catch (RuntimeProviderPluginException exception)
@@ -2173,6 +2241,11 @@ public sealed partial class LanguageDetailPage : Page
             if (row.IsEnabled)
             {
                 await _pluginStore.DisableAsync(row.Id, _pageCancellation.Token);
+                await AppActivityLog.TryWriteAsync(
+                    ActivityOperationType.ProviderPluginStateChange,
+                    ActivityStatus.Succeeded,
+                    $"已停用 {_language.DisplayName} 的 Provider 插件 {row.DisplayName}；已安装运行时不受影响。",
+                    [row.ToolId]);
             }
             else
             {
@@ -2191,6 +2264,11 @@ public sealed partial class LanguageDetailPage : Page
                 }
 
                 await _pluginStore.EnableAsync(row.Id, _pageCancellation.Token);
+                await AppActivityLog.TryWriteAsync(
+                    ActivityOperationType.ProviderPluginStateChange,
+                    ActivityStatus.Succeeded,
+                    $"已启用 {_language.DisplayName} 的 Provider 插件 {row.DisplayName}；后续安装必须显式选择该 Provider。",
+                    [row.ToolId]);
             }
 
             RenderProviderPlugins(await _pluginStore.ListAsync(_pageCancellation.Token));
@@ -2225,6 +2303,11 @@ public sealed partial class LanguageDetailPage : Page
         try
         {
             await _pluginStore.DeleteAsync(row.Id, _pageCancellation.Token);
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.ProviderPluginDelete,
+                ActivityStatus.Succeeded,
+                $"已删除 {_language.DisplayName} 的 Provider 插件 {row.DisplayName}；已安装运行时不受影响。",
+                [row.ToolId]);
             RenderProviderPlugins(await _pluginStore.ListAsync(_pageCancellation.Token));
         }
         catch (RuntimeProviderPluginException exception)
@@ -2368,12 +2451,18 @@ public sealed partial class LanguageDetailPage : Page
             ProviderSourcePreferenceException source =>
                 $"Provider 源设置未通过校验（{source.Error.Code}）。",
             LanguagePackException pack => $"语言包未通过校验（{pack.Code}）。",
+            // The coordinator's message names the concrete failure class and
+            // is produced for user display; echo it verbatim.
+            ManagedInstallFailureException => exception.Message,
             InvalidOperationException when exception.Message.StartsWith(
                 "WinGet 返回退出码 ",
                 StringComparison.Ordinal) => exception.Message,
             _ => "操作未完成；路径、端点查询参数和敏感值未回显。",
         };
     }
+
+    private sealed class ManagedInstallFailureException(string message)
+        : InvalidOperationException(message);
 
     private static bool IsExpectedException(Exception exception) => exception is HttpRequestException
         or InvalidDataException
@@ -2759,6 +2848,8 @@ public sealed partial class LanguageDetailPage : Page
         public string Id { get; } = descriptor.Id;
 
         public string DisplayName { get; } = descriptor.Manifest.DisplayName;
+
+        public string ToolId { get; } = descriptor.Manifest.LanguageToolId;
 
         public bool IsEnabled { get; } = descriptor.IsEnabled;
 
