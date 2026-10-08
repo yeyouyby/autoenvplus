@@ -33,6 +33,8 @@ internal sealed class AppDownloadManager
     private readonly object _sync = new();
     private CancellationTokenSource? _activeCancellation;
     private AppTransferSnapshot? _snapshot;
+    private CancellationTokenSource? _pipInstallCancellation;
+    private bool _pipInstallRunning;
 
     public AppDownloadManager(string managedRoot)
     {
@@ -55,6 +57,62 @@ internal sealed class AppDownloadManager
             {
                 return _snapshot;
             }
+        }
+    }
+
+    public bool IsPipInstallRunning
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _pipInstallRunning;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Starts tracking a pip wheel install. The cancellation source lives in
+    /// this app-scoped manager (not in the page) so navigating away from the
+    /// downloads page does not abort a running, non-transactional install.
+    /// </summary>
+    public CancellationToken BeginPipInstall()
+    {
+        CancellationToken token;
+        lock (_sync)
+        {
+            if (_pipInstallRunning)
+            {
+                throw new InvalidOperationException("A pip install is already running.");
+            }
+
+            _pipInstallCancellation?.Dispose();
+            _pipInstallCancellation = new CancellationTokenSource();
+            _pipInstallRunning = true;
+            token = _pipInstallCancellation.Token;
+        }
+
+        RaiseStateChanged();
+        return token;
+    }
+
+    public void EndPipInstall()
+    {
+        lock (_sync)
+        {
+            _pipInstallCancellation?.Dispose();
+            _pipInstallCancellation = null;
+            _pipInstallRunning = false;
+        }
+
+        RaiseStateChanged();
+    }
+
+    public void CancelPipInstall()
+    {
+        lock (_sync)
+        {
+            _pipInstallCancellation?.Cancel();
         }
     }
 

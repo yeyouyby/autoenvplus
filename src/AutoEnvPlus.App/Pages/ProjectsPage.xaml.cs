@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using AutoEnvPlus.App.Activity;
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Environment;
@@ -150,6 +151,7 @@ public sealed partial class ProjectsPage : Page
         CreateLockButton.IsEnabled = _manifestPath is not null;
         CreateCMakePresetButton.IsEnabled = File.Exists(
             Path.Combine(_projectRoot!, "CMakeLists.txt"));
+        DiscoverCMakePresetSnapshot();
         ResetVirtualEnvironmentDiscovery();
         await new KnownProjectStore(GetManagedRoot()).AddAsync(_projectRoot!);
         ProjectInfo.Severity = InfoBarSeverity.Success;
@@ -473,8 +475,37 @@ public sealed partial class ProjectsPage : Page
             foreach (ProjectTerminalSelection selection in plan.Selections)
             {
                 preview.AppendLine(
-                    $"{selection.Kind}: {selection.RequestedSelector} → {selection.ResolvedVersion} ({selection.RuntimeId})");
+                    $"{selection.Kind}: {selection.RequestedSelector} → {selection.ResolvedVersion} "
+                    + $"({selection.RuntimeId} @ {selection.ProviderId})");
                 preview.AppendLine($"  {selection.EnvironmentVariable}={selection.ResolvedVersion}");
+            }
+        }
+
+        preview.AppendLine("\n会话变量（只写入新终端进程）");
+        if (plan.EnvironmentOverrides.Count == 0)
+        {
+            preview.AppendLine("（无）");
+        }
+        else
+        {
+            foreach (KeyValuePair<string, string> pair in plan.EnvironmentOverrides
+                .OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                if (pair.Key.Equals("PATH", StringComparison.OrdinalIgnoreCase))
+                {
+                    preview.AppendLine($"  {pair.Key}=<Shim 目录已置于首位>");
+                }
+                else if (pair.Key.Contains("PROXY", StringComparison.OrdinalIgnoreCase)
+                    || pair.Key.Equals("PIP_INDEX_URL", StringComparison.OrdinalIgnoreCase)
+                    || pair.Key.Equals("NPM_CONFIG_REGISTRY", StringComparison.OrdinalIgnoreCase))
+                {
+                    // PRODUCT.md: the terminal preview must not echo endpoints.
+                    preview.AppendLine($"  {pair.Key}=<已配置，不回显>");
+                }
+                else
+                {
+                    preview.AppendLine($"  {pair.Key}={pair.Value}");
+                }
             }
         }
 
@@ -717,6 +748,73 @@ public sealed partial class ProjectsPage : Page
                 && File.Exists(Path.Combine(_projectRoot, "CMakeLists.txt"));
         }
     }
+
+    private void DiscoverCMakePresetSnapshot()
+    {
+        // CMake preset snapshots persist under the managed root; without this
+        // lookup the rollback affordance stays dead after an app restart even
+        // though a valid snapshot for this project exists on disk.
+        if (_lastCMakePresetSnapshot is not null || _projectRoot is null)
+        {
+            RollbackCMakePresetButton.IsEnabled = _lastCMakePresetSnapshot is not null;
+            return;
+        }
+
+        try
+        {
+            string snapshotDirectory = Path.Combine(
+                GetManagedRoot(),
+                "state",
+                "cmake-preset-snapshots");
+            if (!Directory.Exists(snapshotDirectory))
+            {
+                RollbackCMakePresetButton.IsEnabled = false;
+                return;
+            }
+
+            string projectRoot = Path.TrimEndingDirectorySeparator(
+                Path.GetFullPath(_projectRoot));
+            foreach (FileInfo file in new DirectoryInfo(snapshotDirectory)
+                .EnumerateFiles("*.json")
+                .OrderByDescending(file => file.LastWriteTimeUtc))
+            {
+                try
+                {
+                    CMakeUserPresetsSnapshot? snapshot = JsonSerializer.Deserialize<
+                        CMakeUserPresetsSnapshot>(
+                        File.ReadAllText(file.FullName),
+                        SnapshotJsonOptions);
+                    if (snapshot is not null
+                        && Path.TrimEndingDirectorySeparator(
+                                Path.GetFullPath(snapshot.ProjectRoot))
+                            .Equals(projectRoot, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _lastCMakePresetSnapshot = file.FullName;
+                        break;
+                    }
+                }
+                catch (Exception exception) when (exception is IOException
+                    or UnauthorizedAccessException
+                    or JsonException)
+                {
+                    // Skip unreadable snapshot files; the newest valid one wins.
+                }
+            }
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or NotSupportedException)
+        {
+            // A failed snapshot lookup must not block loading the project.
+        }
+
+        RollbackCMakePresetButton.IsEnabled = _lastCMakePresetSnapshot is not null;
+    }
+
+    private static readonly JsonSerializerOptions SnapshotJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
 
     private async void OnRollbackCMakePresetClicked(object sender, RoutedEventArgs args)
     {

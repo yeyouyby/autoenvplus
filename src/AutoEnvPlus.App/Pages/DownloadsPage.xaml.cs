@@ -25,7 +25,6 @@ public sealed partial class DownloadsPage : Page
     private bool _suppressFileNameTracking;
     private bool _fileNameEdited;
     private Guid? _lastCompletedTransfer;
-    private CancellationTokenSource? _pipInstallCancellation;
     private bool _pipInstallRunning;
     private bool _defaultsLoaded;
 
@@ -84,8 +83,10 @@ public sealed partial class DownloadsPage : Page
 
     private void OnUnloaded(object sender, RoutedEventArgs args)
     {
+        // The pip install cancellation source lives in the app-scoped
+        // AppDownloadManager, so leaving this page no longer aborts a
+        // running install; only the UI subscription is detached here.
         _manager.StateChanged -= OnManagerStateChanged;
-        _pipInstallCancellation?.Cancel();
     }
 
     private async void OnStartDownloadClicked(object sender, RoutedEventArgs args)
@@ -288,7 +289,7 @@ public sealed partial class DownloadsPage : Page
     private void OnCancelTransferClicked(object sender, RoutedEventArgs args)
     {
         _manager.Cancel();
-        _pipInstallCancellation?.Cancel();
+        _manager.CancelPipInstall();
     }
 
     private void OnRefreshLibraryClicked(object sender, RoutedEventArgs args) =>
@@ -501,8 +502,7 @@ public sealed partial class DownloadsPage : Page
         }
 
         _pipInstallRunning = true;
-        _pipInstallCancellation?.Dispose();
-        _pipInstallCancellation = new CancellationTokenSource();
+        CancellationToken pipToken = _manager.BeginPipInstall();
         UpdateTransferState();
         try
         {
@@ -518,7 +518,7 @@ public sealed partial class DownloadsPage : Page
             PipLocalPackageInstallResult result = await service.ExecuteAsync(
                 plan,
                 progress,
-                _pipInstallCancellation.Token);
+                pipToken);
             if (result.Success)
             {
                 DownloadInfo.Severity = InfoBarSeverity.Success;
@@ -569,8 +569,7 @@ public sealed partial class DownloadsPage : Page
         finally
         {
             _pipInstallRunning = false;
-            _pipInstallCancellation.Dispose();
-            _pipInstallCancellation = null;
+            _manager.EndPipInstall();
             UpdateTransferState();
         }
     }
@@ -717,9 +716,32 @@ public sealed partial class DownloadsPage : Page
             truncatedStreams.Add("stderr");
         }
 
-        return truncatedStreams.Count == 0
+        string notice = truncatedStreams.Count == 0
             ? message
             : $"{message}\n\n{string.Join('/', truncatedStreams)} 已截断；结果仅保留末尾 {PipLocalPackageProcessRunner.MaximumCapturedOutputCharacters:N0} 个字符。";
+        return notice + DescribePipOutput(result);
+    }
+
+    private static string DescribePipOutput(PipLocalPackageInstallResult result)
+    {
+        // Surface the pip subprocess output tail so the user can see what pip
+        // actually did (resolved dependencies, installed packages) or the real
+        // error text instead of a generic failure string.
+        const int MaxTail = 400;
+        PipLocalPackageInstallStageResult? installStage = result.Stages.FirstOrDefault(
+            stage => stage.Stage == PipLocalPackageInstallStage.InstallingPackage);
+        string? output = result.Success
+            ? installStage?.StandardOutput
+            : installStage?.StandardError ?? installStage?.StandardOutput;
+        if (string.IsNullOrWhiteSpace(output))
+        {
+            return string.Empty;
+        }
+
+        string tail = output.Length > MaxTail
+            ? "…" + output[^MaxTail..]
+            : output;
+        return $"\n\npip 输出（末尾）：\n{tail.TrimEnd()}";
     }
 
     private bool TryCreateIntegrity(

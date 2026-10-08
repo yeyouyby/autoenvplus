@@ -171,12 +171,19 @@
                 </NavigationViewItem>
                 <NavigationViewItem
                     AutomationProperties.Name="下载中心"
-                    Content="下载中心"
                     Tag="downloads"
                     ToolTipService.ToolTip="下载中心（Ctrl+4）">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE896;" />
                     </NavigationViewItem.Icon>
+                    <Grid>
+                        <TextBlock VerticalAlignment="Center" Text="下载中心" />
+                        <InfoBadge
+                            x:Name="DownloadsTransferBadge"
+                            AutomationProperties.Name="有正在进行的传输任务"
+                            HorizontalAlignment="Right"
+                            Visibility="Collapsed" />
+                    </Grid>
                 </NavigationViewItem>
                 <NavigationViewItem
                     AutomationProperties.Name="PATH 与命令"

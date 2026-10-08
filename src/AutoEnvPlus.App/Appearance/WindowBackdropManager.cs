@@ -248,7 +248,7 @@ internal sealed class WindowBackdropManager : IDisposable
         catch (Exception)
         {
             _window.SystemBackdrop = null;
-            _rootSurface.Background = _solidBackground;
+            _rootSurface.Background = ResolveSolidBackgroundBrush();
             return false;
         }
     }
@@ -258,10 +258,35 @@ internal sealed class WindowBackdropManager : IDisposable
         string? description = null)
     {
         _window.SystemBackdrop = null;
-        _rootSurface.Background = _solidBackground;
+        _rootSurface.Background = ResolveSolidBackgroundBrush();
 
         WindowBackdropStatus status = CreateStatus(selection);
         UpdateStatus(description is null ? status : status with { Description = description });
+    }
+
+    private Brush ResolveSolidBackgroundBrush()
+    {
+        // The brush captured at startup freezes the theme it was created
+        // under; re-resolve on every application so a theme change while a
+        // solid background is active picks up the new palette. High-contrast
+        // palettes come from system settings, so keep the captured brush.
+        bool highContrast = false;
+        try
+        {
+            highContrast = _accessibilitySettings?.HighContrast == true;
+        }
+        catch (Exception)
+        {
+        }
+
+        if (highContrast && _solidBackground is not null)
+        {
+            return _solidBackground;
+        }
+
+        return _rootSurface.ActualTheme == ElementTheme.Dark
+            ? new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x20, 0x20, 0x20))
+            : new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0xF3, 0xF3, 0xF3));
     }
 
     private void UpdateStatus(WindowBackdropStatus status)

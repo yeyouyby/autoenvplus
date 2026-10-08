@@ -1,4 +1,5 @@
 using AutoEnvPlus.App.Appearance;
+using AutoEnvPlus.App.Downloads;
 using AutoEnvPlus.App.Pages;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Settings;
@@ -17,6 +18,8 @@ public sealed partial class MainWindow : Window
 {
     private readonly WindowBackdropManager _backdropManager;
     private readonly AppWindowTitleBar _appWindowTitleBar;
+    private AppDownloadManager _downloadManager = null!;
+    private bool _allowClose;
     private bool _suppressSelectionChanged;
     private string? _currentNavigationTag;
 
@@ -37,7 +40,9 @@ public sealed partial class MainWindow : Window
         _appWindowTitleBar = AppWindow.TitleBar;
         RootSurface.SizeChanged += OnRootSurfaceSizeChanged;
         RootSurface.Loaded += OnRootSurfaceLoaded;
+        RootSurface.ActualThemeChanged += OnRootSurfaceActualThemeChanged;
         Closed += OnWindowClosed;
+        AppWindow.Closing += OnAppWindowClosing;
         ConfigureSettingsNavigationItem();
 
         _backdropManager = new WindowBackdropManager(
@@ -48,6 +53,66 @@ public sealed partial class MainWindow : Window
         AppWindow.Resize(new SizeInt32(1180, 760));
         NavigateTo(ApplicationSettingsPresentationPolicy.GetStartupNavigationTag(
             applicationSettings.StartupDestination));
+
+        // Shell-level transfer visibility: while a download, import, or pip
+        // install runs, badge the downloads nav item no matter which page is
+        // currently shown (the pages themselves only see their own state).
+        _downloadManager = ((App)Application.Current).DownloadManager;
+        _downloadManager.StateChanged += OnDownloadStateChanged;
+        UpdateTransferBadge();
+    }
+
+    private void OnDownloadStateChanged(object? sender, EventArgs args)
+    {
+        _ = DispatcherQueue.TryEnqueue(UpdateTransferBadge);
+    }
+
+    private void UpdateTransferBadge()
+    {
+        AppDownloadManager manager = _downloadManager;
+        bool busy = manager.Snapshot?.IsBusy == true || manager.IsPipInstallRunning;
+        DownloadsTransferBadge.Visibility = busy
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
+    private bool HasActiveBackgroundWork() => _downloadManager.Snapshot?.IsBusy == true
+        || _downloadManager.IsPipInstallRunning;
+
+    private void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
+    {
+        if (_allowClose || !HasActiveBackgroundWork())
+        {
+            return;
+        }
+
+        // A transfer or pip install is still running; closing kills it with no
+        // confirmation, so intercept once and ask.
+        args.Cancel = true;
+        _ = ConfirmCloseWithActiveWorkAsync();
+    }
+
+    private async Task ConfirmCloseWithActiveWorkAsync()
+    {
+        ContentDialog dialog = new()
+        {
+            XamlRoot = RootSurface.XamlRoot
+                ?? throw new InvalidOperationException("窗口尚未完成初始化。"),
+            Title = "有任务正在进行",
+            Content = new TextBlock
+            {
+                Text = "下载或 pip 安装仍在进行；关闭窗口会中止任务，已下载的分段会尽力清理，pip 安装可能留下部分更改且不会回滚。仍要关闭吗？",
+                TextWrapping = TextWrapping.Wrap,
+            },
+            PrimaryButtonText = "关闭并中止任务",
+            CloseButtonText = "继续运行",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        {
+            _allowClose = true;
+            Close();
+        }
     }
 
     internal AutoEnvPlusApplicationSettings CurrentApplicationSettings { get; private set; } =
@@ -254,6 +319,41 @@ public sealed partial class MainWindow : Window
             xamlRoot.Changed += OnTitleBarXamlRootChanged;
             UpdateTitleBarInsets(_appWindowTitleBar);
         }
+
+        UpdateTitleBarButtonColors();
+    }
+
+    private void OnRootSurfaceActualThemeChanged(FrameworkElement sender, object args) =>
+        UpdateTitleBarButtonColors();
+
+    private void UpdateTitleBarButtonColors()
+    {
+        // When the app theme differs from the OS theme the system caption
+        // buttons keep OS-theme colors and can become invisible (dark glyphs
+        // on a dark window). Sync them to the window content's actual theme.
+        try
+        {
+            bool dark = RootSurface.ActualTheme == ElementTheme.Dark;
+            Windows.UI.Color foreground = dark
+                ? Windows.UI.Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF)
+                : Windows.UI.Color.FromArgb(0xFF, 0x00, 0x00, 0x00);
+            Windows.UI.Color hoverBackground = dark
+                ? Windows.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)
+                : Windows.UI.Color.FromArgb(0x33, 0x00, 0x00, 0x00);
+            Windows.UI.Color pressedBackground = dark
+                ? Windows.UI.Color.FromArgb(0x28, 0xFF, 0xFF, 0xFF)
+                : Windows.UI.Color.FromArgb(0x28, 0x00, 0x00, 0x00);
+            _appWindowTitleBar.ButtonForegroundColor = foreground;
+            _appWindowTitleBar.ButtonHoverForegroundColor = foreground;
+            _appWindowTitleBar.ButtonPressedForegroundColor = foreground;
+            _appWindowTitleBar.ButtonHoverBackgroundColor = hoverBackground;
+            _appWindowTitleBar.ButtonPressedBackgroundColor = pressedBackground;
+        }
+        catch (Exception)
+        {
+            // Title bar color APIs are unavailable in some hosting modes;
+            // the system defaults remain in effect.
+        }
     }
 
     private void OnTitleBarXamlRootChanged(XamlRoot sender, XamlRootChangedEventArgs args) =>
@@ -288,8 +388,15 @@ public sealed partial class MainWindow : Window
     private void OnWindowClosed(object sender, WindowEventArgs args)
     {
         Closed -= OnWindowClosed;
+        AppWindow.Closing -= OnAppWindowClosing;
+        if (_downloadManager is not null)
+        {
+            _downloadManager.StateChanged -= OnDownloadStateChanged;
+        }
+
         RootSurface.SizeChanged -= OnRootSurfaceSizeChanged;
         RootSurface.Loaded -= OnRootSurfaceLoaded;
+        RootSurface.ActualThemeChanged -= OnRootSurfaceActualThemeChanged;
         if (AppTitleBar.XamlRoot is { } xamlRoot)
         {
             xamlRoot.Changed -= OnTitleBarXamlRootChanged;
