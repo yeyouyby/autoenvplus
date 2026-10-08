@@ -13,6 +13,7 @@ using AutoEnvPlus.Core.Runtimes;
 using AutoEnvPlus.Core.Settings;
 using AutoEnvPlus.Core.State;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
@@ -468,6 +469,7 @@ public sealed partial class DownloadsPage : Page
             DisplayMemberPath = nameof(RuntimeChoice.DisplayName),
             SelectedIndex = 0,
         };
+        AutomationProperties.SetName(runtimePicker, "基础 Python");
         TextBox environmentName = new()
         {
             Header = "虚拟环境名称",
@@ -488,6 +490,7 @@ public sealed partial class DownloadsPage : Page
             DisplayMemberPath = nameof(SourceModeChoice.DisplayName),
             SelectedIndex = 0,
         };
+        AutomationProperties.SetName(sourceModePicker, "依赖来源");
         StackPanel choices = new() { Spacing = 12 };
         choices.Children.Add(runtimePicker);
         choices.Children.Add(environmentName);
