@@ -3,8 +3,10 @@ using AutoEnvPlus.App.Downloads;
 using AutoEnvPlus.App.Pages;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Settings;
+using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -52,7 +54,10 @@ public sealed partial class MainWindow : Window
             RootSurface,
             applicationSettings.Backdrop);
         ApplyApplicationSettings(applicationSettings);
-        ResizeWindowForDisplayScale();
+        if (!TryRestoreWindowState())
+        {
+            ResizeWindowForDisplayScale();
+        }
         NavigateTo(ApplicationSettingsPresentationPolicy.GetStartupNavigationTag(
             applicationSettings.StartupDestination));
 
@@ -71,6 +76,119 @@ public sealed partial class MainWindow : Window
 
     [DllImport("user32.dll")]
     private static extern uint GetDpiForWindow(IntPtr hwnd);
+
+    private sealed record WindowState(int X, int Y, int Width, int Height);
+
+    private static string? TryGetWindowStatePath()
+    {
+        try
+        {
+            if (!ManagedRootResolver.TryResolve(null, out string? root, out _)
+                || root is null)
+            {
+                return null;
+            }
+
+            return Path.Combine(Path.GetFullPath(root), "state", "window-state.json");
+        }
+        catch (Exception exception) when (exception is ArgumentException
+            or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    private bool TryRestoreWindowState()
+    {
+        // Restore the last session's window placement; fall back to the
+        // DPI-scaled design size when no valid state exists (first run, or the
+        // saved monitor was disconnected).
+        try
+        {
+            string? path = TryGetWindowStatePath();
+            if (path is null || !File.Exists(path))
+            {
+                return false;
+            }
+
+            WindowState? state = JsonSerializer.Deserialize<WindowState>(
+                File.ReadAllText(path));
+            if (state is null
+                || state.Width < 400
+                || state.Height < 300
+                || state.X < -32000
+                || state.Y < -32000)
+            {
+                return false;
+            }
+
+            // Index the WinRT list directly: enumerating the projected
+            // IReadOnlyList via LINQ throws InvalidCastException (the
+            // IEnumerable cast is unsupported for this projection).
+            bool intersectsAnyDisplay = false;
+            IReadOnlyList<DisplayArea> areas = DisplayArea.FindAll();
+            for (int i = 0; i < areas.Count; i++)
+            {
+                RectInt32 work = areas[i].WorkArea;
+                if (state.X < work.X + work.Width
+                    && state.X + state.Width > work.X
+                    && state.Y < work.Y + work.Height
+                    && state.Y + state.Height > work.Y)
+                {
+                    intersectsAnyDisplay = true;
+                    break;
+                }
+            }
+
+            if (!intersectsAnyDisplay)
+            {
+                return false;
+            }
+
+            AppWindow.MoveAndResize(new RectInt32(
+                state.X,
+                state.Y,
+                state.Width,
+                state.Height));
+            return true;
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or JsonException
+            or ArgumentException
+            or InvalidOperationException
+            or InvalidCastException)
+        {
+            return false;
+        }
+    }
+
+    private void TrySaveWindowState()
+    {
+        try
+        {
+            string? path = TryGetWindowStatePath();
+            if (path is null)
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(
+                path,
+                JsonSerializer.Serialize(new WindowState(
+                    AppWindow.Position.X,
+                    AppWindow.Position.Y,
+                    AppWindow.Size.Width,
+                    AppWindow.Size.Height)));
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException)
+        {
+            // Window placement is a convenience; never block shutdown on it.
+        }
+    }
 
     private void ResizeWindowForDisplayScale()
     {
@@ -427,6 +545,7 @@ public sealed partial class MainWindow : Window
 
     private void OnWindowClosed(object sender, WindowEventArgs args)
     {
+        TrySaveWindowState();
         Closed -= OnWindowClosed;
         AppWindow.Closing -= OnAppWindowClosing;
         if (_downloadManager is not null)
