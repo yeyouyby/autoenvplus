@@ -135,6 +135,89 @@ public sealed partial class SettingsPage : Page
             new("舒适", InterfaceDensity.Comfortable),
             new("紧凑", InterfaceDensity.Compact),
         };
+
+        // Live preview: visual settings apply immediately when picked; the
+        // save button persists them. Without this the user had to save (and
+        // could not un-save) just to see what a theme looks like.
+        ThemePicker.SelectionChanged += OnAppearancePreviewChanged;
+        BackdropPicker.SelectionChanged += OnAppearancePreviewChanged;
+        DensityPicker.SelectionChanged += OnAppearancePreviewChanged;
+
+        // Inline proxy validation: a malformed endpoint is flagged while
+        // typing instead of only failing at save time.
+        HttpProxyTextBox.TextChanged += (_, _) => ValidateProxyInline();
+        HttpsProxyTextBox.TextChanged += (_, _) => ValidateProxyInline();
+    }
+
+    private void ValidateProxyInline()
+    {
+        if (_applicationSettingsBusy)
+        {
+            // The busy state owns the button while a load or save runs; the
+            // final SetApplicationSettingsBusy(false) re-evaluates validity.
+            return;
+        }
+
+        SaveProxyButton.IsEnabled = IsProxyTextValid(HttpProxyTextBox.Text)
+            && IsProxyTextValid(HttpsProxyTextBox.Text);
+        HttpProxyHintText.Text = IsProxyTextEmpty(HttpProxyTextBox.Text)
+            ? "留空表示不使用代理；必须是带主机的绝对地址（如 http://proxy.example:8080）。"
+            : IsProxyTextValid(HttpProxyTextBox.Text)
+                ? "格式有效。"
+                : "格式无效：必须是带主机的绝对地址（如 http://proxy.example:8080）。";
+        HttpsProxyHintText.Text = IsProxyTextEmpty(HttpsProxyTextBox.Text)
+            ? "留空表示不使用代理；必须是带主机的绝对地址（如 http://proxy.example:8080）。"
+            : IsProxyTextValid(HttpsProxyTextBox.Text)
+                ? "格式有效。"
+                : "格式无效：必须是带主机的绝对地址（如 http://proxy.example:8080）。";
+    }
+
+    private static bool IsProxyTextEmpty(string text) => string.IsNullOrWhiteSpace(text);
+
+    private static bool IsProxyTextValid(string text) =>
+        IsProxyTextEmpty(text)
+        || (Uri.TryCreate(text.Trim(), UriKind.Absolute, out Uri? uri)
+            && uri is not null
+            && !string.IsNullOrWhiteSpace(uri.Host));
+
+    private void OnAppearancePreviewChanged(object sender, SelectionChangedEventArgs args)
+    {
+        if (_applicationSettingsBusy
+            || ((App)Application.Current).MainWindowInstance is not MainWindow mainWindow)
+        {
+            return;
+        }
+
+        AutoEnvPlusApplicationSettings preview = _loadedApplicationSettings;
+        if (ThemePicker.SelectedItem is SettingChoice<ApplicationThemePreference> theme)
+        {
+            preview = preview with { Theme = theme.Value };
+        }
+
+        if (BackdropPicker.SelectedItem is SettingChoice<BackdropPreference> backdrop)
+        {
+            preview = preview with { Backdrop = backdrop.Value };
+        }
+
+        if (DensityPicker.SelectedItem is SettingChoice<InterfaceDensity> density)
+        {
+            preview = preview with { Density = density.Value };
+        }
+
+        if (preview == _loadedApplicationSettings)
+        {
+            return;
+        }
+
+        try
+        {
+            mainWindow.ApplyApplicationSettings(preview);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException
+            or ArgumentException)
+        {
+            // A preview must never break the page; saving still validates.
+        }
     }
 
     private async Task LoadApplicationSettingsAsync()
@@ -340,6 +423,14 @@ public sealed partial class SettingsPage : Page
 
     private void UpdateManagedRootStatus()
     {
+        // The restore affordance only makes sense while a user-level override
+        // exists; hide it when the app already runs on the default root.
+        string? userOverride = System.Environment.GetEnvironmentVariable(
+            ManagedRootResolver.EnvironmentVariableName,
+            EnvironmentVariableTarget.User);
+        ResetManagedRootButton.Visibility = string.IsNullOrWhiteSpace(userOverride)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
         if (_managedRoot is null)
         {
             ManagedRootText.Text = "无法解析受管数据根";
@@ -466,6 +557,76 @@ public sealed partial class SettingsPage : Page
             SmtoAbortIfHung,
             5000,
             out _) != 0;
+    }
+
+    private async void OnResetManagedRootClicked(object sender, RoutedEventArgs args)
+    {
+        try
+        {
+            string? currentOverride = System.Environment.GetEnvironmentVariable(
+                ManagedRootResolver.EnvironmentVariableName,
+                EnvironmentVariableTarget.User);
+            if (string.IsNullOrWhiteSpace(currentOverride))
+            {
+                SetManagedRootInfo(
+                    InfoBarSeverity.Informational,
+                    "没有需要恢复的覆盖",
+                    $"当前没有设置用户级 {ManagedRootResolver.EnvironmentVariableName}；应用已在使用默认目录。");
+                return;
+            }
+
+            string defaultRoot = Path.Combine(
+                System.Environment.GetFolderPath(
+                    System.Environment.SpecialFolder.LocalApplicationData),
+                ManagedRootResolver.DefaultDirectoryName);
+            ContentDialog confirmation = new()
+            {
+                XamlRoot = XamlRoot,
+                Title = "恢复默认受管数据根",
+                Content = new TextBlock
+                {
+                    IsTextSelectionEnabled = true,
+                    Text = $"将清除用户级 {ManagedRootResolver.EnvironmentVariableName}（当前值\n{currentOverride}）。\n\n"
+                        + $"重启后使用默认目录\n{defaultRoot}\n\n"
+                        + "不会迁移或删除任何目录中的数据；两个目录中的受管状态相互独立。",
+                    TextWrapping = TextWrapping.Wrap,
+                },
+                PrimaryButtonText = "清除并提示重启",
+                CloseButtonText = "取消",
+                DefaultButton = ContentDialogButton.Close,
+            };
+            if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
+            {
+                return;
+            }
+
+            System.Environment.SetEnvironmentVariable(
+                ManagedRootResolver.EnvironmentVariableName,
+                null,
+                EnvironmentVariableTarget.User);
+            bool broadcast = BroadcastEnvironmentChange();
+            SetManagedRootInfo(
+                InfoBarSeverity.Success,
+                "已恢复默认受管数据根",
+                broadcast
+                    ? $"已清除用户级 {ManagedRootResolver.EnvironmentVariableName}。请重启 AutoEnvPlus 后使用默认目录。"
+                    : $"已清除用户级 {ManagedRootResolver.EnvironmentVariableName}。环境变更广播未确认；请重启 AutoEnvPlus 后使用默认目录。");
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.SettingsChange,
+                ActivityStatus.Succeeded,
+                $"已清除用户级 {ManagedRootResolver.EnvironmentVariableName}；重启后使用默认受管数据根。",
+                [currentOverride, defaultRoot]);
+            UpdateManagedRootStatus();
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException
+            or ArgumentException
+            or System.Runtime.InteropServices.COMException
+            or System.Security.SecurityException)
+        {
+            SetManagedRootInfo(InfoBarSeverity.Error, "恢复默认受管数据根失败", exception.Message);
+        }
     }
 
     private void OnPreviewPowerShellClicked(object sender, RoutedEventArgs args)
@@ -697,7 +858,10 @@ public sealed partial class SettingsPage : Page
         _applicationSettingsBusy = busy;
         SettingsProgress.IsActive = busy;
         SaveSettingsButton.IsEnabled = !busy && _settingsStore is not null;
-        SaveProxyButton.IsEnabled = !busy && _managedRoot is not null;
+        SaveProxyButton.IsEnabled = !busy
+            && _managedRoot is not null
+            && IsProxyTextValid(HttpProxyTextBox.Text)
+            && IsProxyTextValid(HttpsProxyTextBox.Text);
     }
 
     private void SetSettingsInfo(InfoBarSeverity severity, string title, string message)

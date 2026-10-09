@@ -268,6 +268,12 @@
                             x:Name="HttpProxyTextBox"
                             AutomationProperties.Name="HTTP 代理"
                             PlaceholderText="http://proxy.example:8080" />
+                        <TextBlock
+                            x:Name="HttpProxyHintText"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="留空表示不使用代理；必须是带主机的绝对地址（如 http://proxy.example:8080）。"
+                            TextWrapping="Wrap" />
                     </StackPanel>
                     <StackPanel Spacing="4">
                         <TextBlock Text="HTTPS 代理" />
@@ -275,6 +281,12 @@
                             x:Name="HttpsProxyTextBox"
                             AutomationProperties.Name="HTTPS 代理"
                             PlaceholderText="http://proxy.example:8080" />
+                        <TextBlock
+                            x:Name="HttpsProxyHintText"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="留空表示不使用代理；必须是带主机的绝对地址（如 http://proxy.example:8080）。"
+                            TextWrapping="Wrap" />
                     </StackPanel>
                     <StackPanel Spacing="4">
                         <TextBlock Text="不使用代理" />
@@ -365,6 +377,16 @@
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <SymbolIcon Symbol="OpenFile" />
                                 <TextBlock Text="选择数据根" />
+                            </StackPanel>
+                        </Button>
+                        <Button
+                            x:Name="ResetManagedRootButton"
+                            AutomationProperties.Name="恢复默认受管数据根"
+                            Click="OnResetManagedRootClicked"
+                            ToolTipService.ToolTip="清除用户级 AUTOENVPLUS_HOME，恢复 %LOCALAPPDATA%\\AutoEnvPlus">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="Undo" />
+                                <TextBlock Text="恢复默认目录" />
                             </StackPanel>
                         </Button>
                     </StackPanel>
