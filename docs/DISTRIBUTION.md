@@ -1,8 +1,8 @@
 # AutoEnvPlus 分发与安装
 
-## v0.0.1 状态
+## 发布状态
 
-`v0.0.1` 是 Windows 10/11 x64 测试版候选，产品版本为 `0.0.1`，目标 tag 为 `v0.0.1`。仓库已经定义三类构建和强制自签名发布流程，但仓库内容本身不能证明签名证书已配置或 GitHub prerelease 已发布。只有 tag 工作流成功且从 GitHub 回读签名与资产后，才能把它描述为已签名发布。
+AutoEnvPlus 是 Windows 10/11 x64 测试版，当前发布版本 `v0.0.3`（产品版本 `0.0.3`，tag `v0.0.3`）。`v0.0.1`–`v0.0.3` 均已通过 tag 工作流签名发布并完成资产回读；每个新版本仍以对应 tag 工作流成功且从 GitHub 回读签名与资产为准，仓库内容本身不能证明未来版本已发布。
 
 权威 GitHub Release 主资产只有三类：
 
@@ -87,7 +87,7 @@ ZIP 格式不能承载 Authenticode。发布时所谓“signed portable”准确
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msi.ps1 `
   -Configuration Release `
-  -Version 0.0.1 `
+  -Version 0.0.3 `
   -BuildCacheRoot D:\codex `
   -PortableRoot artifacts\AutoEnvPlus-win-x64
 ```
@@ -150,7 +150,7 @@ Get-AuthenticodeSignature .\AutoEnvPlus-win-x64.msi
 
 仓库仍保留 `eng\publish-msix.ps1`、AppxManifest 与 AppInstaller profile，用于开发验证或后续实验。该脚本支持短期开发证书和显式 PFX 模式，并执行包身份/CMS/Authenticode/AppInstaller 交叉检查；开发证书默认不受信任，也不会自动写入证书库。
 
-MSIX 与 AppInstaller 不属于 `v0.0.1` 三类权威 GitHub Release 资产，tag 的自签名主流程不会发布它们。AppInstaller 的 stable `latest` URI 也不构成 prerelease-to-prerelease 更新承诺。不能用本地开发 MSIX 或旧 PFX 脚本成功替代三类签名资产的实际回读。
+MSIX 与 AppInstaller 不属于任何版本的三类权威 GitHub Release 资产，tag 的自签名主流程不会发布它们。AppInstaller 的 stable `latest` URI 也不构成 prerelease-to-prerelease 更新承诺。不能用本地开发 MSIX 或旧 PFX 脚本成功替代三类签名资产的实际回读。
 
 ## 数据、许可证与构建位置
 

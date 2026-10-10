@@ -1,6 +1,6 @@
-# AutoEnvPlus v0.0.1 技术架构
+# AutoEnvPlus v0.0.3 技术架构
 
-本文描述当前测试版候选的实现边界。产品行为以 [产品规格](PRODUCT.md) 为准，信任与残余风险以 [安全模型](SECURITY.md) 为准，文档导航见 [文档首页](README.md)。
+本文描述当前测试版（`v0.0.3`）的实现边界。产品行为以 [产品规格](PRODUCT.md) 为准，信任与残余风险以 [安全模型](SECURITY.md) 为准，文档导航见 [文档首页](README.md)。
 
 ## 组件边界
 
@@ -213,10 +213,10 @@ C/C++ 语言详情重检时使用只读的“当前进程 PATH + 最新用户 PA
 
 系统设置变化优先使用 WinRT 事件；无包身份的 Windows 10 可能拒绝 `AccessibilitySettings.HighContrastChanged` 订阅，此时由 WinUI `ActualThemeChanged` 和两秒低频设置轮询补位。设置页只读显示当前实际选择及回退原因。Windows 10 22H2 build 19045 已通过隐藏启动与 UI Automation 验证，透明效果开启时实际选择 Desktop Acrylic；Windows 11 的 Mica 路径仍需在真实 Windows 11 主机上完成端到端验证。功能层不得依赖仅 Windows 11 存在的 API，使用新 API 前必须做能力检测。
 
-`v0.0.1` 有三条互不混淆的 x64 分发路径。`publish-single-file.ps1` 用 .NET bundler 生成 unpackaged WinUI `AutoEnvPlus-win-x64.exe`，并以 bundle map 检查 Core、WinUI、Windows App SDK、PRI/XBF 与 CLR payload 均已进入单一分发文件；原生库和内容配置为 self-extract，因此运行时可能写入 .NET bundle extraction/临时目录。它是 GUI 主程序，不把 portable 中的 CLI/Shim 承诺扩展成单文件接口。
+AutoEnvPlus 有三条互不混淆的 x64 分发路径。`publish-single-file.ps1` 用 .NET bundler 生成 unpackaged WinUI `AutoEnvPlus-win-x64.exe`，并以 bundle map 检查 Core、WinUI、Windows App SDK、PRI/XBF 与 CLR payload 均已进入单一分发文件；原生库和内容配置为 self-extract，因此运行时可能写入 .NET bundle extraction/临时目录。它是 GUI 主程序，不把 portable 中的 CLI/Shim 承诺扩展成单文件接口。
 
 `publish.ps1` 生成普通 WinUI EXE + DLL 的自包含目录，`cli` 子目录携带自包含 CLI 和无 CLR Shim，并对 PRI/XBF、许可证和逐文件清单做硬门禁。tag 流程先用 signtool 签该目录的第一方 PE（自签名证书 + RFC3161 时间戳），复检签名与指纹，重新生成树清单后才压缩为 `AutoEnvPlus-win-x64-portable.zip`。`publish-msi.ps1` 使用固定 WiX Toolset 版本和锁定包哈希，把同一个已签 portable payload 构建成 per-user MSI；稳定 UpgradeCode、版本化 ProductCode、开始菜单/ARP 元数据和 major-upgrade 规则都在构建输入中。MSI 卸载只拥有安装 payload，不拥有独立的用户配置、受管根或已安装语言工具。
 
 tag 工作流只在 `release-signing` environment 中执行两次签名：先签 single-file 与 portable/MSI 内第一方 PE，后签 MSI 外层。每次结果都用 `Get-AuthenticodeSignature` 复检签名完整性与证书指纹（自签名返回 `UnknownError` 属预期），缺少任一签名 secret/variable、文件、签名或三类最终资产都会失败关闭；普通 PR/CI 不接触签名材料。三个主资产、三个 sidecar 和聚合 `SHA256SUMS.txt` 齐全后才创建/发布 GitHub prerelease。工作流定义不证明签名证书已配置或某个 tag 已成功签名，外部状态必须回读。
 
-仓库仍保留 `publish-msix.ps1` 与 AppInstaller 验证链供遗留开发/实验打包，但 MSIX/AppInstaller 不属于 `v0.0.1` 的三类权威公开资产，也不参与该 tag 的自签名主流程。
+仓库仍保留 `publish-msix.ps1` 与 AppInstaller 验证链供遗留开发/实验打包，但 MSIX/AppInstaller 不属于任何版本的三类权威公开资产，也不参与 tag 的自签名主流程。

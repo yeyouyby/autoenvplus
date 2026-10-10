@@ -1,12 +1,12 @@
 # AutoEnvPlus 快速开始
 
-本指南面向 `v0.0.1` 测试版本。AutoEnvPlus 当前只发布 Windows x64 目标；Windows 10 和 Windows 11 均在产品范围内，但完整真机安装、升级、可访问性和视觉矩阵仍属于发布前验证项。
+本指南面向 AutoEnvPlus 测试版本（当前 `v0.0.3`）。AutoEnvPlus 当前只发布 Windows x64 目标；Windows 10 和 Windows 11 均在产品范围内，但完整真机安装、升级、可访问性和视觉矩阵仍属于发布前验证项。
 
 ## 1. 选择运行方式
 
 ### GitHub 预发布包
 
-只从 [GitHub Releases](https://github.com/yeyouyby/autoenvplus/releases) 获取资产，并核对同一版本附带的 SHA-256 文件或 `SHA256SUMS.txt`。如果没有 `v0.0.1` 资产，表示首个测试版尚未发布；不要从非官方镜像取得同名包。
+只从 [GitHub Releases](https://github.com/yeyouyby/autoenvplus/releases) 获取资产，并核对同一版本附带的 SHA-256 文件或 `SHA256SUMS.txt`。不要从非官方镜像取得同名包。
 
 | 文件 | 选择它的场景 |
 |---|---|
@@ -14,7 +14,7 @@
 | `AutoEnvPlus-win-x64-portable.zip` | 需要可移动的完整目录，以及 `cli\autoenvplus.exe` 和原生 Shim。先完整解压，再运行根目录 `AutoEnvPlus.App.exe`。 |
 | `AutoEnvPlus-win-x64.msi` | 需要 per-user 安装、开始菜单和“应用和功能”卸载。卸载保留用户设置、受管数据和已安装工具。 |
 
-`v0.0.1` 的三个主资产缺一不可，并必须通过发布工作流的签名门禁。单文件 EXE 与 MSI 外层可直接检查 Authenticode；便携 ZIP 应同时核对 ZIP SHA-256，并在解压后检查其中第一方 EXE/DLL 的签名。签名使用自签名测试证书，Windows 显示“未知发布者”属预期。工作流尚未成功发布并回读前，不要把本地候选或 CI artifact 当成正式预发布资产。
+每个版本的三个主资产缺一不可，并必须通过发布工作流的签名门禁。单文件 EXE 与 MSI 外层可直接检查 Authenticode；便携 ZIP 应同时核对 ZIP SHA-256，并在解压后检查其中第一方 EXE/DLL 的签名。签名使用自签名测试证书，Windows 显示“未知发布者”属预期。工作流尚未成功发布并回读前，不要把本地候选或 CI artifact 当成正式预发布资产。
 
 ### 从源码运行
 

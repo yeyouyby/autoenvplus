@@ -1,6 +1,6 @@
 # AutoEnvPlus 开发指南
 
-本文面向继续开发 `v0.0.1` 及后续版本的贡献者。开始修改前先阅读 [产品规格](PRODUCT.md)、[技术架构](ARCHITECTURE.md) 和 [安全模型](SECURITY.md)；功能看似可用不等于满足产品合同和安全边界。
+本文面向继续开发 AutoEnvPlus（当前 `v0.0.3`）及后续版本的贡献者。开始修改前先阅读 [产品规格](PRODUCT.md)、[技术架构](ARCHITECTURE.md) 和 [安全模型](SECURITY.md)；功能看似可用不等于满足产品合同和安全边界。
 
 ## 开发环境
 
