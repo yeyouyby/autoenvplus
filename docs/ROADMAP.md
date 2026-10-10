@@ -1,6 +1,20 @@
 # AutoEnvPlus 路线图
 
-路线图以可验证能力为单位，不以目录条目数量代替实现进度。`v0.0.1` 当前是待发布测试版；只有 tag、工作流和 GitHub Release 回读成功后才算完成发布。
+路线图以可验证能力为单位，不以目录条目数量代替实现进度。`v0.0.1`–`v0.0.3` 均已作为 GitHub prerelease 发布并完成签名与资产回读；后续版本仍以 tag、工作流和 GitHub Release 回读成功为准。
+
+## v0.0.3 产品打磨（已交付）
+
+- [x] 五页产品审计的全部 UI/UX 缺口修复（导入反馈、PATH 第 4 层级、存储取消/回滚、下载徽标、关闭守卫、标题栏主题化、pip 生命周期解耦、扫描可取消、语言详情失败原因/刷新/确认/活动记录/哈希证据、终端预览完整性、CMake 跨会话回滚）；
+- [x] 下载中心传输速度与剩余时间、重复文件名预检；
+- [x] 核心错误消息 UI 边界中文化（CoreErrorText，约 30 条规则）；
+- [x] 设置页关于区块、首次运行引导、Ctrl+9 别名、DPI 感知窗口尺寸；
+- [x] 单实例守卫与代码构建 ComboBox 的 UIA 名称；
+- [x] 窗口位置与尺寸跨会话持久化；
+- [x] 设置页主题/材质/密度即时预览、受管根恢复默认、代理内联校验；
+- [x] 页面状态跨导航保留（外壳页面缓存 + 取消令牌 Loaded 重置）；
+- [x] 应用内更新检查（GitHub releases 列表端点，遵循全局代理，离线静默）；
+- [x] 全局搜索（Ctrl+F，语言直达详情页 + 页面跳转）；
+- [x] 列表行按钮的行级屏幕阅读器名称。
 
 ## v0.0.1 测试版候选
 
@@ -45,14 +59,14 @@
 
 ### 发布门禁
 
-- [ ] 最终代码和安全审查无发布阻断项；
-- [ ] Windows CI 在候选 commit 上实际通过；
-- [ ] Windows 10/11 真机启动、缩放、主题、高对比度、键盘和屏幕阅读器验收；
-- [ ] 自签名发布证书、`release-signing` environment secrets 与指纹 variable 实际配置；
-- [ ] `AutoEnvPlus-win-x64.exe`、`AutoEnvPlus-win-x64-portable.zip`、`AutoEnvPlus-win-x64.msi` 三个主资产及其 sidecar/聚合 SHA-256 从 GitHub 下载回读通过；
-- [ ] 单文件 EXE、便携包内第一方 PE、MSI 内 payload 与 MSI 外层 Authenticode 回读通过；
-- [ ] `v0.0.1` tag 与 GitHub prerelease 实际创建并回读；
-- [ ] 三类主资产缺一、签名失败或签名复检失败时均不发布，且没有未签名回退。
+- [x] 最终代码和安全审查无发布阻断项；
+- [x] Windows CI 在候选 commit 上实际通过；
+- [ ] Windows 10/11 真机启动、缩放、主题、高对比度、键盘和屏幕阅读器验收（部分完成：本机 Windows 11 已验证启动/缩放/主题/键盘/UIA 探针，Windows 10 与完整矩阵未覆盖）；
+- [x] 自签名发布证书、`release-signing` environment secrets 与指纹 variable 实际配置；
+- [x] `AutoEnvPlus-win-x64.exe`、`AutoEnvPlus-win-x64-portable.zip`、`AutoEnvPlus-win-x64.msi` 三个主资产及其 sidecar/聚合 SHA-256 从 GitHub 下载回读通过；
+- [x] 单文件 EXE、便携包内第一方 PE、MSI 内 payload 与 MSI 外层 Authenticode 回读通过；
+- [x] `v0.0.1`–`v0.0.3` tag 与 GitHub prerelease 实际创建并回读；
+- [x] 三类主资产缺一、签名失败或签名复检失败时均不发布，且没有未签名回退。
 
 ## v0.0.x 稳定化
 

@@ -1,21 +1,27 @@
 # AutoEnvPlus 阶段交接
 
-更新时间：2026-07-20
+更新时间：2026-10-10
 
-目标版本：`v0.0.1` 测试版候选
+目标版本：`v0.0.3` 已发布；下一版本未定
 
 本文只保留继续工作的最小上下文。权威行为分别见 [产品规格](PRODUCT.md)、[技术架构](ARCHITECTURE.md)、[安全模型](SECURITY.md) 和 [功能清单](FEATURES.md)。
 
 ## 当前状态
 
-- 产品版本权威源已是 `0.0.1`，Windows 包版本为 `0.0.1.0`，目标 tag 为 `v0.0.1`；
-- 当前分支正在并行收口功能、安全、Fluent UI、文档、打包和 GitHub 工作流；工作树不是干净基线；
-- `.github/workflows/ci.yml` 与 `release.yml` 已在工作树中定义，但只有 GitHub 实际运行和回读才能证明 CI/发布成功；
-- `v0.0.1` 的三类权威主资产是 `AutoEnvPlus-win-x64.exe`（WinUI single-file）、`AutoEnvPlus-win-x64-portable.zip`（含 CLI/Shim）和 `AutoEnvPlus-win-x64.msi`（per-user）；CLI 不单独作为第四类资产；
-- tag 工作流要求三类资产通过自签名门禁，缺少配置或签名失败即停止；签名证书配置和真实 tag 回读尚不能由仓库内容证明；
-- README 和 docs 已把长功能矩阵、用户说明、开发日志、路线图和发布检查拆开；
+- `v0.0.1`（2026-10-05）、`v0.0.2`（2026-10-06，GUI 启动缺陷修复）、`v0.0.3`（2026-10-10，产品打磨）均已作为 GitHub prerelease 发布并完成签名与资产回读；
+- `v0.0.3` 包含五页产品审计的全部 UI/UX 修复与四项功能级改进（页面状态保留、应用内更新检查、全局搜索、行级 a11y 名称），详见 [变更记录](CHANGELOG.md)；
+- 产品版本权威源是 `0.0.3`，Windows 包版本为 `0.0.3.0`，发布 tag 为 `v0.0.3`；
+- 三类权威主资产是 `AutoEnvPlus-win-x64.exe`（WinUI single-file）、`AutoEnvPlus-win-x64-portable.zip`（含 CLI/Shim）和 `AutoEnvPlus-win-x64.msi`（per-user）；CLI 不单独作为第四类资产；
+- tag 工作流要求三类资产通过自签名门禁，缺少配置或签名失败即停止；
 - 不应沿用此前阶段记录的固定测试通过数量，最终结果必须在候选 commit 上重新运行并记录；
 - 不得声称 PR、tag 或 GitHub prerelease 已存在，除非从 GitHub 权威状态回读确认。
+
+## 下一步候选工作
+
+- 界面本地化框架：把 500+ 硬编码中文字符串抽到 `.resw` 资源文件（XAML `x:Uid` + 代码 `ResourceLoader`），支持多语言；当前只有 `CoreErrorText` 在 UI 边界翻译核心错误消息；
+- Windows 10 真机与完整可访问性/缩放矩阵验收（Windows 11 本机已验证启动/主题/键盘/UIA）；
+- Windows 10/11 完整安装升级 E2E（MSI 全新安装、同版本拒绝、升级、降级拒绝、卸载数据保留）；
+- ARM64 应用构建与受信任 CA 发布证书切换。
 
 ## 不可破坏的合同
 
@@ -57,15 +63,13 @@ $env:AUTOENVPLUS_HOME = 'D:\codex\autoenvplus-data'
 
 D 盘是开发建议，不得硬编码为产品必需路径；受管根也不是第三方子进程沙箱。
 
-## 最终收口顺序
+## 发布新版本时的收口顺序
 
-1. 等待并合并并行代理的源代码、UI、资产、打包和工作流改动，不覆盖不属于自己的工作；
-2. 对当前工作树做最终功能/安全 review，修复阻断项；
-3. 执行 [开发指南](DEVELOPMENT.md#构建与验证) 的完整本地门禁；
-4. 在 Windows 10/11 真机完成主题、缩放、键盘和可访问性验收；
-5. 审核最终 diff 和许可证/第三方声明；
-6. 按 [发布指南](RELEASING.md) 创建 PR、等待 CI、合并、打 tag 并回读 GitHub prerelease；
-7. 发布后再把 [变更记录](CHANGELOG.md) 的 `0.0.1` 从“待发布”改为实际日期。
+1. 对当前工作树做功能/安全 review，修复阻断项；
+2. 执行 [开发指南](DEVELOPMENT.md#构建与验证) 的完整本地门禁；
+3. 审核最终 diff 和许可证/第三方声明；
+4. 按 [发布指南](RELEASING.md) 创建 PR、等待 CI、合并、打 tag 并回读 GitHub prerelease；
+5. 发布后再把 [变更记录](CHANGELOG.md) 的对应版本从“待发布”改为实际日期。
 
 ## 最小验证命令
 

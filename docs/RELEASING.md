@@ -1,19 +1,19 @@
 # AutoEnvPlus 发布指南
 
-本文是 `v0.0.1` 及后续 Windows x64 测试版的不可跳过检查表。文档和工作流定义不证明 PR、tag 或 GitHub prerelease 已存在；每个外部状态都必须回读。
+本文是 AutoEnvPlus 各 Windows x64 测试版（当前 `v0.0.3`）的不可跳过检查表。文档和工作流定义不证明 PR、tag 或 GitHub prerelease 已存在；每个外部状态都必须回读。
 
 ## 权威版本与资产
 
 [`Directory.Build.props`](../Directory.Build.props) 是版本权威源：
 
 ```text
-Product version: 0.0.1
-Package version: 0.0.1.0
-Release tag:     v0.0.1
+Product version: 0.0.3
+Package version: 0.0.3.0
+Release tag:     v0.0.3
 License:         AGPL-3.0-only
 ```
 
-`v0.0.1` 必须同时发布三类主资产，不能只发其中一部分：
+每个版本必须同时发布三类主资产，不能只发其中一部分：
 
 ```text
 AutoEnvPlus-win-x64.exe
@@ -30,7 +30,7 @@ AutoEnvPlus-win-x64.msi
 - [ ] “single-file” 没有被写成 CLI、绿色版、完全不自解压或完全无系统依赖；
 - [ ] portable 的签名描述明确指内部第一方 PE，而不是 ZIP 容器 Authenticode；
 - [ ] MSI 明确为 per-user，卸载保留用户数据和受管工具；
-- [ ] 文档没有把遗留 MSIX/AppInstaller/PFX 路径当成 `v0.0.1` 主发布；
+- [ ] 文档没有把遗留 MSIX/AppInstaller/PFX 路径当成主发布；
 - [ ] 没有提交 token、PFX、私钥、内部 URL、本机构建缓存或生成产物；
 - [ ] `git status` 中每个文件都属于本次发布范围。
 
@@ -64,10 +64,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-single-file.
   -Configuration Release -BuildCacheRoot D:\codex
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish.ps1 `
-  -Configuration Release -Version 0.0.1 -BuildCacheRoot D:\codex -NoArchive
+  -Configuration Release -Version 0.0.3 -BuildCacheRoot D:\codex -NoArchive
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msi.ps1 `
-  -Configuration Release -Version 0.0.1 -BuildCacheRoot D:\codex `
+  -Configuration Release -Version 0.0.3 -BuildCacheRoot D:\codex `
   -PortableRoot artifacts\AutoEnvPlus-win-x64
 ```
 
@@ -122,8 +122,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msi.ps1 `
 ```powershell
 git switch main
 git pull --ff-only
-git tag -a v0.0.1 -m "AutoEnvPlus v0.0.1 test release"
-git push origin v0.0.1
+git tag -a v0.0.3 -m "AutoEnvPlus v0.0.3 test release"
+git push origin v0.0.3
 ```
 
 `.github/workflows/release.yml` 会验证 tag/仓库/版本，构建未签候选，强制检查签名配置，用 signtool + RFC3161 时间戳签第一方 PE，逐项验签，重建 portable，构建 MSI，签 MSI 外层并复核其 payload，再生成七个文件。只有全部完成才创建或发布 prerelease；已有资产时拒绝覆盖或追加。

@@ -15,7 +15,7 @@
 </p>
 
 > [!IMPORTANT]
-> `v0.0.1` 是首个 Windows x64 测试版本，面向验证而非生产部署。目标 GitHub prerelease 必须同时提供三类经过发布工作流签名处理的主资产：`AutoEnvPlus-win-x64.exe`、`AutoEnvPlus-win-x64-portable.zip` 和 `AutoEnvPlus-win-x64.msi`。如果 [GitHub Releases](https://github.com/yeyouyby/autoenvplus/releases) 尚无这三个文件及校验文件，表示预发布尚未完成；仓库中的工作流定义、本地构建或未签候选都不等于已经发布。签名使用自签名测试证书，Windows 会显示“未知发布者”，这是测试版的预期行为。
+> 当前发布版本为 `v0.0.3`（Windows x64 测试版，面向验证而非生产部署）。每个 GitHub prerelease 必须同时提供三类经过发布工作流签名处理的主资产：`AutoEnvPlus-win-x64.exe`、`AutoEnvPlus-win-x64-portable.zip` 和 `AutoEnvPlus-win-x64.msi`，外加各自的 `.sha256` 校验文件与聚合 `SHA256SUMS.txt`。如果 [GitHub Releases](https://github.com/yeyouyby/autoenvplus/releases) 尚无这些文件，表示该版本预发布尚未完成；仓库中的工作流定义、本地构建或未签候选都不等于已经发布。签名使用自签名测试证书，Windows 会显示“未知发布者”，这是测试版的预期行为。
 
 ## 为什么是 AutoEnvPlus
 
@@ -45,7 +45,7 @@ AutoEnvPlus 不把开发环境简化成一组 PATH 编辑器。它使用固定�
 | **项目与 C/C++ 工作流** | 导入常见版本文件、生成 `autoenvplus.toml` / `autoenvplus.lock`、只读解析虚拟环境、打开经复检的已激活终端，并管理 MSVC Host/Target 与 CMake User Presets。 |
 | **下载与网络** | HTTPS 单流或 1/2/4/8/16 路分段下载、本地包导入、可选 SHA-256/SHA-512 预期值、受管下载库、wheel 安装计划，以及精确归属到工具/Provider 的来源与独立代理设置。 |
 | **存储、诊断与审计** | 发现和迁移常见包缓存；以隔离、恢复、永久清空三阶段处理纯缓存；显式运行六域环境诊断；记录脱敏且有界的活动日志。 |
-| **Fluent 桌面与受限扩展** | WinUI 3 / Fluent 导航、主题、材质和密度；schema 2 声明式 Runtime Provider 仅为 9 个桥接工具增加受限 ZIP 来源，不加载插件 DLL 或脚本。 |
+| **Fluent 桌面与受限扩展** | WinUI 3 / Fluent 导航、主题、材质和密度（选择即时预览）；全局搜索直达语言详情与页面（Ctrl+F）；应用内新版本提示；页面状态跨导航保留；窗口位置跨会话持久化；单实例守卫；schema 2 声明式 Runtime Provider 仅为 9 个桥接工具增加受限 ZIP 来源，不加载插件 DLL 或脚本。 |
 
 首页和语言页采用 **snapshot-on-load**：打开页面只读取已有快照，不扫描 PATH、不执行版本命令、不遍历缓存，也不联网。完整环境扫描、语言 PATH 重检、虚拟环境解析和实时连接检查都必须由用户手动触发。
 
@@ -59,7 +59,7 @@ AutoEnvPlus 不把开发环境简化成一组 PATH 编辑器。它使用固定�
 - 源码构建使用仓库 [`global.json`](global.json) 指定的 .NET SDK `10.0.200`；
 - 构建 WinUI/原生 Shim 需要 Visual Studio 2022 C++ 桌面工具和 Windows SDK。
 
-### 选择 `v0.0.1` 资产
+### 选择发布资产
 
 | 主资产 | 用途与边界 |
 |---|---|
@@ -106,7 +106,7 @@ dotnet run --project src\AutoEnvPlus.App -p:Platform=x64
 - **插件是 data-only，但资产仍是代码。** 声明式插件不能携带 DLL、脚本、任意命令或安装钩子，下载得到的第三方 `.exe` 仍需要用户独立判断其可信度。
 - **来源不等于代理。** Provider 来源属于 `languageToolId + providerId + slotId`；HTTP(S) 代理和 `NO_PROXY` 是独立传输设置，改变网络路径不会建立发布者信任。
 - **精确身份贯穿三层选择。** 新终端会话、项目 `[tool-identities]` 和全局 profile 都可以保存成对的 Runtime ID 与 Provider ID；解析不会把同版本的另一个 Provider 当作等价替代。
-- **当前仍是预览。** 发布证书配置和首个签名 tag 发布仍需权威回读；自签名测试证书不受 Windows 信任，后续可切换到受信任 CA。完整 Windows 10/11 安装升级 E2E、全量可访问性验收、插件签名/撤销通道和 ARM64 应用构建也尚未完成。
+- **当前仍是预览。** 自签名测试证书不受 Windows 信任，用户侧显示“未知发布者”属预期，后续可切换到受信任 CA。完整 Windows 10/11 安装升级 E2E、全量可访问性验收、插件签名/撤销通道和 ARM64 应用构建尚未完成。
 
 完整威胁边界、验证链和已知残余风险见 [安全模型](docs/SECURITY.md)。发现安全问题时，请避免在公开 Issue 中披露可利用细节；先查看仓库的安全报告渠道或联系维护者。
 
@@ -124,7 +124,7 @@ dotnet run --project src\AutoEnvPlus.App -p:Platform=x64
 | [安全模型](docs/SECURITY.md) | 信任链、文件系统边界与残余风险 |
 | [开发指南](docs/DEVELOPMENT.md) | 仓库结构、验证命令与贡献约束 |
 | [路线图](docs/ROADMAP.md) | 已完成范围与后续目标 |
-| [变更记录](docs/CHANGELOG.md) | `v0.0.1` 测试版开发日志 |
+| [变更记录](docs/CHANGELOG.md) | 各版本测试版开发日志 |
 | [发布指南](docs/RELEASING.md) | 不可跳过的发布检查清单 |
 
 ## 许可证

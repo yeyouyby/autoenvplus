@@ -1,6 +1,6 @@
-# AutoEnvPlus v0.0.1 安全模型
+# AutoEnvPlus v0.0.3 安全模型
 
-本文描述测试版候选的信任边界、验证链和已知残余风险；它不构成“没有漏洞”的保证。用户入口见 [文档首页](README.md)，可执行能力与当前限制见 [功能清单](FEATURES.md)。
+本文描述测试版（`v0.0.3`）的信任边界、验证链和已知残余风险；它不构成“没有漏洞”的保证。用户入口见 [文档首页](README.md)，可执行能力与当前限制见 [功能清单](FEATURES.md)。
 
 ## 运行时安装信任链
 
@@ -170,7 +170,7 @@ WinUI 先选择运行时、环境名和离线/联网依赖模式，再展示参�
 
 ## AutoEnvPlus 自身分发链
 
-`v0.0.1` 的公开签名边界是 tag 驱动的自签名流程，不是仓库内 PFX。只有 `release-signing` GitHub environment 可以读取签名材料 secrets `AUTOENVPLUS_RELEASE_CERT_PFX_BASE64` 与 `AUTOENVPLUS_RELEASE_CERT_PASSWORD`；普通 push、PR、fork PR 和 CI 只构建未签候选，不能接触签名材料。release workflow 还要求 repository variable `AUTOENVPLUS_RELEASE_CERT_THUMBPRINT`（40 位 SHA-1 指纹）存在。所有 PE/MSI 的签名必须密码学完整且签名者指纹精确匹配该值。缺任一项即停止，不发布未签替代品。
+AutoEnvPlus 的公开签名边界是 tag 驱动的自签名流程，不是仓库内 PFX。只有 `release-signing` GitHub environment 可以读取签名材料 secrets `AUTOENVPLUS_RELEASE_CERT_PFX_BASE64` 与 `AUTOENVPLUS_RELEASE_CERT_PASSWORD`；普通 push、PR、fork PR 和 CI 只构建未签候选，不能接触签名材料。release workflow 还要求 repository variable `AUTOENVPLUS_RELEASE_CERT_THUMBPRINT`（40 位 SHA-1 指纹）存在。所有 PE/MSI 的签名必须密码学完整且签名者指纹精确匹配该值。缺任一项即停止，不发布未签替代品。
 
 签名在 runner 上用 Windows SDK `signtool` 完成（SHA-256 文件摘要 + RFC3161 时间戳），证书私钥不离开 GitHub secrets 与离线备份。第一阶段只签列明的第一方 PE：WinUI single-file、portable 中的 App EXE/App DLL/Core DLL、CLI EXE 与原生 Shim；每个文件都必须是普通文件且不能是 reparse point。随后重新计算 portable 树清单并压缩 ZIP，再用同一份已签 payload 构建 MSI。第二阶段单独签 MSI 外层，复检签名并经 `msiexec /a` 提取比对内部 payload 与 portable 完全一致。
 
@@ -178,7 +178,7 @@ WinUI 先选择运行时、环境名和离线/联网依赖模式，再展示参�
 
 MSI 是 per-user 安装包，安装目录在当前用户范围。卸载由 MSI 拥有的组件清单约束，不删除独立于安装 payload 的用户设置、`AUTOENVPLUS_HOME` 受管根或已安装语言工具。这个保留策略降低误删风险，但也意味着卸载不等于擦除用户数据；需要清理数据时必须由用户另行审核目标。
 
-仓库保留旧 `publish-msix.ps1` 的 PFX/开发证书和 AppInstaller 验证路径作为遗留开发工具。开发证书不会自动进入 Windows 信任库，PFX 流程也不属于 `v0.0.1` 三类 GitHub 资产的自签名主链；不能用本地 MSIX 成功替代 tag 流程的签名和回读证据。
+仓库保留旧 `publish-msix.ps1` 的 PFX/开发证书和 AppInstaller 验证路径作为遗留开发工具。开发证书不会自动进入 Windows 信任库，PFX 流程也不属于三类 GitHub 资产的自签名主链；不能用本地 MSIX 成功替代 tag 流程的签名和回读证据。
 
 ## 尚未完成
 

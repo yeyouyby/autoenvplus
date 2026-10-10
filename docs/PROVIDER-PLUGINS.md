@@ -1,4 +1,4 @@
-# AutoEnvPlus v0.0.1 声明式 Runtime Provider 插件
+# AutoEnvPlus 声明式 Runtime Provider 插件
 
 本文是插件作者与审核者指南。产品目录边界见 [语言与语言包](LANGUAGE-PACKS.md)，完整信任模型见 [安全模型](SECURITY.md)，文档导航见 [文档首页](README.md)。
 

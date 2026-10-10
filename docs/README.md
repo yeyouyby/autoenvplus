@@ -1,6 +1,6 @@
 # AutoEnvPlus 文档
 
-本目录集中保存 AutoEnvPlus `v0.0.1` 的用户说明、功能边界、开发记录和发布流程。根目录 [README](../README.md) 只提供项目概览；需要判断“产品现在究竟能做什么”时，以 [产品规格](PRODUCT.md)、[功能清单](FEATURES.md) 和源代码/测试为准。
+本目录集中保存 AutoEnvPlus 的用户说明、功能边界、开发记录和发布流程（当前发布版本 `v0.0.3`）。根目录 [README](../README.md) 只提供项目概览；需要判断“产品现在究竟能做什么”时，以 [产品规格](PRODUCT.md)、[功能清单](FEATURES.md) 和源代码/测试为准。
 
 ## 我应该从哪里开始
 
@@ -27,7 +27,7 @@
 - [产品规格](PRODUCT.md)：权威领域模型、交互合同与验收条件；
 - [技术架构](ARCHITECTURE.md)：WinUI、CLI、Core、Shim、存储和网络的边界；
 - [安全模型](SECURITY.md)：发布者信任、哈希/签名、文件系统和进程边界；
-- [路线图](ROADMAP.md)：`v0.0.1` 已交付范围与后续方向。
+- [路线图](ROADMAP.md)：各版本已交付范围与后续方向。
 
 ### 扩展与交付
 
@@ -50,7 +50,7 @@
 5. Provider 来源与通用代理是两套不同状态；镜像没有跨 Provider 的全局语义。
 6. 语言包和 Runtime Provider 插件都是 data-only；插件下载的第三方可执行文件并不因此可信。
 7. AutoEnvPlus 本体仅以 `AGPL-3.0-only` 发布。
-8. `v0.0.1` 是 Windows 10/11 x64 测试版本；没有 GitHub Release 资产时不得把发布写成已完成。
+8. AutoEnvPlus 是 Windows 10/11 x64 测试版本；没有对应版本的 GitHub Release 资产回读时，不得把该版本发布写成已完成。
 
 ## 文档维护
 
