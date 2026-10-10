@@ -18,7 +18,7 @@ public sealed partial class StoragePage : Page
     private readonly CacheDirectoryService _service = new();
     private readonly ObservableCollection<CacheRow> _rows = [];
     private readonly ObservableCollection<CleanupItemRow> _cleanupItems = [];
-    private readonly CancellationTokenSource _pageCancellation = new();
+    private CancellationTokenSource _pageCancellation = new();
     private readonly string _managedRoot;
     private readonly CacheCleanupService _cleanupService;
     private CancellationTokenSource? _operationCancellation;
@@ -42,6 +42,11 @@ public sealed partial class StoragePage : Page
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
     {
+        // The shell caches this page across navigations; the previous visit's
+        // Unloaded cancelled the token, so re-arm it on every load.
+        _pageCancellation.Cancel();
+        _pageCancellation.Dispose();
+        _pageCancellation = new CancellationTokenSource();
         try
         {
             await ReloadStorageAsync();

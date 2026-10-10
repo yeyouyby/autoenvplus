@@ -12,7 +12,7 @@ namespace AutoEnvPlus.App.Pages;
 
 public sealed partial class LanguagesPage : Page
 {
-    private readonly CancellationTokenSource _pageCancellation = new();
+    private CancellationTokenSource _pageCancellation = new();
     private readonly string _managedRoot;
     private readonly LanguagePackStore _packStore;
     private readonly LanguageVisibilityStore _visibilityStore;
@@ -27,6 +27,7 @@ public sealed partial class LanguagesPage : Page
         LanguageVisibilityPolicy.TopTenAndDetected;
     private bool _busy;
     private bool _loaded;
+    private string? _pendingOpenLanguageId;
     private bool _settingsPolicyApplied;
     private DateTimeOffset? _inventoryCapturedAtUtc;
     private bool _inventoryCatalogChanged;
@@ -55,6 +56,11 @@ public sealed partial class LanguagesPage : Page
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
     {
+        // The shell caches this page across navigations; the previous visit's
+        // Unloaded cancelled the token, so re-arm it on every load.
+        _pageCancellation.Cancel();
+        _pageCancellation.Dispose();
+        _pageCancellation = new CancellationTokenSource();
         if (_loaded)
         {
             return;
@@ -62,6 +68,23 @@ public sealed partial class LanguagesPage : Page
 
         _loaded = true;
         await RefreshAsync(scanPath: false);
+        ConsumePendingOpenLanguage();
+    }
+
+    private void ConsumePendingOpenLanguage()
+    {
+        if (_pendingOpenLanguageId is null)
+        {
+            return;
+        }
+
+        string languageId = _pendingOpenLanguageId;
+        _pendingOpenLanguageId = null;
+        LanguageRow? row = FindRow(languageId);
+        if (row is not null)
+        {
+            OpenLanguageDetail(row);
+        }
     }
 
     private async void OnRefreshClicked(object sender, RoutedEventArgs args) =>
@@ -348,6 +371,30 @@ public sealed partial class LanguagesPage : Page
             return;
         }
 
+        OpenLanguageDetail(row);
+    }
+
+    internal void RequestOpenLanguage(string languageId)
+    {
+        // Entry point for global search: open the language's detail view. On
+        // the first visit the rows are not loaded yet, so remember the
+        // request and consume it once the initial refresh completes.
+        ArgumentException.ThrowIfNullOrWhiteSpace(languageId);
+        LanguageRow? row = FindRow(languageId);
+        if (row is not null)
+        {
+            OpenLanguageDetail(row);
+            return;
+        }
+
+        _pendingOpenLanguageId = languageId;
+    }
+
+    private LanguageRow? FindRow(string languageId) => _rows.FirstOrDefault(candidate =>
+        candidate.LanguageId.Equals(languageId, StringComparison.OrdinalIgnoreCase));
+
+    private void OpenLanguageDetail(LanguageRow row)
+    {
         LanguageDetailPage detail = new(
             row.LanguageId,
             _activeCatalog,
@@ -656,6 +703,8 @@ public sealed partial class LanguagesPage : Page
 
         public string LanguageId { get; }
 
+        public string OpenActionAutomationName => $"打开 {DisplayName} 语言详情";
+
         public string DisplayName { get; }
 
         public string Monogram { get; }
@@ -699,6 +748,12 @@ public sealed partial class LanguagesPage : Page
         public bool IsEnabled { get; } = descriptor.IsEnabled;
 
         public string ToggleText => IsEnabled ? "停用" : "启用";
+
+        public string ToggleActionAutomationName => IsEnabled
+            ? $"停用语言包 {DisplayName}"
+            : $"启用语言包 {DisplayName}";
+
+        public string DeleteActionAutomationName => $"删除语言包 {DisplayName}";
 
         public string Detail { get; } = $"{descriptor.Id} · {descriptor.Manifest.Publisher} · "
             + $"{descriptor.Manifest.Languages.Count} 门语言 · {descriptor.Manifest.Tools.Count} 个工具 · "

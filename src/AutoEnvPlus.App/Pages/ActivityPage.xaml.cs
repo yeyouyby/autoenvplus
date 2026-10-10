@@ -11,7 +11,7 @@ namespace AutoEnvPlus.App.Pages;
 public sealed partial class ActivityPage : Page
 {
     private readonly ObservableCollection<ActivityRow> _rows = [];
-    private readonly CancellationTokenSource _pageCancellation = new();
+    private CancellationTokenSource _pageCancellation = new();
     private readonly ActivityLogStore? _store;
     private readonly string? _rootError;
     private IReadOnlyList<ActivityLogEntry> _entries = [];
@@ -69,6 +69,11 @@ public sealed partial class ActivityPage : Page
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
     {
+        // The shell caches this page across navigations; the previous visit's
+        // Unloaded cancelled the token, so re-arm it on every load.
+        _pageCancellation.Cancel();
+        _pageCancellation.Dispose();
+        _pageCancellation = new CancellationTokenSource();
         await RefreshAsync();
     }
 
@@ -262,6 +267,8 @@ public sealed partial class ActivityPage : Page
         public string TimestampText { get; }
 
         public string OperationText { get; }
+
+        public string CopyActionAutomationName => $"复制 {OperationText} 活动摘要";
 
         public string StatusText { get; }
 

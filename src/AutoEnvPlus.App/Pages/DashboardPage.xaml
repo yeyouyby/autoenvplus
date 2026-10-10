@@ -25,6 +25,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <VisualStateManager.VisualStateGroups>
@@ -221,7 +222,24 @@
                 </InfoBar.ActionButton>
             </InfoBar>
 
-            <StackPanel Grid.Row="2" Spacing="8">
+            <InfoBar
+                x:Name="UpdateAvailableInfo"
+                Grid.Row="2"
+                AutomationProperties.LiveSetting="Polite"
+                AutomationProperties.Name="应用更新提示"
+                IsClosable="True"
+                IsOpen="False"
+                Severity="Informational"
+                Title="有新版本可用">
+                <InfoBar.ActionButton>
+                    <HyperlinkButton
+                        x:Name="UpdateReleaseLink"
+                        AutomationProperties.Name="打开新版本发布页"
+                        Content="查看发布页" />
+                </InfoBar.ActionButton>
+            </InfoBar>
+
+            <StackPanel Grid.Row="3" Spacing="8">
                 <TextBlock
                     Style="{StaticResource DashboardSectionTitleTextBlockStyle}"
                     Text="快捷入口" />
@@ -388,7 +406,7 @@
                 </Grid>
             </StackPanel>
 
-            <Grid Grid.Row="3">
+            <Grid Grid.Row="4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
                     <ColumnDefinition x:Name="OverviewSecondaryColumn" Width="*" />
@@ -513,7 +531,7 @@
             </Grid>
 
             <Border
-                Grid.Row="4"
+                Grid.Row="5"
                 Style="{StaticResource DashboardCardStyle}">
                 <Grid ColumnSpacing="18">
                     <Grid.ColumnDefinitions>
@@ -556,7 +574,7 @@
             </Border>
 
             <Border
-                Grid.Row="5"
+                Grid.Row="6"
                 Style="{StaticResource DashboardCardStyle}">
                 <Grid x:Name="NetworkDownloadLayout" ColumnSpacing="18">
                     <Grid.ColumnDefinitions>
@@ -628,7 +646,7 @@
             </Border>
 
             <Border
-                Grid.Row="6"
+                Grid.Row="7"
                 Style="{StaticResource DashboardCardStyle}">
                 <Grid ColumnSpacing="18">
                     <Grid.ColumnDefinitions>
@@ -666,7 +684,7 @@
                 </Grid>
             </Border>
 
-            <Grid Grid.Row="7">
+            <Grid Grid.Row="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
                     <ColumnDefinition x:Name="DetailsSecondaryColumn" Width="*" />

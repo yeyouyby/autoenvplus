@@ -13,6 +13,10 @@
         <Grid.KeyboardAccelerators>
             <KeyboardAccelerator
                 Invoked="OnNavigationAcceleratorInvoked"
+                Key="F"
+                Modifiers="Control" />
+            <KeyboardAccelerator
+                Invoked="OnNavigationAcceleratorInvoked"
                 Key="Number1"
                 Modifiers="Control" />
             <KeyboardAccelerator
@@ -118,6 +122,31 @@
             PaneDisplayMode="Auto"
             PaneTitle="AutoEnvPlus"
             SelectionChanged="OnNavigationSelectionChanged">
+
+            <NavigationView.AutoSuggestBox>
+                <AutoSuggestBox
+                    x:Name="GlobalSearchBox"
+                    AutomationProperties.Name="全局搜索"
+                    MaxSuggestionListHeight="320"
+                    PlaceholderText="搜索语言与页面"
+                    QueryIcon="Find"
+                    QuerySubmitted="OnGlobalSearchQuerySubmitted"
+                    TextChanged="OnGlobalSearchTextChanged"
+                    ToolTipService.ToolTip="搜索语言与页面（Ctrl+F）">
+                    <AutoSuggestBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,6" Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="{Binding DisplayText}" />
+                                <TextBlock
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="{Binding DetailText}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </AutoSuggestBox.ItemTemplate>
+                </AutoSuggestBox>
+            </NavigationView.AutoSuggestBox>
 
             <NavigationView.Header>
                 <Grid
