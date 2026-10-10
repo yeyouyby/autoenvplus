@@ -19,8 +19,8 @@ public sealed class NativeShimContractTests : IDisposable
         Assert.True(File.Exists(native), $"Native Shim was not copied to test output: {native}");
 
         FileVersionInfo version = FileVersionInfo.GetVersionInfo(native);
-        Assert.Equal("0.0.2.0", version.FileVersion);
-        Assert.Equal("0.0.2.0", version.ProductVersion);
+        Assert.Equal("0.0.3.0", version.FileVersion);
+        Assert.Equal("0.0.3.0", version.ProductVersion);
         Assert.Equal("AutoEnvPlus", version.ProductName);
     }
 

@@ -76,12 +76,12 @@ if (Test-Path -LiteralPath $testRoot) {
 New-Item -ItemType Directory -Path $testRoot -Force | Out-Null
 
 try {
-    Assert-Equal $versionInfo.ProductVersion '0.0.2' 'Authoritative product version'
-    Assert-Equal $versionInfo.PackageVersion '0.0.2.0' 'Authoritative MSIX version'
-    Assert-Equal $versionInfo.ReleaseTag 'v0.0.2' 'Authoritative release tag'
+    Assert-Equal $versionInfo.ProductVersion '0.0.3' 'Authoritative product version'
+    Assert-Equal $versionInfo.PackageVersion '0.0.3.0' 'Authoritative MSIX version'
+    Assert-Equal $versionInfo.ReleaseTag 'v0.0.3' 'Authoritative release tag'
     Assert-Equal $versionInfo.ReleaseStage 'preview' 'Authoritative release stage'
     Assert-Equal $versionInfo.PackageUri `
-        'https://github.com/yeyouyby/autoenvplus/releases/download/v0.0.2/AutoEnvPlus-win-x64.msix' `
+        'https://github.com/yeyouyby/autoenvplus/releases/download/v0.0.3/AutoEnvPlus-win-x64.msix' `
         'Authoritative package URI'
     Assert-Equal $versionInfo.AppInstallerUri `
         'https://github.com/yeyouyby/autoenvplus/releases/latest/download/AutoEnvPlus.appinstaller' `

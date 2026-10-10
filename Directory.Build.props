@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <AutoEnvPlusProductVersion>0.0.2</AutoEnvPlusProductVersion>
+    <AutoEnvPlusProductVersion>0.0.3</AutoEnvPlusProductVersion>
     <AutoEnvPlusPackageVersion>$(AutoEnvPlusProductVersion).0</AutoEnvPlusPackageVersion>
     <AutoEnvPlusReleaseTag>v$(AutoEnvPlusProductVersion)</AutoEnvPlusReleaseTag>
     <AutoEnvPlusReleaseStage>preview</AutoEnvPlusReleaseStage>
