@@ -276,7 +276,7 @@
                                                 <FontIcon Glyph="{Binding VisibilityGlyph}" />
                                             </Button>
                                             <Button
-                                                AutomationProperties.Name="打开语言详情"
+                                                AutomationProperties.Name="{Binding OpenActionAutomationName}"
                                                 Click="OnOpenLanguageClicked"
                                                 Tag="{Binding}"
                                                 ToolTipService.ToolTip="打开语言详情">
@@ -357,11 +357,12 @@
                                             </StackPanel>
                                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
                                                 <Button
+                                                    AutomationProperties.Name="{Binding ToggleActionAutomationName}"
                                                     Click="OnToggleLanguagePackClicked"
                                                     Content="{Binding ToggleText}"
                                                     Tag="{Binding}" />
                                                 <Button
-                                                    AutomationProperties.Name="删除语言包"
+                                                    AutomationProperties.Name="{Binding DeleteActionAutomationName}"
                                                     Click="OnDeleteLanguagePackClicked"
                                                     Tag="{Binding}"
                                                     ToolTipService.ToolTip="删除语言包">

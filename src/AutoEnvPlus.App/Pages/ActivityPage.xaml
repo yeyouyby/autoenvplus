@@ -199,7 +199,7 @@
                                 <Button
                                     x:Name="CopySummaryButton"
                                     Grid.Column="1"
-                                    AutomationProperties.Name="复制活动摘要"
+                                    AutomationProperties.Name="{Binding CopyActionAutomationName}"
                                     Click="OnCopyClicked"
                                     Content="复制摘要"
                                     Tag="{Binding}" />

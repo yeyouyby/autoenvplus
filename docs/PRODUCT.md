@@ -62,7 +62,7 @@ python.provider-id = "python-org"
 
 - **概览**：启动先读取持久快照，默认不做环境扫描；快速刷新只读取受管状态，完整扫描才检查 PATH、执行版本探测和测量缓存，并记录上次完整扫描时间；
 - **语言**：打开时只读取持久的语言工具清单快照，不自动扫描 PATH；用户可显式重检、搜索、筛选和启用/隐藏语言、导入语言包，并进入语言详情管理工具与版本、Provider 来源、项目环境和 Runtime Provider 插件；
-- **项目环境**：导入项目需求、按需只读解析现有虚拟环境，创建锁文件并打开已激活终端；
+- **项目环境**：导入项目需求、按需只读解析现有虚拟环境，创建锁文件并打开已激活终端；可为受管 CMake 安装生成项目级 `CMakeUserPresets.json`（先预览完整写入结果，写入时保存快照，跨会话可回滚）；
 - **下载中心**：从 HTTPS URL 分段或单流下载、导入本地包、查看受管库证据、取消传输、安全删除，并为 `.whl` 生成受管虚拟环境安装计划；
 - **PATH 与命令**：PATH 只需配置一次 AutoEnvPlus Shim，展示新终端会话、项目、全局、自动选择优先级，解释 18 个命令（`python`、`python3`、`pip`、`pip3`、`node`、`npm`、`npx`、`java`、`javac`、`jar`、`dotnet`、`cl`、`clang`、`clang++`、`gcc`、`g++`、`cmake`、`ninja`）的实际路由，并列出可验证回滚的用户 PATH 快照；
 - **缓存与存储**：统计 pip/npm 等目录，直接打开实际位置，进行可回滚配置的安全迁移，并将纯缓存先隔离、后恢复或永久清空；
@@ -165,6 +165,8 @@ pip 安装可能已经创建虚拟环境、写入部分包、解析联网依赖�
 C/C++ 不是单个运行时。MSVC 激活还需要 `INCLUDE`、`LIB`、Windows SDK 和目标架构。AutoEnvPlus 对 C/C++ 的主要操作是创建工具链并“打开已配置终端”，而不是只把 `cl.exe` 写入 PATH。
 
 声明式 Provider 为 MSVC、LLVM、MinGW、CMake 和 Ninja 增加版本化便携 ZIP 来源，但不取代现有工具链语义。固定 WinGet 白名单仍用于已审核的 MSVC Build Tools、LLVM、WinLibs、CMake 和 Ninja 安装；Visual Studio/MSVC 实例、Windows SDK 与 Host/Target 组合仍由内置发现器验证。插件不能声明安装命令、任意 WinGet ID、`vcvarsall.bat` 或环境激活脚本，因此一个插件内的 `cl.exe` 入口不会被错误描述为已经具备完整 MSVC 开发者环境。
+
+项目环境页可为受管 CMake 安装生成项目级 `CMakeUserPresets.json`：用户选择安装与 configure/build 预设对，先看到写入后的完整文件预览，确认后才落盘；写入同时在受管根保存快照，回滚在重启后仍然可用。若项目在预览与写入之间、或回滚准备期间修改了该文件，AutoEnvPlus 拒绝覆盖并要求刷新，避免吞掉用户的新改动。
 
 ## 权限与安全
 

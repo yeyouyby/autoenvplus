@@ -17,7 +17,7 @@ namespace AutoEnvPlus.App.Pages;
 
 public sealed partial class DiagnosticsPage : Page
 {
-    private readonly CancellationTokenSource _pageCancellation = new();
+    private CancellationTokenSource _pageCancellation = new();
     private CancellationTokenSource? _scanCancellation;
     private EnvironmentDiagnosticReport? _lastReport;
     private bool _scanning;
@@ -25,9 +25,19 @@ public sealed partial class DiagnosticsPage : Page
     public DiagnosticsPage()
     {
         InitializeComponent();
+        Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         UpdateScopeControls();
         ShowPendingScopes();
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs args)
+    {
+        // The shell caches this page across navigations; the previous visit's
+        // Unloaded cancelled the token, so re-arm it on every load.
+        _pageCancellation.Cancel();
+        _pageCancellation.Dispose();
+        _pageCancellation = new CancellationTokenSource();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs args)

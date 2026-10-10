@@ -1,5 +1,7 @@
+using AutoEnvPlus.App.Appearance;
 using AutoEnvPlus.App.Downloads;
 using AutoEnvPlus.App.Text;
+using AutoEnvPlus.App.Updates;
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Discovery;
 using AutoEnvPlus.Core.Diagnostics;
@@ -37,11 +39,12 @@ public sealed partial class DashboardPage : Page
         new("csharp", ".NET", [RuntimeKind.DotNet]),
     ];
 
-    private readonly CancellationTokenSource _pageCancellation = new();
+    private CancellationTokenSource _pageCancellation = new();
     private readonly AppDownloadManager _downloadManager;
     private CancellationTokenSource? _refreshCancellation;
     private OverviewSnapshot? _snapshot;
     private bool _cachedSnapshotLoadStarted;
+    private bool _updateCheckStarted;
     private bool _isActive;
 
     public DashboardPage()
@@ -54,7 +57,12 @@ public sealed partial class DashboardPage : Page
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
     {
-        if (_isActive || _pageCancellation.IsCancellationRequested)
+        // The shell caches this page across navigations; the previous visit's
+        // Unloaded cancelled the token, so re-arm it on every load.
+        _pageCancellation.Cancel();
+        _pageCancellation.Dispose();
+        _pageCancellation = new CancellationTokenSource();
+        if (_isActive)
         {
             return;
         }
@@ -69,7 +77,49 @@ public sealed partial class DashboardPage : Page
 
         // Dashboard activation is cache-only; all environment scans stay user-initiated.
         _cachedSnapshotLoadStarted = true;
+        RunUpdateCheckOnce();
         await LoadCachedSnapshotAsync();
+    }
+
+    private void RunUpdateCheckOnce()
+    {
+        // One best-effort check per session: query the latest published
+        // release and surface a notice when it is newer than this build.
+        // Offline or malformed responses stay silent.
+        if (_updateCheckStarted)
+        {
+            return;
+        }
+
+        _updateCheckStarted = true;
+        _ = RunUpdateCheckAsync();
+    }
+
+    private async Task RunUpdateCheckAsync()
+    {
+        try
+        {
+            string managedRoot = ManagedRootResolver.ResolveOrThrow();
+            ProductIdentityPresentation identity =
+                ProductIdentityPresentationPolicy.FromAssembly(typeof(DashboardPage).Assembly);
+            AppUpdateInfo? update = await AppUpdateCheckService.CheckForUpdateAsync(
+                managedRoot,
+                identity.ProductVersion,
+                CancellationToken.None);
+            if (update is null)
+            {
+                return;
+            }
+
+            UpdateAvailableInfo.Message =
+                $"当前 {identity.DisplayVersion}，最新 v{update.LatestVersion}。";
+            UpdateReleaseLink.NavigateUri = update.ReleaseUrl;
+            UpdateAvailableInfo.IsOpen = true;
+        }
+        catch (InvalidOperationException)
+        {
+            // No managed root or no assembly identity: nothing to announce.
+        }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs args)

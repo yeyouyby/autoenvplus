@@ -2,6 +2,7 @@ using AutoEnvPlus.App.Appearance;
 using AutoEnvPlus.App.Downloads;
 using AutoEnvPlus.App.Pages;
 using AutoEnvPlus.Core.Environment;
+using AutoEnvPlus.Core.Languages;
 using AutoEnvPlus.Core.Settings;
 using System.IO;
 using System.Reflection;
@@ -22,6 +23,8 @@ public sealed partial class MainWindow : Window
 {
     private readonly WindowBackdropManager _backdropManager;
     private readonly AppWindowTitleBar _appWindowTitleBar;
+    private readonly Dictionary<string, Page> _pageCache = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string?> _pageCacheContexts = new(StringComparer.Ordinal);
     private AppDownloadManager _downloadManager = null!;
     private bool _allowClose;
     private bool _suppressSelectionChanged;
@@ -345,7 +348,7 @@ public sealed partial class MainWindow : Window
         Page page;
         try
         {
-            page = CreatePage(metadata.Tag, context);
+            page = GetOrCreatePage(metadata.Tag, context);
         }
         catch (InvalidOperationException) when (!ManagedRootResolver.TryResolve(
             null,
@@ -354,13 +357,39 @@ public sealed partial class MainWindow : Window
         {
             metadata = GetPageMetadata("settings");
             _ = SelectNavigationItem(metadata.Tag);
-            page = new SettingsPage(_backdropManager);
+            page = GetOrCreatePage(metadata.Tag, null);
         }
 
         ContentFrame.Content = page;
         _currentNavigationTag = metadata.Tag;
         UpdatePageHeader(metadata);
     }
+
+    private Page GetOrCreatePage(string tag, string? context)
+    {
+        // Pages were recreated on every navigation, losing all form values,
+        // filters, and scroll positions. Cache one instance per tag; the only
+        // context-sensitive page (projects) is recreated when its context
+        // changes. Pages re-arm their cancellation tokens on Loaded, so a
+        // cached instance is safe to reattach.
+        if (_pageCache.TryGetValue(tag, out Page? cached)
+            && IsCachedContextCompatible(tag, context))
+        {
+            return cached;
+        }
+
+        Page page = CreatePage(tag, context);
+        _pageCache[tag] = page;
+        _pageCacheContexts[tag] = context;
+        return page;
+    }
+
+    private bool IsCachedContextCompatible(string tag, string? context) =>
+        !tag.Equals("projects", StringComparison.Ordinal)
+        || string.Equals(
+            _pageCacheContexts.GetValueOrDefault(tag),
+            context,
+            StringComparison.OrdinalIgnoreCase);
 
     private Page CreatePage(string tag, string? context) => tag switch
     {
@@ -439,6 +468,14 @@ public sealed partial class MainWindow : Window
         KeyboardAccelerator sender,
         KeyboardAcceleratorInvokedEventArgs args)
     {
+        if (sender.Key == VirtualKey.F)
+        {
+            // Ctrl+F focuses the global search box instead of navigating.
+            GlobalSearchBox.Focus(FocusState.Keyboard);
+            args.Handled = true;
+            return;
+        }
+
         string? tag = sender.Key switch
         {
             VirtualKey.Number1 => "dashboard",
@@ -561,6 +598,125 @@ public sealed partial class MainWindow : Window
             xamlRoot.Changed -= OnTitleBarXamlRootChanged;
         }
     }
+
+    private void OnGlobalSearchTextChanged(
+        AutoSuggestBox sender,
+        AutoSuggestBoxTextChangedEventArgs args)
+    {
+        if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput)
+        {
+            return;
+        }
+
+        sender.ItemsSource = BuildSearchSuggestions(sender.Text);
+    }
+
+    private static GlobalSearchSuggestion[] BuildSearchSuggestions(string query)
+    {
+        query = query.Trim();
+        if (query.Length == 0)
+        {
+            return [];
+        }
+
+        List<GlobalSearchSuggestion> suggestions = [];
+        foreach (LanguageDefinition language in BuiltInLanguageCatalog.Current.Languages)
+        {
+            if (!MatchesLanguage(language, query))
+            {
+                continue;
+            }
+
+            string aliases = language.Aliases.Count == 0
+                ? language.Id
+                : string.Join("、", language.Aliases.Take(4));
+            suggestions.Add(new GlobalSearchSuggestion(
+                language.DisplayName,
+                $"语言 · {aliases}",
+                language.Id,
+                null));
+            if (suggestions.Count >= 8)
+            {
+                break;
+            }
+        }
+
+        foreach (string tag in PageTags)
+        {
+            ShellPageMetadata metadata = GetPageMetadata(tag);
+            if (!metadata.Title.Contains(query, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            suggestions.Add(new GlobalSearchSuggestion(
+                metadata.Title,
+                $"页面 · {metadata.Subtitle}",
+                null,
+                metadata.Tag));
+            if (suggestions.Count >= 10)
+            {
+                break;
+            }
+        }
+
+        return [.. suggestions];
+    }
+
+    private static bool MatchesLanguage(LanguageDefinition language, string query) =>
+        language.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)
+        || language.Id.Contains(query, StringComparison.OrdinalIgnoreCase)
+        || language.Aliases.Any(alias => alias.Contains(
+            query,
+            StringComparison.OrdinalIgnoreCase))
+        || language.FileExtensions.Any(extension => extension.Contains(
+            query,
+            StringComparison.OrdinalIgnoreCase));
+
+    private void OnGlobalSearchQuerySubmitted(
+        AutoSuggestBox sender,
+        AutoSuggestBoxQuerySubmittedEventArgs args)
+    {
+        if (args.ChosenSuggestion is not GlobalSearchSuggestion suggestion)
+        {
+            return;
+        }
+
+        if (suggestion.LanguageId is not null)
+        {
+            NavigateTo("languages");
+            if (ContentFrame.Content is LanguagesPage languagesPage)
+            {
+                languagesPage.RequestOpenLanguage(suggestion.LanguageId);
+            }
+        }
+        else if (suggestion.PageTag is not null)
+        {
+            NavigateTo(suggestion.PageTag);
+        }
+
+        sender.Text = string.Empty;
+        sender.ItemsSource = null;
+    }
+
+    private static readonly string[] PageTags =
+    [
+        "dashboard",
+        "languages",
+        "projects",
+        "downloads",
+        "path",
+        "storage",
+        "doctor",
+        "activity",
+        "settings",
+    ];
+
+    private sealed record GlobalSearchSuggestion(
+        string DisplayText,
+        string DetailText,
+        string? LanguageId,
+        string? PageTag);
 
     private static ShellPageMetadata GetPageMetadata(string tag) => tag switch
     {

@@ -1066,6 +1066,15 @@ public sealed partial class DownloadsPage : Page
     {
         public string FileName => Item.FileName;
 
+        public string InstallActionAutomationName =>
+            $"安装 {FileName} 到受管 Python 虚拟环境";
+
+        public string OpenLocationActionAutomationName =>
+            $"打开 {FileName} 所在位置";
+
+        public string DeleteActionAutomationName =>
+            $"从受管下载库删除 {FileName}";
+
         public Visibility PipInstallVisibility => Item.Extension.Equals(
             ".whl",
             StringComparison.OrdinalIgnoreCase)
