@@ -195,6 +195,22 @@ foreach ($requiredEntry in $requiredEntries) {
     }
 }
 
+# Record which .NET runtime pack the bundle carries. The runtime pack version
+# floats with the SDK patch (global.json rolls forward within the feature
+# band), so this value is the paper trail for "which runtime did this asset
+# ship with" when diagnosing single-file startup regressions.
+$coreLibEntry = @($bundleMap | Where-Object { $_ -match '^System\.Private\.CoreLib\.dll\|' }) | Select-Object -First 1
+if (-not $coreLibEntry) {
+    throw "SDK bundle input manifest does not record System.Private.CoreLib.dll; cannot identify the bundled runtime."
+}
+$coreLibSource = ($coreLibEntry -split '\|', 3)[1]
+if ($coreLibSource -match '(?i)microsoft\.netcore\.app\.runtime\.win-x64[\\/](?<version>[0-9]+\.[0-9]+\.[0-9]+)[\\/]') {
+    $runtimePackVersion = $Matches['version']
+}
+else {
+    throw "Could not derive the .NET runtime pack version from: $coreLibSource"
+}
+
 Move-Item -LiteralPath $publishedExecutable -Destination $assetPath
 [System.IO.File]::WriteAllLines(
     $manifestPath,
@@ -210,4 +226,5 @@ Write-Host "Published a true .NET/Windows App SDK single-file executable."
 Write-Host "Asset: $assetPath"
 Write-Host "Size: $($asset.Length) bytes ($([math]::Round($asset.Length / 1MB, 2)) MiB)"
 Write-Host "SHA-256: $hash"
+Write-Host ".NET runtime pack: $runtimePackVersion"
 Write-Host "SDK bundle input manifest: $manifestPath"

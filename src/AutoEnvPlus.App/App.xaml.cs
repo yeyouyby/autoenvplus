@@ -77,7 +77,9 @@ public partial class App : Application
         string caption,
         uint type);
 
-    private static void FailFastStartup(Exception exception)
+    // Internal so the custom Program.Main can route pre-activation startup
+    // failures through the same log + dialog + exit path.
+    internal static void FailFastStartup(Exception exception)
     {
         // WinUI swallows exceptions that escape the async OnLaunched callback,
         // which would otherwise leave a windowless background process. Write
