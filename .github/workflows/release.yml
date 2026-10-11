@@ -571,6 +571,57 @@ jobs:
           }
           Remove-Item -LiteralPath $verifyRoot -Recurse -Force
 
+      - name: Smoke test signed release assets
+        shell: pwsh
+        run: |
+          # v0.0.3 shipped a single-file executable that died at the first WinUI
+          # activation because every prior check inspected bytes and signatures
+          # but nobody ever launched the asset. Launch the real executables from
+          # the downloaded release set and require the main window to appear.
+          $releaseRoot = [System.IO.Path]::GetFullPath((Join-Path $env:GITHUB_WORKSPACE 'release'))
+          $portableRoot = Join-Path $env:RUNNER_TEMP 'autoenvplus-release-smoke'
+          if (Test-Path -LiteralPath $portableRoot) { Remove-Item -LiteralPath $portableRoot -Recurse -Force }
+          Expand-Archive -LiteralPath (Join-Path $releaseRoot 'AutoEnvPlus-win-x64-portable.zip') -DestinationPath $portableRoot
+          $targets = @(
+            @{ Label = 'single-file AutoEnvPlus-win-x64.exe'; Path = Join-Path $releaseRoot 'AutoEnvPlus-win-x64.exe' },
+            @{ Label = 'portable AutoEnvPlus.App.exe'; Path = Join-Path $portableRoot 'AutoEnvPlus.App.exe' }
+          )
+          foreach ($target in $targets) {
+            if (-not (Test-Path -LiteralPath $target.Path -PathType Leaf)) {
+              throw "Smoke test target is missing: $($target.Path)"
+            }
+            Write-Host "Launching $($target.Label)..."
+            $process = Start-Process -FilePath $target.Path -PassThru
+            $windowSeen = $false
+            try {
+              $deadline = [DateTime]::UtcNow.AddSeconds(120)
+              while ([DateTime]::UtcNow -lt $deadline) {
+                Start-Sleep -Milliseconds 500
+                $process.Refresh()
+                if ($process.HasExited) {
+                  throw "$($target.Label) exited before showing a window (exit code $($process.ExitCode))."
+                }
+                if ($process.MainWindowHandle -ne 0 -and
+                    $process.MainWindowTitle -like 'AutoEnvPlus v*') {
+                  $windowSeen = $true
+                  break
+                }
+              }
+              if (-not $windowSeen) {
+                throw "$($target.Label) did not present its main window within 120 seconds."
+              }
+              Write-Host "$($target.Label) presented its main window."
+            }
+            finally {
+              if (-not $process.HasExited) {
+                Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+                Wait-Process -Id $process.Id -Timeout 30 -ErrorAction SilentlyContinue
+              }
+            }
+          }
+          Remove-Item -LiteralPath $portableRoot -Recurse -Force
+          Write-Host 'Both signed release executables launched successfully.'
+
       - name: Publish immutable GitHub prerelease
         shell: pwsh
         env:

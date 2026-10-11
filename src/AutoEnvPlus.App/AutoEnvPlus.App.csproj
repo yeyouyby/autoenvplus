@@ -14,6 +14,9 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>..\..\assets\branding\autoenvplus.ico</ApplicationIcon>
+    <!-- Program.cs provides the entry point (with the single-file DLL search
+         path fix); suppress the XAML compiler's generated Program.Main. -->
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
     <!-- Windows App SDK 1.8 supports unpackaged .NET bundles when MSIX tooling
