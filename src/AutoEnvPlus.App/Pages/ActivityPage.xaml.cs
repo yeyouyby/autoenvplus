@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Environment;
 using Microsoft.UI.Xaml;
@@ -19,9 +20,10 @@ public sealed partial class ActivityPage : Page
     public ActivityPage(string? managedRoot = null)
     {
         InitializeComponent();
+        ApplyLocalizedStrings();
         ActivityList.ItemsSource = _rows;
         TypeFilter.Items.Clear();
-        TypeFilter.Items.Add(new ComboBoxItem { Content = "全部操作" });
+        TypeFilter.Items.Add(new ComboBoxItem { Content = Loc.Get("Activity.Filters.Type.All") });
         foreach (ActivityOperationType type in Enum.GetValues<ActivityOperationType>())
         {
             TypeFilter.Items.Add(new ComboBoxItem
@@ -41,7 +43,7 @@ public sealed partial class ActivityPage : Page
                     out string? error)
                 || managedRoot is null)
             {
-                _rootError = error ?? "无法确定 AutoEnvPlus 数据根。";
+                _rootError = error ?? Loc.Get("Activity.Messages.RootResolveFailed");
             }
         }
 
@@ -65,6 +67,50 @@ public sealed partial class ActivityPage : Page
 
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+    }
+
+    /// <summary>
+    /// Applies every localized string for this page from the resource table.
+    /// Unpackaged WinUI 3 apps cannot use x:Uid: the XAML loader resolves
+    /// ms-resource property bags against the OS system language only, so it
+    /// neither matches the standard dotted-key PRI layout nor honors the
+    /// in-app language preference. Code-behind assignment through
+    /// <see cref="Loc"/> is the only path that follows
+    /// <c>Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride</c>.
+    /// </summary>
+    private void ApplyLocalizedStrings()
+    {
+        PageTitleText.Text = Loc.Get("Activity.Header.Title");
+        PageSubtitleText.Text = Loc.Get("Activity.Header.Subtitle");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            RefreshButton,
+            Loc.Get("Activity.Refresh.AccessibleName"));
+        ToolTipService.SetToolTip(
+            RefreshButton,
+            Loc.Get("Activity.Refresh.AccessibleName"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            StatusFilter,
+            Loc.Get("Activity.Filters.Status.AccessibleName"));
+        StatusFilter.Header = Loc.Get("Activity.Filters.Status.Header");
+        StatusFilterAllItem.Content = Loc.Get("Activity.Filters.Status.All");
+        StatusFilterSucceededItem.Content = Loc.Get("Activity.Status.Succeeded");
+        StatusFilterFailedItem.Content = Loc.Get("Activity.Status.Failed");
+        StatusFilterCancelledItem.Content = Loc.Get("Activity.Status.Cancelled");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            TypeFilter,
+            Loc.Get("Activity.Filters.Type.AccessibleName"));
+        TypeFilter.Header = Loc.Get("Activity.Filters.Type.Header");
+        TypeFilterAllItem.Content = Loc.Get("Activity.Filters.Type.All");
+        FilterNoteText.Text = Loc.Get("Activity.Filters.Note");
+        EmptyText.Text = Loc.Get("Activity.Empty.Text");
+    }
+
+    private void OnCopySummaryButtonLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is Button button)
+        {
+            button.Content = Loc.Get("Activity.Item.CopySummary");
+        }
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
@@ -96,13 +142,16 @@ public sealed partial class ActivityPage : Page
     {
         if (_rootError is not null)
         {
-            SetInfo(InfoBarSeverity.Error, "无法读取活动记录", _rootError);
+            SetInfo(InfoBarSeverity.Error, Loc.Get("Activity.Messages.ReadFailedTitle"), _rootError);
             return;
         }
 
         if (_store is null)
         {
-            SetInfo(InfoBarSeverity.Error, "无法读取活动记录", "日志存储未初始化。");
+            SetInfo(
+                InfoBarSeverity.Error,
+                Loc.Get("Activity.Messages.ReadFailedTitle"),
+                Loc.Get("Activity.Messages.StoreNotInitialized"));
             return;
         }
 
@@ -116,26 +165,39 @@ public sealed partial class ActivityPage : Page
             {
                 SetInfo(
                     InfoBarSeverity.Informational,
-                    "活动记录已刷新",
-                    $"共 {_entries.Count} 条记录；日志：{_store.LogPath}。回滚路径仅供查看。");
+                    Loc.Get("Activity.Messages.RefreshedTitle"),
+                    Loc.Format(
+                        "Activity.Messages.RefreshedSummary",
+                        _entries.Count,
+                        _store.LogPath));
             }
             else
             {
                 SetInfo(
                     InfoBarSeverity.Warning,
-                    "活动记录已部分读取",
-                    $"已加载 {_entries.Count} 条有效记录，跳过 {result.Errors.Count} 条损坏或不兼容记录。日志：{_store.LogPath}。");
+                    Loc.Get("Activity.Messages.PartialLoadTitle"),
+                    Loc.Format(
+                        "Activity.Messages.PartialLoadSummary",
+                        _entries.Count,
+                        result.Errors.Count,
+                        _store.LogPath));
             }
         }
         catch (OperationCanceledException)
         {
-            SetInfo(InfoBarSeverity.Informational, "读取已取消", string.Empty);
+            SetInfo(
+                InfoBarSeverity.Informational,
+                Loc.Get("Activity.Messages.LoadCancelledTitle"),
+                string.Empty);
         }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
             or InvalidOperationException)
         {
-            SetInfo(InfoBarSeverity.Error, "无法读取活动记录", exception.Message);
+            SetInfo(
+                InfoBarSeverity.Error,
+                Loc.Get("Activity.Messages.ReadFailedTitle"),
+                exception.Message);
         }
         finally
         {
@@ -184,11 +246,17 @@ public sealed partial class ActivityPage : Page
             DataPackage package = new();
             package.SetText(row.CopyText);
             Clipboard.SetContent(package);
-            SetInfo(InfoBarSeverity.Success, "摘要已复制", "已复制脱敏活动摘要；回滚路径不会在此页自动执行。");
+            SetInfo(
+                InfoBarSeverity.Success,
+                Loc.Get("Activity.Messages.CopySucceededTitle"),
+                Loc.Get("Activity.Messages.CopySucceededSummary"));
         }
         catch (Exception exception) when (exception is COMException or InvalidOperationException)
         {
-            SetInfo(InfoBarSeverity.Error, "无法复制摘要", exception.Message);
+            SetInfo(
+                InfoBarSeverity.Error,
+                Loc.Get("Activity.Messages.CopyFailedTitle"),
+                exception.Message);
         }
     }
 
@@ -202,34 +270,34 @@ public sealed partial class ActivityPage : Page
 
     private static string GetOperationText(ActivityOperationType type) => type switch
     {
-        ActivityOperationType.RuntimeInstall => "语言工具安装",
-        ActivityOperationType.RuntimeUninstall => "语言工具卸载",
-        ActivityOperationType.RuntimeSwitch => "语言工具切换",
-        ActivityOperationType.PathChange => "PATH 修改",
-        ActivityOperationType.PathRollback => "PATH 回滚",
-        ActivityOperationType.CacheMigration => "缓存迁移",
-        ActivityOperationType.CacheRollback => "缓存回滚",
-        ActivityOperationType.CacheCleanup => "缓存清理",
-        ActivityOperationType.ToolchainInstall => "编译与构建工具安装",
-        ActivityOperationType.PowerShellIntegration => "PowerShell 集成",
-        ActivityOperationType.ProjectImport => "项目导入",
-        ActivityOperationType.DiagnosticExport => "诊断导出",
-        ActivityOperationType.CMakePreset => "CMake Preset",
-        ActivityOperationType.SettingsChange => "设置变更",
-        ActivityOperationType.PackageDownload => "包下载",
-        ActivityOperationType.PackageImport => "包导入",
-        ActivityOperationType.PackageInstall => "包安装",
-        ActivityOperationType.ProviderPluginImport => "Provider 插件导入",
-        ActivityOperationType.ProviderPluginStateChange => "Provider 插件状态",
-        ActivityOperationType.ProviderPluginDelete => "Provider 插件删除",
-        _ => "其他操作",
+        ActivityOperationType.RuntimeInstall => Loc.Get("Activity.Operations.RuntimeInstall"),
+        ActivityOperationType.RuntimeUninstall => Loc.Get("Activity.Operations.RuntimeUninstall"),
+        ActivityOperationType.RuntimeSwitch => Loc.Get("Activity.Operations.RuntimeSwitch"),
+        ActivityOperationType.PathChange => Loc.Get("Activity.Operations.PathChange"),
+        ActivityOperationType.PathRollback => Loc.Get("Activity.Operations.PathRollback"),
+        ActivityOperationType.CacheMigration => Loc.Get("Activity.Operations.CacheMigration"),
+        ActivityOperationType.CacheRollback => Loc.Get("Activity.Operations.CacheRollback"),
+        ActivityOperationType.CacheCleanup => Loc.Get("Activity.Operations.CacheCleanup"),
+        ActivityOperationType.ToolchainInstall => Loc.Get("Activity.Operations.ToolchainInstall"),
+        ActivityOperationType.PowerShellIntegration => Loc.Get("Activity.Operations.PowerShellIntegration"),
+        ActivityOperationType.ProjectImport => Loc.Get("Activity.Operations.ProjectImport"),
+        ActivityOperationType.DiagnosticExport => Loc.Get("Activity.Operations.DiagnosticExport"),
+        ActivityOperationType.CMakePreset => Loc.Get("Activity.Operations.CMakePreset"),
+        ActivityOperationType.SettingsChange => Loc.Get("Activity.Operations.SettingsChange"),
+        ActivityOperationType.PackageDownload => Loc.Get("Activity.Operations.PackageDownload"),
+        ActivityOperationType.PackageImport => Loc.Get("Activity.Operations.PackageImport"),
+        ActivityOperationType.PackageInstall => Loc.Get("Activity.Operations.PackageInstall"),
+        ActivityOperationType.ProviderPluginImport => Loc.Get("Activity.Operations.ProviderPluginImport"),
+        ActivityOperationType.ProviderPluginStateChange => Loc.Get("Activity.Operations.ProviderPluginStateChange"),
+        ActivityOperationType.ProviderPluginDelete => Loc.Get("Activity.Operations.ProviderPluginDelete"),
+        _ => Loc.Get("Activity.Operations.Other"),
     };
 
     private static string GetStatusText(ActivityStatus status) => status switch
     {
-        ActivityStatus.Succeeded => "成功",
-        ActivityStatus.Failed => "失败",
-        ActivityStatus.Cancelled => "已取消",
+        ActivityStatus.Succeeded => Loc.Get("Activity.Status.Succeeded"),
+        ActivityStatus.Failed => Loc.Get("Activity.Status.Failed"),
+        ActivityStatus.Cancelled => Loc.Get("Activity.Status.Cancelled"),
         _ => status.ToString(),
     };
 
@@ -243,20 +311,22 @@ public sealed partial class ActivityPage : Page
             StatusText = GetStatusText(entry.Status);
             Summary = entry.Summary;
             AffectedPathsText = entry.AffectedPaths.Count == 0
-                ? "受影响路径：无"
-                : $"受影响路径：{string.Join("；", entry.AffectedPaths)}";
+                ? Loc.Get("Activity.Item.AffectedPathsNone")
+                : Loc.Format(
+                    "Activity.Item.AffectedPaths",
+                    string.Join(Loc.Get("Activity.Item.PathSeparator"), entry.AffectedPaths));
             SnapshotText = entry.SnapshotPath is null
-                ? "快照路径：无"
-                : $"快照路径：{entry.SnapshotPath}";
+                ? Loc.Get("Activity.Item.SnapshotPathNone")
+                : Loc.Format("Activity.Item.SnapshotPath", entry.SnapshotPath);
             RollbackText = entry.RollbackPath is null
-                ? "回滚路径（仅供查看，不自动执行）：无"
-                : $"回滚路径（仅供查看，不自动执行）：{entry.RollbackPath}";
+                ? Loc.Get("Activity.Item.RollbackPathNone")
+                : Loc.Format("Activity.Item.RollbackPath", entry.RollbackPath);
             CopyText = string.Join(
                 System.Environment.NewLine,
                 TimestampText,
-                $"操作：{OperationText}",
-                $"状态：{StatusText}",
-                $"摘要：{Summary}",
+                Loc.Format("Activity.Copy.Operation", OperationText),
+                Loc.Format("Activity.Copy.Status", StatusText),
+                Loc.Format("Activity.Copy.Summary", Summary),
                 AffectedPathsText,
                 SnapshotText,
                 RollbackText);
@@ -268,7 +338,8 @@ public sealed partial class ActivityPage : Page
 
         public string OperationText { get; }
 
-        public string CopyActionAutomationName => $"复制 {OperationText} 活动摘要";
+        public string CopyActionAutomationName =>
+            Loc.Format("Activity.Item.CopyAction.AccessibleName", OperationText);
 
         public string StatusText { get; }
 

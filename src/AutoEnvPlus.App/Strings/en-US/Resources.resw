@@ -1134,4 +1134,179 @@ The current PATH is re-checked before the operation; if other changes were made 
   <data name="Diagnostics.Text.ListSeparator" xml:space="preserve">
     <value>, </value>
   </data>
+
+  <data name="Activity.Header.Title" xml:space="preserve">
+    <value>Activity log</value>
+  </data>
+  <data name="Activity.Header.Subtitle" xml:space="preserve">
+    <value>Review AutoEnvPlus audits for language tool installs, version switches, PATH, cache, and project operations. Only redacted summaries are stored.</value>
+  </data>
+  <data name="Activity.Refresh.AccessibleName" xml:space="preserve">
+    <value>Refresh activity log</value>
+  </data>
+  <data name="Activity.Filters.Status.AccessibleName" xml:space="preserve">
+    <value>Filter by status</value>
+  </data>
+  <data name="Activity.Filters.Status.Header" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Activity.Filters.Status.All" xml:space="preserve">
+    <value>All statuses</value>
+  </data>
+  <data name="Activity.Status.Succeeded" xml:space="preserve">
+    <value>Succeeded</value>
+  </data>
+  <data name="Activity.Status.Failed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="Activity.Status.Cancelled" xml:space="preserve">
+    <value>Cancelled</value>
+  </data>
+  <data name="Activity.Filters.Type.AccessibleName" xml:space="preserve">
+    <value>Filter by operation type</value>
+  </data>
+  <data name="Activity.Filters.Type.Header" xml:space="preserve">
+    <value>Operation type</value>
+  </data>
+  <data name="Activity.Filters.Type.All" xml:space="preserve">
+    <value>All operations</value>
+  </data>
+  <data name="Activity.Filters.Note" xml:space="preserve">
+    <value>Rollback and snapshot paths are for audit review only; this page never runs rollbacks automatically.</value>
+  </data>
+  <data name="Activity.Empty.Text" xml:space="preserve">
+    <value>No activity records match the current filters.</value>
+  </data>
+  <data name="Activity.Item.CopySummary" xml:space="preserve">
+    <value>Copy summary</value>
+  </data>
+  <data name="Activity.Item.CopyAction.AccessibleName" xml:space="preserve">
+    <value>Copy {0} activity summary</value>
+  </data>
+  <data name="Activity.Item.AffectedPaths" xml:space="preserve">
+    <value>Affected paths: {0}</value>
+  </data>
+  <data name="Activity.Item.AffectedPathsNone" xml:space="preserve">
+    <value>Affected paths: none</value>
+  </data>
+  <data name="Activity.Item.PathSeparator" xml:space="preserve">
+    <value>; </value>
+  </data>
+  <data name="Activity.Item.SnapshotPath" xml:space="preserve">
+    <value>Snapshot path: {0}</value>
+  </data>
+  <data name="Activity.Item.SnapshotPathNone" xml:space="preserve">
+    <value>Snapshot path: none</value>
+  </data>
+  <data name="Activity.Item.RollbackPath" xml:space="preserve">
+    <value>Rollback path (view only, never executed): {0}</value>
+  </data>
+  <data name="Activity.Item.RollbackPathNone" xml:space="preserve">
+    <value>Rollback path (view only, never executed): none</value>
+  </data>
+  <data name="Activity.Copy.Operation" xml:space="preserve">
+    <value>Operation: {0}</value>
+  </data>
+  <data name="Activity.Copy.Status" xml:space="preserve">
+    <value>Status: {0}</value>
+  </data>
+  <data name="Activity.Copy.Summary" xml:space="preserve">
+    <value>Summary: {0}</value>
+  </data>
+  <data name="Activity.Messages.RootResolveFailed" xml:space="preserve">
+    <value>Could not determine the AutoEnvPlus data root.</value>
+  </data>
+  <data name="Activity.Messages.ReadFailedTitle" xml:space="preserve">
+    <value>Could not read the activity log</value>
+  </data>
+  <data name="Activity.Messages.StoreNotInitialized" xml:space="preserve">
+    <value>The log store is not initialized.</value>
+  </data>
+  <data name="Activity.Messages.RefreshedTitle" xml:space="preserve">
+    <value>Activity log refreshed</value>
+  </data>
+  <data name="Activity.Messages.RefreshedSummary" xml:space="preserve">
+    <value>{0} records total; log: {1}. Rollback paths are view-only.</value>
+  </data>
+  <data name="Activity.Messages.PartialLoadTitle" xml:space="preserve">
+    <value>Activity log partially loaded</value>
+  </data>
+  <data name="Activity.Messages.PartialLoadSummary" xml:space="preserve">
+    <value>Loaded {0} valid records and skipped {1} corrupted or incompatible records. Log: {2}.</value>
+  </data>
+  <data name="Activity.Messages.LoadCancelledTitle" xml:space="preserve">
+    <value>Read cancelled</value>
+  </data>
+  <data name="Activity.Messages.CopySucceededTitle" xml:space="preserve">
+    <value>Summary copied</value>
+  </data>
+  <data name="Activity.Messages.CopySucceededSummary" xml:space="preserve">
+    <value>Redacted activity summary copied; rollback paths are never executed on this page.</value>
+  </data>
+  <data name="Activity.Messages.CopyFailedTitle" xml:space="preserve">
+    <value>Could not copy the summary</value>
+  </data>
+  <data name="Activity.Operations.RuntimeInstall" xml:space="preserve">
+    <value>Language tool install</value>
+  </data>
+  <data name="Activity.Operations.RuntimeUninstall" xml:space="preserve">
+    <value>Language tool uninstall</value>
+  </data>
+  <data name="Activity.Operations.RuntimeSwitch" xml:space="preserve">
+    <value>Language tool switch</value>
+  </data>
+  <data name="Activity.Operations.PathChange" xml:space="preserve">
+    <value>PATH change</value>
+  </data>
+  <data name="Activity.Operations.PathRollback" xml:space="preserve">
+    <value>PATH rollback</value>
+  </data>
+  <data name="Activity.Operations.CacheMigration" xml:space="preserve">
+    <value>Cache migration</value>
+  </data>
+  <data name="Activity.Operations.CacheRollback" xml:space="preserve">
+    <value>Cache rollback</value>
+  </data>
+  <data name="Activity.Operations.CacheCleanup" xml:space="preserve">
+    <value>Cache cleanup</value>
+  </data>
+  <data name="Activity.Operations.ToolchainInstall" xml:space="preserve">
+    <value>Toolchain install</value>
+  </data>
+  <data name="Activity.Operations.PowerShellIntegration" xml:space="preserve">
+    <value>PowerShell integration</value>
+  </data>
+  <data name="Activity.Operations.ProjectImport" xml:space="preserve">
+    <value>Project import</value>
+  </data>
+  <data name="Activity.Operations.DiagnosticExport" xml:space="preserve">
+    <value>Diagnostics export</value>
+  </data>
+  <data name="Activity.Operations.CMakePreset" xml:space="preserve">
+    <value>CMake preset</value>
+  </data>
+  <data name="Activity.Operations.SettingsChange" xml:space="preserve">
+    <value>Settings change</value>
+  </data>
+  <data name="Activity.Operations.PackageDownload" xml:space="preserve">
+    <value>Package download</value>
+  </data>
+  <data name="Activity.Operations.PackageImport" xml:space="preserve">
+    <value>Package import</value>
+  </data>
+  <data name="Activity.Operations.PackageInstall" xml:space="preserve">
+    <value>Package install</value>
+  </data>
+  <data name="Activity.Operations.ProviderPluginImport" xml:space="preserve">
+    <value>Provider plugin import</value>
+  </data>
+  <data name="Activity.Operations.ProviderPluginStateChange" xml:space="preserve">
+    <value>Provider plugin state</value>
+  </data>
+  <data name="Activity.Operations.ProviderPluginDelete" xml:space="preserve">
+    <value>Provider plugin deletion</value>
+  </data>
+  <data name="Activity.Operations.Other" xml:space="preserve">
+    <value>Other operation</value>
+  </data>
 </root>

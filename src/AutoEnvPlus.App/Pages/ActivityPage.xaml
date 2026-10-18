@@ -58,10 +58,10 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <StackPanel Spacing="4">
-                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="活动记录" />
+                <TextBlock x:Name="PageTitleText" Style="{StaticResource TitleTextBlockStyle}" />
                 <TextBlock
+                    x:Name="PageSubtitleText"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="查看 AutoEnvPlus 的语言工具安装、版本切换、PATH、缓存和项目操作审计。记录仅保存脱敏摘要。"
                     TextWrapping="Wrap" />
             </StackPanel>
             <Button
@@ -69,9 +69,7 @@
                 Grid.Column="1"
                 Width="40"
                 Height="40"
-                AutomationProperties.Name="刷新活动记录"
-                Click="OnRefreshClicked"
-                ToolTipService.ToolTip="刷新活动记录">
+                Click="OnRefreshClicked">
                 <FontIcon FontSize="16" Glyph="&#xE72C;" />
             </Button>
         </Grid>
@@ -89,28 +87,23 @@
             </Grid.RowDefinitions>
             <ComboBox
                 x:Name="StatusFilter"
-                AutomationProperties.Name="按状态筛选"
-                Header="状态"
                 SelectionChanged="OnFilterChanged">
-                <ComboBoxItem Content="全部状态" />
-                <ComboBoxItem Content="成功" />
-                <ComboBoxItem Content="失败" />
-                <ComboBoxItem Content="已取消" />
+                <ComboBoxItem x:Name="StatusFilterAllItem" />
+                <ComboBoxItem x:Name="StatusFilterSucceededItem" />
+                <ComboBoxItem x:Name="StatusFilterFailedItem" />
+                <ComboBoxItem x:Name="StatusFilterCancelledItem" />
             </ComboBox>
             <ComboBox
                 x:Name="TypeFilter"
                 Grid.Column="1"
-                AutomationProperties.Name="按操作类型筛选"
-                Header="操作类型"
                 SelectionChanged="OnFilterChanged">
-                <ComboBoxItem Content="全部操作" />
+                <ComboBoxItem x:Name="TypeFilterAllItem" />
             </ComboBox>
             <TextBlock
                 x:Name="FilterNoteText"
                 Grid.Column="2"
                 Margin="0,28,0,0"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="回滚和快照路径仅供审计查看；本页不会自动执行回滚。"
                 TextWrapping="Wrap" />
         </Grid>
 
@@ -201,7 +194,7 @@
                                     Grid.Column="1"
                                     AutomationProperties.Name="{Binding CopyActionAutomationName}"
                                     Click="OnCopyClicked"
-                                    Content="复制摘要"
+                                    Loaded="OnCopySummaryButtonLoaded"
                                     Tag="{Binding}" />
                                 <TextBlock
                                     Grid.Row="1"
@@ -241,7 +234,6 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="暂无符合筛选条件的活动记录。"
                 TextAlignment="Center"
                 TextWrapping="Wrap"
                 Visibility="Collapsed" />

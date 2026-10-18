@@ -1137,4 +1137,179 @@ PATH 变化
   <data name="Diagnostics.Text.ListSeparator" xml:space="preserve">
     <value>、</value>
   </data>
+
+  <data name="Activity.Header.Title" xml:space="preserve">
+    <value>活动记录</value>
+  </data>
+  <data name="Activity.Header.Subtitle" xml:space="preserve">
+    <value>查看 AutoEnvPlus 的语言工具安装、版本切换、PATH、缓存和项目操作审计。记录仅保存脱敏摘要。</value>
+  </data>
+  <data name="Activity.Refresh.AccessibleName" xml:space="preserve">
+    <value>刷新活动记录</value>
+  </data>
+  <data name="Activity.Filters.Status.AccessibleName" xml:space="preserve">
+    <value>按状态筛选</value>
+  </data>
+  <data name="Activity.Filters.Status.Header" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="Activity.Filters.Status.All" xml:space="preserve">
+    <value>全部状态</value>
+  </data>
+  <data name="Activity.Status.Succeeded" xml:space="preserve">
+    <value>成功</value>
+  </data>
+  <data name="Activity.Status.Failed" xml:space="preserve">
+    <value>失败</value>
+  </data>
+  <data name="Activity.Status.Cancelled" xml:space="preserve">
+    <value>已取消</value>
+  </data>
+  <data name="Activity.Filters.Type.AccessibleName" xml:space="preserve">
+    <value>按操作类型筛选</value>
+  </data>
+  <data name="Activity.Filters.Type.Header" xml:space="preserve">
+    <value>操作类型</value>
+  </data>
+  <data name="Activity.Filters.Type.All" xml:space="preserve">
+    <value>全部操作</value>
+  </data>
+  <data name="Activity.Filters.Note" xml:space="preserve">
+    <value>回滚和快照路径仅供审计查看；本页不会自动执行回滚。</value>
+  </data>
+  <data name="Activity.Empty.Text" xml:space="preserve">
+    <value>暂无符合筛选条件的活动记录。</value>
+  </data>
+  <data name="Activity.Item.CopySummary" xml:space="preserve">
+    <value>复制摘要</value>
+  </data>
+  <data name="Activity.Item.CopyAction.AccessibleName" xml:space="preserve">
+    <value>复制 {0} 活动摘要</value>
+  </data>
+  <data name="Activity.Item.AffectedPaths" xml:space="preserve">
+    <value>受影响路径：{0}</value>
+  </data>
+  <data name="Activity.Item.AffectedPathsNone" xml:space="preserve">
+    <value>受影响路径：无</value>
+  </data>
+  <data name="Activity.Item.PathSeparator" xml:space="preserve">
+    <value>；</value>
+  </data>
+  <data name="Activity.Item.SnapshotPath" xml:space="preserve">
+    <value>快照路径：{0}</value>
+  </data>
+  <data name="Activity.Item.SnapshotPathNone" xml:space="preserve">
+    <value>快照路径：无</value>
+  </data>
+  <data name="Activity.Item.RollbackPath" xml:space="preserve">
+    <value>回滚路径（仅供查看，不自动执行）：{0}</value>
+  </data>
+  <data name="Activity.Item.RollbackPathNone" xml:space="preserve">
+    <value>回滚路径（仅供查看，不自动执行）：无</value>
+  </data>
+  <data name="Activity.Copy.Operation" xml:space="preserve">
+    <value>操作：{0}</value>
+  </data>
+  <data name="Activity.Copy.Status" xml:space="preserve">
+    <value>状态：{0}</value>
+  </data>
+  <data name="Activity.Copy.Summary" xml:space="preserve">
+    <value>摘要：{0}</value>
+  </data>
+  <data name="Activity.Messages.RootResolveFailed" xml:space="preserve">
+    <value>无法确定 AutoEnvPlus 数据根。</value>
+  </data>
+  <data name="Activity.Messages.ReadFailedTitle" xml:space="preserve">
+    <value>无法读取活动记录</value>
+  </data>
+  <data name="Activity.Messages.StoreNotInitialized" xml:space="preserve">
+    <value>日志存储未初始化。</value>
+  </data>
+  <data name="Activity.Messages.RefreshedTitle" xml:space="preserve">
+    <value>活动记录已刷新</value>
+  </data>
+  <data name="Activity.Messages.RefreshedSummary" xml:space="preserve">
+    <value>共 {0} 条记录；日志：{1}。回滚路径仅供查看。</value>
+  </data>
+  <data name="Activity.Messages.PartialLoadTitle" xml:space="preserve">
+    <value>活动记录已部分读取</value>
+  </data>
+  <data name="Activity.Messages.PartialLoadSummary" xml:space="preserve">
+    <value>已加载 {0} 条有效记录，跳过 {1} 条损坏或不兼容记录。日志：{2}。</value>
+  </data>
+  <data name="Activity.Messages.LoadCancelledTitle" xml:space="preserve">
+    <value>读取已取消</value>
+  </data>
+  <data name="Activity.Messages.CopySucceededTitle" xml:space="preserve">
+    <value>摘要已复制</value>
+  </data>
+  <data name="Activity.Messages.CopySucceededSummary" xml:space="preserve">
+    <value>已复制脱敏活动摘要；回滚路径不会在此页自动执行。</value>
+  </data>
+  <data name="Activity.Messages.CopyFailedTitle" xml:space="preserve">
+    <value>无法复制摘要</value>
+  </data>
+  <data name="Activity.Operations.RuntimeInstall" xml:space="preserve">
+    <value>语言工具安装</value>
+  </data>
+  <data name="Activity.Operations.RuntimeUninstall" xml:space="preserve">
+    <value>语言工具卸载</value>
+  </data>
+  <data name="Activity.Operations.RuntimeSwitch" xml:space="preserve">
+    <value>语言工具切换</value>
+  </data>
+  <data name="Activity.Operations.PathChange" xml:space="preserve">
+    <value>PATH 修改</value>
+  </data>
+  <data name="Activity.Operations.PathRollback" xml:space="preserve">
+    <value>PATH 回滚</value>
+  </data>
+  <data name="Activity.Operations.CacheMigration" xml:space="preserve">
+    <value>缓存迁移</value>
+  </data>
+  <data name="Activity.Operations.CacheRollback" xml:space="preserve">
+    <value>缓存回滚</value>
+  </data>
+  <data name="Activity.Operations.CacheCleanup" xml:space="preserve">
+    <value>缓存清理</value>
+  </data>
+  <data name="Activity.Operations.ToolchainInstall" xml:space="preserve">
+    <value>编译与构建工具安装</value>
+  </data>
+  <data name="Activity.Operations.PowerShellIntegration" xml:space="preserve">
+    <value>PowerShell 集成</value>
+  </data>
+  <data name="Activity.Operations.ProjectImport" xml:space="preserve">
+    <value>项目导入</value>
+  </data>
+  <data name="Activity.Operations.DiagnosticExport" xml:space="preserve">
+    <value>诊断导出</value>
+  </data>
+  <data name="Activity.Operations.CMakePreset" xml:space="preserve">
+    <value>CMake Preset</value>
+  </data>
+  <data name="Activity.Operations.SettingsChange" xml:space="preserve">
+    <value>设置变更</value>
+  </data>
+  <data name="Activity.Operations.PackageDownload" xml:space="preserve">
+    <value>包下载</value>
+  </data>
+  <data name="Activity.Operations.PackageImport" xml:space="preserve">
+    <value>包导入</value>
+  </data>
+  <data name="Activity.Operations.PackageInstall" xml:space="preserve">
+    <value>包安装</value>
+  </data>
+  <data name="Activity.Operations.ProviderPluginImport" xml:space="preserve">
+    <value>Provider 插件导入</value>
+  </data>
+  <data name="Activity.Operations.ProviderPluginStateChange" xml:space="preserve">
+    <value>Provider 插件状态</value>
+  </data>
+  <data name="Activity.Operations.ProviderPluginDelete" xml:space="preserve">
+    <value>Provider 插件删除</value>
+  </data>
+  <data name="Activity.Operations.Other" xml:space="preserve">
+    <value>其他操作</value>
+  </data>
 </root>
