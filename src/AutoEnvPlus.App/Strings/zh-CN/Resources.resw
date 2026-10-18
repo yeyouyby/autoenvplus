@@ -2804,4 +2804,92 @@ pip 输出（末尾）：
   <data name="Downloads.Library.IntegrityNone" xml:space="preserve">
     <value>摘要尚未记录</value>
   </data>
+
+  <data name="Path.UserPathEditor.Header" xml:space="preserve">
+    <value>用户 PATH 编辑</value>
+  </data>
+  <data name="Path.UserPathEditor.Hint" xml:space="preserve">
+    <value>直接管理写入注册表的用户 PATH；每次修改都会先写快照，可随时回滚。</value>
+  </data>
+  <data name="Path.UserPathEditor.Summary" xml:space="preserve">
+    <value>{0} 个条目 · {1} 个失效 · {2} 个重复</value>
+  </data>
+  <data name="Path.UserPathEditor.Empty" xml:space="preserve">
+    <value>用户 PATH 为空。</value>
+  </data>
+  <data name="Path.UserPathEditor.SmartRepair.Label" xml:space="preserve">
+    <value>智能修复</value>
+  </data>
+  <data name="Path.UserPathEditor.SmartRepair.ToolTip" xml:space="preserve">
+    <value>移除失效目录并去重（保留首次出现）</value>
+  </data>
+  <data name="Path.UserPathEditor.RemoveEntry.Label" xml:space="preserve">
+    <value>移除</value>
+  </data>
+  <data name="Path.UserPathEditor.RemoveEntry.AccessibleName" xml:space="preserve">
+    <value>移除 {0}</value>
+  </data>
+  <data name="Path.UserPathEditor.RemoveConfirmTitle" xml:space="preserve">
+    <value>移除 PATH 条目</value>
+  </data>
+  <data name="Path.UserPathEditor.RemoveConfirmContent" xml:space="preserve">
+    <value>将从用户 PATH 移除所有指向该目录的条目：{0}。修改会先写快照，可随时回滚。</value>
+  </data>
+  <data name="Path.UserPathEditor.RemoveConfirmButton" xml:space="preserve">
+    <value>移除条目</value>
+  </data>
+  <data name="Path.UserPathEditor.RemovedTitle" xml:space="preserve">
+    <value>已移除 PATH 条目</value>
+  </data>
+  <data name="Path.UserPathEditor.RemovedMessage" xml:space="preserve">
+    <value>已移除指向 {0} 的全部条目；快照已保存，可回滚。</value>
+  </data>
+  <data name="Path.UserPathEditor.RemoveFailedTitle" xml:space="preserve">
+    <value>无法移除 PATH 条目</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairNoChangeTitle" xml:space="preserve">
+    <value>无需修复</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairNoChangeMessage" xml:space="preserve">
+    <value>用户 PATH 没有失效或重复条目。</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairConfirmTitle" xml:space="preserve">
+    <value>智能修复用户 PATH</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairConfirmContent" xml:space="preserve">
+    <value>将移除 {0} 个失效条目和 {1} 个重复条目。修改会先写快照，可随时回滚。</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairConfirmButton" xml:space="preserve">
+    <value>开始修复</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairedTitle" xml:space="preserve">
+    <value>智能修复完成</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairedMessage" xml:space="preserve">
+    <value>已移除 {0} 个条目；快照已保存，可回滚。</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairFailedTitle" xml:space="preserve">
+    <value>智能修复失败</value>
+  </data>
+  <data name="Path.UserPathEditor.LoadFailedTitle" xml:space="preserve">
+    <value>无法读取用户 PATH</value>
+  </data>
+  <data name="Path.Snapshots.SmartRepair" xml:space="preserve">
+    <value>智能修复</value>
+  </data>
+  <data name="Path.Snapshots.RemovedDirectory" xml:space="preserve">
+    <value>移除 {0}</value>
+  </data>
+  <data name="Path.Activity.EntryRemoved" xml:space="preserve">
+    <value>已从用户 PATH 移除 {0}</value>
+  </data>
+  <data name="Path.Activity.EntryRemoveFailed" xml:space="preserve">
+    <value>移除用户 PATH 条目失败（{0}）</value>
+  </data>
+  <data name="Path.Activity.Repaired" xml:space="preserve">
+    <value>智能修复用户 PATH：移除 {0} 个条目</value>
+  </data>
+  <data name="Path.Activity.RepairFailed" xml:space="preserve">
+    <value>智能修复用户 PATH 失败（{0}）</value>
+  </data>
 </root>

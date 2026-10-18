@@ -356,6 +356,96 @@
                 </ListView>
             </PivotItem>
 
+            <PivotItem x:Name="UserPathEditorPivotItem">
+                <Grid Padding="0,8,0,0" RowSpacing="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="2">
+                            <TextBlock
+                                x:Name="UserPathEditorTitleText"
+                                FontSize="16"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                x:Name="UserPathEditorHintText"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <Button
+                            x:Name="SmartRepairButton"
+                            Grid.Column="1"
+                            VerticalAlignment="Top"
+                            Click="OnSmartRepairClicked">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon FontSize="16" Glyph="&#xE9F5;" />
+                                <TextBlock x:Name="SmartRepairButtonText" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <TextBlock
+                        x:Name="UserPathSummaryText"
+                        Grid.Row="1"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                    <Grid Grid.Row="2">
+                        <ListView
+                            x:Name="UserPathList"
+                            IsItemClickEnabled="False"
+                            SelectionMode="None">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Padding="12,8" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Spacing="2" VerticalAlignment="Center">
+                                            <TextBlock
+                                                IsTextSelectionEnabled="true"
+                                                Text="{Binding ExpandedValue}"
+                                                TextTrimming="CharacterEllipsis"
+                                                ToolTipService.ToolTip="{Binding ExpandedValue}" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                FontSize="12"
+                                                Text="{Binding Status}"
+                                                TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <Button
+                                            x:Name="RemoveEntryButton"
+                                            Grid.Column="1"
+                                            Click="OnRemoveUserPathEntryClicked"
+                                            Loaded="OnRemoveEntryButtonLoaded"
+                                            Tag="{Binding}"
+                                            VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <FontIcon FontSize="14" Glyph="&#xE74D;" />
+                                                <TextBlock x:Name="RemoveEntryButtonText" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <TextBlock
+                            x:Name="UserPathEmptyText"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Visibility="Collapsed" />
+                    </Grid>
+                </Grid>
+            </PivotItem>
+
             <PivotItem x:Name="SnapshotPivotItem">
                 <Grid Padding="0,8,0,0" RowSpacing="10">
                     <Grid.RowDefinitions>

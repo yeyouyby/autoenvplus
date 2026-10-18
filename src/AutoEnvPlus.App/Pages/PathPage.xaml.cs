@@ -84,6 +84,16 @@ public sealed partial class PathPage : Page
         PathDirectoryValueHeaderText.Text = Loc.Get("Path.Directory.DirectoryColumn");
         PathDirectoryStatusHeaderText.Text = Loc.Get("Path.Directory.StatusColumn");
         SnapshotPivotItem.Header = Loc.Get("Path.Snapshots.Header");
+        UserPathEditorPivotItem.Header = Loc.Get("Path.UserPathEditor.Header");
+        UserPathEditorTitleText.Text = Loc.Get("Path.UserPathEditor.Header");
+        UserPathEditorHintText.Text = Loc.Get("Path.UserPathEditor.Hint");
+        SmartRepairButtonText.Text = Loc.Get("Path.UserPathEditor.SmartRepair.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            SmartRepairButton,
+            Loc.Get("Path.UserPathEditor.SmartRepair.Label"));
+        ToolTipService.SetToolTip(
+            SmartRepairButton,
+            Loc.Get("Path.UserPathEditor.SmartRepair.ToolTip"));
         RollbackSectionTitleText.Text = Loc.Get("Path.Snapshots.SectionTitle");
         RollbackSectionHintText.Text = Loc.Get("Path.Snapshots.SectionHint");
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
@@ -125,6 +135,7 @@ public sealed partial class PathPage : Page
         try
         {
             await LoadReportAsync();
+            await LoadUserPathEntriesAsync();
             await LoadSnapshotsAsync();
         }
         finally
@@ -179,7 +190,228 @@ public sealed partial class PathPage : Page
         try
         {
             await LoadReportAsync();
+            await LoadUserPathEntriesAsync();
             await LoadSnapshotsAsync();
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private async Task LoadUserPathEntriesAsync()
+    {
+        try
+        {
+            // Inspect the persisted user PATH in isolation so every row is a
+            // user-owned entry with its own existence/duplicate verdict.
+            string? userPath = System.Environment.GetEnvironmentVariable(
+                "PATH",
+                EnvironmentVariableTarget.User);
+            PathInspectionReport userReport = await Task.Run(
+                () => new PathInspector().Inspect(userPath, userPath, null));
+            UserPathEntryRow[] rows = userReport.Entries
+                .Select(entry => new UserPathEntryRow(
+                    entry.RawValue,
+                    entry.ExpandedValue,
+                    StatusLabel(entry)))
+                .ToArray();
+            UserPathList.ItemsSource = rows;
+            UserPathList.Visibility = rows.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+            UserPathEmptyText.Visibility = rows.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+            UserPathEmptyText.Text = Loc.Get("Path.UserPathEditor.Empty");
+            UserPathSummaryText.Text = rows.Length == 0
+                ? string.Empty
+                : Loc.Format(
+                    "Path.UserPathEditor.Summary",
+                    rows.Length,
+                    userReport.MissingCount,
+                    userReport.DuplicateCount);
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException
+            or ArgumentException
+            or NotSupportedException)
+        {
+            UserPathList.ItemsSource = null;
+            UserPathList.Visibility = Visibility.Collapsed;
+            UserPathEmptyText.Visibility = Visibility.Visible;
+            UserPathEmptyText.Text = Loc.Get("Path.UserPathEditor.LoadFailedTitle");
+            UserPathSummaryText.Text = CoreErrorText.Localize(exception.Message);
+        }
+    }
+
+    private void OnRemoveEntryButtonLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is Button button
+            && button.DataContext is UserPathEntryRow row
+            && button.Content is StackPanel panel
+            && panel.Children.Count > 1
+            && panel.Children[1] is TextBlock text)
+        {
+            text.Text = Loc.Get("Path.UserPathEditor.RemoveEntry.Label");
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+                button,
+                Loc.Format("Path.UserPathEditor.RemoveEntry.AccessibleName", row.ExpandedValue));
+        }
+    }
+
+    private async void OnRemoveUserPathEntryClicked(object sender, RoutedEventArgs args)
+    {
+        if (_isBusy || sender is not Button { Tag: UserPathEntryRow row })
+        {
+            return;
+        }
+
+        ContentDialog confirmation = new()
+        {
+            XamlRoot = XamlRoot,
+            Title = Loc.Get("Path.UserPathEditor.RemoveConfirmTitle"),
+            Content = new TextBlock
+            {
+                IsTextSelectionEnabled = true,
+                Text = Loc.Format(
+                    "Path.UserPathEditor.RemoveConfirmContent",
+                    row.ExpandedValue),
+                TextWrapping = TextWrapping.Wrap,
+            },
+            PrimaryButtonText = Loc.Get("Path.UserPathEditor.RemoveConfirmButton"),
+            CloseButtonText = Loc.Get("Path.Dialog.Cancel"),
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        SetBusy(true);
+        try
+        {
+            UserPathMutationPlan plan = _pathManager.PlanRemove(row.ExpandedValue);
+            UserPathMutationResult result = await _pathManager.ApplyAsync(plan);
+            if (!result.Success)
+            {
+                throw new InvalidOperationException(
+                    result.Error ?? Loc.Get("Path.Messages.PathApplyFailed"));
+            }
+
+            await LoadReportAsync();
+            await LoadUserPathEntriesAsync();
+            SummaryInfo.Severity = InfoBarSeverity.Success;
+            SummaryInfo.Title = Loc.Get("Path.UserPathEditor.RemovedTitle");
+            SummaryInfo.Message = Loc.Format(
+                "Path.UserPathEditor.RemovedMessage",
+                row.ExpandedValue);
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.PathChange,
+                ActivityStatus.Succeeded,
+                Loc.Format("Path.Activity.EntryRemoved", row.ExpandedValue),
+                [row.ExpandedValue],
+                result.SnapshotPath,
+                result.SnapshotPath);
+            await LoadSnapshotsAsync();
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException)
+        {
+            SummaryInfo.Severity = InfoBarSeverity.Error;
+            SummaryInfo.Title = Loc.Get("Path.UserPathEditor.RemoveFailedTitle");
+            SummaryInfo.Message = CoreErrorText.Localize(exception.Message);
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.PathChange,
+                ActivityStatus.Failed,
+                Loc.Format(
+                    "Path.Activity.EntryRemoveFailed",
+                    exception.GetType().Name),
+                [row.ExpandedValue]);
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private async void OnSmartRepairClicked(object sender, RoutedEventArgs args)
+    {
+        if (_isBusy)
+        {
+            return;
+        }
+
+        UserPathRepairPlan repair = _pathManager.PlanRepair();
+        if (!repair.Changed)
+        {
+            SummaryInfo.Severity = InfoBarSeverity.Informational;
+            SummaryInfo.Title = Loc.Get("Path.UserPathEditor.RepairNoChangeTitle");
+            SummaryInfo.Message = Loc.Get("Path.UserPathEditor.RepairNoChangeMessage");
+            return;
+        }
+
+        ContentDialog confirmation = new()
+        {
+            XamlRoot = XamlRoot,
+            Title = Loc.Get("Path.UserPathEditor.RepairConfirmTitle"),
+            Content = new TextBlock
+            {
+                IsTextSelectionEnabled = true,
+                Text = Loc.Format(
+                    "Path.UserPathEditor.RepairConfirmContent",
+                    repair.RemovedMissing.Count,
+                    repair.RemovedDuplicates.Count),
+                TextWrapping = TextWrapping.Wrap,
+            },
+            PrimaryButtonText = Loc.Get("Path.UserPathEditor.RepairConfirmButton"),
+            CloseButtonText = Loc.Get("Path.Dialog.Cancel"),
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        SetBusy(true);
+        try
+        {
+            UserPathMutationResult result = await _pathManager.ApplyAsync(repair.Mutation);
+            if (!result.Success)
+            {
+                throw new InvalidOperationException(
+                    result.Error ?? Loc.Get("Path.Messages.PathApplyFailed"));
+            }
+
+            await LoadReportAsync();
+            await LoadUserPathEntriesAsync();
+            SummaryInfo.Severity = InfoBarSeverity.Success;
+            SummaryInfo.Title = Loc.Get("Path.UserPathEditor.RepairedTitle");
+            SummaryInfo.Message = Loc.Format(
+                "Path.UserPathEditor.RepairedMessage",
+                repair.RemovedCount);
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.PathChange,
+                ActivityStatus.Succeeded,
+                Loc.Format("Path.Activity.Repaired", repair.RemovedCount),
+                repair.Mutation.Before.Split(';', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(entry => entry.Trim())
+                    .ToArray(),
+                result.SnapshotPath,
+                result.SnapshotPath);
+            await LoadSnapshotsAsync();
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException)
+        {
+            SummaryInfo.Severity = InfoBarSeverity.Error;
+            SummaryInfo.Title = Loc.Get("Path.UserPathEditor.RepairFailedTitle");
+            SummaryInfo.Message = CoreErrorText.Localize(exception.Message);
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.PathChange,
+                ActivityStatus.Failed,
+                Loc.Format(
+                    "Path.Activity.RepairFailed",
+                    exception.GetType().Name));
         }
         finally
         {
@@ -397,7 +629,7 @@ public sealed partial class PathPage : Page
                     snapshot.CreatedAtUtc.ToLocalTime().ToString(
                         "yyyy-MM-dd HH:mm:ss",
                         CultureInfo.CurrentCulture),
-                    snapshot.AddedDirectory,
+                    SnapshotSubjectLabel(snapshot),
                     SnapshotStateLabel(snapshot.State)))
                 .ToArray();
             SnapshotList.ItemsSource = rows;
@@ -434,8 +666,10 @@ public sealed partial class PathPage : Page
         ActivateShimButton.IsEnabled = !isBusy;
         RefreshPathButton.IsEnabled = !isBusy;
         RefreshSnapshotsButton.IsEnabled = !isBusy;
+        SmartRepairButton.IsEnabled = !isBusy;
         CommandRouteList.IsEnabled = !isBusy;
         PathList.IsEnabled = !isBusy;
+        UserPathList.IsEnabled = !isBusy;
         SnapshotList.IsEnabled = !isBusy;
         UpdateRollbackButton();
     }
@@ -471,6 +705,17 @@ public sealed partial class PathPage : Page
         UserPathSnapshotState.RollbackAvailable => Loc.Get("Path.SnapshotState.Available"),
         UserPathSnapshotState.AlreadyRolledBack => Loc.Get("Path.SnapshotState.RolledBack"),
         _ => Loc.Get("Path.SnapshotState.Changed"),
+    };
+
+    private static string SnapshotSubjectLabel(UserPathSnapshotInfo snapshot) => snapshot.Kind switch
+    {
+        // Repair snapshots have no single subject directory; the kind label
+        // itself is what the rollback list should show.
+        UserPathSnapshotKind.Repair => Loc.Get("Path.Snapshots.SmartRepair"),
+        UserPathSnapshotKind.RemoveDirectory => Loc.Format(
+            "Path.Snapshots.RemovedDirectory",
+            snapshot.AddedDirectory),
+        _ => snapshot.AddedDirectory,
     };
 
     private static string RouteState(
@@ -587,6 +832,11 @@ public sealed partial class PathPage : Page
     }
 
     private sealed record PathEntryRow(string Index, string Scope, string Path, string Status);
+
+    private sealed record UserPathEntryRow(
+        string RawValue,
+        string ExpandedValue,
+        string Status);
 
     private sealed record CommandRouteRow(string Command, string Winner, string State);
 

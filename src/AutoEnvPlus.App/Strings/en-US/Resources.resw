@@ -2801,4 +2801,92 @@ pip output (tail):
   <data name="Downloads.Library.IntegrityNone" xml:space="preserve">
     <value>No digest recorded yet</value>
   </data>
+
+  <data name="Path.UserPathEditor.Header" xml:space="preserve">
+    <value>User PATH editor</value>
+  </data>
+  <data name="Path.UserPathEditor.Hint" xml:space="preserve">
+    <value>Manage the registry-backed user PATH directly; every change writes a snapshot first and can be rolled back.</value>
+  </data>
+  <data name="Path.UserPathEditor.Summary" xml:space="preserve">
+    <value>{0} entries · {1} missing · {2} duplicates</value>
+  </data>
+  <data name="Path.UserPathEditor.Empty" xml:space="preserve">
+    <value>The user PATH is empty.</value>
+  </data>
+  <data name="Path.UserPathEditor.SmartRepair.Label" xml:space="preserve">
+    <value>Smart repair</value>
+  </data>
+  <data name="Path.UserPathEditor.SmartRepair.ToolTip" xml:space="preserve">
+    <value>Remove dead directories and duplicates (first occurrence wins)</value>
+  </data>
+  <data name="Path.UserPathEditor.RemoveEntry.Label" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Path.UserPathEditor.RemoveEntry.AccessibleName" xml:space="preserve">
+    <value>Remove {0}</value>
+  </data>
+  <data name="Path.UserPathEditor.RemoveConfirmTitle" xml:space="preserve">
+    <value>Remove PATH entry</value>
+  </data>
+  <data name="Path.UserPathEditor.RemoveConfirmContent" xml:space="preserve">
+    <value>This removes every user PATH entry pointing to {0}. A snapshot is written first; you can roll back anytime.</value>
+  </data>
+  <data name="Path.UserPathEditor.RemoveConfirmButton" xml:space="preserve">
+    <value>Remove entry</value>
+  </data>
+  <data name="Path.UserPathEditor.RemovedTitle" xml:space="preserve">
+    <value>PATH entry removed</value>
+  </data>
+  <data name="Path.UserPathEditor.RemovedMessage" xml:space="preserve">
+    <value>Removed all entries pointing to {0}; snapshot saved, rollback available.</value>
+  </data>
+  <data name="Path.UserPathEditor.RemoveFailedTitle" xml:space="preserve">
+    <value>Could not remove the PATH entry</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairNoChangeTitle" xml:space="preserve">
+    <value>Nothing to repair</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairNoChangeMessage" xml:space="preserve">
+    <value>The user PATH has no dead or duplicate entries.</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairConfirmTitle" xml:space="preserve">
+    <value>Smart-repair the user PATH</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairConfirmContent" xml:space="preserve">
+    <value>This removes {0} dead entries and {1} duplicates. A snapshot is written first; you can roll back anytime.</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairConfirmButton" xml:space="preserve">
+    <value>Repair now</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairedTitle" xml:space="preserve">
+    <value>Smart repair complete</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairedMessage" xml:space="preserve">
+    <value>Removed {0} entries; snapshot saved, rollback available.</value>
+  </data>
+  <data name="Path.UserPathEditor.RepairFailedTitle" xml:space="preserve">
+    <value>Smart repair failed</value>
+  </data>
+  <data name="Path.UserPathEditor.LoadFailedTitle" xml:space="preserve">
+    <value>Could not read the user PATH</value>
+  </data>
+  <data name="Path.Snapshots.SmartRepair" xml:space="preserve">
+    <value>Smart repair</value>
+  </data>
+  <data name="Path.Snapshots.RemovedDirectory" xml:space="preserve">
+    <value>Removed {0}</value>
+  </data>
+  <data name="Path.Activity.EntryRemoved" xml:space="preserve">
+    <value>Removed {0} from the user PATH</value>
+  </data>
+  <data name="Path.Activity.EntryRemoveFailed" xml:space="preserve">
+    <value>Failed to remove a user PATH entry ({0})</value>
+  </data>
+  <data name="Path.Activity.Repaired" xml:space="preserve">
+    <value>Smart-repaired the user PATH: removed {0} entries</value>
+  </data>
+  <data name="Path.Activity.RepairFailed" xml:space="preserve">
+    <value>Smart repair of the user PATH failed ({0})</value>
+  </data>
 </root>

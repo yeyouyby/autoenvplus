@@ -160,6 +160,129 @@ public sealed class UserPathManagerTests : IDisposable
             Path.Combine(_root, "outside.json")));
     }
 
+    [Fact]
+    public async Task PlanRemove_DropsEveryOccurrenceAndKeepsOthersInOrder()
+    {
+        string keep = Directory.CreateDirectory(Path.Combine(_root, "keep")).FullName;
+        string remove = Directory.CreateDirectory(Path.Combine(_root, "remove")).FullName;
+        FakeEnvironmentStore environment = new();
+        environment.Values["PATH"] = $"{keep};{remove};{keep};{remove}\\";
+        UserPathManager manager = new(_root, environment);
+
+        UserPathMutationPlan plan = manager.PlanRemove(remove);
+
+        Assert.True(plan.Changed);
+        Assert.Equal(UserPathSnapshotKind.RemoveDirectory, plan.Kind);
+        Assert.Equal($"{keep};{keep}", plan.After);
+        UserPathMutationResult applied = await manager.ApplyAsync(plan);
+        Assert.True(applied.Success);
+        Assert.Equal($"{keep};{keep}", environment.Values["PATH"]);
+
+        UserPathMutationResult rolledBack = await manager.RollbackAsync(applied.SnapshotPath!);
+        Assert.True(rolledBack.Success);
+        Assert.Equal(plan.Before, environment.Values["PATH"]);
+    }
+
+    [Fact]
+    public void PlanRemove_OfAbsentDirectoryReportsNoChange()
+    {
+        string keep = Directory.CreateDirectory(Path.Combine(_root, "keep")).FullName;
+        FakeEnvironmentStore environment = new();
+        environment.Values["PATH"] = keep;
+        UserPathManager manager = new(_root, environment);
+
+        UserPathMutationPlan plan = manager.PlanRemove(
+            Path.Combine(_root, "absent"));
+
+        Assert.False(plan.Changed);
+        Assert.Equal(keep, plan.After);
+    }
+
+    [Fact]
+    public async Task PlanRepair_RemovesDeadEntriesAndLaterDuplicates()
+    {
+        string live = Directory.CreateDirectory(Path.Combine(_root, "live")).FullName;
+        string dead = Path.Combine(_root, "dead");
+        FakeEnvironmentStore environment = new();
+        environment.Values["PATH"] = $"{live};{dead};{live}\\;{live}";
+        UserPathManager manager = new(_root, environment);
+
+        UserPathRepairPlan plan = manager.PlanRepair();
+
+        Assert.True(plan.Changed);
+        Assert.Equal(UserPathSnapshotKind.Repair, plan.Mutation.Kind);
+        Assert.Equal(new[] { dead }, plan.RemovedMissing);
+        Assert.Equal(new[] { $"{live}\\", live }, plan.RemovedDuplicates);
+        Assert.Equal(live, plan.Mutation.After);
+        UserPathMutationResult applied = await manager.ApplyAsync(plan.Mutation);
+        Assert.True(applied.Success);
+        Assert.Equal(live, environment.Values["PATH"]);
+
+        UserPathMutationResult rolledBack = await manager.RollbackAsync(applied.SnapshotPath!);
+        Assert.True(rolledBack.Success);
+        Assert.Equal(plan.Mutation.Before, environment.Values["PATH"]);
+    }
+
+    [Fact]
+    public void PlanRepair_KeepsLiveDuplicateWhenEarlierOccurrenceIsDead()
+    {
+        string live = Directory.CreateDirectory(Path.Combine(_root, "live")).FullName;
+        string dead = Path.Combine(_root, "dead");
+        FakeEnvironmentStore environment = new();
+        environment.Values["PATH"] = $"{dead};{live}";
+        UserPathManager manager = new(_root, environment);
+
+        UserPathRepairPlan plan = manager.PlanRepair();
+
+        Assert.Equal(new[] { dead }, plan.RemovedMissing);
+        Assert.Empty(plan.RemovedDuplicates);
+        Assert.Equal(live, plan.Mutation.After);
+    }
+
+    [Fact]
+    public void PlanRepair_OnHealthyPathReportsNoChange()
+    {
+        string live = Directory.CreateDirectory(Path.Combine(_root, "live")).FullName;
+        string other = Directory.CreateDirectory(Path.Combine(_root, "other")).FullName;
+        FakeEnvironmentStore environment = new();
+        environment.Values["PATH"] = $"{live};{other}";
+        UserPathManager manager = new(_root, environment);
+
+        UserPathRepairPlan plan = manager.PlanRepair();
+
+        Assert.False(plan.Changed);
+        Assert.Empty(plan.RemovedMissing);
+        Assert.Empty(plan.RemovedDuplicates);
+    }
+
+    [Fact]
+    public async Task GetSnapshotsAsync_ExposesSnapshotKindForDisplay()
+    {
+        string live = Directory.CreateDirectory(Path.Combine(_root, "live")).FullName;
+        string dead = Path.Combine(_root, "dead");
+        FakeEnvironmentStore environment = new();
+        environment.Values["PATH"] = $"{live};{dead}";
+        UserPathManager manager = new(_root, environment);
+
+        UserPathMutationResult repair = await manager.ApplyAsync(manager.PlanRepair().Mutation);
+        UserPathMutationResult removal = await manager.ApplyAsync(
+            manager.PlanRemove(live));
+
+        IReadOnlyList<UserPathSnapshotInfo> snapshots = await manager.GetSnapshotsAsync();
+
+        Assert.Equal(UserPathSnapshotKind.RemoveDirectory, snapshots[0].Kind);
+        Assert.Equal(live, snapshots[0].AddedDirectory);
+        Assert.True(snapshots[0].CanRollback);
+        Assert.Equal(UserPathSnapshotKind.Repair, snapshots[1].Kind);
+        Assert.Equal(string.Empty, snapshots[1].AddedDirectory);
+        // The repair snapshot's After no longer matches the current PATH
+        // (the removal changed it again), so only the newest snapshot is
+        // rollback-safe.
+        Assert.Equal(UserPathSnapshotState.PathChanged, snapshots[1].State);
+        Assert.True(File.Exists(repair.SnapshotPath));
+        Assert.True(File.Exists(removal.SnapshotPath));
+    }
+
     private static async Task<UserPathSnapshot> ReadSnapshotAsync(string snapshotPath)
     {
         string json = await File.ReadAllTextAsync(snapshotPath);
