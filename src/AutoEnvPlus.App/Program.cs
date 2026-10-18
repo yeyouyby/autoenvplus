@@ -21,6 +21,74 @@ internal static class Program
         CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
     private static extern System.IntPtr AddDllDirectory(string newDirectory);
 
+    [System.Runtime.InteropServices.DllImport(
+        "kernel32.dll",
+        SetLastError = true,
+        CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern System.IntPtr LoadLibraryExW(string fileName, System.IntPtr hFile, uint flags);
+
+    [System.Runtime.InteropServices.DllImport(
+        "kernel32.dll",
+        SetLastError = true)]
+    private static extern bool FreeLibrary(System.IntPtr module);
+
+    /// <summary>
+    /// Release diagnostics for the single-file launch failures that only
+    /// reproduce on CI-built bundles: dump the startup environment and the
+    /// LoadLibraryExW search behavior for the WinUI native DLL to
+    /// %TEMP%\autoenvplus-startup-env.log before the first WinRT activation.
+    /// The release smoke test collects every autoenvplus-*.log on failure, so
+    /// this turns an opaque 0x80040111 into an attributable report. Best
+    /// effort: diagnostics must never block or break startup.
+    /// </summary>
+    private static void WriteStartupEnvironmentDiagnostics()
+    {
+        try
+        {
+            string baseDirectory = AppContext.BaseDirectory;
+            string TryProbe(uint flags)
+            {
+                try
+                {
+                    System.IntPtr module = LoadLibraryExW("Microsoft.UI.Xaml.dll", System.IntPtr.Zero, flags);
+                    if (module == System.IntPtr.Zero)
+                    {
+                        return $"err={System.Runtime.InteropServices.Marshal.GetLastWin32Error()}";
+                    }
+
+                    _ = FreeLibrary(module);
+                    return "ok";
+                }
+                catch (System.Exception exception)
+                {
+                    return $"ex={exception.GetType().Name}";
+                }
+            }
+
+            string report = string.Join(
+                System.Environment.NewLine,
+                $"time={System.DateTimeOffset.Now:O}",
+                $"processPath={System.Environment.ProcessPath}",
+                $"baseDirectory={baseDirectory}",
+                $"xamlDllExists={System.IO.File.Exists(System.IO.Path.Combine(baseDirectory, "Microsoft.UI.Xaml.dll"))}",
+                $"windowsAppRuntimeDllExists={System.IO.File.Exists(System.IO.Path.Combine(baseDirectory, "Microsoft.WindowsAppRuntime.dll"))}",
+                $"modulePriExists={System.IO.File.Exists(System.IO.Path.Combine(baseDirectory, "AutoEnvPlus-win-x64.pri"))}",
+                $"setDllDirectory={SetDllDirectoryW(baseDirectory)}",
+                $"addDllDirectory={(long)AddDllDirectory(baseDirectory)}",
+                $"loadLibraryLegacy={TryProbe(0)}",
+                $"loadLibraryUserDirs={TryProbe(0x00000400)}",
+                $"loadLibraryDefaultDirs={TryProbe(0x00001000)}");
+            System.IO.File.AppendAllText(
+                System.IO.Path.Combine(System.IO.Path.GetTempPath(), "autoenvplus-startup-env.log"),
+                report + System.Environment.NewLine,
+                System.Text.Encoding.UTF8);
+        }
+        catch
+        {
+            // Diagnostics must never block startup.
+        }
+    }
+
     [System.STAThreadAttribute]
     private static void Main(string[] args)
     {
@@ -46,6 +114,8 @@ internal static class Program
             // with restrictive ACLs; SetDllDirectoryW above still covers the
             // legacy search order, so a failure here is non-fatal by design.
             _ = AddDllDirectory(AppContext.BaseDirectory);
+
+            WriteStartupEnvironmentDiagnostics();
 
             ApplyPersistedInterfaceLanguage();
 
