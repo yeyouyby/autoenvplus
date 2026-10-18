@@ -6,7 +6,7 @@
 
 ## 0.0.4 - 2026-10-11
 
-单文件启动修复版：v0.0.3 的单文件 EXE 在部分机器上首次 WinUI 激活即崩溃（COMException 0x80040111，无窗口无日志），portable 与 MSI 不受影响。核心引擎、CLI 与 Shim 行为不变。已作为 GitHub prerelease `v0.0.4` 发布并完成签名与资产回读。
+单文件启动修复版：v0.0.3 的单文件 EXE 在部分机器上首次 WinUI 激活即崩溃（COMException 0x80040111，无窗口无日志），portable 与 MSI 不受影响。核心引擎、CLI 与 Shim 行为不变。
 
 ### Added
 
@@ -14,14 +14,16 @@
 
 ### Fixed
 
-- 单文件 EXE 启动崩溃（两个独立成因，均已修复并在 8.0.25 捆绑包上实测窗口正常出现）：
+- 单文件 EXE 启动崩溃（三个独立成因，均已修复并在 8.0.25 捆绑包上实测窗口正常出现）：
   - Windows App SDK 的 undocked reg-free WinRT 目录以裸文件名加载 WinUI 原生 DLL，而 .NET 8.0.27+ 的单文件宿主不再预加载解压目录中的原生 DLL，裸名搜索找不到目标导致首次激活失败（COMException 0x80040111，无窗口无日志）。现由自定义入口点在 `Application.Start` 前同时调用 `SetDllDirectoryW` 与 `AddDllDirectory`（分别覆盖传统搜索序与 `LOAD_LIBRARY_SEARCH_USER_DIRS` 调用方），把解压目录加入 DLL 搜索路径；`global.json` 改为 `rollForward: disable` 钉死 SDK 10.0.200（运行时包 8.0.25），CI 不再随镜像补丁浮动到 8.0.27；
-  - csproj 设置 `DefaultLanguage`（本地化引入）会让单文件 bundle 在首次 WinUI 激活即失败，移除该属性后语言切换不受影响（实测英文偏好下 UI 正确切换）。语言回退改由 PRI 默认承担：系统语言不匹配 zh-CN/en-US 时回退英文。
+  - csproj 设置 `DefaultLanguage`（本地化引入）会让单文件 bundle 在首次 WinUI 激活即失败，移除该属性后语言切换不受影响（实测英文偏好下 UI 正确切换）。语言回退改由 PRI 默认承担：系统语言不匹配 zh-CN/en-US 时回退英文；
+  - **CI 产线单文件 EXE 必崩的真正元凶**：Windows App SDK 的 `CreateWinRTRegistration` target 把 reg-free WinRT 清单嵌进 apphost，且仅在 target 实际执行时 `PublishSingleFile` 已置位才会生成单文件形态（`loadFrom="%MICROSOFT_WINDOWSAPPRUNTIME_BASE_DIRECTORY%..."`，47 个文件条目）；该 target 带增量检查（Inputs/Outputs）。CI 先跑 portable 发布（无 `PublishSingleFile`）生成框架形态清单（25 个条目、无 `loadFrom`），随后的单文件发布命中增量检查直接复用坏清单——bundle 内容与本地构建逐字节一致，唯独内嵌清单缺 `loadFrom`，目录无法从解压目录解析任何 WinRT 激活，首次 `Microsoft.UI.Xaml` 激活即 0x80040111。本地从未复现是因为 obj 里残留着早前单文件构建的好清单。两个发布脚本现在都会在发布前删除生成的 `Manifests` 目录，强制按各自布局重新生成；已按 CI 顺序（portable→单文件）从干净状态复现坏清单与崩溃、并验证修复后同序列产出好清单且窗口正常。
 - 早期启动失败静默退出：激活前的异常现在会写入 `%TEMP%\autoenvplus-startup-failure.log` 并弹出提示，不再无声消失。
 
 ### Changed
 
 - 发布可追溯性：单文件发布脚本从 bundle 输入清单提取并打印捆绑的 .NET 运行时包版本；
+- 启动环境诊断：`Application.Start` 前把进程路径、`AppContext.BaseDirectory`、关键 DLL/PRI 存在性、`SetDllDirectoryW`/`AddDllDirectory` 结果与 `LoadLibraryExW` 三种搜索模式实测写入 `%TEMP%\autoenvplus-startup-env.log`（冒烟测试失败时随 `autoenvplus-*.log` 一并收集）——正是这组探针把 CI 独有故障定位到"文件在盘、搜索路径已注册、加载仍 126"从而锁定内嵌清单；
 - 发布门禁：GitHub Release 发布前在 CI 上实际启动签名后的单文件 EXE 与 portable App.exe 冒烟验证——v0.0.3 带病发布的直接原因就是此前没有任何门禁真正启动过产物；冒烟失败时输出窗口枚举快照（hwnd/可见性/标题）与应用日志（`%TEMP%` 与 `RUNNER_TEMP` 下的 `autoenvplus-*.log`），并接受 `MainWindowHandle` 或直接枚举到的可见窗口作为通过条件。
 
 ## 0.0.3 - 2026-10-10

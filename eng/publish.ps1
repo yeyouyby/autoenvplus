@@ -152,6 +152,22 @@ try {
     if ($NoRestore) {
         $appBuildArguments += '--no-restore'
     }
+
+    # The Windows App SDK's CreateWinRTRegistration target embeds the
+    # reg-free WinRT manifest into the apphost and is incremental
+    # (Inputs/Outputs on the merged app.manifest). Without this cleanup the
+    # portable layout would silently reuse whatever manifest form a previous
+    # publish of the same project generated (for example the single-file
+    # loadFrom form from eng/publish-single-file.ps1). Both forms work for
+    # the portable layout because its DLLs sit next to the EXE, but builds
+    # must be deterministic: regenerate the framework-style manifest for
+    # this layout on every publish. See publish-single-file.ps1 for the
+    # broken-bundle consequences of reusing the wrong form there.
+    $appObjRoot = Join-Path $repositoryRoot 'src\AutoEnvPlus.App\obj'
+    Get-ChildItem -LiteralPath $appObjRoot -Recurse -Directory -Filter 'Manifests' -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -match "\\$Configuration\\[^\\]+\\win-x64\\Manifests$" } |
+        ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force }
+
     Invoke-DotNet -Arguments $appBuildArguments
 
     New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null

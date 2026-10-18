@@ -148,6 +148,23 @@ if ($NoRestore) {
     $arguments += '--no-restore'
 }
 
+# The Windows App SDK's CreateWinRTRegistration target embeds the reg-free
+# WinRT manifest into the apphost. It only emits the single-file form -
+# <asmv3:file ... loadFrom="%MICROSOFT_WINDOWSAPPRUNTIME_BASE_DIRECTORY%..."> -
+# when PublishSingleFile is set while the target actually executes, and the
+# target is incremental (Inputs/Outputs on the merged app.manifest). A prior
+# publish of the same project without PublishSingleFile (eng/publish.ps1
+# builds the portable layout first in CI) therefore leaves a framework-style
+# manifest behind that this publish reuses verbatim. The bundled EXE then
+# cannot resolve WinRT activations from the extraction directory and dies
+# with 0x80040111 (CLASS_E_CLASSNOTAVAILABLE) at the first Microsoft.UI.Xaml
+# activation. Remove the generated manifests so this publish always
+# regenerates them for the single-file layout.
+$appObjRoot = Join-Path $repositoryRoot 'src\AutoEnvPlus.App\obj'
+Get-ChildItem -LiteralPath $appObjRoot -Recurse -Directory -Filter 'Manifests' -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -match "\\$Configuration\\[^\\]+\\win-x64\\Manifests$" } |
+    ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force }
+
 & dotnet @arguments
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish exited with code $LASTEXITCODE."
