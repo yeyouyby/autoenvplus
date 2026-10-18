@@ -102,4 +102,161 @@
   <data name="Settings.Language.RestartHint" xml:space="preserve">
     <value>The language change takes effect on the next launch.</value>
   </data>
+
+  <data name="MirrorSources.Header.Title" xml:space="preserve">
+    <value>Mirror sources</value>
+  </data>
+  <data name="MirrorSources.Header.Subtitle" xml:space="preserve">
+    <value>Review and edit provider mirror endpoints for every language tool in one place. Overrides and custom sources are saved to managed state immediately.</value>
+  </data>
+  <data name="MirrorSources.Refresh.AccessibleName" xml:space="preserve">
+    <value>Refresh mirror sources</value>
+  </data>
+  <data name="MirrorSources.Filter.PlaceholderText" xml:space="preserve">
+    <value>Filter by tool, provider, name, or endpoint</value>
+  </data>
+  <data name="MirrorSources.Filter.AccessibleName" xml:space="preserve">
+    <value>Filter mirror sources</value>
+  </data>
+  <data name="MirrorSources.Actions.AddCustom" xml:space="preserve">
+    <value>Add custom source</value>
+  </data>
+  <data name="MirrorSources.Summary" xml:space="preserve">
+    <value>{0} sources · {1} overrides · {2} custom</value>
+  </data>
+  <data name="MirrorSources.Empty.Text" xml:space="preserve">
+    <value>No mirror sources to show.</value>
+  </data>
+  <data name="MirrorSources.Item.OriginDefault" xml:space="preserve">
+    <value>Built-in default</value>
+  </data>
+  <data name="MirrorSources.Item.OriginOverride" xml:space="preserve">
+    <value>User override</value>
+  </data>
+  <data name="MirrorSources.Item.OriginCustom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="MirrorSources.Item.DisabledBadge" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="MirrorSources.Item.EditOverride" xml:space="preserve">
+    <value>Edit override</value>
+  </data>
+  <data name="MirrorSources.Item.ResetOverride" xml:space="preserve">
+    <value>Reset to default</value>
+  </data>
+  <data name="MirrorSources.Item.Enable" xml:space="preserve">
+    <value>Enable</value>
+  </data>
+  <data name="MirrorSources.Item.Disable" xml:space="preserve">
+    <value>Disable</value>
+  </data>
+  <data name="MirrorSources.Item.Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="MirrorSources.Item.EditAction.AccessibleName" xml:space="preserve">
+    <value>Edit {0}</value>
+  </data>
+  <data name="MirrorSources.Item.ResetAction.AccessibleName" xml:space="preserve">
+    <value>Reset {0}</value>
+  </data>
+  <data name="MirrorSources.Item.ToggleAction.AccessibleName" xml:space="preserve">
+    <value>Enable or disable {0}</value>
+  </data>
+  <data name="MirrorSources.Item.DeleteAction.AccessibleName" xml:space="preserve">
+    <value>Delete {0}</value>
+  </data>
+  <data name="MirrorSources.Dialog.EditTitle" xml:space="preserve">
+    <value>Edit {0}</value>
+  </data>
+  <data name="MirrorSources.Dialog.EndpointHeader" xml:space="preserve">
+    <value>HTTPS endpoint</value>
+  </data>
+  <data name="MirrorSources.Dialog.SaveOverride" xml:space="preserve">
+    <value>Save override</value>
+  </data>
+  <data name="MirrorSources.Dialog.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="MirrorSources.Dialog.ResetTitle" xml:space="preserve">
+    <value>Reset built-in source {0}</value>
+  </data>
+  <data name="MirrorSources.Dialog.ResetContent" xml:space="preserve">
+    <value>This discards the override of the built-in source slot. Current value: {0}. The catalog-declared default endpoint is restored; installed runtimes are not affected.</value>
+  </data>
+  <data name="MirrorSources.Dialog.ResetConfirm" xml:space="preserve">
+    <value>Reset to default</value>
+  </data>
+  <data name="MirrorSources.Dialog.DeleteTitle" xml:space="preserve">
+    <value>Delete custom source {0}</value>
+  </data>
+  <data name="MirrorSources.Dialog.DeleteContent" xml:space="preserve">
+    <value>This deletes the custom source {0}. The provider loses this source slot afterwards; installed runtimes are not affected.</value>
+  </data>
+  <data name="MirrorSources.Dialog.DeleteConfirm" xml:space="preserve">
+    <value>Delete custom source</value>
+  </data>
+  <data name="MirrorSources.Dialog.AddTitle" xml:space="preserve">
+    <value>Add provider custom source</value>
+  </data>
+  <data name="MirrorSources.Dialog.ProviderHeader" xml:space="preserve">
+    <value>Owning provider</value>
+  </data>
+  <data name="MirrorSources.Dialog.SlotIdHeader" xml:space="preserve">
+    <value>Source ID</value>
+  </data>
+  <data name="MirrorSources.Dialog.NameHeader" xml:space="preserve">
+    <value>Display name</value>
+  </data>
+  <data name="MirrorSources.Dialog.NamePlaceholder" xml:space="preserve">
+    <value>Company source</value>
+  </data>
+  <data name="MirrorSources.Dialog.PurposeHeader" xml:space="preserve">
+    <value>Purpose</value>
+  </data>
+  <data name="MirrorSources.Dialog.PurposePlaceholder" xml:space="preserve">
+    <value>Internal packages and metadata</value>
+  </data>
+  <data name="MirrorSources.Dialog.KindHeader" xml:space="preserve">
+    <value>Endpoint kind</value>
+  </data>
+  <data name="MirrorSources.Dialog.AddConfirm" xml:space="preserve">
+    <value>Add and enable</value>
+  </data>
+  <data name="MirrorSources.Messages.LoadFailedTitle" xml:space="preserve">
+    <value>Could not load mirror sources</value>
+  </data>
+  <data name="MirrorSources.Messages.SaveFailedTitle" xml:space="preserve">
+    <value>Could not save provider source</value>
+  </data>
+  <data name="MirrorSources.Messages.AddFailedTitle" xml:space="preserve">
+    <value>Could not add custom source</value>
+  </data>
+  <data name="MirrorSources.Messages.UpdateFailedTitle" xml:space="preserve">
+    <value>Could not update provider source</value>
+  </data>
+  <data name="MirrorSources.Messages.RefreshedTitle" xml:space="preserve">
+    <value>Refreshed</value>
+  </data>
+  <data name="MirrorSources.Messages.NoProviders" xml:space="preserve">
+    <value>No providers are available.</value>
+  </data>
+  <data name="MirrorSources.Messages.LogOverrideSaved" xml:space="preserve">
+    <value>Overrode the {1} mirror endpoint of {0}.</value>
+  </data>
+  <data name="MirrorSources.Messages.LogOverrideReset" xml:space="preserve">
+    <value>Restored the built-in default mirror source {1} of {0}.</value>
+  </data>
+  <data name="MirrorSources.Messages.LogCustomAdded" xml:space="preserve">
+    <value>Added custom mirror source {1} for {0}.</value>
+  </data>
+  <data name="MirrorSources.Messages.LogCustomDeleted" xml:space="preserve">
+    <value>Deleted custom mirror source {1} of {0}.</value>
+  </data>
+  <data name="MirrorSources.Messages.LogCustomEnabled" xml:space="preserve">
+    <value>Enabled custom mirror source {1} of {0}.</value>
+  </data>
+  <data name="MirrorSources.Messages.LogCustomDisabled" xml:space="preserve">
+    <value>Disabled custom mirror source {1} of {0}.</value>
+  </data>
 </root>

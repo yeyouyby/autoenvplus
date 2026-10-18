@@ -105,4 +105,161 @@
   <data name="Settings.Language.RestartHint" xml:space="preserve">
     <value>语言更改将在下次启动时生效。</value>
   </data>
+
+  <data name="MirrorSources.Header.Title" xml:space="preserve">
+    <value>镜像源</value>
+  </data>
+  <data name="MirrorSources.Header.Subtitle" xml:space="preserve">
+    <value>跨语言工具集中查看与修改 Provider 镜像端点；覆盖与自定义源会立即写入受管状态。</value>
+  </data>
+  <data name="MirrorSources.Refresh.AccessibleName" xml:space="preserve">
+    <value>刷新镜像源</value>
+  </data>
+  <data name="MirrorSources.Filter.PlaceholderText" xml:space="preserve">
+    <value>按工具、Provider、名称或端点筛选</value>
+  </data>
+  <data name="MirrorSources.Filter.AccessibleName" xml:space="preserve">
+    <value>筛选镜像源</value>
+  </data>
+  <data name="MirrorSources.Actions.AddCustom" xml:space="preserve">
+    <value>添加自定义源</value>
+  </data>
+  <data name="MirrorSources.Summary" xml:space="preserve">
+    <value>{0} 个来源 · {1} 个覆盖 · {2} 个自定义</value>
+  </data>
+  <data name="MirrorSources.Empty.Text" xml:space="preserve">
+    <value>没有可显示的镜像源。</value>
+  </data>
+  <data name="MirrorSources.Item.OriginDefault" xml:space="preserve">
+    <value>内置默认</value>
+  </data>
+  <data name="MirrorSources.Item.OriginOverride" xml:space="preserve">
+    <value>用户覆盖</value>
+  </data>
+  <data name="MirrorSources.Item.OriginCustom" xml:space="preserve">
+    <value>自定义</value>
+  </data>
+  <data name="MirrorSources.Item.DisabledBadge" xml:space="preserve">
+    <value>已停用</value>
+  </data>
+  <data name="MirrorSources.Item.EditOverride" xml:space="preserve">
+    <value>编辑覆盖</value>
+  </data>
+  <data name="MirrorSources.Item.ResetOverride" xml:space="preserve">
+    <value>恢复默认</value>
+  </data>
+  <data name="MirrorSources.Item.Enable" xml:space="preserve">
+    <value>启用</value>
+  </data>
+  <data name="MirrorSources.Item.Disable" xml:space="preserve">
+    <value>停用</value>
+  </data>
+  <data name="MirrorSources.Item.Delete" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="MirrorSources.Item.EditAction.AccessibleName" xml:space="preserve">
+    <value>编辑 {0}</value>
+  </data>
+  <data name="MirrorSources.Item.ResetAction.AccessibleName" xml:space="preserve">
+    <value>恢复 {0}</value>
+  </data>
+  <data name="MirrorSources.Item.ToggleAction.AccessibleName" xml:space="preserve">
+    <value>启用或停用 {0}</value>
+  </data>
+  <data name="MirrorSources.Item.DeleteAction.AccessibleName" xml:space="preserve">
+    <value>删除 {0}</value>
+  </data>
+  <data name="MirrorSources.Dialog.EditTitle" xml:space="preserve">
+    <value>编辑 {0}</value>
+  </data>
+  <data name="MirrorSources.Dialog.EndpointHeader" xml:space="preserve">
+    <value>HTTPS 端点</value>
+  </data>
+  <data name="MirrorSources.Dialog.SaveOverride" xml:space="preserve">
+    <value>保存覆盖</value>
+  </data>
+  <data name="MirrorSources.Dialog.Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="MirrorSources.Dialog.ResetTitle" xml:space="preserve">
+    <value>恢复内置默认源 {0}</value>
+  </data>
+  <data name="MirrorSources.Dialog.ResetContent" xml:space="preserve">
+    <value>将丢弃对内置来源槽的覆盖。当前值：{0}。恢复为目录声明的默认端点；已安装的运行时不受影响。</value>
+  </data>
+  <data name="MirrorSources.Dialog.ResetConfirm" xml:space="preserve">
+    <value>恢复默认</value>
+  </data>
+  <data name="MirrorSources.Dialog.DeleteTitle" xml:space="preserve">
+    <value>删除自定义源 {0}</value>
+  </data>
+  <data name="MirrorSources.Dialog.DeleteContent" xml:space="preserve">
+    <value>将删除自定义源 {0}。删除后该 Provider 的这个来源槽不再可用；已安装的运行时不受影响。</value>
+  </data>
+  <data name="MirrorSources.Dialog.DeleteConfirm" xml:space="preserve">
+    <value>删除自定义源</value>
+  </data>
+  <data name="MirrorSources.Dialog.AddTitle" xml:space="preserve">
+    <value>添加 Provider 自定义源</value>
+  </data>
+  <data name="MirrorSources.Dialog.ProviderHeader" xml:space="preserve">
+    <value>归属 Provider</value>
+  </data>
+  <data name="MirrorSources.Dialog.SlotIdHeader" xml:space="preserve">
+    <value>源 ID</value>
+  </data>
+  <data name="MirrorSources.Dialog.NameHeader" xml:space="preserve">
+    <value>显示名称</value>
+  </data>
+  <data name="MirrorSources.Dialog.NamePlaceholder" xml:space="preserve">
+    <value>公司来源</value>
+  </data>
+  <data name="MirrorSources.Dialog.PurposeHeader" xml:space="preserve">
+    <value>用途</value>
+  </data>
+  <data name="MirrorSources.Dialog.PurposePlaceholder" xml:space="preserve">
+    <value>内部包和元数据</value>
+  </data>
+  <data name="MirrorSources.Dialog.KindHeader" xml:space="preserve">
+    <value>端点类型</value>
+  </data>
+  <data name="MirrorSources.Dialog.AddConfirm" xml:space="preserve">
+    <value>添加并启用</value>
+  </data>
+  <data name="MirrorSources.Messages.LoadFailedTitle" xml:space="preserve">
+    <value>无法读取镜像源</value>
+  </data>
+  <data name="MirrorSources.Messages.SaveFailedTitle" xml:space="preserve">
+    <value>无法保存 Provider 源</value>
+  </data>
+  <data name="MirrorSources.Messages.AddFailedTitle" xml:space="preserve">
+    <value>无法添加自定义源</value>
+  </data>
+  <data name="MirrorSources.Messages.UpdateFailedTitle" xml:space="preserve">
+    <value>无法更新 Provider 源</value>
+  </data>
+  <data name="MirrorSources.Messages.RefreshedTitle" xml:space="preserve">
+    <value>已刷新</value>
+  </data>
+  <data name="MirrorSources.Messages.NoProviders" xml:space="preserve">
+    <value>没有可用的 Provider。</value>
+  </data>
+  <data name="MirrorSources.Messages.LogOverrideSaved" xml:space="preserve">
+    <value>已覆盖 {0} 的 {1} 镜像端点。</value>
+  </data>
+  <data name="MirrorSources.Messages.LogOverrideReset" xml:space="preserve">
+    <value>已恢复 {0} 的 {1} 内置默认镜像源。</value>
+  </data>
+  <data name="MirrorSources.Messages.LogCustomAdded" xml:space="preserve">
+    <value>已为 {0} 添加自定义镜像源 {1}。</value>
+  </data>
+  <data name="MirrorSources.Messages.LogCustomDeleted" xml:space="preserve">
+    <value>已删除 {0} 的自定义镜像源 {1}。</value>
+  </data>
+  <data name="MirrorSources.Messages.LogCustomEnabled" xml:space="preserve">
+    <value>已启用 {0} 的自定义镜像源 {1}。</value>
+  </data>
+  <data name="MirrorSources.Messages.LogCustomDisabled" xml:space="preserve">
+    <value>已停用 {0} 的自定义镜像源 {1}。</value>
+  </data>
 </root>

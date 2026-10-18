@@ -190,6 +190,15 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem
+                    AutomationProperties.Name="镜像源"
+                    Content="镜像源"
+                    Tag="mirrors"
+                    ToolTipService.ToolTip="镜像源">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8F1;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem
                     AutomationProperties.Name="项目环境"
                     Content="项目环境"
                     Tag="projects"

@@ -395,6 +395,7 @@ public sealed partial class MainWindow : Window
     {
         "dashboard" => new DashboardPage(),
         "languages" => new LanguagesPage(),
+        "mirrors" => new MirrorSourcesPage(),
         "path" => new PathPage(),
         "storage" => new StoragePage(),
         "projects" => new ProjectsPage(context),
@@ -703,6 +704,7 @@ public sealed partial class MainWindow : Window
     [
         "dashboard",
         "languages",
+        "mirrors",
         "projects",
         "downloads",
         "path",
@@ -722,6 +724,7 @@ public sealed partial class MainWindow : Window
     {
         "dashboard" => new("dashboard", "概览", "上次环境快照与常用入口"),
         "languages" => new("languages", "语言工具", "版本、Provider 与全局选择"),
+        "mirrors" => new("mirrors", "镜像源", "Provider 镜像端点的全局编辑"),
         "projects" => new("projects", "项目环境", "隔离配置与项目工具链"),
         "downloads" => new("downloads", "下载中心", "受管包与传输任务"),
         "path" => new("path", "PATH 与命令", "命令路由、冲突与回滚"),
