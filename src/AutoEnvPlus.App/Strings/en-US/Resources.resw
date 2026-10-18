@@ -1309,4 +1309,167 @@ The current PATH is re-checked before the operation; if other changes were made 
   <data name="Activity.Operations.Other" xml:space="preserve">
     <value>Other operation</value>
   </data>
+
+  <data name="Shell.Nav.AccessibleName" xml:space="preserve">
+    <value>AutoEnvPlus main navigation</value>
+  </data>
+  <data name="Shell.Search.AccessibleName" xml:space="preserve">
+    <value>Global search</value>
+  </data>
+  <data name="Shell.Search.PlaceholderText" xml:space="preserve">
+    <value>Search languages and pages</value>
+  </data>
+  <data name="Shell.Search.ToolTip" xml:space="preserve">
+    <value>Search languages and pages (Ctrl+F)</value>
+  </data>
+  <data name="Shell.Nav.Dashboard.Label" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Shell.Nav.Dashboard.ToolTip" xml:space="preserve">
+    <value>Overview (Ctrl+1)</value>
+  </data>
+  <data name="Shell.Nav.Languages.Label" xml:space="preserve">
+    <value>Language tools</value>
+  </data>
+  <data name="Shell.Nav.Languages.ToolTip" xml:space="preserve">
+    <value>Language tools (Ctrl+2)</value>
+  </data>
+  <data name="Shell.Nav.Mirrors.Label" xml:space="preserve">
+    <value>Mirror sources</value>
+  </data>
+  <data name="Shell.Nav.Mirrors.ToolTip" xml:space="preserve">
+    <value>Mirror sources</value>
+  </data>
+  <data name="Shell.Nav.Projects.Label" xml:space="preserve">
+    <value>Project environments</value>
+  </data>
+  <data name="Shell.Nav.Projects.ToolTip" xml:space="preserve">
+    <value>Project environments (Ctrl+3)</value>
+  </data>
+  <data name="Shell.Nav.Downloads.Label" xml:space="preserve">
+    <value>Downloads</value>
+  </data>
+  <data name="Shell.Nav.Downloads.ToolTip" xml:space="preserve">
+    <value>Downloads (Ctrl+4)</value>
+  </data>
+  <data name="Shell.Nav.Downloads.Badge.AccessibleName" xml:space="preserve">
+    <value>Transfers in progress</value>
+  </data>
+  <data name="Shell.Nav.Path.Label" xml:space="preserve">
+    <value>PATH and commands</value>
+  </data>
+  <data name="Shell.Nav.Path.ToolTip" xml:space="preserve">
+    <value>PATH and commands (Ctrl+5)</value>
+  </data>
+  <data name="Shell.Nav.Storage.Label" xml:space="preserve">
+    <value>Cache and storage</value>
+  </data>
+  <data name="Shell.Nav.Storage.ToolTip" xml:space="preserve">
+    <value>Cache and storage (Ctrl+6)</value>
+  </data>
+  <data name="Shell.Nav.Doctor.Label" xml:space="preserve">
+    <value>Environment diagnostics</value>
+  </data>
+  <data name="Shell.Nav.Doctor.ToolTip" xml:space="preserve">
+    <value>Environment diagnostics (Ctrl+7)</value>
+  </data>
+  <data name="Shell.Nav.Activity.Label" xml:space="preserve">
+    <value>Activity log</value>
+  </data>
+  <data name="Shell.Nav.Activity.ToolTip" xml:space="preserve">
+    <value>Activity log (Ctrl+8)</value>
+  </data>
+  <data name="Shell.Nav.Settings.Label" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Shell.Nav.Settings.ToolTip" xml:space="preserve">
+    <value>Settings (Ctrl+0)</value>
+  </data>
+  <data name="Shell.Header.AccessibleName" xml:space="preserve">
+    <value>{0}. {1}</value>
+  </data>
+  <data name="Shell.Frame.AccessibleName" xml:space="preserve">
+    <value>{0} content</value>
+  </data>
+  <data name="Shell.CloseConfirm.NotInitialized" xml:space="preserve">
+    <value>The window has not finished initializing.</value>
+  </data>
+  <data name="Shell.CloseConfirm.Title" xml:space="preserve">
+    <value>Tasks in progress</value>
+  </data>
+  <data name="Shell.CloseConfirm.Message" xml:space="preserve">
+    <value>A download or pip install is still running; closing the window aborts it. Downloaded segments are cleaned up best-effort, and a pip install may leave partial changes without rollback. Close anyway?</value>
+  </data>
+  <data name="Shell.CloseConfirm.Primary" xml:space="preserve">
+    <value>Close and abort tasks</value>
+  </data>
+  <data name="Shell.CloseConfirm.Secondary" xml:space="preserve">
+    <value>Keep running</value>
+  </data>
+  <data name="Shell.Search.LanguageDetail" xml:space="preserve">
+    <value>Language · {0}</value>
+  </data>
+  <data name="Shell.Search.PageDetail" xml:space="preserve">
+    <value>Page · {0}</value>
+  </data>
+  <data name="Shell.Pages.dashboard.Title" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Shell.Pages.dashboard.Subtitle" xml:space="preserve">
+    <value>Latest environment snapshot and quick entries</value>
+  </data>
+  <data name="Shell.Pages.languages.Title" xml:space="preserve">
+    <value>Language tools</value>
+  </data>
+  <data name="Shell.Pages.languages.Subtitle" xml:space="preserve">
+    <value>Versions, providers, and global selections</value>
+  </data>
+  <data name="Shell.Pages.mirrors.Title" xml:space="preserve">
+    <value>Mirror sources</value>
+  </data>
+  <data name="Shell.Pages.mirrors.Subtitle" xml:space="preserve">
+    <value>Global editing of provider mirror endpoints</value>
+  </data>
+  <data name="Shell.Pages.projects.Title" xml:space="preserve">
+    <value>Project environments</value>
+  </data>
+  <data name="Shell.Pages.projects.Subtitle" xml:space="preserve">
+    <value>Isolated configs and project toolchains</value>
+  </data>
+  <data name="Shell.Pages.downloads.Title" xml:space="preserve">
+    <value>Downloads</value>
+  </data>
+  <data name="Shell.Pages.downloads.Subtitle" xml:space="preserve">
+    <value>Managed packages and transfers</value>
+  </data>
+  <data name="Shell.Pages.path.Title" xml:space="preserve">
+    <value>PATH and commands</value>
+  </data>
+  <data name="Shell.Pages.path.Subtitle" xml:space="preserve">
+    <value>Command routing, conflicts, and rollback</value>
+  </data>
+  <data name="Shell.Pages.storage.Title" xml:space="preserve">
+    <value>Cache and storage</value>
+  </data>
+  <data name="Shell.Pages.storage.Subtitle" xml:space="preserve">
+    <value>Managed data, migration, and cleanup</value>
+  </data>
+  <data name="Shell.Pages.doctor.Title" xml:space="preserve">
+    <value>Environment diagnostics</value>
+  </data>
+  <data name="Shell.Pages.doctor.Subtitle" xml:space="preserve">
+    <value>Read-only checks and report export</value>
+  </data>
+  <data name="Shell.Pages.activity.Title" xml:space="preserve">
+    <value>Activity log</value>
+  </data>
+  <data name="Shell.Pages.activity.Subtitle" xml:space="preserve">
+    <value>Key changes and operation results</value>
+  </data>
+  <data name="Shell.Pages.settings.Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Shell.Pages.settings.Subtitle" xml:space="preserve">
+    <value>Appearance, startup, network, and logging</value>
+  </data>
 </root>

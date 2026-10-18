@@ -1312,4 +1312,167 @@ PATH 变化
   <data name="Activity.Operations.Other" xml:space="preserve">
     <value>其他操作</value>
   </data>
+
+  <data name="Shell.Nav.AccessibleName" xml:space="preserve">
+    <value>AutoEnvPlus 主导航</value>
+  </data>
+  <data name="Shell.Search.AccessibleName" xml:space="preserve">
+    <value>全局搜索</value>
+  </data>
+  <data name="Shell.Search.PlaceholderText" xml:space="preserve">
+    <value>搜索语言与页面</value>
+  </data>
+  <data name="Shell.Search.ToolTip" xml:space="preserve">
+    <value>搜索语言与页面（Ctrl+F）</value>
+  </data>
+  <data name="Shell.Nav.Dashboard.Label" xml:space="preserve">
+    <value>概览</value>
+  </data>
+  <data name="Shell.Nav.Dashboard.ToolTip" xml:space="preserve">
+    <value>概览（Ctrl+1）</value>
+  </data>
+  <data name="Shell.Nav.Languages.Label" xml:space="preserve">
+    <value>语言工具</value>
+  </data>
+  <data name="Shell.Nav.Languages.ToolTip" xml:space="preserve">
+    <value>语言工具（Ctrl+2）</value>
+  </data>
+  <data name="Shell.Nav.Mirrors.Label" xml:space="preserve">
+    <value>镜像源</value>
+  </data>
+  <data name="Shell.Nav.Mirrors.ToolTip" xml:space="preserve">
+    <value>镜像源</value>
+  </data>
+  <data name="Shell.Nav.Projects.Label" xml:space="preserve">
+    <value>项目环境</value>
+  </data>
+  <data name="Shell.Nav.Projects.ToolTip" xml:space="preserve">
+    <value>项目环境（Ctrl+3）</value>
+  </data>
+  <data name="Shell.Nav.Downloads.Label" xml:space="preserve">
+    <value>下载中心</value>
+  </data>
+  <data name="Shell.Nav.Downloads.ToolTip" xml:space="preserve">
+    <value>下载中心（Ctrl+4）</value>
+  </data>
+  <data name="Shell.Nav.Downloads.Badge.AccessibleName" xml:space="preserve">
+    <value>有正在进行的传输任务</value>
+  </data>
+  <data name="Shell.Nav.Path.Label" xml:space="preserve">
+    <value>PATH 与命令</value>
+  </data>
+  <data name="Shell.Nav.Path.ToolTip" xml:space="preserve">
+    <value>PATH 与命令（Ctrl+5）</value>
+  </data>
+  <data name="Shell.Nav.Storage.Label" xml:space="preserve">
+    <value>缓存与存储</value>
+  </data>
+  <data name="Shell.Nav.Storage.ToolTip" xml:space="preserve">
+    <value>缓存与存储（Ctrl+6）</value>
+  </data>
+  <data name="Shell.Nav.Doctor.Label" xml:space="preserve">
+    <value>环境诊断</value>
+  </data>
+  <data name="Shell.Nav.Doctor.ToolTip" xml:space="preserve">
+    <value>环境诊断（Ctrl+7）</value>
+  </data>
+  <data name="Shell.Nav.Activity.Label" xml:space="preserve">
+    <value>活动记录</value>
+  </data>
+  <data name="Shell.Nav.Activity.ToolTip" xml:space="preserve">
+    <value>活动记录（Ctrl+8）</value>
+  </data>
+  <data name="Shell.Nav.Settings.Label" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="Shell.Nav.Settings.ToolTip" xml:space="preserve">
+    <value>设置（Ctrl+0）</value>
+  </data>
+  <data name="Shell.Header.AccessibleName" xml:space="preserve">
+    <value>{0}。{1}</value>
+  </data>
+  <data name="Shell.Frame.AccessibleName" xml:space="preserve">
+    <value>{0}内容</value>
+  </data>
+  <data name="Shell.CloseConfirm.NotInitialized" xml:space="preserve">
+    <value>窗口尚未完成初始化。</value>
+  </data>
+  <data name="Shell.CloseConfirm.Title" xml:space="preserve">
+    <value>有任务正在进行</value>
+  </data>
+  <data name="Shell.CloseConfirm.Message" xml:space="preserve">
+    <value>下载或 pip 安装仍在进行；关闭窗口会中止任务，已下载的分段会尽力清理，pip 安装可能留下部分更改且不会回滚。仍要关闭吗？</value>
+  </data>
+  <data name="Shell.CloseConfirm.Primary" xml:space="preserve">
+    <value>关闭并中止任务</value>
+  </data>
+  <data name="Shell.CloseConfirm.Secondary" xml:space="preserve">
+    <value>继续运行</value>
+  </data>
+  <data name="Shell.Search.LanguageDetail" xml:space="preserve">
+    <value>语言 · {0}</value>
+  </data>
+  <data name="Shell.Search.PageDetail" xml:space="preserve">
+    <value>页面 · {0}</value>
+  </data>
+  <data name="Shell.Pages.dashboard.Title" xml:space="preserve">
+    <value>概览</value>
+  </data>
+  <data name="Shell.Pages.dashboard.Subtitle" xml:space="preserve">
+    <value>上次环境快照与常用入口</value>
+  </data>
+  <data name="Shell.Pages.languages.Title" xml:space="preserve">
+    <value>语言工具</value>
+  </data>
+  <data name="Shell.Pages.languages.Subtitle" xml:space="preserve">
+    <value>版本、Provider 与全局选择</value>
+  </data>
+  <data name="Shell.Pages.mirrors.Title" xml:space="preserve">
+    <value>镜像源</value>
+  </data>
+  <data name="Shell.Pages.mirrors.Subtitle" xml:space="preserve">
+    <value>Provider 镜像端点的全局编辑</value>
+  </data>
+  <data name="Shell.Pages.projects.Title" xml:space="preserve">
+    <value>项目环境</value>
+  </data>
+  <data name="Shell.Pages.projects.Subtitle" xml:space="preserve">
+    <value>隔离配置与项目工具链</value>
+  </data>
+  <data name="Shell.Pages.downloads.Title" xml:space="preserve">
+    <value>下载中心</value>
+  </data>
+  <data name="Shell.Pages.downloads.Subtitle" xml:space="preserve">
+    <value>受管包与传输任务</value>
+  </data>
+  <data name="Shell.Pages.path.Title" xml:space="preserve">
+    <value>PATH 与命令</value>
+  </data>
+  <data name="Shell.Pages.path.Subtitle" xml:space="preserve">
+    <value>命令路由、冲突与回滚</value>
+  </data>
+  <data name="Shell.Pages.storage.Title" xml:space="preserve">
+    <value>缓存与存储</value>
+  </data>
+  <data name="Shell.Pages.storage.Subtitle" xml:space="preserve">
+    <value>受管数据、迁移与清理</value>
+  </data>
+  <data name="Shell.Pages.doctor.Title" xml:space="preserve">
+    <value>环境诊断</value>
+  </data>
+  <data name="Shell.Pages.doctor.Subtitle" xml:space="preserve">
+    <value>只读检查与报告导出</value>
+  </data>
+  <data name="Shell.Pages.activity.Title" xml:space="preserve">
+    <value>活动记录</value>
+  </data>
+  <data name="Shell.Pages.activity.Subtitle" xml:space="preserve">
+    <value>关键变更与操作结果</value>
+  </data>
+  <data name="Shell.Pages.settings.Title" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="Shell.Pages.settings.Subtitle" xml:space="preserve">
+    <value>外观、启动、网络与日志</value>
+  </data>
 </root>

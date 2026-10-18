@@ -109,7 +109,6 @@
             x:Name="RootNavigation"
             Grid.Row="1"
             AlwaysShowHeader="True"
-            AutomationProperties.Name="AutoEnvPlus 主导航"
             Background="Transparent"
             CompactModeThresholdWidth="720"
             CompactPaneLength="48"
@@ -126,13 +125,10 @@
             <NavigationView.AutoSuggestBox>
                 <AutoSuggestBox
                     x:Name="GlobalSearchBox"
-                    AutomationProperties.Name="全局搜索"
                     MaxSuggestionListHeight="320"
-                    PlaceholderText="搜索语言与页面"
                     QueryIcon="Find"
                     QuerySubmitted="OnGlobalSearchQuerySubmitted"
-                    TextChanged="OnGlobalSearchTextChanged"
-                    ToolTipService.ToolTip="搜索语言与页面（Ctrl+F）">
+                    TextChanged="OnGlobalSearchTextChanged">
                     <AutoSuggestBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Margin="0,6" Spacing="2">
@@ -159,12 +155,10 @@
                             x:Name="PageHeaderTitle"
                             FontSize="28"
                             FontWeight="SemiBold"
-                            Text="概览"
                             TextWrapping="Wrap" />
                         <TextBlock
                             x:Name="PageHeaderSubtitle"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="上次环境快照与常用入口"
                             TextWrapping="Wrap" />
                     </StackPanel>
                 </Grid>
@@ -172,90 +166,72 @@
 
             <NavigationView.MenuItems>
                 <NavigationViewItem
-                    AutomationProperties.Name="概览"
-                    Content="概览"
-                    Tag="dashboard"
-                    ToolTipService.ToolTip="概览（Ctrl+1）">
+                    x:Name="NavDashboardItem"
+                    Tag="dashboard">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE80F;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem
-                    AutomationProperties.Name="语言工具"
-                    Content="语言工具"
-                    Tag="languages"
-                    ToolTipService.ToolTip="语言工具（Ctrl+2）">
+                    x:Name="NavLanguagesItem"
+                    Tag="languages">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE950;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem
-                    AutomationProperties.Name="镜像源"
-                    Content="镜像源"
-                    Tag="mirrors"
-                    ToolTipService.ToolTip="镜像源">
+                    x:Name="NavMirrorsItem"
+                    Tag="mirrors">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8F1;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem
-                    AutomationProperties.Name="项目环境"
-                    Content="项目环境"
-                    Tag="projects"
-                    ToolTipService.ToolTip="项目环境（Ctrl+3）">
+                    x:Name="NavProjectsItem"
+                    Tag="projects">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8B7;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem
-                    AutomationProperties.Name="下载中心"
-                    Tag="downloads"
-                    ToolTipService.ToolTip="下载中心（Ctrl+4）">
+                    x:Name="NavDownloadsItem"
+                    Tag="downloads">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE896;" />
                     </NavigationViewItem.Icon>
                     <Grid>
-                        <TextBlock VerticalAlignment="Center" Text="下载中心" />
+                        <TextBlock x:Name="NavDownloadsText" VerticalAlignment="Center" />
                         <InfoBadge
                             x:Name="DownloadsTransferBadge"
-                            AutomationProperties.Name="有正在进行的传输任务"
                             HorizontalAlignment="Right"
                             Visibility="Collapsed" />
                     </Grid>
                 </NavigationViewItem>
                 <NavigationViewItem
-                    AutomationProperties.Name="PATH 与命令"
-                    Content="PATH 与命令"
-                    Tag="path"
-                    ToolTipService.ToolTip="PATH 与命令（Ctrl+5）">
+                    x:Name="NavPathItem"
+                    Tag="path">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8A5;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem
-                    AutomationProperties.Name="缓存与存储"
-                    Content="缓存与存储"
-                    Tag="storage"
-                    ToolTipService.ToolTip="缓存与存储（Ctrl+6）">
+                    x:Name="NavStorageItem"
+                    Tag="storage">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xEDA2;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItemSeparator />
                 <NavigationViewItem
-                    AutomationProperties.Name="环境诊断"
-                    Content="环境诊断"
-                    Tag="doctor"
-                    ToolTipService.ToolTip="环境诊断（Ctrl+7）">
+                    x:Name="NavDoctorItem"
+                    Tag="doctor">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE9D9;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem
-                    AutomationProperties.Name="活动记录"
-                    Content="活动记录"
-                    Tag="activity"
-                    ToolTipService.ToolTip="活动记录（Ctrl+8）">
+                    x:Name="NavActivityItem"
+                    Tag="activity">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE823;" />
                     </NavigationViewItem.Icon>
@@ -264,7 +240,6 @@
 
             <Frame
                 x:Name="ContentFrame"
-                AutomationProperties.Name="概览内容"
                 IsTabStop="False" />
         </NavigationView>
     </Grid>

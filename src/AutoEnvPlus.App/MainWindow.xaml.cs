@@ -1,6 +1,7 @@
 using AutoEnvPlus.App.Appearance;
 using AutoEnvPlus.App.Downloads;
 using AutoEnvPlus.App.Pages;
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Languages;
 using AutoEnvPlus.Core.Settings;
@@ -40,6 +41,7 @@ public sealed partial class MainWindow : Window
         ArgumentNullException.ThrowIfNull(applicationSettings);
         applicationSettings.Validate();
         InitializeComponent();
+        ApplyShellLocalizedStrings();
         ApplyProductIdentity();
 
         ExtendsContentIntoTitleBar = true;
@@ -70,6 +72,50 @@ public sealed partial class MainWindow : Window
         _downloadManager = ((App)Application.Current).DownloadManager;
         _downloadManager.StateChanged += OnDownloadStateChanged;
         UpdateTransferBadge();
+    }
+
+    private void ApplyShellLocalizedStrings()
+    {
+        AutomationProperties.SetName(RootNavigation, Loc.Get("Shell.Nav.AccessibleName"));
+        AutomationProperties.SetName(GlobalSearchBox, Loc.Get("Shell.Search.AccessibleName"));
+        GlobalSearchBox.PlaceholderText = Loc.Get("Shell.Search.PlaceholderText");
+        ToolTipService.SetToolTip(GlobalSearchBox, Loc.Get("Shell.Search.ToolTip"));
+        PageHeaderTitle.Text = Loc.Get("Shell.Pages.dashboard.Title");
+        PageHeaderSubtitle.Text = Loc.Get("Shell.Pages.dashboard.Subtitle");
+        // ContentFrame's accessible name is a format key filled by
+        // UpdatePageHeader on the first navigation.
+
+        LocalizeNavItem(NavDashboardItem, "Shell.Nav.Dashboard");
+        LocalizeNavItem(NavLanguagesItem, "Shell.Nav.Languages");
+        LocalizeNavItem(NavMirrorsItem, "Shell.Nav.Mirrors");
+        LocalizeNavItem(NavProjectsItem, "Shell.Nav.Projects");
+        // The downloads item hosts a Grid (label + transfer badge), so its
+        // Content must stay the Grid; only the accessible name and tooltip
+        // are set here, the label TextBlock carries the visible text.
+        LocalizeNavItem(NavDownloadsItem, "Shell.Nav.Downloads", setContent: false);
+        NavDownloadsText.Text = Loc.Get("Shell.Nav.Downloads.Label");
+        AutomationProperties.SetName(
+            DownloadsTransferBadge,
+            Loc.Get("Shell.Nav.Downloads.Badge.AccessibleName"));
+        LocalizeNavItem(NavPathItem, "Shell.Nav.Path");
+        LocalizeNavItem(NavStorageItem, "Shell.Nav.Storage");
+        LocalizeNavItem(NavDoctorItem, "Shell.Nav.Doctor");
+        LocalizeNavItem(NavActivityItem, "Shell.Nav.Activity");
+    }
+
+    private static void LocalizeNavItem(
+        NavigationViewItem item,
+        string keyPrefix,
+        bool setContent = true)
+    {
+        string label = Loc.Get(keyPrefix + ".Label");
+        if (setContent)
+        {
+            item.Content = label;
+        }
+
+        AutomationProperties.SetName(item, label);
+        ToolTipService.SetToolTip(item, Loc.Get(keyPrefix + ".ToolTip"));
     }
 
     private void OnDownloadStateChanged(object? sender, EventArgs args)
@@ -255,15 +301,16 @@ public sealed partial class MainWindow : Window
         ContentDialog dialog = new()
         {
             XamlRoot = RootSurface.XamlRoot
-                ?? throw new InvalidOperationException("窗口尚未完成初始化。"),
-            Title = "有任务正在进行",
+                ?? throw new InvalidOperationException(
+                    Loc.Get("Shell.CloseConfirm.NotInitialized")),
+            Title = Loc.Get("Shell.CloseConfirm.Title"),
             Content = new TextBlock
             {
-                Text = "下载或 pip 安装仍在进行；关闭窗口会中止任务，已下载的分段会尽力清理，pip 安装可能留下部分更改且不会回滚。仍要关闭吗？",
+                Text = Loc.Get("Shell.CloseConfirm.Message"),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "关闭并中止任务",
-            CloseButtonText = "继续运行",
+            PrimaryButtonText = Loc.Get("Shell.CloseConfirm.Primary"),
+            CloseButtonText = Loc.Get("Shell.CloseConfirm.Secondary"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)
@@ -438,8 +485,10 @@ public sealed partial class MainWindow : Window
         PageHeaderSubtitle.Text = metadata.Subtitle;
         AutomationProperties.SetName(
             ShellPageHeader,
-            $"{metadata.Title}。{metadata.Subtitle}");
-        AutomationProperties.SetName(ContentFrame, $"{metadata.Title}内容");
+            Loc.Format("Shell.Header.AccessibleName", metadata.Title, metadata.Subtitle));
+        AutomationProperties.SetName(
+            ContentFrame,
+            Loc.Format("Shell.Frame.AccessibleName", metadata.Title));
     }
 
     private void ConfigureSettingsNavigationItem()
@@ -449,9 +498,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        settingsItem.Content = "设置";
-        AutomationProperties.SetName(settingsItem, "设置");
-        ToolTipService.SetToolTip(settingsItem, "设置（Ctrl+0）");
+        LocalizeNavItem(settingsItem, "Shell.Nav.Settings");
     }
 
     private void QueueNavigationFocus(Control? navigationItem)
@@ -633,7 +680,7 @@ public sealed partial class MainWindow : Window
                 : string.Join("、", language.Aliases.Take(4));
             suggestions.Add(new GlobalSearchSuggestion(
                 language.DisplayName,
-                $"语言 · {aliases}",
+                Loc.Format("Shell.Search.LanguageDetail", aliases),
                 language.Id,
                 null));
             if (suggestions.Count >= 8)
@@ -652,7 +699,7 @@ public sealed partial class MainWindow : Window
 
             suggestions.Add(new GlobalSearchSuggestion(
                 metadata.Title,
-                $"页面 · {metadata.Subtitle}",
+                Loc.Format("Shell.Search.PageDetail", metadata.Subtitle),
                 null,
                 metadata.Tag));
             if (suggestions.Count >= 10)
@@ -722,17 +769,39 @@ public sealed partial class MainWindow : Window
 
     private static ShellPageMetadata GetPageMetadata(string tag) => tag switch
     {
-        "dashboard" => new("dashboard", "概览", "上次环境快照与常用入口"),
-        "languages" => new("languages", "语言工具", "版本、Provider 与全局选择"),
-        "mirrors" => new("mirrors", "镜像源", "Provider 镜像端点的全局编辑"),
-        "projects" => new("projects", "项目环境", "隔离配置与项目工具链"),
-        "downloads" => new("downloads", "下载中心", "受管包与传输任务"),
-        "path" => new("path", "PATH 与命令", "命令路由、冲突与回滚"),
-        "storage" => new("storage", "缓存与存储", "受管数据、迁移与清理"),
-        "doctor" => new("doctor", "环境诊断", "只读检查与报告导出"),
-        "activity" => new("activity", "活动记录", "关键变更与操作结果"),
-        "settings" => new("settings", "设置", "外观、启动、网络与日志"),
-        _ => new("dashboard", "概览", "上次环境快照与常用入口"),
+        "dashboard" => new("dashboard",
+            Loc.Get("Shell.Pages.dashboard.Title"),
+            Loc.Get("Shell.Pages.dashboard.Subtitle")),
+        "languages" => new("languages",
+            Loc.Get("Shell.Pages.languages.Title"),
+            Loc.Get("Shell.Pages.languages.Subtitle")),
+        "mirrors" => new("mirrors",
+            Loc.Get("Shell.Pages.mirrors.Title"),
+            Loc.Get("Shell.Pages.mirrors.Subtitle")),
+        "projects" => new("projects",
+            Loc.Get("Shell.Pages.projects.Title"),
+            Loc.Get("Shell.Pages.projects.Subtitle")),
+        "downloads" => new("downloads",
+            Loc.Get("Shell.Pages.downloads.Title"),
+            Loc.Get("Shell.Pages.downloads.Subtitle")),
+        "path" => new("path",
+            Loc.Get("Shell.Pages.path.Title"),
+            Loc.Get("Shell.Pages.path.Subtitle")),
+        "storage" => new("storage",
+            Loc.Get("Shell.Pages.storage.Title"),
+            Loc.Get("Shell.Pages.storage.Subtitle")),
+        "doctor" => new("doctor",
+            Loc.Get("Shell.Pages.doctor.Title"),
+            Loc.Get("Shell.Pages.doctor.Subtitle")),
+        "activity" => new("activity",
+            Loc.Get("Shell.Pages.activity.Title"),
+            Loc.Get("Shell.Pages.activity.Subtitle")),
+        "settings" => new("settings",
+            Loc.Get("Shell.Pages.settings.Title"),
+            Loc.Get("Shell.Pages.settings.Subtitle")),
+        _ => new("dashboard",
+            Loc.Get("Shell.Pages.dashboard.Title"),
+            Loc.Get("Shell.Pages.dashboard.Subtitle")),
     };
 
     private sealed record ShellPageMetadata(
