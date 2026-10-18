@@ -3878,4 +3878,89 @@ AutoEnvPlus 只会写入用户级 {2}。不会自动迁移语言工具、缓存�
   <data name="Settings.Validation.NumberRequired" xml:space="preserve">
     <value>{0}必须是有效数字。</value>
   </data>
+
+  <data name="Diagnostics.Repair.Button.Label" xml:space="preserve">
+    <value>修复</value>
+  </data>
+  <data name="Diagnostics.Repair.Button.AccessibleName" xml:space="preserve">
+    <value>修复：{0}</value>
+  </data>
+  <data name="Diagnostics.Repair.Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Diagnostics.Repair.Path.ToolTip" xml:space="preserve">
+    <value>移除用户 PATH 中的失效目录并去重（保留首次出现）</value>
+  </data>
+  <data name="Diagnostics.Repair.PathConfirmTitle" xml:space="preserve">
+    <value>智能修复用户 PATH</value>
+  </data>
+  <data name="Diagnostics.Repair.PathConfirmContent" xml:space="preserve">
+    <value>将移除 {0} 个失效条目和 {1} 个重复条目。修改会先写快照，可随时回滚。</value>
+  </data>
+  <data name="Diagnostics.Repair.PathConfirmButton" xml:space="preserve">
+    <value>开始修复</value>
+  </data>
+  <data name="Diagnostics.Repair.PathNoChangeTitle" xml:space="preserve">
+    <value>无需修复</value>
+  </data>
+  <data name="Diagnostics.Repair.PathNoChangeMessage" xml:space="preserve">
+    <value>用户 PATH 没有失效或重复条目。</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimReinstall.ToolTip" xml:space="preserve">
+    <value>重新生成受管 Shim 并移到用户 PATH 最前</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimReinstallConfirmTitle" xml:space="preserve">
+    <value>重装 AutoEnvPlus Shim</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimReinstallConfirmContent" xml:space="preserve">
+    <value>将重新生成受管 Shim，并把 {0} 移到用户 PATH 最前。修改会先写快照，可随时回滚。</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimReinstallConfirmButton" xml:space="preserve">
+    <value>重装 Shim</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimFirst.ToolTip" xml:space="preserve">
+    <value>把 Shim 目录移到用户 PATH 第一项</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimFirstConfirmTitle" xml:space="preserve">
+    <value>把 Shim 移到用户 PATH 最前</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimFirstConfirmContent" xml:space="preserve">
+    <value>将把 {0} 移到用户 PATH 第一项，避免同名命令绕过版本选择。修改会先写快照，可随时回滚。</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimFirstConfirmButton" xml:space="preserve">
+    <value>移到最前</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimFirstNoChangeTitle" xml:space="preserve">
+    <value>已在最前</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimFirstNoChangeMessage" xml:space="preserve">
+    <value>Shim 已经是用户 PATH 第一项。</value>
+  </data>
+  <data name="Diagnostics.Repair.SucceededTitle" xml:space="preserve">
+    <value>修复完成</value>
+  </data>
+  <data name="Diagnostics.Repair.SucceededMessage" xml:space="preserve">
+    <value>修复已应用，正在重新扫描。</value>
+  </data>
+  <data name="Diagnostics.Repair.FailedTitle" xml:space="preserve">
+    <value>修复失败</value>
+  </data>
+  <data name="Diagnostics.Repair.ApplyFailed" xml:space="preserve">
+    <value>修改用户 PATH 失败。</value>
+  </data>
+  <data name="Diagnostics.Repair.CliMissing" xml:space="preserve">
+    <value>未找到 CLI：{0}</value>
+  </data>
+  <data name="Diagnostics.Repair.Activity.Path" xml:space="preserve">
+    <value>诊断修复：智能修复用户 PATH，移除 {0} 个条目</value>
+  </data>
+  <data name="Diagnostics.Repair.Activity.ShimReinstalled" xml:space="preserve">
+    <value>诊断修复：重装 AutoEnvPlus Shim（{0}）</value>
+  </data>
+  <data name="Diagnostics.Repair.Activity.ShimFirst" xml:space="preserve">
+    <value>诊断修复：已把 Shim 移到用户 PATH 最前（{0}）</value>
+  </data>
+  <data name="Diagnostics.Repair.Activity.Failed" xml:space="preserve">
+    <value>诊断修复失败（{0}）</value>
+  </data>
 </root>

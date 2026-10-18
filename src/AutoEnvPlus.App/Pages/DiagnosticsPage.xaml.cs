@@ -4,6 +4,8 @@ using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Diagnostics;
 using AutoEnvPlus.Core.Environment;
+using AutoEnvPlus.Core.Shell;
+using AutoEnvPlus.Core.Storage;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -21,9 +23,19 @@ public sealed partial class DiagnosticsPage : Page
     private CancellationTokenSource? _scanCancellation;
     private EnvironmentDiagnosticReport? _lastReport;
     private bool _scanning;
+    private readonly string _managedRoot;
+    private readonly string _cliPath;
+    private readonly string _nativeShimPath;
+    private readonly UserPathManager _pathManager;
 
     public DiagnosticsPage()
     {
+        _managedRoot = ManagedRootResolver.ResolveOrThrow();
+        _cliPath = Path.Combine(AppContext.BaseDirectory, "cli", "autoenvplus.exe");
+        _nativeShimPath = Path.Combine(AppContext.BaseDirectory, "cli", "autoenvplus-shim.exe");
+        _pathManager = new UserPathManager(
+            _managedRoot,
+            new WindowsUserEnvironmentVariableStore());
         InitializeComponent();
         ApplyLocalizedStrings();
         Loaded += OnLoaded;
@@ -111,6 +123,275 @@ public sealed partial class DiagnosticsPage : Page
 
     private void OnCancelClicked(object sender, RoutedEventArgs args) =>
         _scanCancellation?.Cancel();
+
+    private void OnIssueRepairButtonLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is Button button
+            && button.DataContext is IssueRow { Repair: { } repair, Title: { } title }
+            && button.Content is StackPanel panel
+            && panel.Children.Count > 1
+            && panel.Children[1] is TextBlock text)
+        {
+            text.Text = Loc.Get("Diagnostics.Repair.Button.Label");
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+                button,
+                Loc.Format("Diagnostics.Repair.Button.AccessibleName", title));
+            ToolTipService.SetToolTip(button, RepairToolTip(repair));
+        }
+    }
+
+    private static string RepairToolTip(DiagnosticRepairKind repair) => repair switch
+    {
+        DiagnosticRepairKind.UserPathSmartRepair =>
+            Loc.Get("Diagnostics.Repair.Path.ToolTip"),
+        DiagnosticRepairKind.ShimReinstall =>
+            Loc.Get("Diagnostics.Repair.ShimReinstall.ToolTip"),
+        DiagnosticRepairKind.ShimEnsureFirst =>
+            Loc.Get("Diagnostics.Repair.ShimFirst.ToolTip"),
+        _ => string.Empty,
+    };
+
+    private async void OnIssueRepairClicked(object sender, RoutedEventArgs args)
+    {
+        if (_scanning || sender is not Button { Tag: IssueRow { Repair: { } repair } row })
+        {
+            return;
+        }
+
+        switch (repair)
+        {
+            case DiagnosticRepairKind.UserPathSmartRepair:
+                await RepairUserPathAsync();
+                break;
+            case DiagnosticRepairKind.ShimReinstall:
+                await RepairShimReinstallAsync();
+                break;
+            case DiagnosticRepairKind.ShimEnsureFirst:
+                await RepairShimEnsureFirstAsync();
+                break;
+        }
+    }
+
+    private async Task RepairUserPathAsync()
+    {
+        UserPathRepairPlan repair = _pathManager.PlanRepair();
+        if (!repair.Changed)
+        {
+            SummaryInfo.Severity = InfoBarSeverity.Informational;
+            SummaryInfo.Title = Loc.Get("Diagnostics.Repair.PathNoChangeTitle");
+            SummaryInfo.Message = Loc.Get("Diagnostics.Repair.PathNoChangeMessage");
+            return;
+        }
+
+        ContentDialog confirmation = new()
+        {
+            XamlRoot = XamlRoot,
+            Title = Loc.Get("Diagnostics.Repair.PathConfirmTitle"),
+            Content = new TextBlock
+            {
+                IsTextSelectionEnabled = true,
+                Text = Loc.Format(
+                    "Diagnostics.Repair.PathConfirmContent",
+                    repair.RemovedMissing.Count,
+                    repair.RemovedDuplicates.Count),
+                TextWrapping = TextWrapping.Wrap,
+            },
+            PrimaryButtonText = Loc.Get("Diagnostics.Repair.PathConfirmButton"),
+            CloseButtonText = Loc.Get("Diagnostics.Repair.Cancel"),
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        SetBusy(true);
+        try
+        {
+            UserPathMutationResult result = await _pathManager.ApplyAsync(repair.Mutation);
+            if (!result.Success)
+            {
+                throw new InvalidOperationException(
+                    result.Error ?? Loc.Get("Diagnostics.Repair.ApplyFailed"));
+            }
+
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.PathChange,
+                ActivityStatus.Succeeded,
+                Loc.Format("Diagnostics.Repair.Activity.Path", repair.RemovedCount),
+                [result.SnapshotPath ?? string.Empty],
+                result.SnapshotPath,
+                result.SnapshotPath);
+            await FinishRepairAsync();
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException)
+        {
+            await LogRepairFailureAsync(exception);
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private async Task RepairShimReinstallAsync()
+    {
+        if (!File.Exists(_cliPath))
+        {
+            SummaryInfo.Severity = InfoBarSeverity.Error;
+            SummaryInfo.Title = Loc.Get("Diagnostics.Repair.FailedTitle");
+            SummaryInfo.Message = Loc.Format("Diagnostics.Repair.CliMissing", _cliPath);
+            return;
+        }
+
+        string shimDirectory = Path.Combine(_managedRoot, "shims");
+        ContentDialog confirmation = new()
+        {
+            XamlRoot = XamlRoot,
+            Title = Loc.Get("Diagnostics.Repair.ShimReinstallConfirmTitle"),
+            Content = new TextBlock
+            {
+                IsTextSelectionEnabled = true,
+                Text = Loc.Format(
+                    "Diagnostics.Repair.ShimReinstallConfirmContent",
+                    shimDirectory),
+                TextWrapping = TextWrapping.Wrap,
+            },
+            PrimaryButtonText = Loc.Get("Diagnostics.Repair.ShimReinstallConfirmButton"),
+            CloseButtonText = Loc.Get("Diagnostics.Repair.Cancel"),
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        SetBusy(true);
+        try
+        {
+            CommandShimInstallResult shims = await new CommandShimManager().InstallAsync(
+                _managedRoot,
+                _cliPath,
+                [],
+                File.Exists(_nativeShimPath) ? _nativeShimPath : null);
+            UserPathMutationPlan plan = _pathManager.PlanEnsureFirst(shims.ShimDirectory);
+            UserPathMutationResult result = await _pathManager.ApplyAsync(plan);
+            if (!result.Success)
+            {
+                throw new InvalidOperationException(
+                    result.Error ?? Loc.Get("Diagnostics.Repair.ApplyFailed"));
+            }
+
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.PathChange,
+                ActivityStatus.Succeeded,
+                Loc.Format("Diagnostics.Repair.Activity.ShimReinstalled", shims.ShimDirectory),
+                [shims.ShimDirectory],
+                result.SnapshotPath,
+                result.SnapshotPath);
+            await FinishRepairAsync();
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException)
+        {
+            await LogRepairFailureAsync(exception);
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private async Task RepairShimEnsureFirstAsync()
+    {
+        string shimDirectory = Path.Combine(_managedRoot, "shims");
+        UserPathMutationPlan plan = _pathManager.PlanEnsureFirst(shimDirectory);
+        if (!plan.Changed)
+        {
+            SummaryInfo.Severity = InfoBarSeverity.Informational;
+            SummaryInfo.Title = Loc.Get("Diagnostics.Repair.ShimFirstNoChangeTitle");
+            SummaryInfo.Message = Loc.Get("Diagnostics.Repair.ShimFirstNoChangeMessage");
+            return;
+        }
+
+        ContentDialog confirmation = new()
+        {
+            XamlRoot = XamlRoot,
+            Title = Loc.Get("Diagnostics.Repair.ShimFirstConfirmTitle"),
+            Content = new TextBlock
+            {
+                IsTextSelectionEnabled = true,
+                Text = Loc.Format(
+                    "Diagnostics.Repair.ShimFirstConfirmContent",
+                    shimDirectory),
+                TextWrapping = TextWrapping.Wrap,
+            },
+            PrimaryButtonText = Loc.Get("Diagnostics.Repair.ShimFirstConfirmButton"),
+            CloseButtonText = Loc.Get("Diagnostics.Repair.Cancel"),
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        SetBusy(true);
+        try
+        {
+            UserPathMutationResult result = await _pathManager.ApplyAsync(plan);
+            if (!result.Success)
+            {
+                throw new InvalidOperationException(
+                    result.Error ?? Loc.Get("Diagnostics.Repair.ApplyFailed"));
+            }
+
+            await AppActivityLog.TryWriteAsync(
+                ActivityOperationType.PathChange,
+                ActivityStatus.Succeeded,
+                Loc.Format("Diagnostics.Repair.Activity.ShimFirst", shimDirectory),
+                [shimDirectory],
+                result.SnapshotPath,
+                result.SnapshotPath);
+            await FinishRepairAsync();
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException)
+        {
+            await LogRepairFailureAsync(exception);
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    /// <summary>
+    /// A repair changes the environment the report was computed from, so
+    /// announce the success and immediately rescan with the same scopes to
+    /// show the post-repair state.
+    /// </summary>
+    private async Task FinishRepairAsync()
+    {
+        SummaryInfo.Severity = InfoBarSeverity.Success;
+        SummaryInfo.Title = Loc.Get("Diagnostics.Repair.SucceededTitle");
+        SummaryInfo.Message = Loc.Get("Diagnostics.Repair.SucceededMessage");
+        await RefreshAsync();
+    }
+
+    private async Task LogRepairFailureAsync(Exception exception)
+    {
+        SummaryInfo.Severity = InfoBarSeverity.Error;
+        SummaryInfo.Title = Loc.Get("Diagnostics.Repair.FailedTitle");
+        SummaryInfo.Message = CoreErrorText.Localize(exception.Message);
+        await AppActivityLog.TryWriteAsync(
+            ActivityOperationType.PathChange,
+            ActivityStatus.Failed,
+            Loc.Format("Diagnostics.Repair.Activity.Failed", exception.GetType().Name));
+    }
 
     private void OnScopeSelectionChanged(object sender, RoutedEventArgs args)
     {
@@ -510,9 +791,15 @@ public sealed partial class DiagnosticsPage : Page
         string Title,
         string Detail,
         string Path,
-        Brush SeverityBrush)
+        Brush SeverityBrush,
+        DiagnosticRepairKind? Repair = null,
+        DiagnosticIssue? Issue = null)
     {
         public Visibility PathVisibility => string.IsNullOrWhiteSpace(Path)
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+
+        public Visibility RepairVisibility => Repair is null
             ? Visibility.Collapsed
             : Visibility.Visible;
 
@@ -532,7 +819,9 @@ public sealed partial class DiagnosticsPage : Page
                 DiagnosticSeverity.Error => Colors.Firebrick,
                 DiagnosticSeverity.Warning => Colors.DarkGoldenrod,
                 _ => Colors.DodgerBlue,
-            }));
+            }),
+            issue.Repair,
+            issue);
     }
 
     private sealed record CommandRow(string Command, string Winner, string CandidateText);

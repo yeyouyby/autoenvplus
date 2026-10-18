@@ -400,6 +400,18 @@
                                         Text="{Binding Path}"
                                         TextWrapping="WrapWholeWords"
                                         Visibility="{Binding PathVisibility}" />
+                                    <Button
+                                        x:Name="IssueRepairButton"
+                                        Margin="0,4,0,0"
+                                        Click="OnIssueRepairClicked"
+                                        Loaded="OnIssueRepairButtonLoaded"
+                                        Tag="{Binding}"
+                                        Visibility="{Binding RepairVisibility}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon FontSize="14" Glyph="&#xE9F5;" />
+                                            <TextBlock x:Name="IssueRepairButtonText" />
+                                        </StackPanel>
+                                    </Button>
                                 </StackPanel>
                             </Grid>
                         </DataTemplate>

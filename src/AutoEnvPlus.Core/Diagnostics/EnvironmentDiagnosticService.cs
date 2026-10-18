@@ -19,13 +19,36 @@ public enum DiagnosticSeverity
     Error,
 }
 
+/// <summary>
+/// The repair action the app can offer for a diagnostic issue. Issues
+/// without a repair kind need a human decision (or no action at all).
+/// </summary>
+public enum DiagnosticRepairKind
+{
+    /// <summary>
+    /// Remove dead and duplicate entries from the persisted user PATH via
+    /// <see cref="Environment.UserPathManager.PlanRepair"/>.
+    /// </summary>
+    UserPathSmartRepair,
+
+    /// <summary>Reinstall the managed command shims from the CLI payload.</summary>
+    ShimReinstall,
+
+    /// <summary>
+    /// Move the shim directory to the front of the persisted user PATH via
+    /// <see cref="Environment.UserPathManager.PlanEnsureFirst"/>.
+    /// </summary>
+    ShimEnsureFirst,
+}
+
 public sealed record DiagnosticIssue(
     string Id,
     DiagnosticSeverity Severity,
     string Title,
     string Detail,
     string? Path = null,
-    DiagnosticScanScope Scope = DiagnosticScanScope.PathAndCommands);
+    DiagnosticScanScope Scope = DiagnosticScanScope.PathAndCommands,
+    DiagnosticRepairKind? Repair = null);
 
 public sealed record DiagnosticCommandStatus(
     string Command,
@@ -325,7 +348,8 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Warning,
                 "PATH 目录不存在",
                 $"进程 PATH 第 {entry.Index + 1} 项无法访问。",
-                entry.ExpandedValue));
+                entry.ExpandedValue,
+                Repair: UserPathRepairFor(entry)));
         }
 
         foreach (PathInspectionEntry entry in path.Entries.Where(entry => entry.IsDuplicate))
@@ -335,7 +359,8 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Warning,
                 "PATH 包含重复目录",
                 $"第 {entry.Index + 1} 项与第 {(entry.FirstOccurrenceIndex ?? 0) + 1} 项重复。",
-                entry.ExpandedValue));
+                entry.ExpandedValue,
+                Repair: UserPathRepairFor(entry)));
         }
 
         foreach (CommandConflict conflict in path.Conflicts)
@@ -347,7 +372,6 @@ public sealed class EnvironmentDiagnosticService
                 $"将使用 {conflict.Candidates[0].ExecutablePath}；PATH 中还有 {conflict.Candidates.Count - 1} 个同名候选。",
                 conflict.Candidates[0].ExecutablePath));
         }
-
         foreach (DiscoveredRuntime runtime in runtimes.Where(runtime => !runtime.IsHealthy))
         {
             issues.Add(new DiagnosticIssue(
@@ -390,6 +414,15 @@ public sealed class EnvironmentDiagnosticService
         }
     }
 
+    /// <summary>
+    /// The smart user-PATH repair can only remove entries the user actually
+    /// owns; machine-only or process-only entries need different action.
+    /// </summary>
+    private static DiagnosticRepairKind? UserPathRepairFor(PathInspectionEntry entry) =>
+        entry.Scope is PathEntryScope.User or PathEntryScope.UserAndMachine
+            ? DiagnosticRepairKind.UserPathSmartRepair
+            : null;
+
     private void AnalyzeShim(
         PathInspectionReport path,
         ICollection<DiagnosticIssue> issues)
@@ -416,7 +449,8 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Error,
                 "AutoEnvPlus Shim 目录失效",
                 "用户 PATH 仍引用 AutoEnvPlus Shim，但受管目录不存在。",
-                shimDirectory));
+                shimDirectory,
+                Repair: DiagnosticRepairKind.ShimReinstall));
             return;
         }
 
@@ -464,7 +498,8 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Error,
                 "AutoEnvPlus Shim 不完整",
                 $"缺少命令：{string.Join("、", missing)}。",
-                shimDirectory));
+                shimDirectory,
+                Repair: DiagnosticRepairKind.ShimReinstall));
         }
 
         if (ambiguous.Count > 0)
@@ -474,7 +509,8 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Warning,
                 "AutoEnvPlus Shim 存在旧实现残留",
                 $"以下命令同时存在 .exe 与 .cmd：{string.Join("、", ambiguous)}。",
-                shimDirectory));
+                shimDirectory,
+                Repair: DiagnosticRepairKind.ShimReinstall));
         }
 
         if (empty.Count > 0)
@@ -484,7 +520,8 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Error,
                 "AutoEnvPlus Shim 文件无效",
                 $"以下命令的 Shim 为空或无法读取：{string.Join("、", empty.Distinct(StringComparer.OrdinalIgnoreCase))}。",
-                shimDirectory));
+                shimDirectory,
+                Repair: DiagnosticRepairKind.ShimReinstall));
         }
 
         if (!persisted)
@@ -494,7 +531,8 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Warning,
                 "Shim 尚未写入用户 PATH",
                 "受管 Shim 已存在，但持久用户 PATH 不包含该目录。",
-                shimDirectory));
+                shimDirectory,
+                Repair: DiagnosticRepairKind.ShimEnsureFirst));
             return;
         }
 
@@ -505,7 +543,8 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Warning,
                 "Shim 不是用户 PATH 第一项",
                 $"Shim 位于持久用户 PATH 第 {persistedIndex + 1} 项，前面的同名命令可能绕过版本选择。",
-                shimDirectory));
+                shimDirectory,
+                Repair: DiagnosticRepairKind.ShimEnsureFirst));
         }
 
         int currentIndex = path.Entries

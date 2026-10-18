@@ -3875,4 +3875,89 @@ If the profile was modified after installation, AutoEnvPlus refuses to overwrite
   <data name="Settings.Validation.NumberRequired" xml:space="preserve">
     <value>{0} must be a valid number.</value>
   </data>
+
+  <data name="Diagnostics.Repair.Button.Label" xml:space="preserve">
+    <value>Repair</value>
+  </data>
+  <data name="Diagnostics.Repair.Button.AccessibleName" xml:space="preserve">
+    <value>Repair: {0}</value>
+  </data>
+  <data name="Diagnostics.Repair.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Diagnostics.Repair.Path.ToolTip" xml:space="preserve">
+    <value>Remove dead directories and duplicates from the user PATH (first occurrence wins)</value>
+  </data>
+  <data name="Diagnostics.Repair.PathConfirmTitle" xml:space="preserve">
+    <value>Smart-repair the user PATH</value>
+  </data>
+  <data name="Diagnostics.Repair.PathConfirmContent" xml:space="preserve">
+    <value>This removes {0} dead entries and {1} duplicates. A snapshot is written first; you can roll back anytime.</value>
+  </data>
+  <data name="Diagnostics.Repair.PathConfirmButton" xml:space="preserve">
+    <value>Repair now</value>
+  </data>
+  <data name="Diagnostics.Repair.PathNoChangeTitle" xml:space="preserve">
+    <value>Nothing to repair</value>
+  </data>
+  <data name="Diagnostics.Repair.PathNoChangeMessage" xml:space="preserve">
+    <value>The user PATH has no dead or duplicate entries.</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimReinstall.ToolTip" xml:space="preserve">
+    <value>Regenerate the managed shims and move them to the front of the user PATH</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimReinstallConfirmTitle" xml:space="preserve">
+    <value>Reinstall AutoEnvPlus shims</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimReinstallConfirmContent" xml:space="preserve">
+    <value>This regenerates the managed shims and moves {0} to the front of the user PATH. A snapshot is written first; you can roll back anytime.</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimReinstallConfirmButton" xml:space="preserve">
+    <value>Reinstall shims</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimFirst.ToolTip" xml:space="preserve">
+    <value>Move the shim directory to the front of the user PATH</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimFirstConfirmTitle" xml:space="preserve">
+    <value>Move the shim directory to the front of the user PATH</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimFirstConfirmContent" xml:space="preserve">
+    <value>This moves {0} to the front of the user PATH so same-named commands cannot bypass version selection. A snapshot is written first; you can roll back anytime.</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimFirstConfirmButton" xml:space="preserve">
+    <value>Move to front</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimFirstNoChangeTitle" xml:space="preserve">
+    <value>Already first</value>
+  </data>
+  <data name="Diagnostics.Repair.ShimFirstNoChangeMessage" xml:space="preserve">
+    <value>The shim directory is already first in the user PATH.</value>
+  </data>
+  <data name="Diagnostics.Repair.SucceededTitle" xml:space="preserve">
+    <value>Repair complete</value>
+  </data>
+  <data name="Diagnostics.Repair.SucceededMessage" xml:space="preserve">
+    <value>The repair was applied; rescanning.</value>
+  </data>
+  <data name="Diagnostics.Repair.FailedTitle" xml:space="preserve">
+    <value>Repair failed</value>
+  </data>
+  <data name="Diagnostics.Repair.ApplyFailed" xml:space="preserve">
+    <value>Failed to modify the user PATH.</value>
+  </data>
+  <data name="Diagnostics.Repair.CliMissing" xml:space="preserve">
+    <value>The CLI was not found: {0}</value>
+  </data>
+  <data name="Diagnostics.Repair.Activity.Path" xml:space="preserve">
+    <value>Diagnostic repair: smart-repaired the user PATH, removed {0} entries</value>
+  </data>
+  <data name="Diagnostics.Repair.Activity.ShimReinstalled" xml:space="preserve">
+    <value>Diagnostic repair: reinstalled AutoEnvPlus shims ({0})</value>
+  </data>
+  <data name="Diagnostics.Repair.Activity.ShimFirst" xml:space="preserve">
+    <value>Diagnostic repair: moved the shim directory to the front of the user PATH ({0})</value>
+  </data>
+  <data name="Diagnostics.Repair.Activity.Failed" xml:space="preserve">
+    <value>Diagnostic repair failed ({0})</value>
+  </data>
 </root>

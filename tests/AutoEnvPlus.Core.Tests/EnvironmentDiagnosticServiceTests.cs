@@ -63,6 +63,19 @@ public sealed class EnvironmentDiagnosticServiceTests : IDisposable
         Assert.Contains(report.Issues, issue => issue.Id.StartsWith("runtime-unhealthy", StringComparison.Ordinal));
         Assert.Contains(report.Issues, issue => issue.Id == "managed-missing-nodejs-20-x64");
         Assert.Contains(report.Issues, issue => issue.Id == "global-unresolved-NodeJs");
+        // The duplicate entry lives in the user PATH and carries the
+        // smart-repair hint; the dead entry is process-only (not in the
+        // user PATH passed below), so no user repair is offered for it.
+        // Command conflicts never carry a repair.
+        Assert.Contains(report.Issues, issue =>
+            issue.Id.StartsWith("path-duplicate", StringComparison.Ordinal)
+            && issue.Repair == DiagnosticRepairKind.UserPathSmartRepair);
+        Assert.Contains(report.Issues, issue =>
+            issue.Id.StartsWith("path-missing", StringComparison.Ordinal)
+            && issue.Repair is null);
+        Assert.Contains(report.Issues, issue =>
+            issue.Id == "command-conflict-python"
+            && issue.Repair is null);
         DiagnosticCommandStatus command = report.Commands.Single(item => item.Command == "python");
         Assert.Equal(Path.Combine(first, "python.exe"), command.WinnerPath);
         Assert.Equal(2, command.CandidateCount);
@@ -255,6 +268,45 @@ public sealed class EnvironmentDiagnosticServiceTests : IDisposable
         Assert.Contains(report.Issues, issue => issue.Id == "shim-aliases-missing");
         Assert.Contains(report.Issues, issue => issue.Id == "shim-aliases-empty");
         Assert.Contains(report.Issues, issue => issue.Id == "shim-not-in-user-path");
+        // Broken shim payloads are repairable by reinstalling; a missing
+        // user PATH entry is repairable by ensuring the shim directory first.
+        Assert.Contains(report.Issues, issue =>
+            issue.Id == "shim-aliases-missing"
+            && issue.Repair == DiagnosticRepairKind.ShimReinstall);
+        Assert.Contains(report.Issues, issue =>
+            issue.Id == "shim-aliases-empty"
+            && issue.Repair == DiagnosticRepairKind.ShimReinstall);
+        Assert.Contains(report.Issues, issue =>
+            issue.Id == "shim-not-in-user-path"
+            && issue.Repair == DiagnosticRepairKind.ShimEnsureFirst);
+    }
+
+    [Fact]
+    public void Analyze_MachineOnlyPathProblemsHaveNoUserRepair()
+    {
+        string machine = Directory.CreateDirectory(Path.Combine(_root, "machine")).FullName;
+        string deadMachine = Path.Combine(_root, "dead-machine");
+        PathInspectionReport path = new PathInspector().Inspect(
+            $"{machine};{deadMachine};{machine}",
+            string.Empty,
+            $"{machine};{deadMachine};{machine}",
+            []);
+
+        EnvironmentDiagnosticReport report = new EnvironmentDiagnosticService(_root).Analyze(
+            path,
+            [],
+            new RegistryLoadResult([], []),
+            RuntimeProfile.Empty,
+            scopes: DiagnosticScanScope.PathAndCommands);
+
+        Assert.Contains(report.Issues, issue =>
+            issue.Id.StartsWith("path-missing", StringComparison.Ordinal));
+        Assert.Contains(report.Issues, issue =>
+            issue.Id.StartsWith("path-duplicate", StringComparison.Ordinal));
+        // Machine-scope entries cannot be fixed by the user PATH smart
+        // repair, so no repair hint is offered for them.
+        Assert.DoesNotContain(report.Issues, issue =>
+            issue.Repair == DiagnosticRepairKind.UserPathSmartRepair);
     }
 
     [Fact]
