@@ -50,6 +50,13 @@ public enum CatalogUpdatePolicy
     Weekly,
 }
 
+public enum LanguagePreference
+{
+    System,
+    ChineseSimplified,
+    English,
+}
+
 public sealed record AutoEnvPlusApplicationSettings(
     StartupDestination StartupDestination,
     OverviewRefreshPolicy OverviewRefreshPolicy,
@@ -65,7 +72,8 @@ public sealed record AutoEnvPlusApplicationSettings(
     CatalogUpdatePolicy CatalogUpdatePolicy,
     int LogRetentionDays,
     bool RequireDestructiveActionConfirmation,
-    bool ShowExperimentalTools)
+    bool ShowExperimentalTools,
+    LanguagePreference LanguagePreference)
 {
     public const int MinimumDeepScanIntervalHours = 1;
     public const int MaximumDeepScanIntervalHours = 8_760;
@@ -89,7 +97,8 @@ public sealed record AutoEnvPlusApplicationSettings(
         CatalogUpdatePolicy.Weekly,
         LogRetentionDays: 30,
         RequireDestructiveActionConfirmation: true,
-        ShowExperimentalTools: false);
+        ShowExperimentalTools: false,
+        LanguagePreference: LanguagePreference.System);
 
     public void Validate()
     {
@@ -99,7 +108,8 @@ public sealed record AutoEnvPlusApplicationSettings(
             || !Enum.IsDefined(Theme)
             || !Enum.IsDefined(Backdrop)
             || !Enum.IsDefined(Density)
-            || !Enum.IsDefined(CatalogUpdatePolicy))
+            || !Enum.IsDefined(CatalogUpdatePolicy)
+            || !Enum.IsDefined(LanguagePreference))
         {
             throw new InvalidDataException("Application settings contain an unsupported option.");
         }

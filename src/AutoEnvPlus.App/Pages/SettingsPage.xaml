@@ -71,10 +71,10 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <StackPanel Spacing="4">
-                    <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="设置" />
+                    <TextBlock x:Name="PageTitleText" Style="{StaticResource TitleTextBlockStyle}" />
                     <TextBlock
+                        x:Name="PageSubtitleText"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="启动与快照、语言可见性、下载、代理、外观、日志与受管数据"
                         TextWrapping="Wrap" />
                 </StackPanel>
                 <StackPanel
@@ -87,16 +87,14 @@
                         x:Name="SettingsProgress"
                         Width="20"
                         Height="20"
-                        AutomationProperties.Name="设置保存进度"
                         IsActive="False" />
                     <Button
                         x:Name="SaveSettingsButton"
-                        AutomationProperties.Name="保存应用设置"
                         Click="OnSaveSettingsClicked"
                         Style="{StaticResource AccentButtonStyle}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <SymbolIcon Symbol="Save" />
-                            <TextBlock Text="保存设置" />
+                            <TextBlock x:Name="SaveSettingsButtonText" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -107,6 +105,49 @@
                 AutomationProperties.LiveSetting="Polite"
                 IsClosable="False"
                 IsOpen="False" />
+
+            <Border
+                BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,1"
+                Padding="0,18">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border
+                        Width="40"
+                        Height="40"
+                        Background="{ThemeResource AccentFillColorSecondaryBrush}"
+                        CornerRadius="8">
+                        <FontIcon
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="18"
+                            Glyph="&#xE777;" />
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Spacing="5">
+                        <TextBlock x:Name="LanguageSectionTitleText" Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock
+                            x:Name="LanguageSectionSubtitleText"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap" />
+                        <StackPanel Margin="0,10,0,0" Spacing="4">
+                            <TextBlock x:Name="LanguageFieldLabelText" />
+                            <ComboBox
+                                x:Name="LanguagePicker"
+                                HorizontalAlignment="Stretch"
+                                DisplayMemberPath="Label" />
+                        </StackPanel>
+                        <TextBlock
+                            x:Name="LanguageRestartHint"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+            </Border>
 
             <Border
                 BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"

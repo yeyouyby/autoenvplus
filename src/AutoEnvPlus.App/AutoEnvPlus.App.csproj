@@ -9,6 +9,10 @@
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
+    <!-- zh-CN is the product's default/fallback language: the PRI falls back
+         to it when the user's system language matches none of the Strings/
+         candidates, preserving the pre-localization Chinese UI. -->
+    <DefaultLanguage>zh-CN</DefaultLanguage>
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>true</EnableMsixTooling>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>

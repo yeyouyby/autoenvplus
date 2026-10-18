@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+### Added
+
+- 本地化框架：应用字符串迁入 MRT Core 资源表（`Strings/zh-CN` 与 `Strings/en-US`），代码后置经 `Loc` 解析；设置页新增"语言"区块（跟随系统/简体中文/English），选择持久化到应用设置并在下次启动经 `Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride` 生效。未打包 WinUI 3 的 `x:Uid` 既不匹配点号键的 PRI 布局、也不跟随应用内语言覆盖，因此全部字符串走代码后置赋值——这是后续全量字符串抽取的既定模式。
+
 ## 0.0.4 - 2026-10-11
 
 单文件启动修复版：v0.0.3 的单文件 EXE 在部分机器上首次 WinUI 激活即崩溃（COMException 0x80040111，无窗口无日志），portable 与 MSI 不受影响。核心引擎、CLI 与 Shim 行为不变。已作为 GitHub prerelease `v0.0.4` 发布并完成签名与资产回读。

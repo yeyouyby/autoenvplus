@@ -34,6 +34,8 @@ internal static class Program
             // harmless no-op.
             SetDllDirectoryW(AppContext.BaseDirectory);
 
+            ApplyPersistedInterfaceLanguage();
+
             global::WinRT.ComWrappersSupport.InitializeComWrappers();
             global::Microsoft.UI.Xaml.Application.Start((p) =>
             {
@@ -50,6 +52,55 @@ internal static class Program
             // silently exited. Reuse the startup failure path so the cause is
             // logged to %TEMP%\autoenvplus-startup-failure.log and surfaced.
             App.FailFastStartup(exception);
+        }
+    }
+
+    /// <summary>
+    /// Applies the persisted interface language preference before any XAML
+    /// resource is resolved. Must run before Application.Start so the first
+    /// page picks up the right language. Best-effort: any failure (missing
+    /// managed root, unreadable settings) falls back to the system language
+    /// rather than blocking the launch.
+    /// </summary>
+    private static void ApplyPersistedInterfaceLanguage()
+    {
+        try
+        {
+            if (!AutoEnvPlus.Core.Environment.ManagedRootResolver.TryResolve(
+                    null,
+                    out string? managedRoot,
+                    out _)
+                || string.IsNullOrEmpty(managedRoot))
+            {
+                return;
+            }
+
+            AutoEnvPlus.Core.Settings.AutoEnvPlusApplicationSettings settings =
+                new AutoEnvPlus.Core.Settings.AutoEnvPlusApplicationSettingsStore(managedRoot)
+                    .LoadAsync()
+                    .GetAwaiter()
+                    .GetResult();
+
+            string? languageTag = settings.LanguagePreference switch
+            {
+                AutoEnvPlus.Core.Settings.LanguagePreference.ChineseSimplified => "zh-CN",
+                AutoEnvPlus.Core.Settings.LanguagePreference.English => "en-US",
+                _ => null,
+            };
+
+            if (languageTag is not null)
+            {
+                // MRT Core (the Windows App SDK resource stack used by
+                // unpackaged WinUI apps) reads this per-process override;
+                // the OS-level Windows.Globalization copy does not apply.
+                global::Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride =
+                    languageTag;
+            }
+        }
+        catch
+        {
+            // Language selection never blocks startup; the system language
+            // remains in effect for this session.
         }
     }
 }

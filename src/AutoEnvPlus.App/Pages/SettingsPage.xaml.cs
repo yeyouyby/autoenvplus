@@ -7,6 +7,7 @@ using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Networking;
 using AutoEnvPlus.Core.Settings;
 using AutoEnvPlus.Core.Shell;
+using AutoEnvPlus.App.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Storage;
@@ -49,6 +50,7 @@ public sealed partial class SettingsPage : Page
         _nativeShimPath = Path.Combine(AppContext.BaseDirectory, "cli", "autoenvplus-shim.exe");
         _profilePath = PowerShellIntegrationManager.GetDefaultWindowsPowerShellProfilePath();
         ProfilePathText.Text = _profilePath;
+        ApplyLocalizedStrings();
         InitializeApplicationSettingsChoices();
         InitializeAboutSection();
         Loaded += OnLoaded;
@@ -56,6 +58,35 @@ public sealed partial class SettingsPage : Page
         UpdateBackdropStatus();
         UpdateManagedRootStatus();
         SetBusy(false);
+    }
+
+    /// <summary>
+    /// Applies every localized string for this page from the resource table.
+    /// Unpackaged WinUI 3 apps cannot use x:Uid: the XAML loader resolves
+    /// ms-resource property bags against the OS system language only, so it
+    /// neither matches the standard dotted-key PRI layout nor honors the
+    /// in-app language preference. Code-behind assignment through
+    /// <see cref="Loc"/> is the only path that follows
+    /// <c>Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride</c>.
+    /// </summary>
+    private void ApplyLocalizedStrings()
+    {
+        PageTitleText.Text = Loc.Get("Settings.Page.Title");
+        PageSubtitleText.Text = Loc.Get("Settings.Page.Subtitle");
+        SaveSettingsButtonText.Text = Loc.Get("Settings.SaveButton.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            SaveSettingsButton,
+            Loc.Get("Settings.SaveButton.AccessibleName"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            SettingsProgress,
+            Loc.Get("Settings.SaveProgress.AccessibleName"));
+        LanguageSectionTitleText.Text = Loc.Get("Settings.Language.SectionTitle");
+        LanguageSectionSubtitleText.Text = Loc.Get("Settings.Language.SectionSubtitle");
+        LanguageFieldLabelText.Text = Loc.Get("Settings.Language.FieldLabel");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            LanguagePicker,
+            Loc.Get("Settings.Language.Picker.AccessibleName"));
+        LanguageRestartHint.Text = Loc.Get("Settings.Language.RestartHint");
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
@@ -135,6 +166,20 @@ public sealed partial class SettingsPage : Page
             new("舒适", InterfaceDensity.Comfortable),
             new("紧凑", InterfaceDensity.Compact),
         };
+        LanguagePicker.ItemsSource = new SettingChoice<LanguagePreference>[]
+        {
+            new(Loc.Get("Settings.Language.Option.System"), LanguagePreference.System),
+            new(
+                Loc.Get("Settings.Language.Option.ChineseSimplified"),
+                LanguagePreference.ChineseSimplified),
+            new(Loc.Get("Settings.Language.Option.English"), LanguagePreference.English),
+        };
+
+        // The restart hint only matters while an unsaved (or saved-but-not-
+        // yet-applied) language change is pending; hide it when the picker
+        // matches the persisted preference.
+        LanguagePicker.SelectionChanged += OnLanguagePickerSelectionChanged;
+        UpdateLanguageRestartHint();
 
         // Live preview: visual settings apply immediately when picked; the
         // save button persists them. Without this the user had to save (and
@@ -147,6 +192,18 @@ public sealed partial class SettingsPage : Page
         // typing instead of only failing at save time.
         HttpProxyTextBox.TextChanged += (_, _) => ValidateProxyInline();
         HttpsProxyTextBox.TextChanged += (_, _) => ValidateProxyInline();
+    }
+
+    private void OnLanguagePickerSelectionChanged(object sender, SelectionChangedEventArgs args) =>
+        UpdateLanguageRestartHint();
+
+    private void UpdateLanguageRestartHint()
+    {
+        LanguageRestartHint.Visibility =
+            LanguagePicker.SelectedItem is SettingChoice<LanguagePreference> choice
+            && choice.Value != _loadedApplicationSettings.LanguagePreference
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     private void ValidateProxyInline()
@@ -240,6 +297,7 @@ public sealed partial class SettingsPage : Page
             SelectChoice(ThemePicker, settings.Theme);
             SelectChoice(BackdropPicker, settings.Backdrop);
             SelectChoice(DensityPicker, settings.Density);
+            SelectChoice(LanguagePicker, settings.LanguagePreference);
             MaxDownloadGbNumber.Value = settings.DefaultDownloadMaximumBytes
                 / (double)(1024L * 1024 * 1024);
             LogRetentionNumber.Value = settings.LogRetentionDays;
@@ -282,6 +340,8 @@ public sealed partial class SettingsPage : Page
             ApplicationThemePreference theme = SelectedChoice<ApplicationThemePreference>(ThemePicker);
             BackdropPreference backdrop = SelectedChoice<BackdropPreference>(BackdropPicker);
             InterfaceDensity density = SelectedChoice<InterfaceDensity>(DensityPicker);
+            LanguagePreference languagePreference =
+                SelectedChoice<LanguagePreference>(LanguagePicker);
             int logRetentionDays = checked((int)Math.Round(RequiredNumber(
                 LogRetentionNumber,
                 "日志保留天数")));
@@ -299,6 +359,7 @@ public sealed partial class SettingsPage : Page
                     Density = density,
                     LogRetentionDays = logRetentionDays,
                     ShowExperimentalTools = showExperimentalTools,
+                    LanguagePreference = languagePreference,
                 });
             _loadedApplicationSettings = settings;
             ((App)Application.Current).UpdateCurrentSettings(settings);
@@ -310,7 +371,7 @@ public sealed partial class SettingsPage : Page
             SetSettingsInfo(
                 InfoBarSeverity.Success,
                 "应用设置已保存",
-                "主题、背景材质和界面密度已应用；启动页、语言、下载默认值和日志保留策略将在对应功能中生效。首页始终只读快照。");
+                "主题、背景材质和界面密度已应用；启动页、语言、下载默认值和日志保留策略将在对应功能中生效。界面语言更改将在下次启动时生效。首页始终只读快照。");
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.SettingsChange,
                 ActivityStatus.Succeeded,

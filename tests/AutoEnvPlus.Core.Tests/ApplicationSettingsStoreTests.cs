@@ -19,6 +19,7 @@ public sealed class ApplicationSettingsStoreTests : IDisposable
         Assert.Equal(8, settings.DefaultDownloadConnections);
         Assert.True(settings.UseManagedShims);
         Assert.True(settings.RequireDestructiveActionConfirmation);
+        Assert.Equal(LanguagePreference.System, settings.LanguagePreference);
     }
 
     [Fact]
@@ -41,6 +42,7 @@ public sealed class ApplicationSettingsStoreTests : IDisposable
             LogRetentionDays = 90,
             RequireDestructiveActionConfirmation = false,
             ShowExperimentalTools = true,
+            LanguagePreference = LanguagePreference.English,
         };
         AutoEnvPlusApplicationSettingsStore store = new(_root);
 
@@ -87,6 +89,56 @@ public sealed class ApplicationSettingsStoreTests : IDisposable
         Assert.Equal(ApplicationThemePreference.Dark, updated.Theme);
         Assert.False(updated.RequireDestructiveActionConfirmation);
         Assert.False(updated.ShellAutoActivation);
+    }
+
+    [Fact]
+    public async Task LoadAsync_MissingLanguageFieldFallsBackToSystemForOlderFiles()
+    {
+        AutoEnvPlusApplicationSettingsStore store = new(_root);
+        Directory.CreateDirectory(Path.GetDirectoryName(store.SettingsPath)!);
+        // A v0.0.3-era document has no languagePreference field; loading it
+        // must fall back to the System default instead of failing.
+        await File.WriteAllTextAsync(
+            store.SettingsPath,
+            """
+            {
+              "schemaVersion": 1,
+              "startupDestination": 0,
+              "overviewRefreshPolicy": 0,
+              "deepScanIntervalHours": 168,
+              "languageVisibilityPolicy": 0,
+              "defaultDownloadConnections": 8,
+              "defaultDownloadMaximumBytes": 8589934592,
+              "theme": 0,
+              "backdrop": 0,
+              "density": 0,
+              "shellAutoActivation": true,
+              "useManagedShims": true,
+              "catalogUpdatePolicy": 2,
+              "logRetentionDays": 30,
+              "requireDestructiveActionConfirmation": true,
+              "showExperimentalTools": false
+            }
+            """);
+
+        AutoEnvPlusApplicationSettings settings = await store.LoadAsync();
+
+        Assert.Equal(LanguagePreference.System, settings.LanguagePreference);
+    }
+
+    [Fact]
+    public async Task SaveAsync_PersistsLanguagePreferenceAsReadableText()
+    {
+        AutoEnvPlusApplicationSettingsStore store = new(_root);
+
+        await store.SaveAsync(
+            AutoEnvPlusApplicationSettings.Default with { LanguagePreference = LanguagePreference.ChineseSimplified });
+
+        string document = await File.ReadAllTextAsync(store.SettingsPath);
+        Assert.Contains("\"languagePreference\": \"ChineseSimplified\"", document);
+        Assert.Equal(
+            LanguagePreference.ChineseSimplified,
+            (await store.LoadAsync()).LanguagePreference);
     }
 
     [Fact]
