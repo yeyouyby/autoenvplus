@@ -1,3 +1,4 @@
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Languages;
 using AutoEnvPlus.Core.Settings;
@@ -36,20 +37,129 @@ public sealed partial class LanguagesPage : Page
     public LanguagesPage()
     {
         InitializeComponent();
+        ApplyLocalizedStrings();
         _managedRoot = ManagedRootResolver.ResolveOrThrow();
         _packStore = new LanguagePackStore(_managedRoot);
         _visibilityStore = new LanguageVisibilityStore(_managedRoot);
         _inventoryStore = new LanguageToolInventoryStore(_managedRoot);
-        FilterCombo.ItemsSource = new[]
-        {
-            new FilterChoice("all", "所有状态"),
-            new FilterChoice("detected", "已检测"),
-            new FilterChoice("default", "默认 Top 10"),
-            new FilterChoice("hidden", "已隐藏"),
-        };
         FilterCombo.SelectedIndex = 0;
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+    }
+
+    /// <summary>
+    /// Applies every localized string for this page from the resource table.
+    /// Unpackaged WinUI 3 apps cannot use x:Uid: the XAML loader resolves
+    /// ms-resource property bags against the OS system language only, so it
+    /// neither matches the standard dotted-key PRI layout nor honors the
+    /// in-app language preference. Code-behind assignment through
+    /// <see cref="Loc"/> is the only path that follows
+    /// <c>Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride</c>.
+    /// </summary>
+    private void ApplyLocalizedStrings()
+    {
+        PageTitleText.Text = Loc.Get("Languages.Header.Title");
+        PageSubtitleText.Text = Loc.Get("Languages.Header.Subtitle");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            RefreshProgress,
+            Loc.Get("Languages.Refresh.ProgressAccessibleName"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            RefreshButton,
+            Loc.Get("Languages.Refresh.AccessibleName"));
+        ToolTipService.SetToolTip(
+            RefreshButton,
+            Loc.Get("Languages.Refresh.ToolTip"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            ImportPackButton,
+            Loc.Get("Languages.ImportPack.Label"));
+        ImportPackButtonText.Text = Loc.Get("Languages.ImportPack.Label");
+        StatusInfo.Title = Loc.Get("Languages.Status.ReadingTitle");
+        CatalogNoteInfo.Title = Loc.Get("Languages.Catalog.NoteTitle");
+        CatalogNoteInfo.Message = Loc.Get("Languages.Catalog.NoteMessage");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            SearchBox,
+            Loc.Get("Languages.Search.AccessibleName"));
+        SearchBox.PlaceholderText = Loc.Get("Languages.Search.PlaceholderText");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            FilterCombo,
+            Loc.Get("Languages.Filter.AccessibleName"));
+        FilterCombo.ItemsSource = new[]
+        {
+            new FilterChoice("all", Loc.Get("Languages.Filters.All")),
+            new FilterChoice("detected", Loc.Get("Languages.Filters.Detected")),
+            new FilterChoice("default", Loc.Get("Languages.Filters.Default")),
+            new FilterChoice("hidden", Loc.Get("Languages.Filters.Hidden")),
+        };
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            ShowAllToggle,
+            Loc.Get("Languages.ShowAll.Header"));
+        ShowAllToggle.Header = Loc.Get("Languages.ShowAll.Header");
+        ShowAllToggle.OffContent = Loc.Get("Languages.ShowAll.OffContent");
+        ShowAllToggle.OnContent = Loc.Get("Languages.ShowAll.OnContent");
+        LanguageMappingTitleText.Text = Loc.Get("Languages.Summary.SectionTitle");
+        LanguageSummaryText.Text = Loc.Get("Languages.Summary.InitialText");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            ResetVisibilityButton,
+            Loc.Get("Languages.ResetVisibility.Title"));
+        ToolTipService.SetToolTip(
+            ResetVisibilityButton,
+            Loc.Get("Languages.ResetVisibility.ToolTip"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            LanguageList,
+            Loc.Get("Languages.Header.Title"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            EmptyLanguageState,
+            Loc.Get("Languages.Empty.Title"));
+        EmptyLanguageTitleText.Text = Loc.Get("Languages.Empty.Title");
+        EmptyLanguageHintText.Text = Loc.Get("Languages.Empty.Hint");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            LanguagePackExpander,
+            Loc.Get("Languages.Packs.AccessibleName"));
+        LanguagePackTitleText.Text = Loc.Get("Languages.Packs.SectionTitle");
+        LanguagePackSummaryText.Text = Loc.Get("Languages.Packs.SummaryInitial");
+        LanguagePackSchemaInfo.Title = Loc.Get("Languages.Packs.SchemaNoteTitle");
+        LanguagePackSchemaInfo.Message = Loc.Get("Languages.Packs.SchemaNoteMessage");
+        EmptyPackText.Text = Loc.Get("Languages.Packs.Empty");
+    }
+
+    private void OnDetectedBadgeLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is TextBlock badge)
+        {
+            badge.Text = Loc.Get("Languages.Filters.Detected");
+        }
+    }
+
+    private void OnDefaultBadgeLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is TextBlock badge)
+        {
+            badge.Text = Loc.Get("Languages.Item.DefaultBadge");
+        }
+    }
+
+    private void OnHiddenBadgeLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is TextBlock badge)
+        {
+            badge.Text = Loc.Get("Languages.Filters.Hidden");
+        }
+    }
+
+    private void OnOpenLanguageButtonLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is Button button)
+        {
+            ToolTipService.SetToolTip(button, Loc.Get("Languages.Item.Open.ToolTip"));
+        }
+    }
+
+    private void OnDeletePackButtonLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is Button button)
+        {
+            ToolTipService.SetToolTip(button, Loc.Get("Languages.Packs.Delete.ToolTip"));
+        }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs args) => _pageCancellation.Cancel();
@@ -99,10 +209,12 @@ public sealed partial class LanguagesPage : Page
 
         StatusInfo.IsOpen = true;
         StatusInfo.Severity = InfoBarSeverity.Informational;
-        StatusInfo.Title = scanPath ? "正在扫描语言工具" : "正在读取语言目录";
+        StatusInfo.Title = scanPath
+            ? Loc.Get("Languages.Status.ScanningTitle")
+            : Loc.Get("Languages.Status.ReadingTitle");
         StatusInfo.Message = scanPath
-            ? "只检查目录声明的 PATH 命令；不会运行版本命令或访问网络。"
-            : "正在读取语言包、显示偏好和上次库存快照。";
+            ? Loc.Get("Languages.Status.ScanningMessage")
+            : Loc.Get("Languages.Status.ReadingMessage");
         SetBusy(true);
         try
         {
@@ -150,21 +262,40 @@ public sealed partial class LanguagesPage : Page
             StatusInfo.Severity = packs.Errors.Count == 0
                 ? InfoBarSeverity.Success
                 : InfoBarSeverity.Warning;
-            StatusInfo.Title = "语言目录已就绪";
+            StatusInfo.Title = Loc.Get("Languages.Status.ReadyTitle");
             string inventoryStatus = _inventoryCapturedAtUtc is DateTimeOffset capturedAt
-                ? $"库存 {capturedAt.ToLocalTime():yyyy-MM-dd HH:mm}"
-                    + (_inventoryCatalogChanged ? "（目录已变化，等待重新检测）" : string.Empty)
-                : "尚无库存快照（未自动扫描）";
+                ? Loc.Format(
+                    "Languages.Status.InventoryAt",
+                    capturedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm"))
+                    + (_inventoryCatalogChanged
+                        ? Loc.Get("Languages.Status.InventoryStale")
+                        : string.Empty)
+                : Loc.Get("Languages.Status.InventoryNone");
             int operationAdapterCount = _activeCatalog.Tools.Count(tool =>
                 LanguageToolUiPolicy.GetManagementKind(tool) != ToolManagementKind.None);
-            StatusInfo.Message = $"{_activeCatalog.Languages.Count} 门可用语言 · "
-                + $"{_activeCatalog.Tools.Count} 个语言工具 · "
-                + $"{operationAdapterCount} 个工具已接通 AutoEnvPlus 安装适配器 · "
-                + $"检测到 {detectedLanguageIds.Count} 门语言 · {inventoryStatus}"
-                + (_inventoryWarning is null ? string.Empty : $" · {_inventoryWarning}")
-                + (packs.Errors.Count > 0
-                    ? $" · {packs.Errors.Count} 个语言包未通过验证"
-                    : string.Empty);
+            List<string> summarySegments =
+            [
+                Loc.Format("Languages.Status.SummaryLanguages", _activeCatalog.Languages.Count),
+                Loc.Format("Languages.Status.SummaryTools", _activeCatalog.Tools.Count),
+                Loc.Format("Languages.Status.SummaryAdapters", operationAdapterCount),
+                Loc.Format("Languages.Status.SummaryDetected", detectedLanguageIds.Count),
+                inventoryStatus,
+            ];
+            if (_inventoryWarning is not null)
+            {
+                summarySegments.Add(_inventoryWarning);
+            }
+
+            if (packs.Errors.Count > 0)
+            {
+                summarySegments.Add(Loc.Format(
+                    "Languages.Status.PackErrors",
+                    packs.Errors.Count));
+            }
+
+            StatusInfo.Message = string.Join(
+                Loc.Get("Languages.Text.Separator"),
+                summarySegments);
         }
         catch (OperationCanceledException)
         {
@@ -178,14 +309,14 @@ public sealed partial class LanguagesPage : Page
         {
             StatusInfo.IsOpen = true;
             StatusInfo.Severity = InfoBarSeverity.Error;
-            StatusInfo.Title = "无法读取语言目录";
+            StatusInfo.Title = Loc.Get("Languages.Messages.ReadFailedTitle");
             StatusInfo.Message = exception switch
             {
                 LanguageVisibilityException visibility =>
-                    $"语言显示状态未通过校验（{visibility.Code}）；状态内容未回显。",
+                    Loc.Format("Languages.Messages.VisibilityInvalid", visibility.Code),
                 LanguagePackException pack =>
-                    $"语言包未通过校验（{pack.Code}）；清单内容未回显。",
-                _ => "语言目录或状态路径当前不可用；路径外内容和敏感值未显示。",
+                    Loc.Format("Languages.Messages.PackInvalid", pack.Code),
+                _ => Loc.Get("Languages.Messages.CatalogUnavailable"),
             };
         }
         finally
@@ -217,7 +348,7 @@ public sealed partial class LanguagesPage : Page
                 or NotSupportedException)
             {
                 snapshot = null;
-                _inventoryWarning = "库存快照未通过校验";
+                _inventoryWarning = Loc.Get("Languages.Messages.InventoryInvalid");
             }
         }
 
@@ -257,9 +388,15 @@ public sealed partial class LanguagesPage : Page
             : Visibility.Collapsed;
         int effectiveCount = _rows.Count(row => row.Entry.IsVisible);
         int detectedCount = _rows.Count(row => row.Entry.IsDetected);
-        LanguageSummaryText.Text = $"当前显示 {filtered.Length} 门 · 有效集合 {effectiveCount} 门 · "
-            + $"库存已检测 {detectedCount} 门 · 目录总计 {_rows.Length} 门 · "
-            + $"设置策略 {VisibilityPolicyName(_settingsVisibilityPolicy)}";
+        LanguageSummaryText.Text = string.Join(
+            Loc.Get("Languages.Text.Separator"),
+            Loc.Format("Languages.Summary.VisibleCount", filtered.Length),
+            Loc.Format("Languages.Summary.EffectiveCount", effectiveCount),
+            Loc.Format("Languages.Summary.DetectedCount", detectedCount),
+            Loc.Format("Languages.Summary.TotalCount", _rows.Length),
+            Loc.Format(
+                "Languages.Summary.Policy",
+                VisibilityPolicyName(_settingsVisibilityPolicy)));
     }
 
     private void OnSearchTextChanged(
@@ -310,8 +447,10 @@ public sealed partial class LanguagesPage : Page
         {
             StatusInfo.IsOpen = true;
             StatusInfo.Severity = InfoBarSeverity.Error;
-            StatusInfo.Title = "无法保存语言显示状态";
-            StatusInfo.Message = $"状态未写入（{exception.Code}）。";
+            StatusInfo.Title = Loc.Get("Languages.Messages.VisibilitySaveFailedTitle");
+            StatusInfo.Message = Loc.Format(
+                "Languages.Messages.VisibilitySaveFailed",
+                exception.Code);
             SetBusy(false);
             return;
         }
@@ -330,10 +469,10 @@ public sealed partial class LanguagesPage : Page
         ContentDialog dialog = new()
         {
             XamlRoot = XamlRoot,
-            Title = "重置语言显示偏好",
-            Content = "清除所有显式启用和隐藏状态。之后仍会显示默认 Top 10 和 PATH 已检测到的语言。",
-            PrimaryButtonText = "重置",
-            CloseButtonText = "取消",
+            Title = Loc.Get("Languages.ResetVisibility.Title"),
+            Content = Loc.Get("Languages.ResetVisibility.DialogContent"),
+            PrimaryButtonText = Loc.Get("Languages.ResetVisibility.ResetButton"),
+            CloseButtonText = Loc.Get("Languages.Dialog.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await dialog.ShowAsync() != ContentDialogResult.Primary)
@@ -352,8 +491,8 @@ public sealed partial class LanguagesPage : Page
         {
             StatusInfo.IsOpen = true;
             StatusInfo.Severity = InfoBarSeverity.Error;
-            StatusInfo.Title = "无法重置语言显示状态";
-            StatusInfo.Message = $"状态未更新（{exception.Code}）。";
+            StatusInfo.Title = Loc.Get("Languages.Messages.ResetFailedTitle");
+            StatusInfo.Message = Loc.Format("Languages.Messages.ResetFailed", exception.Code);
             return;
         }
         finally
@@ -433,7 +572,7 @@ public sealed partial class LanguagesPage : Page
         FileOpenPicker picker = new()
         {
             SuggestedStartLocation = PickerLocationId.Downloads,
-            CommitButtonText = "预检语言包",
+            CommitButtonText = Loc.Get("Languages.ImportPack.PickerCommit"),
         };
         picker.FileTypeFilter.Add(".json");
         InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(window));
@@ -453,10 +592,12 @@ public sealed partial class LanguagesPage : Page
             ContentDialog confirmation = new()
             {
                 XamlRoot = XamlRoot,
-                Title = $"导入 {preview.Manifest.DisplayName}",
+                Title = Loc.Format(
+                    "Languages.ImportPack.ConfirmTitle",
+                    preview.Manifest.DisplayName),
                 Content = CreatePackPreview(preview, file.Name),
-                PrimaryButtonText = "导入（保持停用）",
-                CloseButtonText = "取消",
+                PrimaryButtonText = Loc.Get("Languages.ImportPack.ConfirmButton"),
+                CloseButtonText = Loc.Get("Languages.Dialog.Cancel"),
                 DefaultButton = ContentDialogButton.Close,
             };
             if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -468,7 +609,9 @@ public sealed partial class LanguagesPage : Page
         }
         catch (LanguagePackException exception)
         {
-            importErrorMessage = $"清单未通过安全校验（{exception.Code}）；内容未回显。";
+            importErrorMessage = Loc.Format(
+                "Languages.Messages.ManifestInvalid",
+                exception.Code);
         }
         finally
         {
@@ -483,14 +626,14 @@ public sealed partial class LanguagesPage : Page
         if (importErrorMessage is not null)
         {
             StatusInfo.Severity = InfoBarSeverity.Error;
-            StatusInfo.Title = "无法导入语言包";
+            StatusInfo.Title = Loc.Get("Languages.Messages.ImportFailedTitle");
             StatusInfo.Message = importErrorMessage;
         }
         else
         {
             StatusInfo.Severity = InfoBarSeverity.Success;
-            StatusInfo.Title = "语言包已导入并保持停用";
-            StatusInfo.Message = "显式启用后，新语言和工具才会进入有效目录。";
+            StatusInfo.Title = Loc.Get("Languages.Messages.ImportedTitle");
+            StatusInfo.Message = Loc.Get("Languages.Messages.ImportedMessage");
         }
     }
 
@@ -506,10 +649,10 @@ public sealed partial class LanguagesPage : Page
             ContentDialog confirmation = new()
             {
                 XamlRoot = XamlRoot,
-                Title = $"启用 {row.DisplayName}",
-                Content = "该 data-only 语言包的语言和工具元数据将加入目录；它不会获得脚本或 DLL 执行能力。",
-                PrimaryButtonText = "显式启用",
-                CloseButtonText = "取消",
+                Title = Loc.Format("Languages.Packs.EnableTitle", row.DisplayName),
+                Content = Loc.Get("Languages.Packs.EnableDialogContent"),
+                PrimaryButtonText = Loc.Get("Languages.Packs.EnableConfirm"),
+                CloseButtonText = Loc.Get("Languages.Dialog.Cancel"),
                 DefaultButton = ContentDialogButton.Close,
             };
             if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -534,8 +677,10 @@ public sealed partial class LanguagesPage : Page
         {
             StatusInfo.IsOpen = true;
             StatusInfo.Severity = InfoBarSeverity.Error;
-            StatusInfo.Title = "无法更改语言包状态";
-            StatusInfo.Message = $"操作未提交（{exception.Code}）。";
+            StatusInfo.Title = Loc.Get("Languages.Messages.PackStateFailedTitle");
+            StatusInfo.Message = Loc.Format(
+                "Languages.Messages.OperationNotCommitted",
+                exception.Code);
             return;
         }
         finally
@@ -556,10 +701,10 @@ public sealed partial class LanguagesPage : Page
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = $"删除 {row.DisplayName}",
-            Content = "删除受管语言包清单；不会删除任何外部语言工具或项目文件。",
-            PrimaryButtonText = "删除",
-            CloseButtonText = "取消",
+            Title = Loc.Format("Languages.Packs.DeleteTitle", row.DisplayName),
+            Content = Loc.Get("Languages.Packs.DeleteDialogContent"),
+            PrimaryButtonText = Loc.Get("Languages.Packs.DeleteConfirm"),
+            CloseButtonText = Loc.Get("Languages.Dialog.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -576,8 +721,10 @@ public sealed partial class LanguagesPage : Page
         {
             StatusInfo.IsOpen = true;
             StatusInfo.Severity = InfoBarSeverity.Error;
-            StatusInfo.Title = "无法删除语言包";
-            StatusInfo.Message = $"操作未提交（{exception.Code}）。";
+            StatusInfo.Title = Loc.Get("Languages.Messages.DeleteFailedTitle");
+            StatusInfo.Message = Loc.Format(
+                "Languages.Messages.OperationNotCommitted",
+                exception.Code);
             return;
         }
         finally
@@ -594,8 +741,21 @@ public sealed partial class LanguagesPage : Page
         LanguagePackList.ItemsSource = rows;
         LanguagePackList.Visibility = rows.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         EmptyPackText.Visibility = rows.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
-        LanguagePackSummaryText.Text = $"已导入 {rows.Length} 个 · 已启用 {rows.Count(row => row.IsEnabled)} 个"
-            + (result.Errors.Count > 0 ? $" · 错误 {result.Errors.Count} 个" : string.Empty);
+        List<string> packSummarySegments =
+        [
+            Loc.Format("Languages.Packs.SummaryImported", rows.Length),
+            Loc.Format("Languages.Packs.SummaryEnabled", rows.Count(row => row.IsEnabled)),
+        ];
+        if (result.Errors.Count > 0)
+        {
+            packSummarySegments.Add(Loc.Format(
+                "Languages.Packs.SummaryErrors",
+                result.Errors.Count));
+        }
+
+        LanguagePackSummaryText.Text = string.Join(
+            Loc.Get("Languages.Text.Separator"),
+            packSummarySegments);
     }
 
     private static LanguageCatalog CreateCatalog(
@@ -614,9 +774,9 @@ public sealed partial class LanguagesPage : Page
 
     private static string VisibilityPolicyName(LanguageVisibilityPolicy policy) => policy switch
     {
-        LanguageVisibilityPolicy.TopTenAndDetected => "Top 10 与已检测",
-        LanguageVisibilityPolicy.EnabledOnly => "只显示手动启用",
-        LanguageVisibilityPolicy.AllBuiltIn => "显示全部内置语言",
+        LanguageVisibilityPolicy.TopTenAndDetected => Loc.Get("Languages.Policy.TopTenAndDetected"),
+        LanguageVisibilityPolicy.EnabledOnly => Loc.Get("Languages.Policy.EnabledOnly"),
+        LanguageVisibilityPolicy.AllBuiltIn => Loc.Get("Languages.Policy.AllBuiltIn"),
         _ => policy.ToString(),
     };
 
@@ -628,18 +788,23 @@ public sealed partial class LanguagesPage : Page
             Spacing = 8,
             Children =
         {
-            Detail("文件", fileName),
-            Detail("语言包 ID", preview.Manifest.Id),
-            Detail("发布者", preview.Manifest.Publisher),
-            Detail("内容", $"{preview.LanguageCount} 门语言 · {preview.ToolCount} 个工具"),
-            Detail("许可证", preview.Manifest.License),
+            Detail(Loc.Get("Languages.Preview.FileLabel"), fileName),
+            Detail(Loc.Get("Languages.Preview.PackIdLabel"), preview.Manifest.Id),
+            Detail(Loc.Get("Languages.Preview.PublisherLabel"), preview.Manifest.Publisher),
+            Detail(
+                Loc.Get("Languages.Preview.ContentLabel"),
+                Loc.Format(
+                    "Languages.Preview.ContentValue",
+                    preview.LanguageCount,
+                    preview.ToolCount)),
+            Detail(Loc.Get("Languages.Preview.LicenseLabel"), preview.Manifest.License),
             new InfoBar
             {
                 IsClosable = false,
                 IsOpen = true,
                 Severity = InfoBarSeverity.Informational,
-                Title = "默认保持停用",
-                Message = "导入只复制规范化 JSON；不会运行清单内容。",
+                Title = Loc.Get("Languages.Preview.InactiveTitle"),
+                Message = Loc.Get("Languages.Preview.InactiveMessage"),
             },
         },
         };
@@ -682,15 +847,21 @@ public sealed partial class LanguagesPage : Page
             int managedTools = tools.Count(tool =>
                 LanguageToolUiPolicy.GetManagementKind(tool) != ToolManagementKind.None);
             int metadataOnlyTools = tools.Count - managedTools;
-            ToolSummary = $"{tools.Count} 个语言工具 · PATH 已检测 {detectedTools} 个 · "
-                + $"{managedTools} 个已接通 AutoEnvPlus 操作 · {metadataOnlyTools} 个仅目录元数据";
+            ToolSummary = Loc.Format(
+                "Languages.Item.ToolSummary",
+                tools.Count,
+                detectedTools,
+                managedTools,
+                metadataOnlyTools);
             string aliases = entry.Language.Aliases.Count == 0
                 ? entry.Language.Id
-                : string.Join("、", entry.Language.Aliases.Take(4));
+                : string.Join(
+                    Loc.Get("Languages.Item.AliasSeparator"),
+                    entry.Language.Aliases.Take(4));
             string extensions = entry.Language.FileExtensions.Count == 0
-                ? "无固定扩展名"
+                ? Loc.Get("Languages.Item.NoExtensions")
                 : string.Join(" ", entry.Language.FileExtensions.Take(6));
-            IdentitySummary = $"{aliases} · {extensions}";
+            IdentitySummary = aliases + Loc.Get("Languages.Text.Separator") + extensions;
             SearchText = string.Join(
                 " ",
                 new[] { LanguageId, DisplayName }
@@ -703,7 +874,9 @@ public sealed partial class LanguagesPage : Page
 
         public string LanguageId { get; }
 
-        public string OpenActionAutomationName => $"打开 {DisplayName} 语言详情";
+        public string OpenActionAutomationName => Loc.Format(
+            "Languages.Item.OpenActionAccessibleName",
+            DisplayName);
 
         public string DisplayName { get; }
 
@@ -715,7 +888,10 @@ public sealed partial class LanguagesPage : Page
 
         public string SearchText { get; }
 
-        public string AutomationName => $"{DisplayName}，{ToolSummary}";
+        public string AutomationName => Loc.Format(
+            "Languages.Item.AutomationName",
+            DisplayName,
+            ToolSummary);
 
         public Visibility DetectedVisibility => Entry.IsDetected
             ? Visibility.Visible
@@ -731,8 +907,8 @@ public sealed partial class LanguagesPage : Page
             : Visibility.Collapsed;
 
         public string VisibilityActionText => Entry.IsVisible && !Entry.IsExplicitlyHidden
-            ? $"隐藏 {DisplayName}"
-            : $"启用 {DisplayName}";
+            ? Loc.Format("Languages.Item.HideAction", DisplayName)
+            : Loc.Format("Languages.Item.EnableAction", DisplayName);
 
         public string VisibilityGlyph => Entry.IsVisible && !Entry.IsExplicitlyHidden
             ? "\uE8F5"
@@ -747,16 +923,28 @@ public sealed partial class LanguagesPage : Page
 
         public bool IsEnabled { get; } = descriptor.IsEnabled;
 
-        public string ToggleText => IsEnabled ? "停用" : "启用";
+        public string ToggleText => IsEnabled
+            ? Loc.Get("Languages.Packs.Disable")
+            : Loc.Get("Languages.Packs.Enable");
 
         public string ToggleActionAutomationName => IsEnabled
-            ? $"停用语言包 {DisplayName}"
-            : $"启用语言包 {DisplayName}";
+            ? Loc.Format("Languages.Packs.DisableActionAccessibleName", DisplayName)
+            : Loc.Format("Languages.Packs.EnableActionAccessibleName", DisplayName);
 
-        public string DeleteActionAutomationName => $"删除语言包 {DisplayName}";
+        public string DeleteActionAutomationName => Loc.Format(
+            "Languages.Packs.DeleteActionAccessibleName",
+            DisplayName);
 
-        public string Detail { get; } = $"{descriptor.Id} · {descriptor.Manifest.Publisher} · "
-            + $"{descriptor.Manifest.Languages.Count} 门语言 · {descriptor.Manifest.Tools.Count} 个工具 · "
-            + (descriptor.IsEnabled ? "已启用" : "已停用");
+        public string Detail { get; } = string.Join(
+            Loc.Get("Languages.Text.Separator"),
+            descriptor.Id,
+            descriptor.Manifest.Publisher,
+            Loc.Format(
+                "Languages.Packs.DetailLanguages",
+                descriptor.Manifest.Languages.Count),
+            Loc.Format("Languages.Packs.DetailTools", descriptor.Manifest.Tools.Count),
+            descriptor.IsEnabled
+                ? Loc.Get("Languages.Packs.Enabled")
+                : Loc.Get("Languages.Packs.Disabled"));
     }
 }

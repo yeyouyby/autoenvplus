@@ -262,4 +262,879 @@
   <data name="MirrorSources.Messages.LogCustomDisabled" xml:space="preserve">
     <value>已停用 {0} 的自定义镜像源 {1}。</value>
   </data>
+
+  <data name="Languages.Header.Title" xml:space="preserve">
+    <value>语言目录</value>
+  </data>
+  <data name="Languages.Header.Subtitle" xml:space="preserve">
+    <value>先选择语言，再查看语言工具、Provider 和 Provider Source。目录声明不等同于 AutoEnvPlus 已接通操作。</value>
+  </data>
+  <data name="Languages.Refresh.ProgressAccessibleName" xml:space="preserve">
+    <value>语言目录操作进度</value>
+  </data>
+  <data name="Languages.Refresh.AccessibleName" xml:space="preserve">
+    <value>扫描语言工具</value>
+  </data>
+  <data name="Languages.Refresh.ToolTip" xml:space="preserve">
+    <value>显式扫描 PATH 中的语言工具</value>
+  </data>
+  <data name="Languages.ImportPack.Label" xml:space="preserve">
+    <value>导入语言包</value>
+  </data>
+  <data name="Languages.ImportPack.PickerCommit" xml:space="preserve">
+    <value>预检语言包</value>
+  </data>
+  <data name="Languages.ImportPack.ConfirmTitle" xml:space="preserve">
+    <value>导入 {0}</value>
+  </data>
+  <data name="Languages.ImportPack.ConfirmButton" xml:space="preserve">
+    <value>导入（保持停用）</value>
+  </data>
+  <data name="Languages.Status.ReadingTitle" xml:space="preserve">
+    <value>正在读取语言目录</value>
+  </data>
+  <data name="Languages.Status.ScanningTitle" xml:space="preserve">
+    <value>正在扫描语言工具</value>
+  </data>
+  <data name="Languages.Status.ReadingMessage" xml:space="preserve">
+    <value>正在读取语言包、显示偏好和上次库存快照。</value>
+  </data>
+  <data name="Languages.Status.ScanningMessage" xml:space="preserve">
+    <value>只检查目录声明的 PATH 命令；不会运行版本命令或访问网络。</value>
+  </data>
+  <data name="Languages.Status.ReadyTitle" xml:space="preserve">
+    <value>语言目录已就绪</value>
+  </data>
+  <data name="Languages.Status.InventoryAt" xml:space="preserve">
+    <value>库存 {0}</value>
+  </data>
+  <data name="Languages.Status.InventoryStale" xml:space="preserve">
+    <value>（目录已变化，等待重新检测）</value>
+  </data>
+  <data name="Languages.Status.InventoryNone" xml:space="preserve">
+    <value>尚无库存快照（未自动扫描）</value>
+  </data>
+  <data name="Languages.Status.SummaryLanguages" xml:space="preserve">
+    <value>{0} 门可用语言</value>
+  </data>
+  <data name="Languages.Status.SummaryTools" xml:space="preserve">
+    <value>{0} 个语言工具</value>
+  </data>
+  <data name="Languages.Status.SummaryAdapters" xml:space="preserve">
+    <value>{0} 个工具已接通 AutoEnvPlus 安装适配器</value>
+  </data>
+  <data name="Languages.Status.SummaryDetected" xml:space="preserve">
+    <value>检测到 {0} 门语言</value>
+  </data>
+  <data name="Languages.Status.PackErrors" xml:space="preserve">
+    <value>{0} 个语言包未通过验证</value>
+  </data>
+  <data name="Languages.Catalog.NoteTitle" xml:space="preserve">
+    <value>目录元数据与可执行操作分开</value>
+  </data>
+  <data name="Languages.Catalog.NoteMessage" xml:space="preserve">
+    <value>136 个内置工具是生态目录规模，不代表 136 个受管适配器。只有标明 AutoEnvPlus 操作适配器的工具可在应用内安装或切换；扫描仅按需检查 PATH，不运行版本命令或访问网络。</value>
+  </data>
+  <data name="Languages.Search.AccessibleName" xml:space="preserve">
+    <value>搜索语言</value>
+  </data>
+  <data name="Languages.Search.PlaceholderText" xml:space="preserve">
+    <value>搜索语言、别名或扩展名</value>
+  </data>
+  <data name="Languages.Filter.AccessibleName" xml:space="preserve">
+    <value>语言筛选</value>
+  </data>
+  <data name="Languages.Filters.All" xml:space="preserve">
+    <value>所有状态</value>
+  </data>
+  <data name="Languages.Filters.Detected" xml:space="preserve">
+    <value>已检测</value>
+  </data>
+  <data name="Languages.Filters.Default" xml:space="preserve">
+    <value>默认 Top 10</value>
+  </data>
+  <data name="Languages.Filters.Hidden" xml:space="preserve">
+    <value>已隐藏</value>
+  </data>
+  <data name="Languages.ShowAll.Header" xml:space="preserve">
+    <value>显示所有语言</value>
+  </data>
+  <data name="Languages.ShowAll.OffContent" xml:space="preserve">
+    <value>有效集合</value>
+  </data>
+  <data name="Languages.ShowAll.OnContent" xml:space="preserve">
+    <value>全部目录</value>
+  </data>
+  <data name="Languages.Summary.SectionTitle" xml:space="preserve">
+    <value>Language → Language Tool</value>
+  </data>
+  <data name="Languages.Summary.InitialText" xml:space="preserve">
+    <value>正在计算有效语言集合…</value>
+  </data>
+  <data name="Languages.Summary.VisibleCount" xml:space="preserve">
+    <value>当前显示 {0} 门</value>
+  </data>
+  <data name="Languages.Summary.EffectiveCount" xml:space="preserve">
+    <value>有效集合 {0} 门</value>
+  </data>
+  <data name="Languages.Summary.DetectedCount" xml:space="preserve">
+    <value>库存已检测 {0} 门</value>
+  </data>
+  <data name="Languages.Summary.TotalCount" xml:space="preserve">
+    <value>目录总计 {0} 门</value>
+  </data>
+  <data name="Languages.Summary.Policy" xml:space="preserve">
+    <value>设置策略 {0}</value>
+  </data>
+  <data name="Languages.ResetVisibility.Title" xml:space="preserve">
+    <value>重置语言显示偏好</value>
+  </data>
+  <data name="Languages.ResetVisibility.ToolTip" xml:space="preserve">
+    <value>清除所有显式启用和隐藏状态</value>
+  </data>
+  <data name="Languages.ResetVisibility.DialogContent" xml:space="preserve">
+    <value>清除所有显式启用和隐藏状态。之后仍会显示默认 Top 10 和 PATH 已检测到的语言。</value>
+  </data>
+  <data name="Languages.ResetVisibility.ResetButton" xml:space="preserve">
+    <value>重置</value>
+  </data>
+  <data name="Languages.Empty.Title" xml:space="preserve">
+    <value>没有符合当前条件的语言</value>
+  </data>
+  <data name="Languages.Empty.Hint" xml:space="preserve">
+    <value>可更改搜索词、状态筛选或显示范围。</value>
+  </data>
+  <data name="Languages.Item.DefaultBadge" xml:space="preserve">
+    <value>默认</value>
+  </data>
+  <data name="Languages.Item.Open.ToolTip" xml:space="preserve">
+    <value>打开语言详情</value>
+  </data>
+  <data name="Languages.Item.OpenActionAccessibleName" xml:space="preserve">
+    <value>打开 {0} 语言详情</value>
+  </data>
+  <data name="Languages.Item.AutomationName" xml:space="preserve">
+    <value>{0}，{1}</value>
+  </data>
+  <data name="Languages.Item.ToolSummary" xml:space="preserve">
+    <value>{0} 个语言工具 · PATH 已检测 {1} 个 · {2} 个已接通 AutoEnvPlus 操作 · {3} 个仅目录元数据</value>
+  </data>
+  <data name="Languages.Item.AliasSeparator" xml:space="preserve">
+    <value>、</value>
+  </data>
+  <data name="Languages.Item.NoExtensions" xml:space="preserve">
+    <value>无固定扩展名</value>
+  </data>
+  <data name="Languages.Item.HideAction" xml:space="preserve">
+    <value>隐藏 {0}</value>
+  </data>
+  <data name="Languages.Item.EnableAction" xml:space="preserve">
+    <value>启用 {0}</value>
+  </data>
+  <data name="Languages.Packs.AccessibleName" xml:space="preserve">
+    <value>当前语言目录的语言包</value>
+  </data>
+  <data name="Languages.Packs.SectionTitle" xml:space="preserve">
+    <value>语言包</value>
+  </data>
+  <data name="Languages.Packs.SummaryInitial" xml:space="preserve">
+    <value>读取已导入语言包…</value>
+  </data>
+  <data name="Languages.Packs.SchemaNoteTitle" xml:space="preserve">
+    <value>Data-only schema 1</value>
+  </data>
+  <data name="Languages.Packs.SchemaNoteMessage" xml:space="preserve">
+    <value>语言包只能添加声明式语言和工具元数据；不能加载 DLL、脚本、任意命令或安装钩子。导入后默认停用。</value>
+  </data>
+  <data name="Languages.Packs.Empty" xml:space="preserve">
+    <value>尚未导入语言包。</value>
+  </data>
+  <data name="Languages.Packs.Delete.ToolTip" xml:space="preserve">
+    <value>删除语言包</value>
+  </data>
+  <data name="Languages.Packs.EnableTitle" xml:space="preserve">
+    <value>启用 {0}</value>
+  </data>
+  <data name="Languages.Packs.EnableDialogContent" xml:space="preserve">
+    <value>该 data-only 语言包的语言和工具元数据将加入目录；它不会获得脚本或 DLL 执行能力。</value>
+  </data>
+  <data name="Languages.Packs.EnableConfirm" xml:space="preserve">
+    <value>显式启用</value>
+  </data>
+  <data name="Languages.Packs.Enable" xml:space="preserve">
+    <value>启用</value>
+  </data>
+  <data name="Languages.Packs.Disable" xml:space="preserve">
+    <value>停用</value>
+  </data>
+  <data name="Languages.Packs.EnableActionAccessibleName" xml:space="preserve">
+    <value>启用语言包 {0}</value>
+  </data>
+  <data name="Languages.Packs.DisableActionAccessibleName" xml:space="preserve">
+    <value>停用语言包 {0}</value>
+  </data>
+  <data name="Languages.Packs.DeleteActionAccessibleName" xml:space="preserve">
+    <value>删除语言包 {0}</value>
+  </data>
+  <data name="Languages.Packs.DeleteTitle" xml:space="preserve">
+    <value>删除 {0}</value>
+  </data>
+  <data name="Languages.Packs.DeleteDialogContent" xml:space="preserve">
+    <value>删除受管语言包清单；不会删除任何外部语言工具或项目文件。</value>
+  </data>
+  <data name="Languages.Packs.DeleteConfirm" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="Languages.Packs.SummaryImported" xml:space="preserve">
+    <value>已导入 {0} 个</value>
+  </data>
+  <data name="Languages.Packs.SummaryEnabled" xml:space="preserve">
+    <value>已启用 {0} 个</value>
+  </data>
+  <data name="Languages.Packs.SummaryErrors" xml:space="preserve">
+    <value>错误 {0} 个</value>
+  </data>
+  <data name="Languages.Packs.DetailLanguages" xml:space="preserve">
+    <value>{0} 门语言</value>
+  </data>
+  <data name="Languages.Packs.DetailTools" xml:space="preserve">
+    <value>{0} 个工具</value>
+  </data>
+  <data name="Languages.Packs.Enabled" xml:space="preserve">
+    <value>已启用</value>
+  </data>
+  <data name="Languages.Packs.Disabled" xml:space="preserve">
+    <value>已停用</value>
+  </data>
+  <data name="Languages.Dialog.Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Languages.Messages.ReadFailedTitle" xml:space="preserve">
+    <value>无法读取语言目录</value>
+  </data>
+  <data name="Languages.Messages.VisibilityInvalid" xml:space="preserve">
+    <value>语言显示状态未通过校验（{0}）；状态内容未回显。</value>
+  </data>
+  <data name="Languages.Messages.PackInvalid" xml:space="preserve">
+    <value>语言包未通过校验（{0}）；清单内容未回显。</value>
+  </data>
+  <data name="Languages.Messages.CatalogUnavailable" xml:space="preserve">
+    <value>语言目录或状态路径当前不可用；路径外内容和敏感值未显示。</value>
+  </data>
+  <data name="Languages.Messages.InventoryInvalid" xml:space="preserve">
+    <value>库存快照未通过校验</value>
+  </data>
+  <data name="Languages.Messages.VisibilitySaveFailedTitle" xml:space="preserve">
+    <value>无法保存语言显示状态</value>
+  </data>
+  <data name="Languages.Messages.VisibilitySaveFailed" xml:space="preserve">
+    <value>状态未写入（{0}）。</value>
+  </data>
+  <data name="Languages.Messages.ResetFailedTitle" xml:space="preserve">
+    <value>无法重置语言显示状态</value>
+  </data>
+  <data name="Languages.Messages.ResetFailed" xml:space="preserve">
+    <value>状态未更新（{0}）。</value>
+  </data>
+  <data name="Languages.Messages.ManifestInvalid" xml:space="preserve">
+    <value>清单未通过安全校验（{0}）；内容未回显。</value>
+  </data>
+  <data name="Languages.Messages.ImportFailedTitle" xml:space="preserve">
+    <value>无法导入语言包</value>
+  </data>
+  <data name="Languages.Messages.ImportedTitle" xml:space="preserve">
+    <value>语言包已导入并保持停用</value>
+  </data>
+  <data name="Languages.Messages.ImportedMessage" xml:space="preserve">
+    <value>显式启用后，新语言和工具才会进入有效目录。</value>
+  </data>
+  <data name="Languages.Messages.PackStateFailedTitle" xml:space="preserve">
+    <value>无法更改语言包状态</value>
+  </data>
+  <data name="Languages.Messages.OperationNotCommitted" xml:space="preserve">
+    <value>操作未提交（{0}）。</value>
+  </data>
+  <data name="Languages.Messages.DeleteFailedTitle" xml:space="preserve">
+    <value>无法删除语言包</value>
+  </data>
+  <data name="Languages.Preview.FileLabel" xml:space="preserve">
+    <value>文件</value>
+  </data>
+  <data name="Languages.Preview.PackIdLabel" xml:space="preserve">
+    <value>语言包 ID</value>
+  </data>
+  <data name="Languages.Preview.PublisherLabel" xml:space="preserve">
+    <value>发布者</value>
+  </data>
+  <data name="Languages.Preview.ContentLabel" xml:space="preserve">
+    <value>内容</value>
+  </data>
+  <data name="Languages.Preview.ContentValue" xml:space="preserve">
+    <value>{0} 门语言 · {1} 个工具</value>
+  </data>
+  <data name="Languages.Preview.LicenseLabel" xml:space="preserve">
+    <value>许可证</value>
+  </data>
+  <data name="Languages.Preview.InactiveTitle" xml:space="preserve">
+    <value>默认保持停用</value>
+  </data>
+  <data name="Languages.Preview.InactiveMessage" xml:space="preserve">
+    <value>导入只复制规范化 JSON；不会运行清单内容。</value>
+  </data>
+  <data name="Languages.Policy.TopTenAndDetected" xml:space="preserve">
+    <value>Top 10 与已检测</value>
+  </data>
+  <data name="Languages.Policy.EnabledOnly" xml:space="preserve">
+    <value>只显示手动启用</value>
+  </data>
+  <data name="Languages.Policy.AllBuiltIn" xml:space="preserve">
+    <value>显示全部内置语言</value>
+  </data>
+  <data name="Languages.Text.Separator" xml:space="preserve">
+    <value> · </value>
+  </data>
+
+  <data name="Path.Header.Title" xml:space="preserve">
+    <value>PATH 与命令</value>
+  </data>
+  <data name="Path.Header.Subtitle" xml:space="preserve">
+    <value>用户 PATH 只配置一次 AutoEnvPlus Shim；后续全局、项目和会话切换不再重写 PATH。</value>
+  </data>
+  <data name="Path.Refresh.AccessibleName" xml:space="preserve">
+    <value>刷新 PATH 与命令</value>
+  </data>
+  <data name="Path.Shim.StateInitial" xml:space="preserve">
+    <value>正在读取 Shim 路由状态…</value>
+  </data>
+  <data name="Path.Shim.ActivateLabel" xml:space="preserve">
+    <value>配置 AutoEnvPlus Shim</value>
+  </data>
+  <data name="Path.Shim.ConfirmTitle" xml:space="preserve">
+    <value>启用命令版本切换</value>
+  </data>
+  <data name="Path.Shim.ConfirmContent" xml:space="preserve">
+    <value>将生成命令
+python、python3、pip、pip3、node、npm、npx、java、javac、jar、dotnet、cl、clang、clang++、gcc、g++、cmake、ninja
+
+Shim 目录
+{0}
+
+PATH 变化
+{1}
+
+系统 PATH 不会修改。</value>
+  </data>
+  <data name="Path.Shim.PathChangeAdd" xml:space="preserve">
+    <value>添加到用户 PATH 第一位，并保存回滚快照</value>
+  </data>
+  <data name="Path.Shim.PathChangeNone" xml:space="preserve">
+    <value>Shim 已位于用户 PATH 第一位</value>
+  </data>
+  <data name="Path.Shim.ConfirmButton" xml:space="preserve">
+    <value>生成 Shim 并应用</value>
+  </data>
+  <data name="Path.Shim.NativeImplementation" xml:space="preserve">
+    <value>Win32 原生 Shim</value>
+  </data>
+  <data name="Path.Shim.CmdImplementation" xml:space="preserve">
+    <value>CMD 回退 Shim</value>
+  </data>
+  <data name="Path.Shim.StateMissingDirectory" xml:space="preserve">
+    <value>用户 PATH 仍引用 Shim，但受管目录不存在。</value>
+  </data>
+  <data name="Path.Shim.StateNotConfigured" xml:space="preserve">
+    <value>Shim 尚未配置；当前命令继续使用系统 PATH。</value>
+  </data>
+  <data name="Path.Shim.StateIncomplete" xml:space="preserve">
+    <value>Shim 不完整，缺少：{0}。</value>
+  </data>
+  <data name="Path.Shim.StateNotPersisted" xml:space="preserve">
+    <value>Shim 文件完整，但尚未写入持久用户 PATH。</value>
+  </data>
+  <data name="Path.Shim.StateActive" xml:space="preserve">
+    <value>一次性 Shim 已生效；命令切换不需要再次修改 PATH。</value>
+  </data>
+  <data name="Path.Shim.StatePersisted" xml:space="preserve">
+    <value>Shim 已写入持久用户 PATH；当前进程可能仍需在新终端中刷新。</value>
+  </data>
+  <data name="Path.Summary.HealthyTitle" xml:space="preserve">
+    <value>PATH 与命令路由正常</value>
+  </data>
+  <data name="Path.Summary.UnhealthyTitle" xml:space="preserve">
+    <value>PATH 或命令路由需要检查</value>
+  </data>
+  <data name="Path.Summary.Missing" xml:space="preserve">
+    <value>失效 {0}</value>
+  </data>
+  <data name="Path.Summary.Duplicates" xml:space="preserve">
+    <value>重复 {0}</value>
+  </data>
+  <data name="Path.Summary.Conflicts" xml:space="preserve">
+    <value>命令冲突 {0}</value>
+  </data>
+  <data name="Path.Summary.ShimManaged" xml:space="preserve">
+    <value>Shim 接管 {0}/{1}</value>
+  </data>
+  <data name="Path.CommandRoute.Header" xml:space="preserve">
+    <value>命令路由</value>
+  </data>
+  <data name="Path.CommandRoute.CommandColumn" xml:space="preserve">
+    <value>命令</value>
+  </data>
+  <data name="Path.CommandRoute.EntryColumn" xml:space="preserve">
+    <value>实际入口</value>
+  </data>
+  <data name="Path.CommandRoute.StateColumn" xml:space="preserve">
+    <value>路由状态</value>
+  </data>
+  <data name="Path.CommandRoute.NotFound" xml:space="preserve">
+    <value>未找到</value>
+  </data>
+  <data name="Path.RouteState.Shim" xml:space="preserve">
+    <value>AutoEnvPlus Shim</value>
+  </data>
+  <data name="Path.RouteState.ShimCandidates" xml:space="preserve">
+    <value>AutoEnvPlus Shim · {0} 个候选</value>
+  </data>
+  <data name="Path.RouteState.Direct" xml:space="preserve">
+    <value>直接命令</value>
+  </data>
+  <data name="Path.RouteState.DirectCandidates" xml:space="preserve">
+    <value>直接命令 · {0} 个候选</value>
+  </data>
+  <data name="Path.Directory.Header" xml:space="preserve">
+    <value>PATH 目录</value>
+  </data>
+  <data name="Path.Directory.IndexColumn" xml:space="preserve">
+    <value>顺序</value>
+  </data>
+  <data name="Path.Directory.ScopeColumn" xml:space="preserve">
+    <value>作用域</value>
+  </data>
+  <data name="Path.Directory.DirectoryColumn" xml:space="preserve">
+    <value>目录</value>
+  </data>
+  <data name="Path.Directory.StatusColumn" xml:space="preserve">
+    <value>状态</value>
+  </data>
+  <data name="Path.Scope.User" xml:space="preserve">
+    <value>用户</value>
+  </data>
+  <data name="Path.Scope.Machine" xml:space="preserve">
+    <value>系统</value>
+  </data>
+  <data name="Path.Scope.UserAndMachine" xml:space="preserve">
+    <value>用户 + 系统</value>
+  </data>
+  <data name="Path.Scope.Process" xml:space="preserve">
+    <value>进程</value>
+  </data>
+  <data name="Path.Status.Missing" xml:space="preserve">
+    <value>目录不存在</value>
+  </data>
+  <data name="Path.Status.Duplicate" xml:space="preserve">
+    <value>重复</value>
+  </data>
+  <data name="Path.Status.Ok" xml:space="preserve">
+    <value>正常</value>
+  </data>
+  <data name="Path.Scopes.Session" xml:space="preserve">
+    <value>会话临时</value>
+  </data>
+  <data name="Path.Scopes.SessionPriority" xml:space="preserve">
+    <value>优先级 1</value>
+  </data>
+  <data name="Path.Scopes.SessionDetail" xml:space="preserve">
+    <value>只影响当前终端，不写入持久选择。</value>
+  </data>
+  <data name="Path.Scopes.Project" xml:space="preserve">
+    <value>项目锁定</value>
+  </data>
+  <data name="Path.Scopes.ProjectPriority" xml:space="preserve">
+    <value>优先级 2</value>
+  </data>
+  <data name="Path.Scopes.ProjectDetail" xml:space="preserve">
+    <value>项目目录内按 autoenvplus.toml 解析。</value>
+  </data>
+  <data name="Path.Scopes.Global" xml:space="preserve">
+    <value>全局默认</value>
+  </data>
+  <data name="Path.Scopes.GlobalPriority" xml:space="preserve">
+    <value>优先级 3</value>
+  </data>
+  <data name="Path.Scopes.GlobalDetail" xml:space="preserve">
+    <value>没有会话或项目选择时使用。</value>
+  </data>
+  <data name="Path.Scopes.Auto" xml:space="preserve">
+    <value>自动选择</value>
+  </data>
+  <data name="Path.Scopes.AutoPriority" xml:space="preserve">
+    <value>优先级 4</value>
+  </data>
+  <data name="Path.Scopes.AutoDetail" xml:space="preserve">
+    <value>在满足要求的已安装版本中自动选择最高稳定版。</value>
+  </data>
+  <data name="Path.Snapshots.Header" xml:space="preserve">
+    <value>回滚快照</value>
+  </data>
+  <data name="Path.Snapshots.SectionTitle" xml:space="preserve">
+    <value>用户 PATH 回滚</value>
+  </data>
+  <data name="Path.Snapshots.SectionHint" xml:space="preserve">
+    <value>仅恢复 AutoEnvPlus 写入前的用户 PATH；系统 PATH 和 Shim 文件保持不变。</value>
+  </data>
+  <data name="Path.Snapshots.RefreshAccessibleName" xml:space="preserve">
+    <value>刷新 PATH 快照</value>
+  </data>
+  <data name="Path.Snapshots.RollbackLabel" xml:space="preserve">
+    <value>回滚用户 PATH</value>
+  </data>
+  <data name="Path.Snapshots.SummaryInitial" xml:space="preserve">
+    <value>正在读取 PATH 快照…</value>
+  </data>
+  <data name="Path.Snapshots.Empty" xml:space="preserve">
+    <value>尚未创建 PATH 快照。</value>
+  </data>
+  <data name="Path.Snapshots.SummaryEmpty" xml:space="preserve">
+    <value>启用命令版本切换并修改用户 PATH 后，会在这里保留可审计的回滚快照。</value>
+  </data>
+  <data name="Path.Snapshots.SummaryCount" xml:space="preserve">
+    <value>共 {0} 个有效快照，其中 {1} 个与当前用户 PATH 匹配。请选择快照后回滚。</value>
+  </data>
+  <data name="Path.Snapshots.LoadFailed" xml:space="preserve">
+    <value>无法读取 PATH 快照。</value>
+  </data>
+  <data name="Path.Snapshots.ConfirmContent" xml:space="preserve">
+    <value>快照时间
+{0}
+
+当时加入的目录
+{1}
+
+将把用户 PATH 恢复到 AutoEnvPlus 写入前的完整值。系统 PATH 和 Shim 文件不会修改。
+
+执行前会再次检查当前 PATH；如果快照之后已有其他修改，AutoEnvPlus 将拒绝覆盖。</value>
+  </data>
+  <data name="Path.SnapshotState.Available" xml:space="preserve">
+    <value>可回滚</value>
+  </data>
+  <data name="Path.SnapshotState.RolledBack" xml:space="preserve">
+    <value>已回滚</value>
+  </data>
+  <data name="Path.SnapshotState.Changed" xml:space="preserve">
+    <value>PATH 已变化</value>
+  </data>
+  <data name="Path.Dialog.Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Path.Messages.CliMissingTitle" xml:space="preserve">
+    <value>CLI 组件缺失</value>
+  </data>
+  <data name="Path.Messages.CliMissing" xml:space="preserve">
+    <value>找不到 {0}，请重新构建或安装 AutoEnvPlus。</value>
+  </data>
+  <data name="Path.Messages.PathApplyFailed" xml:space="preserve">
+    <value>用户 PATH 修改失败。</value>
+  </data>
+  <data name="Path.Messages.ShimEnabledTitle" xml:space="preserve">
+    <value>命令版本切换已启用</value>
+  </data>
+  <data name="Path.Messages.ShimInstalledChanged" xml:space="preserve">
+    <value>已安装 {0} 并保存 PATH 快照：{1}。请打开新终端。</value>
+  </data>
+  <data name="Path.Messages.ShimInstalledUnchanged" xml:space="preserve">
+    <value>{0} 已安装，Shim 已经处于用户 PATH 第一位。</value>
+  </data>
+  <data name="Path.Messages.ShimEnableFailedTitle" xml:space="preserve">
+    <value>无法启用命令切换</value>
+  </data>
+  <data name="Path.Messages.RollbackFailedTitle" xml:space="preserve">
+    <value>无法回滚用户 PATH</value>
+  </data>
+  <data name="Path.Messages.RollbackFailed" xml:space="preserve">
+    <value>PATH 回滚失败。</value>
+  </data>
+  <data name="Path.Messages.RollbackSuccessTitle" xml:space="preserve">
+    <value>用户 PATH 已回滚</value>
+  </data>
+  <data name="Path.Messages.RollbackSuccess" xml:space="preserve">
+    <value>已恢复快照写入前的用户 PATH；系统 PATH 和 Shim 文件未修改。请打开新终端。</value>
+  </data>
+  <data name="Path.Activity.ShimInstalledChanged" xml:space="preserve">
+    <value>已安装 {0}，并把 AutoEnvPlus Shim 置于用户 PATH 第一位。</value>
+  </data>
+  <data name="Path.Activity.ShimInstalledUnchanged" xml:space="preserve">
+    <value>已确认 {0} 与用户 PATH 无需变更。</value>
+  </data>
+  <data name="Path.Activity.ShimEnableFailed" xml:space="preserve">
+    <value>启用 AutoEnvPlus Shim 与用户 PATH 失败。错误类型：{0}。</value>
+  </data>
+  <data name="Path.Activity.RollbackRejected" xml:space="preserve">
+    <value>用户 PATH 回滚在执行时复检阶段被拒绝。</value>
+  </data>
+  <data name="Path.Activity.RollbackSucceeded" xml:space="preserve">
+    <value>已恢复 AutoEnvPlus 修改前的用户 PATH；系统 PATH 与 Shim 文件保持不变。</value>
+  </data>
+  <data name="Path.Activity.RollbackFailed" xml:space="preserve">
+    <value>用户 PATH 回滚失败。错误类型：{0}。</value>
+  </data>
+  <data name="Path.Text.Separator" xml:space="preserve">
+    <value> · </value>
+  </data>
+  <data name="Path.Text.ListSeparator" xml:space="preserve">
+    <value>、</value>
+  </data>
+
+  <data name="Diagnostics.Header.Title" xml:space="preserve">
+    <value>环境诊断</value>
+  </data>
+  <data name="Diagnostics.Header.Subtitle" xml:space="preserve">
+    <value>选择需要的扫描域；只读取真实状态，项目、缓存和联网检查不会自动运行。</value>
+  </data>
+  <data name="Diagnostics.Progress.AccessibleName" xml:space="preserve">
+    <value>诊断扫描进度</value>
+  </data>
+  <data name="Diagnostics.Export.ToolTip" xml:space="preserve">
+    <value>导出当前结构化诊断报告</value>
+  </data>
+  <data name="Diagnostics.Export.Label" xml:space="preserve">
+    <value>导出 JSON</value>
+  </data>
+  <data name="Diagnostics.Export.FileTypeLabel" xml:space="preserve">
+    <value>JSON 诊断报告</value>
+  </data>
+  <data name="Diagnostics.Cancel.AccessibleName" xml:space="preserve">
+    <value>取消诊断</value>
+  </data>
+  <data name="Diagnostics.Cancel.ToolTip" xml:space="preserve">
+    <value>取消当前诊断</value>
+  </data>
+  <data name="Diagnostics.Scan.ToolTip" xml:space="preserve">
+    <value>按所选范围执行只读诊断</value>
+  </data>
+  <data name="Diagnostics.Scan.Label" xml:space="preserve">
+    <value>开始扫描</value>
+  </data>
+  <data name="Diagnostics.Scope.Header" xml:space="preserve">
+    <value>扫描范围</value>
+  </data>
+  <data name="Diagnostics.Scope.Path" xml:space="preserve">
+    <value>PATH、命令与 Shim</value>
+  </data>
+  <data name="Diagnostics.Scope.Managed" xml:space="preserve">
+    <value>托管语言工具与版本选择</value>
+  </data>
+  <data name="Diagnostics.Scope.Provider" xml:space="preserve">
+    <value>Provider 与来源配置</value>
+  </data>
+  <data name="Diagnostics.Scope.Project" xml:space="preserve">
+    <value>项目选择与虚拟环境</value>
+  </data>
+  <data name="Diagnostics.Scope.Storage" xml:space="preserve">
+    <value>缓存、暂存与磁盘（较慢）</value>
+  </data>
+  <data name="Diagnostics.Scope.Connectivity" xml:space="preserve">
+    <value>Provider 来源实时连接（较慢）</value>
+  </data>
+  <data name="Diagnostics.Scope.HintNone" xml:space="preserve">
+    <value>尚未选择扫描域。</value>
+  </data>
+  <data name="Diagnostics.Scope.HintCount" xml:space="preserve">
+    <value>已选择 {0} 个扫描域</value>
+  </data>
+  <data name="Diagnostics.Scope.HintCheap" xml:space="preserve">
+    <value>；不会遍历项目、缓存或访问网络。</value>
+  </data>
+  <data name="Diagnostics.Scope.HintExpensive" xml:space="preserve">
+    <value>，其中 {0} 个需要额外 I/O 或网络。</value>
+  </data>
+  <data name="Diagnostics.Scope.PendingResult" xml:space="preserve">
+    <value>待扫描</value>
+  </data>
+  <data name="Diagnostics.Scope.ResultErrors" xml:space="preserve">
+    <value>{0} 个错误</value>
+  </data>
+  <data name="Diagnostics.Scope.ResultWarnings" xml:space="preserve">
+    <value>{0} 个警告</value>
+  </data>
+  <data name="Diagnostics.Scope.ResultPassed" xml:space="preserve">
+    <value>已通过</value>
+  </data>
+  <data name="Diagnostics.Scope.ResultDetail" xml:space="preserve">
+    <value>{0} 共记录 {1} 条结果。</value>
+  </data>
+  <data name="Diagnostics.Scope.ManagedName" xml:space="preserve">
+    <value>托管语言工具</value>
+  </data>
+  <data name="Diagnostics.Scope.ProjectName" xml:space="preserve">
+    <value>项目环境</value>
+  </data>
+  <data name="Diagnostics.Scope.ProviderName" xml:space="preserve">
+    <value>Provider 与来源</value>
+  </data>
+  <data name="Diagnostics.Scope.StorageName" xml:space="preserve">
+    <value>缓存、暂存与磁盘</value>
+  </data>
+  <data name="Diagnostics.Scope.ConnectivityName" xml:space="preserve">
+    <value>实时连接</value>
+  </data>
+  <data name="Diagnostics.Scope.Other" xml:space="preserve">
+    <value>其他</value>
+  </data>
+  <data name="Diagnostics.Scope.PathDescription" xml:space="preserve">
+    <value>检查失效目录、命令遮蔽、Shim 完整性与实际版本。</value>
+  </data>
+  <data name="Diagnostics.Scope.ManagedDescription" xml:space="preserve">
+    <value>检查受管入口、库存快照、精确全局身份、重复记录及命令偏差。</value>
+  </data>
+  <data name="Diagnostics.Scope.ProjectDescription" xml:space="preserve">
+    <value>检查所选目录的版本选择、精确工具身份和本地虚拟环境。</value>
+  </data>
+  <data name="Diagnostics.Scope.ProviderDescription" xml:space="preserve">
+    <value>检查 Provider 插件、工具身份、来源及代理配置的可解析状态。</value>
+  </data>
+  <data name="Diagnostics.Scope.StorageDescription" xml:space="preserve">
+    <value>检查缓存、安装/下载暂存、系统盘落点与相关磁盘容量。</value>
+  </data>
+  <data name="Diagnostics.Scope.ConnectivityDescription" xml:space="preserve">
+    <value>对受限数量的 Provider 来源端点执行 HEAD 请求。</value>
+  </data>
+  <data name="Diagnostics.ProjectPath.AccessibleName" xml:space="preserve">
+    <value>诊断项目目录</value>
+  </data>
+  <data name="Diagnostics.ProjectPath.PlaceholderText" xml:space="preserve">
+    <value>选择项目目录</value>
+  </data>
+  <data name="Diagnostics.BrowseProject.AccessibleName" xml:space="preserve">
+    <value>选择诊断项目目录</value>
+  </data>
+  <data name="Diagnostics.Summary.WaitingTitle" xml:space="preserve">
+    <value>等待扫描</value>
+  </data>
+  <data name="Diagnostics.Summary.WaitingMessage" xml:space="preserve">
+    <value>选择范围后开始扫描；所有检查均为只读。</value>
+  </data>
+  <data name="Diagnostics.Summary.Header" xml:space="preserve">
+    <value>扫描摘要</value>
+  </data>
+  <data name="Diagnostics.Summary.Errors" xml:space="preserve">
+    <value>错误 {0}</value>
+  </data>
+  <data name="Diagnostics.Summary.Warnings" xml:space="preserve">
+    <value>警告 {0}</value>
+  </data>
+  <data name="Diagnostics.Summary.Scopes" xml:space="preserve">
+    <value>扫描域 {0} 个</value>
+  </data>
+  <data name="Diagnostics.Summary.Time" xml:space="preserve">
+    <value>时间 {0}</value>
+  </data>
+  <data name="Diagnostics.Issues.Header" xml:space="preserve">
+    <value>问题</value>
+  </data>
+  <data name="Diagnostics.Issues.AllScopesLabel" xml:space="preserve">
+    <value>所选范围</value>
+  </data>
+  <data name="Diagnostics.Issues.NoneFoundTitle" xml:space="preserve">
+    <value>未发现问题</value>
+  </data>
+  <data name="Diagnostics.Issues.NoneFoundDetail" xml:space="preserve">
+    <value>所选扫描域均通过当前只读检查。</value>
+  </data>
+  <data name="Diagnostics.Severity.Error" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="Diagnostics.Severity.Warning" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="Diagnostics.Severity.Info" xml:space="preserve">
+    <value>信息</value>
+  </data>
+  <data name="Diagnostics.Commands.Header" xml:space="preserve">
+    <value>命令路由</value>
+  </data>
+  <data name="Diagnostics.Commands.CommandColumn" xml:space="preserve">
+    <value>命令</value>
+  </data>
+  <data name="Diagnostics.Commands.EntryColumn" xml:space="preserve">
+    <value>实际入口</value>
+  </data>
+  <data name="Diagnostics.Commands.CandidateColumn" xml:space="preserve">
+    <value>候选</value>
+  </data>
+  <data name="Diagnostics.Commands.NotFound" xml:space="preserve">
+    <value>未找到</value>
+  </data>
+  <data name="Diagnostics.Commands.Candidates" xml:space="preserve">
+    <value>{0} 个</value>
+  </data>
+  <data name="Diagnostics.Commands.CandidatesShadowed" xml:space="preserve">
+    <value>{0} 个，有遮蔽</value>
+  </data>
+  <data name="Diagnostics.Runtime.Header" xml:space="preserve">
+    <value>语言工具与选择</value>
+  </data>
+  <data name="Diagnostics.Runtime.GlobalSelectionTitle" xml:space="preserve">
+    <value>全局选择解析</value>
+  </data>
+  <data name="Diagnostics.Runtime.ProbeFailed" xml:space="preserve">
+    <value>探测失败</value>
+  </data>
+  <data name="Diagnostics.Runtime.ResolveFailed" xml:space="preserve">
+    <value>无法解析</value>
+  </data>
+  <data name="Diagnostics.Messages.ProjectPickFailedTitle" xml:space="preserve">
+    <value>无法选择项目目录</value>
+  </data>
+  <data name="Diagnostics.Messages.ExportedTitle" xml:space="preserve">
+    <value>诊断报告已导出</value>
+  </data>
+  <data name="Diagnostics.Messages.ExportFailedTitle" xml:space="preserve">
+    <value>无法导出诊断报告</value>
+  </data>
+  <data name="Diagnostics.Messages.ScanningTitle" xml:space="preserve">
+    <value>正在执行所选诊断</value>
+  </data>
+  <data name="Diagnostics.Messages.ScanningMessage" xml:space="preserve">
+    <value>扫描域：{0}。</value>
+  </data>
+  <data name="Diagnostics.Messages.CancelledTitle" xml:space="preserve">
+    <value>诊断已取消</value>
+  </data>
+  <data name="Diagnostics.Messages.CancelledMessage" xml:space="preserve">
+    <value>没有修改任何环境设置。</value>
+  </data>
+  <data name="Diagnostics.Messages.ScanFailedTitle" xml:space="preserve">
+    <value>无法完成环境诊断</value>
+  </data>
+  <data name="Diagnostics.Messages.NoScopeTitle" xml:space="preserve">
+    <value>请选择扫描范围</value>
+  </data>
+  <data name="Diagnostics.Messages.NoScopeMessage" xml:space="preserve">
+    <value>至少选择一个只读扫描域。</value>
+  </data>
+  <data name="Diagnostics.Messages.NoProjectTitle" xml:space="preserve">
+    <value>请选择项目目录</value>
+  </data>
+  <data name="Diagnostics.Messages.NoProjectMessage" xml:space="preserve">
+    <value>项目锁与虚拟环境检查只扫描明确选择的目录。</value>
+  </data>
+  <data name="Diagnostics.Messages.HealthyTitle" xml:space="preserve">
+    <value>所选范围状态正常</value>
+  </data>
+  <data name="Diagnostics.Messages.UnhealthyTitle" xml:space="preserve">
+    <value>所选范围需要检查</value>
+  </data>
+  <data name="Diagnostics.Activity.Exported" xml:space="preserve">
+    <value>已导出脱敏的结构化环境诊断 JSON。</value>
+  </data>
+  <data name="Diagnostics.Activity.ExportFailed" xml:space="preserve">
+    <value>环境诊断 JSON 导出失败。错误类型：{0}。</value>
+  </data>
+  <data name="Diagnostics.Text.Separator" xml:space="preserve">
+    <value> · </value>
+  </data>
+  <data name="Diagnostics.Text.ListSeparator" xml:space="preserve">
+    <value>、</value>
+  </data>
 </root>

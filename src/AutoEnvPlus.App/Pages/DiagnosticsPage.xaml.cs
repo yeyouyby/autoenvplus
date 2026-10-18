@@ -25,10 +25,70 @@ public sealed partial class DiagnosticsPage : Page
     public DiagnosticsPage()
     {
         InitializeComponent();
+        ApplyLocalizedStrings();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         UpdateScopeControls();
         ShowPendingScopes();
+    }
+
+    /// <summary>
+    /// Applies every localized string for this page from the resource table.
+    /// Unpackaged WinUI 3 apps cannot use x:Uid: the XAML loader resolves
+    /// ms-resource property bags against the OS system language only, so it
+    /// neither matches the standard dotted-key PRI layout nor honors the
+    /// in-app language preference. Code-behind assignment through
+    /// <see cref="Loc"/> is the only path that follows
+    /// <c>Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride</c>.
+    /// </summary>
+    private void ApplyLocalizedStrings()
+    {
+        PageTitleText.Text = Loc.Get("Diagnostics.Header.Title");
+        PageSubtitleText.Text = Loc.Get("Diagnostics.Header.Subtitle");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            DiagnosticProgress,
+            Loc.Get("Diagnostics.Progress.AccessibleName"));
+        ToolTipService.SetToolTip(
+            ExportButton,
+            Loc.Get("Diagnostics.Export.ToolTip"));
+        ExportButtonText.Text = Loc.Get("Diagnostics.Export.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            CancelButton,
+            Loc.Get("Diagnostics.Cancel.AccessibleName"));
+        ToolTipService.SetToolTip(
+            CancelButton,
+            Loc.Get("Diagnostics.Cancel.ToolTip"));
+        ToolTipService.SetToolTip(
+            RefreshButton,
+            Loc.Get("Diagnostics.Scan.ToolTip"));
+        ScanButtonText.Text = Loc.Get("Diagnostics.Scan.Label");
+        ScopeExpander.Header = Loc.Get("Diagnostics.Scope.Header");
+        PathScopeCheckBox.Content = Loc.Get("Diagnostics.Scope.Path");
+        ManagedScopeCheckBox.Content = Loc.Get("Diagnostics.Scope.Managed");
+        ProviderScopeCheckBox.Content = Loc.Get("Diagnostics.Scope.Provider");
+        ProjectScopeCheckBox.Content = Loc.Get("Diagnostics.Scope.Project");
+        StorageScopeCheckBox.Content = Loc.Get("Diagnostics.Scope.Storage");
+        ConnectivityScopeCheckBox.Content = Loc.Get("Diagnostics.Scope.Connectivity");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            ProjectPathTextBox,
+            Loc.Get("Diagnostics.ProjectPath.AccessibleName"));
+        ProjectPathTextBox.PlaceholderText = Loc.Get("Diagnostics.ProjectPath.PlaceholderText");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            BrowseProjectButton,
+            Loc.Get("Diagnostics.BrowseProject.AccessibleName"));
+        ToolTipService.SetToolTip(
+            BrowseProjectButton,
+            Loc.Get("Diagnostics.ProjectPath.PlaceholderText"));
+        SummaryInfo.Title = Loc.Get("Diagnostics.Summary.WaitingTitle");
+        SummaryInfo.Message = Loc.Get("Diagnostics.Summary.WaitingMessage");
+        SummaryPivotItem.Header = Loc.Get("Diagnostics.Summary.Header");
+        IssuePivotItem.Header = Loc.Get("Diagnostics.Issues.Header");
+        CommandPivotItem.Header = Loc.Get("Diagnostics.Commands.Header");
+        CommandHeaderText.Text = Loc.Get("Diagnostics.Commands.CommandColumn");
+        CommandEntryHeaderText.Text = Loc.Get("Diagnostics.Commands.EntryColumn");
+        CommandCandidateHeaderText.Text = Loc.Get("Diagnostics.Commands.CandidateColumn");
+        RuntimePivotItem.Header = Loc.Get("Diagnostics.Runtime.Header");
+        GlobalSelectionTitleText.Text = Loc.Get("Diagnostics.Runtime.GlobalSelectionTitle");
     }
 
     private void OnLoaded(object sender, RoutedEventArgs args)
@@ -97,7 +157,7 @@ public sealed partial class DiagnosticsPage : Page
             or System.Runtime.InteropServices.COMException)
         {
             SummaryInfo.Severity = InfoBarSeverity.Error;
-            SummaryInfo.Title = "无法选择项目目录";
+            SummaryInfo.Title = Loc.Get("Diagnostics.Messages.ProjectPickFailedTitle");
             SummaryInfo.Message = CoreErrorText.Localize(exception.Message);
         }
     }
@@ -117,7 +177,7 @@ public sealed partial class DiagnosticsPage : Page
                 SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
                 SuggestedFileName = $"autoenvplus-diagnostics-{DateTime.Now:yyyyMMdd-HHmmss}",
             };
-            picker.FileTypeChoices.Add("JSON 诊断报告", [".json"]);
+            picker.FileTypeChoices.Add(Loc.Get("Diagnostics.Export.FileTypeLabel"), [".json"]);
             InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(window));
             StorageFile? file = await picker.PickSaveFileAsync();
             if (file is null)
@@ -128,12 +188,12 @@ public sealed partial class DiagnosticsPage : Page
             string json = DiagnosticReportExportSerializer.Serialize(_lastReport);
             await FileIO.WriteTextAsync(file, json, UnicodeEncoding.Utf8);
             SummaryInfo.Severity = InfoBarSeverity.Success;
-            SummaryInfo.Title = "诊断报告已导出";
+            SummaryInfo.Title = Loc.Get("Diagnostics.Messages.ExportedTitle");
             SummaryInfo.Message = file.Path;
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.DiagnosticExport,
                 ActivityStatus.Succeeded,
-                "已导出脱敏的结构化环境诊断 JSON。",
+                Loc.Get("Diagnostics.Activity.Exported"),
                 [file.Path]);
         }
         catch (Exception exception) when (exception is IOException
@@ -142,12 +202,12 @@ public sealed partial class DiagnosticsPage : Page
             or System.Runtime.InteropServices.COMException)
         {
             SummaryInfo.Severity = InfoBarSeverity.Error;
-            SummaryInfo.Title = "无法导出诊断报告";
+            SummaryInfo.Title = Loc.Get("Diagnostics.Messages.ExportFailedTitle");
             SummaryInfo.Message = CoreErrorText.Localize(exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.DiagnosticExport,
                 ActivityStatus.Failed,
-                $"环境诊断 JSON 导出失败。错误类型：{exception.GetType().Name}。");
+                Loc.Format("Diagnostics.Activity.ExportFailed", exception.GetType().Name));
         }
     }
 
@@ -164,8 +224,12 @@ public sealed partial class DiagnosticsPage : Page
             _pageCancellation.Token);
         SetBusy(true);
         SummaryInfo.Severity = InfoBarSeverity.Informational;
-        SummaryInfo.Title = "正在执行所选诊断";
-        SummaryInfo.Message = $"扫描域：{string.Join("、", EnumerateScopes(options.Scopes).Select(ScopeName))}。";
+        SummaryInfo.Title = Loc.Get("Diagnostics.Messages.ScanningTitle");
+        SummaryInfo.Message = Loc.Format(
+            "Diagnostics.Messages.ScanningMessage",
+            string.Join(
+                Loc.Get("Diagnostics.Text.ListSeparator"),
+                EnumerateScopes(options.Scopes).Select(ScopeName)));
         try
         {
             EnvironmentDiagnosticReport report = await new EnvironmentDiagnosticService(
@@ -175,8 +239,8 @@ public sealed partial class DiagnosticsPage : Page
         catch (OperationCanceledException)
         {
             SummaryInfo.Severity = InfoBarSeverity.Informational;
-            SummaryInfo.Title = "诊断已取消";
-            SummaryInfo.Message = "没有修改任何环境设置。";
+            SummaryInfo.Title = Loc.Get("Diagnostics.Messages.CancelledTitle");
+            SummaryInfo.Message = Loc.Get("Diagnostics.Messages.CancelledMessage");
         }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
@@ -186,7 +250,7 @@ public sealed partial class DiagnosticsPage : Page
             or NotSupportedException)
         {
             SummaryInfo.Severity = InfoBarSeverity.Error;
-            SummaryInfo.Title = "无法完成环境诊断";
+            SummaryInfo.Title = Loc.Get("Diagnostics.Messages.ScanFailedTitle");
             SummaryInfo.Message = CoreErrorText.Localize(exception.Message);
         }
         finally
@@ -204,8 +268,8 @@ public sealed partial class DiagnosticsPage : Page
         if (scopes == DiagnosticScanScope.None)
         {
             SummaryInfo.Severity = InfoBarSeverity.Warning;
-            SummaryInfo.Title = "请选择扫描范围";
-            SummaryInfo.Message = "至少选择一个只读扫描域。";
+            SummaryInfo.Title = Loc.Get("Diagnostics.Messages.NoScopeTitle");
+            SummaryInfo.Message = Loc.Get("Diagnostics.Messages.NoScopeMessage");
             return null;
         }
 
@@ -216,8 +280,8 @@ public sealed partial class DiagnosticsPage : Page
             && string.IsNullOrWhiteSpace(projectRoot))
         {
             SummaryInfo.Severity = InfoBarSeverity.Warning;
-            SummaryInfo.Title = "请选择项目目录";
-            SummaryInfo.Message = "项目锁与虚拟环境检查只扫描明确选择的目录。";
+            SummaryInfo.Title = Loc.Get("Diagnostics.Messages.NoProjectTitle");
+            SummaryInfo.Message = Loc.Get("Diagnostics.Messages.NoProjectMessage");
             return null;
         }
 
@@ -237,15 +301,15 @@ public sealed partial class DiagnosticsPage : Page
             or DiagnosticScanScope.StoragePressure
             or DiagnosticScanScope.ProviderConnectivity);
         ScopeHintText.Text = selected.Length == 0
-            ? "尚未选择扫描域。"
-            : $"已选择 {selected.Length} 个扫描域"
+            ? Loc.Get("Diagnostics.Scope.HintNone")
+            : Loc.Format("Diagnostics.Scope.HintCount", selected.Length)
                 + (expensive == 0
-                    ? "；不会遍历项目、缓存或访问网络。"
-                    : $"，其中 {expensive} 个需要额外 I/O 或网络。");
+                    ? Loc.Get("Diagnostics.Scope.HintCheap")
+                    : Loc.Format("Diagnostics.Scope.HintExpensive", expensive));
         ScopeList.ItemsSource = selected
             .Select(scope => new ScopeRow(
                 ScopeName(scope),
-                "待扫描",
+                Loc.Get("Diagnostics.Scope.PendingResult"),
                 ScopeDescription(scope)))
             .ToArray();
     }
@@ -258,10 +322,19 @@ public sealed partial class DiagnosticsPage : Page
             : report.WarningCount > 0
                 ? InfoBarSeverity.Warning
                 : InfoBarSeverity.Success;
-        SummaryInfo.Title = report.IsHealthy ? "所选范围状态正常" : "所选范围需要检查";
-        SummaryInfo.Message = $"错误 {report.ErrorCount} · 警告 {report.WarningCount} · "
-            + $"扫描域 {EnumerateScopes(report.CompletedScopes).Count()} 个 · "
-            + $"时间 {report.CreatedAtUtc.ToLocalTime():yyyy-MM-dd HH:mm:ss}";
+        SummaryInfo.Title = report.IsHealthy
+            ? Loc.Get("Diagnostics.Messages.HealthyTitle")
+            : Loc.Get("Diagnostics.Messages.UnhealthyTitle");
+        SummaryInfo.Message = string.Join(
+            Loc.Get("Diagnostics.Text.Separator"),
+            Loc.Format("Diagnostics.Summary.Errors", report.ErrorCount),
+            Loc.Format("Diagnostics.Summary.Warnings", report.WarningCount),
+            Loc.Format(
+                "Diagnostics.Summary.Scopes",
+                EnumerateScopes(report.CompletedScopes).Count()),
+            Loc.Format(
+                "Diagnostics.Summary.Time",
+                report.CreatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")));
 
         ScopeList.ItemsSource = EnumerateScopes(report.CompletedScopes)
             .Select(scope =>
@@ -273,23 +346,26 @@ public sealed partial class DiagnosticsPage : Page
                 int warnings = scoped.Count(issue =>
                     issue.Severity == DiagnosticSeverity.Warning);
                 string result = errors > 0
-                    ? $"{errors} 个错误"
+                    ? Loc.Format("Diagnostics.Scope.ResultErrors", errors)
                     : warnings > 0
-                        ? $"{warnings} 个警告"
-                        : "已通过";
+                        ? Loc.Format("Diagnostics.Scope.ResultWarnings", warnings)
+                        : Loc.Get("Diagnostics.Scope.ResultPassed");
                 string detail = scoped.Length == 0
                     ? ScopeDescription(scope)
-                    : $"{ScopeDescription(scope)} 共记录 {scoped.Length} 条结果。";
+                    : Loc.Format(
+                        "Diagnostics.Scope.ResultDetail",
+                        ScopeDescription(scope),
+                        scoped.Length);
                 return new ScopeRow(ScopeName(scope), result, detail);
             })
             .ToArray();
 
         IssueList.ItemsSource = report.Issues.Count == 0
             ? [new IssueRow(
-                "所选范围",
-                "信息",
-                "未发现问题",
-                "所选扫描域均通过当前只读检查。",
+                Loc.Get("Diagnostics.Issues.AllScopesLabel"),
+                Loc.Get("Diagnostics.Severity.Info"),
+                Loc.Get("Diagnostics.Issues.NoneFoundTitle"),
+                Loc.Get("Diagnostics.Issues.NoneFoundDetail"),
                 string.Empty,
                 new SolidColorBrush(Colors.ForestGreen))]
             : report.Issues
@@ -301,15 +377,15 @@ public sealed partial class DiagnosticsPage : Page
         CommandList.ItemsSource = report.Commands
             .Select(command => new CommandRow(
                 command.Command,
-                command.WinnerPath ?? "未找到",
+                command.WinnerPath ?? Loc.Get("Diagnostics.Commands.NotFound"),
                 command.HasConflict
-                    ? $"{command.CandidateCount} 个，有遮蔽"
-                    : $"{command.CandidateCount} 个"))
+                    ? Loc.Format("Diagnostics.Commands.CandidatesShadowed", command.CandidateCount)
+                    : Loc.Format("Diagnostics.Commands.Candidates", command.CandidateCount)))
             .ToArray();
         RuntimeList.ItemsSource = report.Runtimes
             .Select(runtime => new RuntimeRow(
-                $"{runtime.Kind} · {runtime.Command}",
-                runtime.Version?.ToString() ?? "探测失败",
+                runtime.Kind + Loc.Get("Diagnostics.Text.Separator") + runtime.Command,
+                runtime.Version?.ToString() ?? Loc.Get("Diagnostics.Runtime.ProbeFailed"),
                 runtime.ExecutablePath))
             .ToArray();
         GlobalSelectionList.ItemsSource = report.GlobalSelections
@@ -317,8 +393,12 @@ public sealed partial class DiagnosticsPage : Page
                 selection.Kind.ToString(),
                 selection.Selector,
                 selection.Success
-                    ? $"{selection.RuntimeId} · {selection.Version} · {selection.Architecture}"
-                    : selection.Error ?? "无法解析"))
+                    ? string.Join(
+                        Loc.Get("Diagnostics.Text.Separator"),
+                        selection.RuntimeId,
+                        selection.Version,
+                        selection.Architecture)
+                    : selection.Error ?? Loc.Get("Diagnostics.Runtime.ResolveFailed")))
             .ToArray();
     }
 
@@ -400,23 +480,23 @@ public sealed partial class DiagnosticsPage : Page
 
     private static string ScopeName(DiagnosticScanScope scope) => scope switch
     {
-        DiagnosticScanScope.PathAndCommands => "PATH、命令与 Shim",
-        DiagnosticScanScope.ManagedTools => "托管语言工具",
-        DiagnosticScanScope.ProjectEnvironment => "项目环境",
-        DiagnosticScanScope.ProviderConfiguration => "Provider 与来源",
-        DiagnosticScanScope.StoragePressure => "缓存、暂存与磁盘",
-        DiagnosticScanScope.ProviderConnectivity => "实时连接",
-        _ => "其他",
+        DiagnosticScanScope.PathAndCommands => Loc.Get("Diagnostics.Scope.Path"),
+        DiagnosticScanScope.ManagedTools => Loc.Get("Diagnostics.Scope.ManagedName"),
+        DiagnosticScanScope.ProjectEnvironment => Loc.Get("Diagnostics.Scope.ProjectName"),
+        DiagnosticScanScope.ProviderConfiguration => Loc.Get("Diagnostics.Scope.ProviderName"),
+        DiagnosticScanScope.StoragePressure => Loc.Get("Diagnostics.Scope.StorageName"),
+        DiagnosticScanScope.ProviderConnectivity => Loc.Get("Diagnostics.Scope.ConnectivityName"),
+        _ => Loc.Get("Diagnostics.Scope.Other"),
     };
 
     private static string ScopeDescription(DiagnosticScanScope scope) => scope switch
     {
-        DiagnosticScanScope.PathAndCommands => "检查失效目录、命令遮蔽、Shim 完整性与实际版本。",
-        DiagnosticScanScope.ManagedTools => "检查受管入口、库存快照、精确全局身份、重复记录及命令偏差。",
-        DiagnosticScanScope.ProjectEnvironment => "检查所选目录的版本选择、精确工具身份和本地虚拟环境。",
-        DiagnosticScanScope.ProviderConfiguration => "检查 Provider 插件、工具身份、来源及代理配置的可解析状态。",
-        DiagnosticScanScope.StoragePressure => "检查缓存、安装/下载暂存、系统盘落点与相关磁盘容量。",
-        DiagnosticScanScope.ProviderConnectivity => "对受限数量的 Provider 来源端点执行 HEAD 请求。",
+        DiagnosticScanScope.PathAndCommands => Loc.Get("Diagnostics.Scope.PathDescription"),
+        DiagnosticScanScope.ManagedTools => Loc.Get("Diagnostics.Scope.ManagedDescription"),
+        DiagnosticScanScope.ProjectEnvironment => Loc.Get("Diagnostics.Scope.ProjectDescription"),
+        DiagnosticScanScope.ProviderConfiguration => Loc.Get("Diagnostics.Scope.ProviderDescription"),
+        DiagnosticScanScope.StoragePressure => Loc.Get("Diagnostics.Scope.StorageDescription"),
+        DiagnosticScanScope.ProviderConnectivity => Loc.Get("Diagnostics.Scope.ConnectivityDescription"),
         _ => string.Empty,
     };
 
@@ -440,9 +520,9 @@ public sealed partial class DiagnosticsPage : Page
             ScopeName(issue.Scope),
             issue.Severity switch
             {
-                DiagnosticSeverity.Error => "错误",
-                DiagnosticSeverity.Warning => "警告",
-                _ => "信息",
+                DiagnosticSeverity.Error => Loc.Get("Diagnostics.Severity.Error"),
+                DiagnosticSeverity.Warning => Loc.Get("Diagnostics.Severity.Warning"),
+                _ => Loc.Get("Diagnostics.Severity.Info"),
             },
             issue.Title,
             issue.Detail,

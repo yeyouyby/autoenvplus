@@ -259,4 +259,879 @@
   <data name="MirrorSources.Messages.LogCustomDisabled" xml:space="preserve">
     <value>Disabled custom mirror source {1} of {0}.</value>
   </data>
+
+  <data name="Languages.Header.Title" xml:space="preserve">
+    <value>Languages</value>
+  </data>
+  <data name="Languages.Header.Subtitle" xml:space="preserve">
+    <value>Pick a language first, then review its language tools, providers, and provider sources. Catalog entries do not imply AutoEnvPlus can operate on them.</value>
+  </data>
+  <data name="Languages.Refresh.ProgressAccessibleName" xml:space="preserve">
+    <value>Language catalog operation progress</value>
+  </data>
+  <data name="Languages.Refresh.AccessibleName" xml:space="preserve">
+    <value>Scan language tools</value>
+  </data>
+  <data name="Languages.Refresh.ToolTip" xml:space="preserve">
+    <value>Explicitly scan PATH for language tools</value>
+  </data>
+  <data name="Languages.ImportPack.Label" xml:space="preserve">
+    <value>Import language pack</value>
+  </data>
+  <data name="Languages.ImportPack.PickerCommit" xml:space="preserve">
+    <value>Validate language pack</value>
+  </data>
+  <data name="Languages.ImportPack.ConfirmTitle" xml:space="preserve">
+    <value>Import {0}</value>
+  </data>
+  <data name="Languages.ImportPack.ConfirmButton" xml:space="preserve">
+    <value>Import (keep disabled)</value>
+  </data>
+  <data name="Languages.Status.ReadingTitle" xml:space="preserve">
+    <value>Reading language catalog</value>
+  </data>
+  <data name="Languages.Status.ScanningTitle" xml:space="preserve">
+    <value>Scanning language tools</value>
+  </data>
+  <data name="Languages.Status.ReadingMessage" xml:space="preserve">
+    <value>Reading language packs, visibility preferences, and the last inventory snapshot.</value>
+  </data>
+  <data name="Languages.Status.ScanningMessage" xml:space="preserve">
+    <value>Only checks PATH commands declared by the catalog; never runs version commands or accesses the network.</value>
+  </data>
+  <data name="Languages.Status.ReadyTitle" xml:space="preserve">
+    <value>Language catalog ready</value>
+  </data>
+  <data name="Languages.Status.InventoryAt" xml:space="preserve">
+    <value>Inventory {0}</value>
+  </data>
+  <data name="Languages.Status.InventoryStale" xml:space="preserve">
+    <value> (catalog changed; rescan pending)</value>
+  </data>
+  <data name="Languages.Status.InventoryNone" xml:space="preserve">
+    <value>No inventory snapshot yet (no automatic scan)</value>
+  </data>
+  <data name="Languages.Status.SummaryLanguages" xml:space="preserve">
+    <value>{0} available languages</value>
+  </data>
+  <data name="Languages.Status.SummaryTools" xml:space="preserve">
+    <value>{0} language tools</value>
+  </data>
+  <data name="Languages.Status.SummaryAdapters" xml:space="preserve">
+    <value>{0} tools wired to AutoEnvPlus install adapters</value>
+  </data>
+  <data name="Languages.Status.SummaryDetected" xml:space="preserve">
+    <value>{0} languages detected</value>
+  </data>
+  <data name="Languages.Status.PackErrors" xml:space="preserve">
+    <value>{0} language packs failed validation</value>
+  </data>
+  <data name="Languages.Catalog.NoteTitle" xml:space="preserve">
+    <value>Catalog metadata is separate from executable actions</value>
+  </data>
+  <data name="Languages.Catalog.NoteMessage" xml:space="preserve">
+    <value>The 136 built-in tools reflect the ecosystem catalog, not 136 managed adapters. Only tools marked with an AutoEnvPlus action adapter can be installed or switched in-app; scanning only checks PATH on demand and never runs version commands or accesses the network.</value>
+  </data>
+  <data name="Languages.Search.AccessibleName" xml:space="preserve">
+    <value>Search languages</value>
+  </data>
+  <data name="Languages.Search.PlaceholderText" xml:space="preserve">
+    <value>Search languages, aliases, or extensions</value>
+  </data>
+  <data name="Languages.Filter.AccessibleName" xml:space="preserve">
+    <value>Language filter</value>
+  </data>
+  <data name="Languages.Filters.All" xml:space="preserve">
+    <value>All statuses</value>
+  </data>
+  <data name="Languages.Filters.Detected" xml:space="preserve">
+    <value>Detected</value>
+  </data>
+  <data name="Languages.Filters.Default" xml:space="preserve">
+    <value>Default Top 10</value>
+  </data>
+  <data name="Languages.Filters.Hidden" xml:space="preserve">
+    <value>Hidden</value>
+  </data>
+  <data name="Languages.ShowAll.Header" xml:space="preserve">
+    <value>Show all languages</value>
+  </data>
+  <data name="Languages.ShowAll.OffContent" xml:space="preserve">
+    <value>Effective set</value>
+  </data>
+  <data name="Languages.ShowAll.OnContent" xml:space="preserve">
+    <value>Full catalog</value>
+  </data>
+  <data name="Languages.Summary.SectionTitle" xml:space="preserve">
+    <value>Language → Language Tool</value>
+  </data>
+  <data name="Languages.Summary.InitialText" xml:space="preserve">
+    <value>Computing the effective language set…</value>
+  </data>
+  <data name="Languages.Summary.VisibleCount" xml:space="preserve">
+    <value>Showing {0}</value>
+  </data>
+  <data name="Languages.Summary.EffectiveCount" xml:space="preserve">
+    <value>{0} in effective set</value>
+  </data>
+  <data name="Languages.Summary.DetectedCount" xml:space="preserve">
+    <value>{0} detected in inventory</value>
+  </data>
+  <data name="Languages.Summary.TotalCount" xml:space="preserve">
+    <value>{0} in catalog</value>
+  </data>
+  <data name="Languages.Summary.Policy" xml:space="preserve">
+    <value>Policy: {0}</value>
+  </data>
+  <data name="Languages.ResetVisibility.Title" xml:space="preserve">
+    <value>Reset language visibility preferences</value>
+  </data>
+  <data name="Languages.ResetVisibility.ToolTip" xml:space="preserve">
+    <value>Clear all explicit enable and hide states</value>
+  </data>
+  <data name="Languages.ResetVisibility.DialogContent" xml:space="preserve">
+    <value>Clears all explicit enable and hide states. The default Top 10 and languages detected on PATH will still be shown.</value>
+  </data>
+  <data name="Languages.ResetVisibility.ResetButton" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Languages.Empty.Title" xml:space="preserve">
+    <value>No languages match the current filters</value>
+  </data>
+  <data name="Languages.Empty.Hint" xml:space="preserve">
+    <value>Try changing the search term, status filter, or display scope.</value>
+  </data>
+  <data name="Languages.Item.DefaultBadge" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="Languages.Item.Open.ToolTip" xml:space="preserve">
+    <value>Open language details</value>
+  </data>
+  <data name="Languages.Item.OpenActionAccessibleName" xml:space="preserve">
+    <value>Open details for {0}</value>
+  </data>
+  <data name="Languages.Item.AutomationName" xml:space="preserve">
+    <value>{0}, {1}</value>
+  </data>
+  <data name="Languages.Item.ToolSummary" xml:space="preserve">
+    <value>{0} language tools · {1} detected on PATH · {2} wired to AutoEnvPlus actions · {3} catalog metadata only</value>
+  </data>
+  <data name="Languages.Item.AliasSeparator" xml:space="preserve">
+    <value>, </value>
+  </data>
+  <data name="Languages.Item.NoExtensions" xml:space="preserve">
+    <value>No fixed extensions</value>
+  </data>
+  <data name="Languages.Item.HideAction" xml:space="preserve">
+    <value>Hide {0}</value>
+  </data>
+  <data name="Languages.Item.EnableAction" xml:space="preserve">
+    <value>Enable {0}</value>
+  </data>
+  <data name="Languages.Packs.AccessibleName" xml:space="preserve">
+    <value>Language packs in the current language catalog</value>
+  </data>
+  <data name="Languages.Packs.SectionTitle" xml:space="preserve">
+    <value>Language packs</value>
+  </data>
+  <data name="Languages.Packs.SummaryInitial" xml:space="preserve">
+    <value>Reading imported language packs…</value>
+  </data>
+  <data name="Languages.Packs.SchemaNoteTitle" xml:space="preserve">
+    <value>Data-only schema 1</value>
+  </data>
+  <data name="Languages.Packs.SchemaNoteMessage" xml:space="preserve">
+    <value>Language packs only add declarative language and tool metadata; they cannot load DLLs, scripts, arbitrary commands, or install hooks. New imports start disabled.</value>
+  </data>
+  <data name="Languages.Packs.Empty" xml:space="preserve">
+    <value>No language packs imported yet.</value>
+  </data>
+  <data name="Languages.Packs.Delete.ToolTip" xml:space="preserve">
+    <value>Delete language pack</value>
+  </data>
+  <data name="Languages.Packs.EnableTitle" xml:space="preserve">
+    <value>Enable {0}</value>
+  </data>
+  <data name="Languages.Packs.EnableDialogContent" xml:space="preserve">
+    <value>This data-only pack&apos;s language and tool metadata will join the catalog; it never gains script or DLL execution.</value>
+  </data>
+  <data name="Languages.Packs.EnableConfirm" xml:space="preserve">
+    <value>Enable explicitly</value>
+  </data>
+  <data name="Languages.Packs.Enable" xml:space="preserve">
+    <value>Enable</value>
+  </data>
+  <data name="Languages.Packs.Disable" xml:space="preserve">
+    <value>Disable</value>
+  </data>
+  <data name="Languages.Packs.EnableActionAccessibleName" xml:space="preserve">
+    <value>Enable language pack {0}</value>
+  </data>
+  <data name="Languages.Packs.DisableActionAccessibleName" xml:space="preserve">
+    <value>Disable language pack {0}</value>
+  </data>
+  <data name="Languages.Packs.DeleteActionAccessibleName" xml:space="preserve">
+    <value>Delete language pack {0}</value>
+  </data>
+  <data name="Languages.Packs.DeleteTitle" xml:space="preserve">
+    <value>Delete {0}</value>
+  </data>
+  <data name="Languages.Packs.DeleteDialogContent" xml:space="preserve">
+    <value>Deletes the managed pack manifest; no external language tools or project files are removed.</value>
+  </data>
+  <data name="Languages.Packs.DeleteConfirm" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Languages.Packs.SummaryImported" xml:space="preserve">
+    <value>{0} imported</value>
+  </data>
+  <data name="Languages.Packs.SummaryEnabled" xml:space="preserve">
+    <value>{0} enabled</value>
+  </data>
+  <data name="Languages.Packs.SummaryErrors" xml:space="preserve">
+    <value>{0} errors</value>
+  </data>
+  <data name="Languages.Packs.DetailLanguages" xml:space="preserve">
+    <value>{0} languages</value>
+  </data>
+  <data name="Languages.Packs.DetailTools" xml:space="preserve">
+    <value>{0} tools</value>
+  </data>
+  <data name="Languages.Packs.Enabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="Languages.Packs.Disabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="Languages.Dialog.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Languages.Messages.ReadFailedTitle" xml:space="preserve">
+    <value>Cannot read language catalog</value>
+  </data>
+  <data name="Languages.Messages.VisibilityInvalid" xml:space="preserve">
+    <value>Language visibility state failed validation ({0}); state content is not echoed.</value>
+  </data>
+  <data name="Languages.Messages.PackInvalid" xml:space="preserve">
+    <value>Language pack failed validation ({0}); manifest content is not echoed.</value>
+  </data>
+  <data name="Languages.Messages.CatalogUnavailable" xml:space="preserve">
+    <value>The language catalog or state paths are unavailable right now; content outside the paths and sensitive values are not shown.</value>
+  </data>
+  <data name="Languages.Messages.InventoryInvalid" xml:space="preserve">
+    <value>Inventory snapshot failed validation</value>
+  </data>
+  <data name="Languages.Messages.VisibilitySaveFailedTitle" xml:space="preserve">
+    <value>Cannot save language visibility state</value>
+  </data>
+  <data name="Languages.Messages.VisibilitySaveFailed" xml:space="preserve">
+    <value>State was not written ({0}).</value>
+  </data>
+  <data name="Languages.Messages.ResetFailedTitle" xml:space="preserve">
+    <value>Cannot reset language visibility state</value>
+  </data>
+  <data name="Languages.Messages.ResetFailed" xml:space="preserve">
+    <value>State was not updated ({0}).</value>
+  </data>
+  <data name="Languages.Messages.ManifestInvalid" xml:space="preserve">
+    <value>Manifest failed security validation ({0}); content is not echoed.</value>
+  </data>
+  <data name="Languages.Messages.ImportFailedTitle" xml:space="preserve">
+    <value>Cannot import language pack</value>
+  </data>
+  <data name="Languages.Messages.ImportedTitle" xml:space="preserve">
+    <value>Language pack imported and kept disabled</value>
+  </data>
+  <data name="Languages.Messages.ImportedMessage" xml:space="preserve">
+    <value>New languages and tools join the effective catalog only after you enable them explicitly.</value>
+  </data>
+  <data name="Languages.Messages.PackStateFailedTitle" xml:space="preserve">
+    <value>Cannot change language pack state</value>
+  </data>
+  <data name="Languages.Messages.OperationNotCommitted" xml:space="preserve">
+    <value>The operation was not committed ({0}).</value>
+  </data>
+  <data name="Languages.Messages.DeleteFailedTitle" xml:space="preserve">
+    <value>Cannot delete language pack</value>
+  </data>
+  <data name="Languages.Preview.FileLabel" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="Languages.Preview.PackIdLabel" xml:space="preserve">
+    <value>Language pack ID</value>
+  </data>
+  <data name="Languages.Preview.PublisherLabel" xml:space="preserve">
+    <value>Publisher</value>
+  </data>
+  <data name="Languages.Preview.ContentLabel" xml:space="preserve">
+    <value>Contents</value>
+  </data>
+  <data name="Languages.Preview.ContentValue" xml:space="preserve">
+    <value>{0} languages · {1} tools</value>
+  </data>
+  <data name="Languages.Preview.LicenseLabel" xml:space="preserve">
+    <value>License</value>
+  </data>
+  <data name="Languages.Preview.InactiveTitle" xml:space="preserve">
+    <value>Kept disabled by default</value>
+  </data>
+  <data name="Languages.Preview.InactiveMessage" xml:space="preserve">
+    <value>Import only copies normalized JSON; manifest content is never run.</value>
+  </data>
+  <data name="Languages.Policy.TopTenAndDetected" xml:space="preserve">
+    <value>Top 10 and detected</value>
+  </data>
+  <data name="Languages.Policy.EnabledOnly" xml:space="preserve">
+    <value>Manually enabled only</value>
+  </data>
+  <data name="Languages.Policy.AllBuiltIn" xml:space="preserve">
+    <value>All built-in languages</value>
+  </data>
+  <data name="Languages.Text.Separator" xml:space="preserve">
+    <value> · </value>
+  </data>
+
+  <data name="Path.Header.Title" xml:space="preserve">
+    <value>PATH &amp; commands</value>
+  </data>
+  <data name="Path.Header.Subtitle" xml:space="preserve">
+    <value>The user PATH is configured with the AutoEnvPlus shim only once; later global, project, and session switches never rewrite PATH.</value>
+  </data>
+  <data name="Path.Refresh.AccessibleName" xml:space="preserve">
+    <value>Refresh PATH and commands</value>
+  </data>
+  <data name="Path.Shim.StateInitial" xml:space="preserve">
+    <value>Reading shim routing state…</value>
+  </data>
+  <data name="Path.Shim.ActivateLabel" xml:space="preserve">
+    <value>Set up AutoEnvPlus shim</value>
+  </data>
+  <data name="Path.Shim.ConfirmTitle" xml:space="preserve">
+    <value>Enable command version switching</value>
+  </data>
+  <data name="Path.Shim.ConfirmContent" xml:space="preserve">
+    <value>Commands to generate
+python, python3, pip, pip3, node, npm, npx, java, javac, jar, dotnet, cl, clang, clang++, gcc, g++, cmake, ninja
+
+Shim directory
+{0}
+
+PATH change
+{1}
+
+The system PATH is not modified.</value>
+  </data>
+  <data name="Path.Shim.PathChangeAdd" xml:space="preserve">
+    <value>Added to the front of the user PATH, with a rollback snapshot saved</value>
+  </data>
+  <data name="Path.Shim.PathChangeNone" xml:space="preserve">
+    <value>The shim is already first in the user PATH</value>
+  </data>
+  <data name="Path.Shim.ConfirmButton" xml:space="preserve">
+    <value>Generate shim and apply</value>
+  </data>
+  <data name="Path.Shim.NativeImplementation" xml:space="preserve">
+    <value>Win32 native shim</value>
+  </data>
+  <data name="Path.Shim.CmdImplementation" xml:space="preserve">
+    <value>CMD fallback shim</value>
+  </data>
+  <data name="Path.Shim.StateMissingDirectory" xml:space="preserve">
+    <value>The user PATH still references the shim, but the managed directory does not exist.</value>
+  </data>
+  <data name="Path.Shim.StateNotConfigured" xml:space="preserve">
+    <value>The shim is not configured yet; commands keep using the system PATH.</value>
+  </data>
+  <data name="Path.Shim.StateIncomplete" xml:space="preserve">
+    <value>The shim is incomplete; missing: {0}.</value>
+  </data>
+  <data name="Path.Shim.StateNotPersisted" xml:space="preserve">
+    <value>The shim files are complete, but the persistent user PATH has not been updated.</value>
+  </data>
+  <data name="Path.Shim.StateActive" xml:space="preserve">
+    <value>The one-time shim is active; command switching no longer needs to modify PATH.</value>
+  </data>
+  <data name="Path.Shim.StatePersisted" xml:space="preserve">
+    <value>The shim is in the persistent user PATH; the current process may still need a new terminal to pick it up.</value>
+  </data>
+  <data name="Path.Summary.HealthyTitle" xml:space="preserve">
+    <value>PATH and command routing are healthy</value>
+  </data>
+  <data name="Path.Summary.UnhealthyTitle" xml:space="preserve">
+    <value>PATH or command routing needs attention</value>
+  </data>
+  <data name="Path.Summary.Missing" xml:space="preserve">
+    <value>{0} missing</value>
+  </data>
+  <data name="Path.Summary.Duplicates" xml:space="preserve">
+    <value>{0} duplicates</value>
+  </data>
+  <data name="Path.Summary.Conflicts" xml:space="preserve">
+    <value>{0} command conflicts</value>
+  </data>
+  <data name="Path.Summary.ShimManaged" xml:space="preserve">
+    <value>Shim manages {0}/{1}</value>
+  </data>
+  <data name="Path.CommandRoute.Header" xml:space="preserve">
+    <value>Command routing</value>
+  </data>
+  <data name="Path.CommandRoute.CommandColumn" xml:space="preserve">
+    <value>Command</value>
+  </data>
+  <data name="Path.CommandRoute.EntryColumn" xml:space="preserve">
+    <value>Actual entry</value>
+  </data>
+  <data name="Path.CommandRoute.StateColumn" xml:space="preserve">
+    <value>Route state</value>
+  </data>
+  <data name="Path.CommandRoute.NotFound" xml:space="preserve">
+    <value>Not found</value>
+  </data>
+  <data name="Path.RouteState.Shim" xml:space="preserve">
+    <value>AutoEnvPlus shim</value>
+  </data>
+  <data name="Path.RouteState.ShimCandidates" xml:space="preserve">
+    <value>AutoEnvPlus shim · {0} candidates</value>
+  </data>
+  <data name="Path.RouteState.Direct" xml:space="preserve">
+    <value>Direct command</value>
+  </data>
+  <data name="Path.RouteState.DirectCandidates" xml:space="preserve">
+    <value>Direct command · {0} candidates</value>
+  </data>
+  <data name="Path.Directory.Header" xml:space="preserve">
+    <value>PATH directories</value>
+  </data>
+  <data name="Path.Directory.IndexColumn" xml:space="preserve">
+    <value>Order</value>
+  </data>
+  <data name="Path.Directory.ScopeColumn" xml:space="preserve">
+    <value>Scope</value>
+  </data>
+  <data name="Path.Directory.DirectoryColumn" xml:space="preserve">
+    <value>Directory</value>
+  </data>
+  <data name="Path.Directory.StatusColumn" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Path.Scope.User" xml:space="preserve">
+    <value>User</value>
+  </data>
+  <data name="Path.Scope.Machine" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Path.Scope.UserAndMachine" xml:space="preserve">
+    <value>User + system</value>
+  </data>
+  <data name="Path.Scope.Process" xml:space="preserve">
+    <value>Process</value>
+  </data>
+  <data name="Path.Status.Missing" xml:space="preserve">
+    <value>Directory missing</value>
+  </data>
+  <data name="Path.Status.Duplicate" xml:space="preserve">
+    <value>Duplicate</value>
+  </data>
+  <data name="Path.Status.Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Path.Scopes.Session" xml:space="preserve">
+    <value>Session</value>
+  </data>
+  <data name="Path.Scopes.SessionPriority" xml:space="preserve">
+    <value>Priority 1</value>
+  </data>
+  <data name="Path.Scopes.SessionDetail" xml:space="preserve">
+    <value>Affects only the current terminal; no persistent choice is written.</value>
+  </data>
+  <data name="Path.Scopes.Project" xml:space="preserve">
+    <value>Project lock</value>
+  </data>
+  <data name="Path.Scopes.ProjectPriority" xml:space="preserve">
+    <value>Priority 2</value>
+  </data>
+  <data name="Path.Scopes.ProjectDetail" xml:space="preserve">
+    <value>Inside the project directory, resolved per autoenvplus.toml.</value>
+  </data>
+  <data name="Path.Scopes.Global" xml:space="preserve">
+    <value>Global default</value>
+  </data>
+  <data name="Path.Scopes.GlobalPriority" xml:space="preserve">
+    <value>Priority 3</value>
+  </data>
+  <data name="Path.Scopes.GlobalDetail" xml:space="preserve">
+    <value>Used when no session or project selection applies.</value>
+  </data>
+  <data name="Path.Scopes.Auto" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="Path.Scopes.AutoPriority" xml:space="preserve">
+    <value>Priority 4</value>
+  </data>
+  <data name="Path.Scopes.AutoDetail" xml:space="preserve">
+    <value>Automatically picks the highest stable version among installed versions that satisfy the requirements.</value>
+  </data>
+  <data name="Path.Snapshots.Header" xml:space="preserve">
+    <value>Rollback snapshots</value>
+  </data>
+  <data name="Path.Snapshots.SectionTitle" xml:space="preserve">
+    <value>User PATH rollback</value>
+  </data>
+  <data name="Path.Snapshots.SectionHint" xml:space="preserve">
+    <value>Restores only the user PATH from before AutoEnvPlus wrote to it; the system PATH and shim files stay unchanged.</value>
+  </data>
+  <data name="Path.Snapshots.RefreshAccessibleName" xml:space="preserve">
+    <value>Refresh PATH snapshots</value>
+  </data>
+  <data name="Path.Snapshots.RollbackLabel" xml:space="preserve">
+    <value>Roll back user PATH</value>
+  </data>
+  <data name="Path.Snapshots.SummaryInitial" xml:space="preserve">
+    <value>Reading PATH snapshots…</value>
+  </data>
+  <data name="Path.Snapshots.Empty" xml:space="preserve">
+    <value>No PATH snapshots created yet.</value>
+  </data>
+  <data name="Path.Snapshots.SummaryEmpty" xml:space="preserve">
+    <value>After you enable command version switching and modify the user PATH, auditable rollback snapshots are kept here.</value>
+  </data>
+  <data name="Path.Snapshots.SummaryCount" xml:space="preserve">
+    <value>{0} valid snapshots, {1} of which match the current user PATH. Select a snapshot to roll back.</value>
+  </data>
+  <data name="Path.Snapshots.LoadFailed" xml:space="preserve">
+    <value>Cannot read PATH snapshots.</value>
+  </data>
+  <data name="Path.Snapshots.ConfirmContent" xml:space="preserve">
+    <value>Snapshot time
+{0}
+
+Directory added at the time
+{1}
+
+Restores the user PATH to its full value from before AutoEnvPlus wrote to it. The system PATH and shim files are not modified.
+
+The current PATH is re-checked before the operation; if other changes were made after the snapshot, AutoEnvPlus will refuse to overwrite.</value>
+  </data>
+  <data name="Path.SnapshotState.Available" xml:space="preserve">
+    <value>Rollback available</value>
+  </data>
+  <data name="Path.SnapshotState.RolledBack" xml:space="preserve">
+    <value>Rolled back</value>
+  </data>
+  <data name="Path.SnapshotState.Changed" xml:space="preserve">
+    <value>PATH changed</value>
+  </data>
+  <data name="Path.Dialog.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Path.Messages.CliMissingTitle" xml:space="preserve">
+    <value>CLI component missing</value>
+  </data>
+  <data name="Path.Messages.CliMissing" xml:space="preserve">
+    <value>Cannot find {0}; rebuild or reinstall AutoEnvPlus.</value>
+  </data>
+  <data name="Path.Messages.PathApplyFailed" xml:space="preserve">
+    <value>Failed to modify the user PATH.</value>
+  </data>
+  <data name="Path.Messages.ShimEnabledTitle" xml:space="preserve">
+    <value>Command version switching enabled</value>
+  </data>
+  <data name="Path.Messages.ShimInstalledChanged" xml:space="preserve">
+    <value>Installed {0} and saved a PATH snapshot: {1}. Open a new terminal.</value>
+  </data>
+  <data name="Path.Messages.ShimInstalledUnchanged" xml:space="preserve">
+    <value>{0} is installed; the shim is already first in the user PATH.</value>
+  </data>
+  <data name="Path.Messages.ShimEnableFailedTitle" xml:space="preserve">
+    <value>Cannot enable command switching</value>
+  </data>
+  <data name="Path.Messages.RollbackFailedTitle" xml:space="preserve">
+    <value>Cannot roll back the user PATH</value>
+  </data>
+  <data name="Path.Messages.RollbackFailed" xml:space="preserve">
+    <value>PATH rollback failed.</value>
+  </data>
+  <data name="Path.Messages.RollbackSuccessTitle" xml:space="preserve">
+    <value>User PATH rolled back</value>
+  </data>
+  <data name="Path.Messages.RollbackSuccess" xml:space="preserve">
+    <value>The user PATH from before the snapshot write has been restored; the system PATH and shim files were not modified. Open a new terminal.</value>
+  </data>
+  <data name="Path.Activity.ShimInstalledChanged" xml:space="preserve">
+    <value>Installed {0} and placed the AutoEnvPlus shim first in the user PATH.</value>
+  </data>
+  <data name="Path.Activity.ShimInstalledUnchanged" xml:space="preserve">
+    <value>Confirmed {0} requires no user PATH changes.</value>
+  </data>
+  <data name="Path.Activity.ShimEnableFailed" xml:space="preserve">
+    <value>Failed to enable the AutoEnvPlus shim and user PATH. Error type: {0}.</value>
+  </data>
+  <data name="Path.Activity.RollbackRejected" xml:space="preserve">
+    <value>The user PATH rollback was rejected during the pre-apply recheck.</value>
+  </data>
+  <data name="Path.Activity.RollbackSucceeded" xml:space="preserve">
+    <value>Restored the user PATH from before AutoEnvPlus modified it; the system PATH and shim files stay unchanged.</value>
+  </data>
+  <data name="Path.Activity.RollbackFailed" xml:space="preserve">
+    <value>User PATH rollback failed. Error type: {0}.</value>
+  </data>
+  <data name="Path.Text.Separator" xml:space="preserve">
+    <value> · </value>
+  </data>
+  <data name="Path.Text.ListSeparator" xml:space="preserve">
+    <value>, </value>
+  </data>
+
+  <data name="Diagnostics.Header.Title" xml:space="preserve">
+    <value>Environment diagnostics</value>
+  </data>
+  <data name="Diagnostics.Header.Subtitle" xml:space="preserve">
+    <value>Pick the scan domains you need; only real state is read, and project, cache, and connectivity checks never run automatically.</value>
+  </data>
+  <data name="Diagnostics.Progress.AccessibleName" xml:space="preserve">
+    <value>Diagnostic scan progress</value>
+  </data>
+  <data name="Diagnostics.Export.ToolTip" xml:space="preserve">
+    <value>Export the current structured diagnostic report</value>
+  </data>
+  <data name="Diagnostics.Export.Label" xml:space="preserve">
+    <value>Export JSON</value>
+  </data>
+  <data name="Diagnostics.Export.FileTypeLabel" xml:space="preserve">
+    <value>JSON diagnostic report</value>
+  </data>
+  <data name="Diagnostics.Cancel.AccessibleName" xml:space="preserve">
+    <value>Cancel diagnostics</value>
+  </data>
+  <data name="Diagnostics.Cancel.ToolTip" xml:space="preserve">
+    <value>Cancel the current diagnostic run</value>
+  </data>
+  <data name="Diagnostics.Scan.ToolTip" xml:space="preserve">
+    <value>Run read-only diagnostics for the selected scopes</value>
+  </data>
+  <data name="Diagnostics.Scan.Label" xml:space="preserve">
+    <value>Start scan</value>
+  </data>
+  <data name="Diagnostics.Scope.Header" xml:space="preserve">
+    <value>Scan scopes</value>
+  </data>
+  <data name="Diagnostics.Scope.Path" xml:space="preserve">
+    <value>PATH, commands &amp; shim</value>
+  </data>
+  <data name="Diagnostics.Scope.Managed" xml:space="preserve">
+    <value>Managed language tools &amp; version selection</value>
+  </data>
+  <data name="Diagnostics.Scope.Provider" xml:space="preserve">
+    <value>Providers &amp; source configuration</value>
+  </data>
+  <data name="Diagnostics.Scope.Project" xml:space="preserve">
+    <value>Project selection &amp; virtual environments</value>
+  </data>
+  <data name="Diagnostics.Scope.Storage" xml:space="preserve">
+    <value>Cache, staging &amp; disk (slower)</value>
+  </data>
+  <data name="Diagnostics.Scope.Connectivity" xml:space="preserve">
+    <value>Live provider source connectivity (slower)</value>
+  </data>
+  <data name="Diagnostics.Scope.HintNone" xml:space="preserve">
+    <value>No scan domains selected yet.</value>
+  </data>
+  <data name="Diagnostics.Scope.HintCount" xml:space="preserve">
+    <value>{0} scan domains selected</value>
+  </data>
+  <data name="Diagnostics.Scope.HintCheap" xml:space="preserve">
+    <value>; projects, caches, and the network are not touched.</value>
+  </data>
+  <data name="Diagnostics.Scope.HintExpensive" xml:space="preserve">
+    <value>, {0} of which need extra I/O or network.</value>
+  </data>
+  <data name="Diagnostics.Scope.PendingResult" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="Diagnostics.Scope.ResultErrors" xml:space="preserve">
+    <value>{0} errors</value>
+  </data>
+  <data name="Diagnostics.Scope.ResultWarnings" xml:space="preserve">
+    <value>{0} warnings</value>
+  </data>
+  <data name="Diagnostics.Scope.ResultPassed" xml:space="preserve">
+    <value>Passed</value>
+  </data>
+  <data name="Diagnostics.Scope.ResultDetail" xml:space="preserve">
+    <value>{0}: {1} findings recorded.</value>
+  </data>
+  <data name="Diagnostics.Scope.ManagedName" xml:space="preserve">
+    <value>Managed language tools</value>
+  </data>
+  <data name="Diagnostics.Scope.ProjectName" xml:space="preserve">
+    <value>Project environment</value>
+  </data>
+  <data name="Diagnostics.Scope.ProviderName" xml:space="preserve">
+    <value>Providers &amp; sources</value>
+  </data>
+  <data name="Diagnostics.Scope.StorageName" xml:space="preserve">
+    <value>Cache, staging &amp; disk</value>
+  </data>
+  <data name="Diagnostics.Scope.ConnectivityName" xml:space="preserve">
+    <value>Live connectivity</value>
+  </data>
+  <data name="Diagnostics.Scope.Other" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="Diagnostics.Scope.PathDescription" xml:space="preserve">
+    <value>Checks for missing directories, command shadowing, shim completeness, and actual versions.</value>
+  </data>
+  <data name="Diagnostics.Scope.ManagedDescription" xml:space="preserve">
+    <value>Checks managed entries, inventory snapshots, exact global identities, duplicate records, and command drift.</value>
+  </data>
+  <data name="Diagnostics.Scope.ProjectDescription" xml:space="preserve">
+    <value>Checks version selection, exact tool identities, and local virtual environments in the selected directory.</value>
+  </data>
+  <data name="Diagnostics.Scope.ProviderDescription" xml:space="preserve">
+    <value>Checks whether provider plugins, tool identities, sources, and proxy configuration resolve.</value>
+  </data>
+  <data name="Diagnostics.Scope.StorageDescription" xml:space="preserve">
+    <value>Checks caches, install/download staging, system-disk placement, and related disk capacity.</value>
+  </data>
+  <data name="Diagnostics.Scope.ConnectivityDescription" xml:space="preserve">
+    <value>Sends HEAD requests to a limited number of provider source endpoints.</value>
+  </data>
+  <data name="Diagnostics.ProjectPath.AccessibleName" xml:space="preserve">
+    <value>Diagnostics project directory</value>
+  </data>
+  <data name="Diagnostics.ProjectPath.PlaceholderText" xml:space="preserve">
+    <value>Choose a project directory</value>
+  </data>
+  <data name="Diagnostics.BrowseProject.AccessibleName" xml:space="preserve">
+    <value>Choose diagnostics project directory</value>
+  </data>
+  <data name="Diagnostics.Summary.WaitingTitle" xml:space="preserve">
+    <value>Waiting to scan</value>
+  </data>
+  <data name="Diagnostics.Summary.WaitingMessage" xml:space="preserve">
+    <value>Select scopes and start the scan; every check is read-only.</value>
+  </data>
+  <data name="Diagnostics.Summary.Header" xml:space="preserve">
+    <value>Scan summary</value>
+  </data>
+  <data name="Diagnostics.Summary.Errors" xml:space="preserve">
+    <value>{0} errors</value>
+  </data>
+  <data name="Diagnostics.Summary.Warnings" xml:space="preserve">
+    <value>{0} warnings</value>
+  </data>
+  <data name="Diagnostics.Summary.Scopes" xml:space="preserve">
+    <value>{0} scan domains</value>
+  </data>
+  <data name="Diagnostics.Summary.Time" xml:space="preserve">
+    <value>Time {0}</value>
+  </data>
+  <data name="Diagnostics.Issues.Header" xml:space="preserve">
+    <value>Issues</value>
+  </data>
+  <data name="Diagnostics.Issues.AllScopesLabel" xml:space="preserve">
+    <value>Selected scopes</value>
+  </data>
+  <data name="Diagnostics.Issues.NoneFoundTitle" xml:space="preserve">
+    <value>No issues found</value>
+  </data>
+  <data name="Diagnostics.Issues.NoneFoundDetail" xml:space="preserve">
+    <value>All selected scan domains passed the current read-only checks.</value>
+  </data>
+  <data name="Diagnostics.Severity.Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="Diagnostics.Severity.Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="Diagnostics.Severity.Info" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="Diagnostics.Commands.Header" xml:space="preserve">
+    <value>Command routing</value>
+  </data>
+  <data name="Diagnostics.Commands.CommandColumn" xml:space="preserve">
+    <value>Command</value>
+  </data>
+  <data name="Diagnostics.Commands.EntryColumn" xml:space="preserve">
+    <value>Actual entry</value>
+  </data>
+  <data name="Diagnostics.Commands.CandidateColumn" xml:space="preserve">
+    <value>Candidates</value>
+  </data>
+  <data name="Diagnostics.Commands.NotFound" xml:space="preserve">
+    <value>Not found</value>
+  </data>
+  <data name="Diagnostics.Commands.Candidates" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="Diagnostics.Commands.CandidatesShadowed" xml:space="preserve">
+    <value>{0}, shadowed</value>
+  </data>
+  <data name="Diagnostics.Runtime.Header" xml:space="preserve">
+    <value>Language tools &amp; selection</value>
+  </data>
+  <data name="Diagnostics.Runtime.GlobalSelectionTitle" xml:space="preserve">
+    <value>Global selection resolution</value>
+  </data>
+  <data name="Diagnostics.Runtime.ProbeFailed" xml:space="preserve">
+    <value>Probe failed</value>
+  </data>
+  <data name="Diagnostics.Runtime.ResolveFailed" xml:space="preserve">
+    <value>Could not resolve</value>
+  </data>
+  <data name="Diagnostics.Messages.ProjectPickFailedTitle" xml:space="preserve">
+    <value>Cannot choose a project directory</value>
+  </data>
+  <data name="Diagnostics.Messages.ExportedTitle" xml:space="preserve">
+    <value>Diagnostic report exported</value>
+  </data>
+  <data name="Diagnostics.Messages.ExportFailedTitle" xml:space="preserve">
+    <value>Cannot export the diagnostic report</value>
+  </data>
+  <data name="Diagnostics.Messages.ScanningTitle" xml:space="preserve">
+    <value>Running the selected diagnostics</value>
+  </data>
+  <data name="Diagnostics.Messages.ScanningMessage" xml:space="preserve">
+    <value>Scan domains: {0}.</value>
+  </data>
+  <data name="Diagnostics.Messages.CancelledTitle" xml:space="preserve">
+    <value>Diagnostics cancelled</value>
+  </data>
+  <data name="Diagnostics.Messages.CancelledMessage" xml:space="preserve">
+    <value>No environment settings were modified.</value>
+  </data>
+  <data name="Diagnostics.Messages.ScanFailedTitle" xml:space="preserve">
+    <value>Cannot complete environment diagnostics</value>
+  </data>
+  <data name="Diagnostics.Messages.NoScopeTitle" xml:space="preserve">
+    <value>Select scan scopes</value>
+  </data>
+  <data name="Diagnostics.Messages.NoScopeMessage" xml:space="preserve">
+    <value>Select at least one read-only scan domain.</value>
+  </data>
+  <data name="Diagnostics.Messages.NoProjectTitle" xml:space="preserve">
+    <value>Select a project directory</value>
+  </data>
+  <data name="Diagnostics.Messages.NoProjectMessage" xml:space="preserve">
+    <value>The project-lock and virtual-environment checks only scan a directory you choose explicitly.</value>
+  </data>
+  <data name="Diagnostics.Messages.HealthyTitle" xml:space="preserve">
+    <value>Selected scopes are healthy</value>
+  </data>
+  <data name="Diagnostics.Messages.UnhealthyTitle" xml:space="preserve">
+    <value>Selected scopes need attention</value>
+  </data>
+  <data name="Diagnostics.Activity.Exported" xml:space="preserve">
+    <value>Exported the redacted structured environment diagnostics JSON.</value>
+  </data>
+  <data name="Diagnostics.Activity.ExportFailed" xml:space="preserve">
+    <value>Environment diagnostics JSON export failed. Error type: {0}.</value>
+  </data>
+  <data name="Diagnostics.Text.Separator" xml:space="preserve">
+    <value> · </value>
+  </data>
+  <data name="Diagnostics.Text.ListSeparator" xml:space="preserve">
+    <value>, </value>
+  </data>
 </root>

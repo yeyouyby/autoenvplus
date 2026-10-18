@@ -50,10 +50,10 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="语言目录" />
+                        <TextBlock x:Name="PageTitleText" Style="{StaticResource TitleTextBlockStyle}" />
                         <TextBlock
+                            x:Name="PageSubtitleText"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="先选择语言，再查看语言工具、Provider 和 Provider Source。目录声明不等同于 AutoEnvPlus 已接通操作。"
                             TextWrapping="Wrap" />
                     </StackPanel>
                     <StackPanel
@@ -66,22 +66,19 @@
                             x:Name="RefreshProgress"
                             Width="20"
                             Height="20"
-                            AutomationProperties.Name="语言目录操作进度"
+                            AutomationProperties.LiveSetting="Polite"
                             IsActive="False" />
                         <Button
                             x:Name="RefreshButton"
-                            AutomationProperties.Name="扫描语言工具"
-                            Click="OnRefreshClicked"
-                            ToolTipService.ToolTip="显式扫描 PATH 中的语言工具">
+                            Click="OnRefreshClicked">
                             <SymbolIcon Symbol="Refresh" />
                         </Button>
                         <Button
                             x:Name="ImportPackButton"
-                            AutomationProperties.Name="导入语言包"
                             Click="OnImportLanguagePackClicked">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <SymbolIcon Symbol="OpenFile" />
-                                <TextBlock Text="导入语言包" />
+                                <TextBlock x:Name="ImportPackButtonText" />
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -92,15 +89,13 @@
                     AutomationProperties.LiveSetting="Polite"
                     IsClosable="False"
                     IsOpen="True"
-                    Severity="Informational"
-                    Title="正在读取语言目录" />
+                    Severity="Informational" />
 
                 <InfoBar
+                    x:Name="CatalogNoteInfo"
                     IsClosable="False"
                     IsOpen="True"
-                    Message="136 个内置工具是生态目录规模，不代表 136 个受管适配器。只有标明 AutoEnvPlus 操作适配器的工具可在应用内安装或切换；扫描仅按需检查 PATH，不运行版本命令或访问网络。"
-                    Severity="Informational"
-                    Title="目录元数据与可执行操作分开" />
+                    Severity="Informational" />
 
                 <Border
                     Padding="16"
@@ -111,21 +106,14 @@
                     <StackPanel x:Name="FilterPanel" Spacing="10">
                         <AutoSuggestBox
                             x:Name="SearchBox"
-                            AutomationProperties.Name="搜索语言"
-                            PlaceholderText="搜索语言、别名或扩展名"
                             QueryIcon="Find"
                             TextChanged="OnSearchTextChanged" />
                         <ComboBox
                             x:Name="FilterCombo"
-                            AutomationProperties.Name="语言筛选"
                             DisplayMemberPath="Label"
                             SelectionChanged="OnFilterChanged" />
                         <ToggleSwitch
                             x:Name="ShowAllToggle"
-                            AutomationProperties.Name="显示所有语言"
-                            Header="显示所有语言"
-                            OffContent="有效集合"
-                            OnContent="全部目录"
                             Toggled="OnShowAllToggled" />
                     </StackPanel>
                 </Border>
@@ -136,19 +124,17 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Spacing="2">
-                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Language → Language Tool" />
+                        <TextBlock x:Name="LanguageMappingTitleText" Style="{StaticResource SubtitleTextBlockStyle}" />
                         <TextBlock
                             x:Name="LanguageSummaryText"
                             AutomationProperties.LiveSetting="Polite"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="正在计算有效语言集合…"
                             TextWrapping="Wrap" />
                     </StackPanel>
                     <Button
+                        x:Name="ResetVisibilityButton"
                         Grid.Column="1"
-                        AutomationProperties.Name="重置语言显示偏好"
-                        Click="OnResetVisibilityClicked"
-                        ToolTipService.ToolTip="清除所有显式启用和隐藏状态">
+                        Click="OnResetVisibilityClicked">
                         <FontIcon Glyph="&#xE777;" />
                     </Button>
                 </Grid>
@@ -156,7 +142,6 @@
                 <Grid MinHeight="120">
                     <ListView
                         x:Name="LanguageList"
-                        AutomationProperties.Name="语言目录"
                         IsItemClickEnabled="False"
                         SelectionMode="None">
                         <ListView.ItemContainerStyle>
@@ -236,21 +221,21 @@
                                                     Background="{ThemeResource AccentFillColorTertiaryBrush}"
                                                     CornerRadius="4"
                                                     Visibility="{Binding DetectedVisibility}">
-                                                    <TextBlock FontSize="12" Text="已检测" />
+                                                    <TextBlock FontSize="12" Loaded="OnDetectedBadgeLoaded" />
                                                 </Border>
                                                 <Border
                                                     Padding="6,2"
                                                     Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                                     CornerRadius="4"
                                                     Visibility="{Binding DefaultVisibility}">
-                                                    <TextBlock FontSize="12" Text="默认" />
+                                                    <TextBlock FontSize="12" Loaded="OnDefaultBadgeLoaded" />
                                                 </Border>
                                                 <Border
                                                     Padding="6,2"
                                                     Background="{ThemeResource SystemFillColorCautionBackgroundBrush}"
                                                     CornerRadius="4"
                                                     Visibility="{Binding HiddenVisibility}">
-                                                    <TextBlock FontSize="12" Text="已隐藏" />
+                                                    <TextBlock FontSize="12" Loaded="OnHiddenBadgeLoaded" />
                                                 </Border>
                                             </StackPanel>
                                             <TextBlock
@@ -278,8 +263,8 @@
                                             <Button
                                                 AutomationProperties.Name="{Binding OpenActionAutomationName}"
                                                 Click="OnOpenLanguageClicked"
-                                                Tag="{Binding}"
-                                                ToolTipService.ToolTip="打开语言详情">
+                                                Loaded="OnOpenLanguageButtonLoaded"
+                                                Tag="{Binding}">
                                                 <SymbolIcon Symbol="Forward" />
                                             </Button>
                                         </StackPanel>
@@ -292,38 +277,35 @@
                         x:Name="EmptyLanguageState"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        AutomationProperties.Name="没有符合当前条件的语言"
                         Spacing="4"
                         Visibility="Collapsed">
                         <TextBlock
+                            x:Name="EmptyLanguageTitleText"
                             HorizontalAlignment="Center"
-                            FontWeight="SemiBold"
-                            Text="没有符合当前条件的语言" />
+                            FontWeight="SemiBold" />
                         <TextBlock
+                            x:Name="EmptyLanguageHintText"
                             HorizontalAlignment="Center"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="可更改搜索词、状态筛选或显示范围。"
                             TextWrapping="Wrap" />
                     </StackPanel>
                 </Grid>
 
-                <Expander AutomationProperties.Name="当前语言目录的语言包" IsExpanded="False">
+                <Expander x:Name="LanguagePackExpander" IsExpanded="False">
                     <Expander.Header>
                         <StackPanel Spacing="2">
-                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="语言包" />
+                            <TextBlock x:Name="LanguagePackTitleText" Style="{StaticResource SubtitleTextBlockStyle}" />
                             <TextBlock
                                 x:Name="LanguagePackSummaryText"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="读取已导入语言包…" />
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         </StackPanel>
                     </Expander.Header>
                     <StackPanel Padding="0,12,0,0" Spacing="10">
                         <InfoBar
+                            x:Name="LanguagePackSchemaInfo"
                             IsClosable="False"
                             IsOpen="True"
-                            Message="语言包只能添加声明式语言和工具元数据；不能加载 DLL、脚本、任意命令或安装钩子。导入后默认停用。"
-                            Severity="Informational"
-                            Title="Data-only schema 1" />
+                            Severity="Informational" />
                         <ListView
                             x:Name="LanguagePackList"
                             IsItemClickEnabled="False"
@@ -364,8 +346,8 @@
                                                 <Button
                                                     AutomationProperties.Name="{Binding DeleteActionAutomationName}"
                                                     Click="OnDeleteLanguagePackClicked"
-                                                    Tag="{Binding}"
-                                                    ToolTipService.ToolTip="删除语言包">
+                                                    Loaded="OnDeletePackButtonLoaded"
+                                                    Tag="{Binding}">
                                                     <SymbolIcon Symbol="Delete" />
                                                 </Button>
                                             </StackPanel>
@@ -376,8 +358,7 @@
                         </ListView>
                         <TextBlock
                             x:Name="EmptyPackText"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="尚未导入语言包。" />
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     </StackPanel>
                 </Expander>
             </StackPanel>

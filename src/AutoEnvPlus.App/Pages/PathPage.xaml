@@ -68,16 +68,15 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <StackPanel Spacing="4">
-                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="PATH 与命令" />
+                <TextBlock x:Name="PageTitleText" Style="{StaticResource TitleTextBlockStyle}" />
                 <TextBlock
+                    x:Name="PageSubtitleText"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="用户 PATH 只配置一次 AutoEnvPlus Shim；后续全局、项目和会话切换不再重写 PATH。"
                     TextWrapping="Wrap" />
                 <TextBlock
                     x:Name="ShimStateText"
                     AutomationProperties.LiveSetting="Polite"
                     FontWeight="SemiBold"
-                    Text="正在读取 Shim 路由状态…"
                     TextWrapping="Wrap" />
             </StackPanel>
             <StackPanel
@@ -90,9 +89,7 @@
                     x:Name="RefreshPathButton"
                     Width="36"
                     Height="36"
-                    AutomationProperties.Name="刷新 PATH 与命令"
-                    Click="OnRefreshPathClicked"
-                    ToolTipService.ToolTip="刷新 PATH 与命令">
+                    Click="OnRefreshPathClicked">
                     <FontIcon FontSize="14" Glyph="&#xE72C;" />
                 </Button>
                 <Button
@@ -100,7 +97,7 @@
                     Click="OnActivateShimClicked">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon FontSize="14" Glyph="&#xE73E;" />
-                        <TextBlock Text="配置 AutoEnvPlus Shim" />
+                        <TextBlock x:Name="ActivateShimButtonText" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -137,7 +134,7 @@
         </ItemsRepeater>
 
         <Pivot Grid.Row="3">
-            <PivotItem Header="命令路由">
+            <PivotItem x:Name="CommandRoutePivotItem">
                 <ListView
                     x:Name="CommandRouteList"
                     ItemContainerStyle="{StaticResource StretchPathListViewItemStyle}"
@@ -152,9 +149,9 @@
                                 <ColumnDefinition />
                                 <ColumnDefinition Width="150" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock FontWeight="SemiBold" Text="命令" />
-                            <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="实际入口" />
-                            <TextBlock Grid.Column="2" FontWeight="SemiBold" Text="路由状态" />
+                            <TextBlock x:Name="CommandRouteCommandHeaderText" FontWeight="SemiBold" />
+                            <TextBlock x:Name="CommandRouteEntryHeaderText" Grid.Column="1" FontWeight="SemiBold" />
+                            <TextBlock x:Name="CommandRouteStateHeaderText" Grid.Column="2" FontWeight="SemiBold" />
                         </Grid>
                     </ListView.Header>
                     <ListView.ItemTemplate>
@@ -239,7 +236,7 @@
                 </ListView>
             </PivotItem>
 
-            <PivotItem Header="PATH 目录">
+            <PivotItem x:Name="PathDirectoryPivotItem">
                 <ListView
                     x:Name="PathList"
                     IsItemClickEnabled="False"
@@ -256,10 +253,10 @@
                                 <ColumnDefinition />
                                 <ColumnDefinition Width="120" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock FontWeight="SemiBold" Text="顺序" />
-                            <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="作用域" />
-                            <TextBlock Grid.Column="2" FontWeight="SemiBold" Text="目录" />
-                            <TextBlock Grid.Column="3" FontWeight="SemiBold" Text="状态" />
+                            <TextBlock x:Name="PathDirectoryIndexHeaderText" FontWeight="SemiBold" />
+                            <TextBlock x:Name="PathDirectoryScopeHeaderText" Grid.Column="1" FontWeight="SemiBold" />
+                            <TextBlock x:Name="PathDirectoryValueHeaderText" Grid.Column="2" FontWeight="SemiBold" />
+                            <TextBlock x:Name="PathDirectoryStatusHeaderText" Grid.Column="3" FontWeight="SemiBold" />
                         </Grid>
                     </ListView.Header>
                     <ListView.ItemTemplate>
@@ -359,7 +356,7 @@
                 </ListView>
             </PivotItem>
 
-            <PivotItem Header="回滚快照">
+            <PivotItem x:Name="SnapshotPivotItem">
                 <Grid Padding="0,8,0,0" RowSpacing="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -378,12 +375,12 @@
                         </Grid.RowDefinitions>
                         <StackPanel Spacing="2">
                             <TextBlock
+                                x:Name="RollbackSectionTitleText"
                                 FontSize="16"
-                                FontWeight="SemiBold"
-                                Text="用户 PATH 回滚" />
+                                FontWeight="SemiBold" />
                             <TextBlock
+                                x:Name="RollbackSectionHintText"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="仅恢复 AutoEnvPlus 写入前的用户 PATH；系统 PATH 和 Shim 文件保持不变。"
                                 TextWrapping="Wrap" />
                         </StackPanel>
                         <StackPanel
@@ -395,21 +392,18 @@
                                 x:Name="RefreshSnapshotsButton"
                                 Width="36"
                                 Height="36"
-                                AutomationProperties.Name="刷新 PATH 快照"
-                                Click="OnRefreshSnapshotsClicked"
-                                ToolTipService.ToolTip="刷新 PATH 快照">
+                                Click="OnRefreshSnapshotsClicked">
                                 <FontIcon FontSize="14" Glyph="&#xE72C;" />
                             </Button>
                             <Button
                                 x:Name="RollbackPathButton"
                                 MinWidth="124"
                                 Height="36"
-                                AutomationProperties.Name="回滚用户 PATH"
                                 Click="OnRollbackPathClicked"
                                 IsEnabled="False">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <FontIcon FontSize="14" Glyph="&#xE7A7;" />
-                                    <TextBlock Text="回滚用户 PATH" />
+                                    <TextBlock x:Name="RollbackPathButtonText" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -420,7 +414,6 @@
                         Grid.Row="1"
                         AutomationProperties.LiveSetting="Polite"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="正在读取 PATH 快照…"
                         TextWrapping="Wrap" />
 
                     <Grid Grid.Row="2">
@@ -463,8 +456,7 @@
                             x:Name="SnapshotEmptyText"
                             Padding="10,6"
                             AutomationProperties.LiveSetting="Polite"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="尚未创建 PATH 快照。" />
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     </Grid>
                 </Grid>
             </PivotItem>

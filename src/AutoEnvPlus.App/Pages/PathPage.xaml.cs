@@ -49,14 +49,74 @@ public sealed partial class PathPage : Page
             _managedRoot,
             new WindowsUserEnvironmentVariableStore());
         InitializeComponent();
+        ApplyLocalizedStrings();
+        Loaded += OnPageLoaded;
+    }
+
+    /// <summary>
+    /// Applies every localized string for this page from the resource table.
+    /// Unpackaged WinUI 3 apps cannot use x:Uid: the XAML loader resolves
+    /// ms-resource property bags against the OS system language only, so it
+    /// neither matches the standard dotted-key PRI layout nor honors the
+    /// in-app language preference. Code-behind assignment through
+    /// <see cref="Loc"/> is the only path that follows
+    /// <c>Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride</c>.
+    /// </summary>
+    private void ApplyLocalizedStrings()
+    {
+        PageTitleText.Text = Loc.Get("Path.Header.Title");
+        PageSubtitleText.Text = Loc.Get("Path.Header.Subtitle");
+        ShimStateText.Text = Loc.Get("Path.Shim.StateInitial");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            RefreshPathButton,
+            Loc.Get("Path.Refresh.AccessibleName"));
+        ToolTipService.SetToolTip(
+            RefreshPathButton,
+            Loc.Get("Path.Refresh.AccessibleName"));
+        ActivateShimButtonText.Text = Loc.Get("Path.Shim.ActivateLabel");
+        CommandRoutePivotItem.Header = Loc.Get("Path.CommandRoute.Header");
+        CommandRouteCommandHeaderText.Text = Loc.Get("Path.CommandRoute.CommandColumn");
+        CommandRouteEntryHeaderText.Text = Loc.Get("Path.CommandRoute.EntryColumn");
+        CommandRouteStateHeaderText.Text = Loc.Get("Path.CommandRoute.StateColumn");
+        PathDirectoryPivotItem.Header = Loc.Get("Path.Directory.Header");
+        PathDirectoryIndexHeaderText.Text = Loc.Get("Path.Directory.IndexColumn");
+        PathDirectoryScopeHeaderText.Text = Loc.Get("Path.Directory.ScopeColumn");
+        PathDirectoryValueHeaderText.Text = Loc.Get("Path.Directory.DirectoryColumn");
+        PathDirectoryStatusHeaderText.Text = Loc.Get("Path.Directory.StatusColumn");
+        SnapshotPivotItem.Header = Loc.Get("Path.Snapshots.Header");
+        RollbackSectionTitleText.Text = Loc.Get("Path.Snapshots.SectionTitle");
+        RollbackSectionHintText.Text = Loc.Get("Path.Snapshots.SectionHint");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            RefreshSnapshotsButton,
+            Loc.Get("Path.Snapshots.RefreshAccessibleName"));
+        ToolTipService.SetToolTip(
+            RefreshSnapshotsButton,
+            Loc.Get("Path.Snapshots.RefreshAccessibleName"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            RollbackPathButton,
+            Loc.Get("Path.Snapshots.RollbackLabel"));
+        RollbackPathButtonText.Text = Loc.Get("Path.Snapshots.RollbackLabel");
+        SnapshotSummaryText.Text = Loc.Get("Path.Snapshots.SummaryInitial");
+        SnapshotEmptyText.Text = Loc.Get("Path.Snapshots.Empty");
         SwitchScopeRepeater.ItemsSource = new[]
         {
-            new SwitchScopeRow("会话临时", "优先级 1", "只影响当前终端，不写入持久选择。"),
-            new SwitchScopeRow("项目锁定", "优先级 2", "项目目录内按 autoenvplus.toml 解析。"),
-            new SwitchScopeRow("全局默认", "优先级 3", "没有会话或项目选择时使用。"),
-            new SwitchScopeRow("自动选择", "优先级 4", "在满足要求的已安装版本中自动选择最高稳定版。"),
+            new SwitchScopeRow(
+                Loc.Get("Path.Scopes.Session"),
+                Loc.Get("Path.Scopes.SessionPriority"),
+                Loc.Get("Path.Scopes.SessionDetail")),
+            new SwitchScopeRow(
+                Loc.Get("Path.Scopes.Project"),
+                Loc.Get("Path.Scopes.ProjectPriority"),
+                Loc.Get("Path.Scopes.ProjectDetail")),
+            new SwitchScopeRow(
+                Loc.Get("Path.Scopes.Global"),
+                Loc.Get("Path.Scopes.GlobalPriority"),
+                Loc.Get("Path.Scopes.GlobalDetail")),
+            new SwitchScopeRow(
+                Loc.Get("Path.Scopes.Auto"),
+                Loc.Get("Path.Scopes.AutoPriority"),
+                Loc.Get("Path.Scopes.AutoDetail")),
         };
-        Loaded += OnPageLoaded;
     }
 
     private async void OnPageLoaded(object sender, RoutedEventArgs args)
@@ -90,7 +150,7 @@ public sealed partial class PathPage : Page
         CommandRouteList.ItemsSource = report.CommandResolutions
             .Select(resolution => new CommandRouteRow(
                 resolution.Command,
-                resolution.Winner?.ExecutablePath ?? "未找到",
+                resolution.Winner?.ExecutablePath ?? Loc.Get("Path.CommandRoute.NotFound"),
                 RouteState(resolution, shimDirectory)))
             .ToArray();
         ShimRouteState shim = InspectShimState(report, shimDirectory);
@@ -100,10 +160,17 @@ public sealed partial class PathPage : Page
             ? InfoBarSeverity.Success
             : InfoBarSeverity.Warning;
         SummaryInfo.Title = isHealthy
-            ? "PATH 与命令路由正常"
-            : "PATH 或命令路由需要检查";
-        SummaryInfo.Message = $"失效 {report.MissingCount} · 重复 {report.DuplicateCount} · "
-            + $"命令冲突 {report.Conflicts.Count} · Shim 接管 {shim.ManagedCommandCount}/{KnownCommands.Length}";
+            ? Loc.Get("Path.Summary.HealthyTitle")
+            : Loc.Get("Path.Summary.UnhealthyTitle");
+        SummaryInfo.Message = string.Join(
+            Loc.Get("Path.Text.Separator"),
+            Loc.Format("Path.Summary.Missing", report.MissingCount),
+            Loc.Format("Path.Summary.Duplicates", report.DuplicateCount),
+            Loc.Format("Path.Summary.Conflicts", report.Conflicts.Count),
+            Loc.Format(
+                "Path.Summary.ShimManaged",
+                shim.ManagedCommandCount,
+                KnownCommands.Length));
     }
 
     private async void OnRefreshPathClicked(object sender, RoutedEventArgs args)
@@ -125,8 +192,8 @@ public sealed partial class PathPage : Page
         if (!File.Exists(_cliPath))
         {
             SummaryInfo.Severity = InfoBarSeverity.Error;
-            SummaryInfo.Title = "CLI 组件缺失";
-            SummaryInfo.Message = $"找不到 {_cliPath}，请重新构建或安装 AutoEnvPlus。";
+            SummaryInfo.Title = Loc.Get("Path.Messages.CliMissingTitle");
+            SummaryInfo.Message = Loc.Format("Path.Messages.CliMissing", _cliPath);
             return;
         }
 
@@ -135,15 +202,20 @@ public sealed partial class PathPage : Page
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = "启用命令版本切换",
+            Title = Loc.Get("Path.Shim.ConfirmTitle"),
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"将生成命令\npython、python3、pip、pip3、node、npm、npx、java、javac、jar、dotnet、cl、clang、clang++、gcc、g++、cmake、ninja\n\nShim 目录\n{shimDirectory}\n\nPATH 变化\n{(plan.Changed ? "添加到用户 PATH 第一位，并保存回滚快照" : "Shim 已位于用户 PATH 第一位")}\n\n系统 PATH 不会修改。",
+                Text = Loc.Format(
+                    "Path.Shim.ConfirmContent",
+                    shimDirectory,
+                    plan.Changed
+                        ? Loc.Get("Path.Shim.PathChangeAdd")
+                        : Loc.Get("Path.Shim.PathChangeNone")),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "生成 Shim 并应用",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Path.Shim.ConfirmButton"),
+            CloseButtonText = Loc.Get("Path.Dialog.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -163,24 +235,28 @@ public sealed partial class PathPage : Page
             UserPathMutationResult result = await _pathManager.ApplyAsync(plan);
             if (!result.Success)
             {
-                throw new InvalidOperationException(result.Error ?? "用户 PATH 修改失败。");
+                throw new InvalidOperationException(
+                    result.Error ?? Loc.Get("Path.Messages.PathApplyFailed"));
             }
 
             await LoadReportAsync();
             SummaryInfo.Severity = InfoBarSeverity.Success;
-            SummaryInfo.Title = "命令版本切换已启用";
+            SummaryInfo.Title = Loc.Get("Path.Messages.ShimEnabledTitle");
             string implementation = shims.Implementation == CommandShimImplementation.NativeWin32
-                ? "Win32 原生 Shim"
-                : "CMD 回退 Shim";
+                ? Loc.Get("Path.Shim.NativeImplementation")
+                : Loc.Get("Path.Shim.CmdImplementation");
             SummaryInfo.Message = result.Changed
-                ? $"已安装 {implementation} 并保存 PATH 快照：{result.SnapshotPath}。请打开新终端。"
-                : $"{implementation} 已安装，Shim 已经处于用户 PATH 第一位。";
+                ? Loc.Format(
+                    "Path.Messages.ShimInstalledChanged",
+                    implementation,
+                    result.SnapshotPath)
+                : Loc.Format("Path.Messages.ShimInstalledUnchanged", implementation);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PathChange,
                 ActivityStatus.Succeeded,
                 result.Changed
-                    ? $"已安装 {implementation}，并把 AutoEnvPlus Shim 置于用户 PATH 第一位。"
-                    : $"已确认 {implementation} 与用户 PATH 无需变更。",
+                    ? Loc.Format("Path.Activity.ShimInstalledChanged", implementation)
+                    : Loc.Format("Path.Activity.ShimInstalledUnchanged", implementation),
                 [shims.ShimDirectory],
                 result.SnapshotPath,
                 result.SnapshotPath);
@@ -191,12 +267,14 @@ public sealed partial class PathPage : Page
             or InvalidOperationException)
         {
             SummaryInfo.Severity = InfoBarSeverity.Error;
-            SummaryInfo.Title = "无法启用命令切换";
+            SummaryInfo.Title = Loc.Get("Path.Messages.ShimEnableFailedTitle");
             SummaryInfo.Message = CoreErrorText.Localize(exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PathChange,
                 ActivityStatus.Failed,
-                $"启用 AutoEnvPlus Shim 与用户 PATH 失败。错误类型：{exception.GetType().Name}。",
+                Loc.Format(
+                    "Path.Activity.ShimEnableFailed",
+                    exception.GetType().Name),
                 [shimDirectory]);
         }
         finally
@@ -231,15 +309,18 @@ public sealed partial class PathPage : Page
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = "回滚用户 PATH",
+            Title = Loc.Get("Path.Snapshots.RollbackLabel"),
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"快照时间\n{selected.CreatedAt}\n\n当时加入的目录\n{selected.AddedDirectory}\n\n将把用户 PATH 恢复到 AutoEnvPlus 写入前的完整值。系统 PATH 和 Shim 文件不会修改。\n\n执行前会再次检查当前 PATH；如果快照之后已有其他修改，AutoEnvPlus 将拒绝覆盖。",
+                Text = Loc.Format(
+                    "Path.Snapshots.ConfirmContent",
+                    selected.CreatedAt,
+                    selected.AddedDirectory),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "回滚用户 PATH",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Path.Snapshots.RollbackLabel"),
+            CloseButtonText = Loc.Get("Path.Dialog.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -255,12 +336,12 @@ public sealed partial class PathPage : Page
             if (!result.Success)
             {
                 SummaryInfo.Severity = InfoBarSeverity.Error;
-                SummaryInfo.Title = "无法回滚用户 PATH";
-                SummaryInfo.Message = result.Error ?? "PATH 回滚失败。";
+                SummaryInfo.Title = Loc.Get("Path.Messages.RollbackFailedTitle");
+                SummaryInfo.Message = result.Error ?? Loc.Get("Path.Messages.RollbackFailed");
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.PathRollback,
                     ActivityStatus.Failed,
-                    "用户 PATH 回滚在执行时复检阶段被拒绝。",
+                    Loc.Get("Path.Activity.RollbackRejected"),
                     [selected.AddedDirectory],
                     selected.Snapshot.SnapshotPath,
                     selected.Snapshot.SnapshotPath);
@@ -270,12 +351,12 @@ public sealed partial class PathPage : Page
 
             await LoadReportAsync();
             SummaryInfo.Severity = InfoBarSeverity.Success;
-            SummaryInfo.Title = "用户 PATH 已回滚";
-            SummaryInfo.Message = "已恢复快照写入前的用户 PATH；系统 PATH 和 Shim 文件未修改。请打开新终端。";
+            SummaryInfo.Title = Loc.Get("Path.Messages.RollbackSuccessTitle");
+            SummaryInfo.Message = Loc.Get("Path.Messages.RollbackSuccess");
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PathRollback,
                 ActivityStatus.Succeeded,
-                "已恢复 AutoEnvPlus 修改前的用户 PATH；系统 PATH 与 Shim 文件保持不变。",
+                Loc.Get("Path.Activity.RollbackSucceeded"),
                 [selected.AddedDirectory],
                 selected.Snapshot.SnapshotPath,
                 selected.Snapshot.SnapshotPath);
@@ -288,12 +369,12 @@ public sealed partial class PathPage : Page
             or NotSupportedException)
         {
             SummaryInfo.Severity = InfoBarSeverity.Error;
-            SummaryInfo.Title = "无法回滚用户 PATH";
+            SummaryInfo.Title = Loc.Get("Path.Messages.RollbackFailedTitle");
             SummaryInfo.Message = CoreErrorText.Localize(exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PathRollback,
                 ActivityStatus.Failed,
-                $"用户 PATH 回滚失败。错误类型：{exception.GetType().Name}。",
+                Loc.Format("Path.Activity.RollbackFailed", exception.GetType().Name),
                 [selected.AddedDirectory],
                 selected.Snapshot.SnapshotPath,
                 selected.Snapshot.SnapshotPath);
@@ -322,12 +403,12 @@ public sealed partial class PathPage : Page
             SnapshotList.ItemsSource = rows;
             SnapshotList.Visibility = rows.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
             SnapshotEmptyText.Visibility = rows.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
-            SnapshotEmptyText.Text = "尚未创建 PATH 快照。";
+            SnapshotEmptyText.Text = Loc.Get("Path.Snapshots.Empty");
 
             int availableCount = rows.Count(row => row.CanRollback);
             SnapshotSummaryText.Text = rows.Length == 0
-                ? "启用命令版本切换并修改用户 PATH 后，会在这里保留可审计的回滚快照。"
-                : $"共 {rows.Length} 个有效快照，其中 {availableCount} 个与当前用户 PATH 匹配。请选择快照后回滚。";
+                ? Loc.Get("Path.Snapshots.SummaryEmpty")
+                : Loc.Format("Path.Snapshots.SummaryCount", rows.Length, availableCount);
             SnapshotList.SelectedItem = rows.FirstOrDefault(row => row.CanRollback)
                 ?? rows.FirstOrDefault();
         }
@@ -340,7 +421,7 @@ public sealed partial class PathPage : Page
             SnapshotList.ItemsSource = null;
             SnapshotList.Visibility = Visibility.Collapsed;
             SnapshotEmptyText.Visibility = Visibility.Visible;
-            SnapshotEmptyText.Text = "无法读取 PATH 快照。";
+            SnapshotEmptyText.Text = Loc.Get("Path.Snapshots.LoadFailed");
             SnapshotSummaryText.Text = exception.Message;
         }
 
@@ -367,27 +448,29 @@ public sealed partial class PathPage : Page
 
     private static string ScopeLabel(PathEntryScope scope) => scope switch
     {
-        PathEntryScope.User => "用户",
-        PathEntryScope.Machine => "系统",
-        PathEntryScope.UserAndMachine => "用户 + 系统",
-        _ => "进程",
+        PathEntryScope.User => Loc.Get("Path.Scope.User"),
+        PathEntryScope.Machine => Loc.Get("Path.Scope.Machine"),
+        PathEntryScope.UserAndMachine => Loc.Get("Path.Scope.UserAndMachine"),
+        _ => Loc.Get("Path.Scope.Process"),
     };
 
     private static string StatusLabel(PathInspectionEntry entry)
     {
         if (!entry.Exists)
         {
-            return "目录不存在";
+            return Loc.Get("Path.Status.Missing");
         }
 
-        return entry.IsDuplicate ? "重复" : "正常";
+        return entry.IsDuplicate
+            ? Loc.Get("Path.Status.Duplicate")
+            : Loc.Get("Path.Status.Ok");
     }
 
     private static string SnapshotStateLabel(UserPathSnapshotState state) => state switch
     {
-        UserPathSnapshotState.RollbackAvailable => "可回滚",
-        UserPathSnapshotState.AlreadyRolledBack => "已回滚",
-        _ => "PATH 已变化",
+        UserPathSnapshotState.RollbackAvailable => Loc.Get("Path.SnapshotState.Available"),
+        UserPathSnapshotState.AlreadyRolledBack => Loc.Get("Path.SnapshotState.RolledBack"),
+        _ => Loc.Get("Path.SnapshotState.Changed"),
     };
 
     private static string RouteState(
@@ -396,7 +479,7 @@ public sealed partial class PathPage : Page
     {
         if (resolution.Winner is null)
         {
-            return "未找到";
+            return Loc.Get("Path.CommandRoute.NotFound");
         }
 
         if (PathsEqual(
@@ -404,13 +487,13 @@ public sealed partial class PathPage : Page
             shimDirectory))
         {
             return resolution.Candidates.Count > 1
-                ? $"AutoEnvPlus Shim · {resolution.Candidates.Count} 个候选"
-                : "AutoEnvPlus Shim";
+                ? Loc.Format("Path.RouteState.ShimCandidates", resolution.Candidates.Count)
+                : Loc.Get("Path.RouteState.Shim");
         }
 
         return resolution.Candidates.Count > 1
-            ? $"直接命令 · {resolution.Candidates.Count} 个候选"
-            : "直接命令";
+            ? Loc.Format("Path.RouteState.DirectCandidates", resolution.Candidates.Count)
+            : Loc.Get("Path.RouteState.Direct");
     }
 
     private ShimRouteState InspectShimState(
@@ -432,8 +515,8 @@ public sealed partial class PathPage : Page
                 !persisted,
                 0,
                 persisted
-                    ? "用户 PATH 仍引用 Shim，但受管目录不存在。"
-                    : "Shim 尚未配置；当前命令继续使用系统 PATH。");
+                    ? Loc.Get("Path.Shim.StateMissingDirectory")
+                    : Loc.Get("Path.Shim.StateNotConfigured"));
         }
 
         string[] missing = KnownCommands.Where(command =>
@@ -450,7 +533,9 @@ public sealed partial class PathPage : Page
             return new ShimRouteState(
                 false,
                 managedCount,
-                $"Shim 不完整，缺少：{string.Join("、", missing)}。");
+                Loc.Format(
+                    "Path.Shim.StateIncomplete",
+                    string.Join(Loc.Get("Path.Text.ListSeparator"), missing)));
         }
 
         if (!persisted)
@@ -458,7 +543,7 @@ public sealed partial class PathPage : Page
             return new ShimRouteState(
                 false,
                 managedCount,
-                "Shim 文件完整，但尚未写入持久用户 PATH。");
+                Loc.Get("Path.Shim.StateNotPersisted"));
         }
 
         if (managedCount == KnownCommands.Length)
@@ -466,13 +551,13 @@ public sealed partial class PathPage : Page
             return new ShimRouteState(
                 true,
                 managedCount,
-                "一次性 Shim 已生效；命令切换不需要再次修改 PATH。");
+                Loc.Get("Path.Shim.StateActive"));
         }
 
         return new ShimRouteState(
             true,
             managedCount,
-            "Shim 已写入持久用户 PATH；当前进程可能仍需在新终端中刷新。");
+            Loc.Get("Path.Shim.StatePersisted"));
     }
 
     private static bool PathsEqual(string? left, string? right)

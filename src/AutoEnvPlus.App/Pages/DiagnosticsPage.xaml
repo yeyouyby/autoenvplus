@@ -96,10 +96,10 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <StackPanel Spacing="4">
-                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="环境诊断" />
+                <TextBlock x:Name="PageTitleText" Style="{StaticResource TitleTextBlockStyle}" />
                 <TextBlock
+                    x:Name="PageSubtitleText"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="选择需要的扫描域；只读取真实状态，项目、缓存和联网检查不会自动运行。"
                     TextWrapping="Wrap" />
             </StackPanel>
             <StackPanel
@@ -112,35 +112,30 @@
                     x:Name="DiagnosticProgress"
                     Width="20"
                     Height="20"
-                    AutomationProperties.Name="诊断扫描进度"
                     IsActive="False" />
                 <Button
                     x:Name="ExportButton"
                     Click="OnExportClicked"
-                    IsEnabled="False"
-                    ToolTipService.ToolTip="导出当前结构化诊断报告">
+                    IsEnabled="False">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <SymbolIcon Symbol="Save" />
-                        <TextBlock Text="导出 JSON" />
+                        <TextBlock x:Name="ExportButtonText" />
                     </StackPanel>
                 </Button>
                 <Button
                     x:Name="CancelButton"
                     Width="36"
                     Height="36"
-                    AutomationProperties.Name="取消诊断"
                     Click="OnCancelClicked"
-                    IsEnabled="False"
-                    ToolTipService.ToolTip="取消当前诊断">
+                    IsEnabled="False">
                     <SymbolIcon Symbol="Cancel" />
                 </Button>
                 <Button
                     x:Name="RefreshButton"
-                    Click="OnRefreshClicked"
-                    ToolTipService.ToolTip="按所选范围执行只读诊断">
+                    Click="OnRefreshClicked">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <SymbolIcon Symbol="Play" />
-                        <TextBlock Text="开始扫描" />
+                        <TextBlock x:Name="ScanButtonText" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -149,7 +144,6 @@
         <Expander
             x:Name="ScopeExpander"
             Grid.Row="1"
-            Header="扫描范围"
             IsExpanded="True">
             <Grid Padding="0,8,0,4" ColumnSpacing="20" RowSpacing="8">
                 <Grid.ColumnDefinitions>
@@ -170,37 +164,31 @@
                 <CheckBox
                     x:Name="PathScopeCheckBox"
                     Click="OnScopeSelectionChanged"
-                    Content="PATH、命令与 Shim"
                     IsChecked="True" />
                 <CheckBox
                     x:Name="ManagedScopeCheckBox"
                     Grid.Column="1"
                     Click="OnScopeSelectionChanged"
-                    Content="托管语言工具与版本选择"
                     IsChecked="True" />
                 <CheckBox
                     x:Name="ProviderScopeCheckBox"
                     Grid.Row="1"
                     Click="OnScopeSelectionChanged"
-                    Content="Provider 与来源配置"
                     IsChecked="True" />
                 <CheckBox
                     x:Name="ProjectScopeCheckBox"
                     Grid.Row="1"
                     Grid.Column="1"
-                    Click="OnProjectScopeChanged"
-                    Content="项目选择与虚拟环境" />
+                    Click="OnProjectScopeChanged" />
                 <CheckBox
                     x:Name="StorageScopeCheckBox"
                     Grid.Row="2"
-                    Click="OnScopeSelectionChanged"
-                    Content="缓存、暂存与磁盘（较慢）" />
+                    Click="OnScopeSelectionChanged" />
                 <CheckBox
                     x:Name="ConnectivityScopeCheckBox"
                     Grid.Row="2"
                     Grid.Column="1"
-                    Click="OnScopeSelectionChanged"
-                    Content="Provider 来源实时连接（较慢）" />
+                    Click="OnScopeSelectionChanged" />
 
                 <Grid
                     x:Name="ProjectPathPicker"
@@ -213,18 +201,14 @@
                     </Grid.ColumnDefinitions>
                     <TextBox
                         x:Name="ProjectPathTextBox"
-                        AutomationProperties.Name="诊断项目目录"
                         IsEnabled="False"
-                        IsReadOnly="True"
-                        PlaceholderText="选择项目目录" />
+                        IsReadOnly="True" />
                     <Button
                         x:Name="BrowseProjectButton"
                         Grid.Column="1"
                         Height="36"
-                        AutomationProperties.Name="选择诊断项目目录"
                         Click="OnBrowseProjectClicked"
-                        IsEnabled="False"
-                        ToolTipService.ToolTip="选择项目目录">
+                        IsEnabled="False">
                         <FontIcon FontSize="14" Glyph="&#xE8B7;" />
                     </Button>
                 </Grid>
@@ -235,7 +219,6 @@
                     Grid.ColumnSpan="2"
                     AutomationProperties.LiveSetting="Polite"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="已选择 3 个扫描域；不会遍历项目、缓存或访问网络。"
                     TextWrapping="Wrap" />
             </Grid>
         </Expander>
@@ -246,12 +229,10 @@
             AutomationProperties.LiveSetting="Polite"
             IsClosable="False"
             IsOpen="True"
-            Message="选择范围后开始扫描；所有检查均为只读。"
-            Severity="Informational"
-            Title="等待扫描" />
+            Severity="Informational" />
 
         <Pivot Grid.Row="3">
-            <PivotItem Header="扫描摘要">
+            <PivotItem x:Name="SummaryPivotItem">
                 <ListView
                     x:Name="ScopeList"
                     ItemContainerStyle="{StaticResource StretchDiagnosticListViewItemStyle}"
@@ -333,7 +314,7 @@
                 </ListView>
             </PivotItem>
 
-            <PivotItem Header="问题">
+            <PivotItem x:Name="IssuePivotItem">
                 <ListView
                     x:Name="IssueList"
                     ItemContainerStyle="{StaticResource StretchDiagnosticListViewItemStyle}"
@@ -426,7 +407,7 @@
                 </ListView>
             </PivotItem>
 
-            <PivotItem Header="命令路由">
+            <PivotItem x:Name="CommandPivotItem">
                 <ListView
                     x:Name="CommandList"
                     ItemContainerStyle="{StaticResource StretchDiagnosticListViewItemStyle}"
@@ -441,9 +422,9 @@
                                 <ColumnDefinition />
                                 <ColumnDefinition Width="120" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock FontWeight="SemiBold" Text="命令" />
-                            <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="实际入口" />
-                            <TextBlock Grid.Column="2" FontWeight="SemiBold" Text="候选" />
+                            <TextBlock x:Name="CommandHeaderText" FontWeight="SemiBold" />
+                            <TextBlock x:Name="CommandEntryHeaderText" Grid.Column="1" FontWeight="SemiBold" />
+                            <TextBlock x:Name="CommandCandidateHeaderText" Grid.Column="2" FontWeight="SemiBold" />
                         </Grid>
                     </ListView.Header>
                     <ListView.ItemTemplate>
@@ -528,7 +509,7 @@
                 </ListView>
             </PivotItem>
 
-            <PivotItem Header="语言工具与选择">
+            <PivotItem x:Name="RuntimePivotItem">
                 <Grid RowSpacing="14">
                     <Grid.RowDefinitions>
                         <RowDefinition />
@@ -620,9 +601,9 @@
                         </ListView.ItemTemplate>
                     </ListView>
                     <TextBlock
+                        x:Name="GlobalSelectionTitleText"
                         Grid.Row="1"
-                        Style="{StaticResource SubtitleTextBlockStyle}"
-                        Text="全局选择解析" />
+                        Style="{StaticResource SubtitleTextBlockStyle}" />
                     <ListView
                         x:Name="GlobalSelectionList"
                         Grid.Row="2"
