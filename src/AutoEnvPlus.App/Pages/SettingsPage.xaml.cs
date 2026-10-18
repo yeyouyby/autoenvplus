@@ -87,6 +87,134 @@ public sealed partial class SettingsPage : Page
             LanguagePicker,
             Loc.Get("Settings.Language.Picker.AccessibleName"));
         LanguageRestartHint.Text = Loc.Get("Settings.Language.RestartHint");
+        AppearanceSectionTitleText.Text = Loc.Get("Settings.Appearance.SectionTitle");
+        AppearanceSectionSubtitleText.Text = Loc.Get("Settings.Appearance.SectionSubtitle");
+        ThemeFieldLabelText.Text = Loc.Get("Settings.Appearance.Theme.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            ThemePicker,
+            Loc.Get("Settings.Appearance.Theme.AccessibleName"));
+        BackdropFieldLabelText.Text = Loc.Get("Settings.Appearance.Backdrop.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            BackdropPicker,
+            Loc.Get("Settings.Appearance.Backdrop.AccessibleName"));
+        DensityFieldLabelText.Text = Loc.Get("Settings.Appearance.Density.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            DensityPicker,
+            Loc.Get("Settings.Appearance.Density.AccessibleName"));
+        StartupSnapshotExpander.Header = Loc.Get("Settings.Startup.Header");
+        StartupDestinationLabelText.Text = Loc.Get("Settings.Startup.Destination.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            StartupDestinationPicker,
+            Loc.Get("Settings.Startup.Destination.AccessibleName"));
+        StartupScanPolicyInfoBar.Title = Loc.Get("Settings.Startup.ScanPolicy.Title");
+        StartupScanPolicyInfoBar.Message = Loc.Get("Settings.Startup.ScanPolicy.Message");
+        LanguageCatalogExpander.Header = Loc.Get("Settings.LanguageCatalog.Header");
+        LanguageVisibilityLabelText.Text = Loc.Get("Settings.LanguageCatalog.Visibility.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            LanguageVisibilityPicker,
+            Loc.Get("Settings.LanguageCatalog.Visibility.AccessibleName"));
+        ExperimentalToolsToggle.Header =
+            Loc.Get("Settings.LanguageCatalog.ExperimentalTools.Header");
+        ExperimentalToolsToggle.OffContent =
+            Loc.Get("Settings.LanguageCatalog.ExperimentalTools.OffContent");
+        ExperimentalToolsToggle.OnContent =
+            Loc.Get("Settings.LanguageCatalog.ExperimentalTools.OnContent");
+        ExperimentalToolsHintText.Text =
+            Loc.Get("Settings.LanguageCatalog.ExperimentalTools.Hint");
+        DownloadDefaultsExpander.Header = Loc.Get("Settings.DownloadDefaults.Header");
+        DefaultConnectionsLabelText.Text =
+            Loc.Get("Settings.DownloadDefaults.Connections.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            DefaultConnectionsPicker,
+            Loc.Get("Settings.DownloadDefaults.Connections.AccessibleName"));
+        MaxDownloadGbLabelText.Text = Loc.Get("Settings.DownloadDefaults.MaxSize.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            MaxDownloadGbNumber,
+            Loc.Get("Settings.DownloadDefaults.MaxSize.AccessibleName"));
+        NetworkProxyExpander.Header = Loc.Get("Settings.Network.Header");
+        NetworkProxyIntroText.Text = Loc.Get("Settings.Network.Intro");
+        HttpProxyLabelText.Text = Loc.Get("Settings.Network.HttpProxy.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            HttpProxyTextBox,
+            Loc.Get("Settings.Network.HttpProxy.AccessibleName"));
+        HttpProxyHintText.Text = Loc.Get("Settings.Network.ProxyHint");
+        HttpsProxyLabelText.Text = Loc.Get("Settings.Network.HttpsProxy.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            HttpsProxyTextBox,
+            Loc.Get("Settings.Network.HttpsProxy.AccessibleName"));
+        HttpsProxyHintText.Text = Loc.Get("Settings.Network.ProxyHint");
+        NoProxyLabelText.Text = Loc.Get("Settings.Network.NoProxy.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            NoProxyTextBox,
+            Loc.Get("Settings.Network.NoProxy.AccessibleName"));
+        SaveProxyButtonText.Text = Loc.Get("Settings.Network.SaveProxy.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            SaveProxyButton,
+            Loc.Get("Settings.Network.SaveProxy.AccessibleName"));
+        LoggingPolicyExpander.Header = Loc.Get("Settings.Logging.Header");
+        SecurityContractInfoBar.Title = Loc.Get("Settings.Logging.SecurityContract.Title");
+        SecurityContractInfoBar.Message = Loc.Get("Settings.Logging.SecurityContract.Message");
+        LogRetentionLabelText.Text = Loc.Get("Settings.Logging.Retention.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            LogRetentionNumber,
+            Loc.Get("Settings.Logging.Retention.AccessibleName"));
+        LogRetentionHintText.Text = Loc.Get("Settings.Logging.Retention.Hint");
+        ManagedRootSectionTitleText.Text = Loc.Get("Settings.ManagedRoot.SectionTitle");
+        ManagedRootSectionSubtitleText.Text =
+            Loc.Get("Settings.ManagedRoot.SectionSubtitle");
+        ToolTipService.SetToolTip(
+            ChooseManagedRootButton,
+            Loc.Get("Settings.ManagedRoot.Choose.ToolTip"));
+        ChooseManagedRootButtonText.Text = Loc.Get("Settings.ManagedRoot.Choose.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            ResetManagedRootButton,
+            Loc.Get("Settings.ManagedRoot.Reset.AccessibleName"));
+        ToolTipService.SetToolTip(
+            ResetManagedRootButton,
+            Loc.Get("Settings.ManagedRoot.Reset.ToolTip"));
+        ResetManagedRootButtonText.Text = Loc.Get("Settings.ManagedRoot.Reset.Label");
+        PowerShellSectionTitleText.Text = Loc.Get("Settings.PowerShell.SectionTitle");
+        PowerShellSectionSubtitleText.Text = Loc.Get("Settings.PowerShell.SectionSubtitle");
+        ToolTipService.SetToolTip(
+            PreviewPowerShellButton,
+            Loc.Get("Settings.PowerShell.Preview.ToolTip"));
+        PreviewPowerShellButtonText.Text = Loc.Get("Settings.PowerShell.Preview.Label");
+        ToolTipService.SetToolTip(
+            InstallPowerShellButton,
+            Loc.Get("Settings.PowerShell.Install.ToolTip"));
+        InstallPowerShellButtonText.Text = Loc.Get("Settings.PowerShell.Install.Label");
+        ToolTipService.SetToolTip(
+            RollbackPowerShellButton,
+            Loc.Get("Settings.PowerShell.Rollback.ToolTip"));
+        RollbackPowerShellButtonText.Text = Loc.Get("Settings.PowerShell.Rollback.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            PowerShellProgress,
+            Loc.Get("Settings.PowerShell.Progress.AccessibleName"));
+        PowerShellSummaryPivotItem.Header = Loc.Get("Settings.PowerShell.Summary.Header");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            PowerShellSummaryText,
+            Loc.Get("Settings.PowerShell.Summary.AccessibleName"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            PowerShellProfilePreviewText,
+            Loc.Get("Settings.PowerShell.ProfilePreview.AccessibleName"));
+        PowerShellModulePivotItem.Header = Loc.Get("Settings.PowerShell.Module.Header");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            PowerShellModulePreviewText,
+            Loc.Get("Settings.PowerShell.ModulePreview.AccessibleName"));
+        AboutSectionTitleText.Text = Loc.Get("Settings.About.SectionTitle");
+        AboutTaglineText.Text = Loc.Get("Settings.About.Tagline");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            GitHubRepoLink,
+            Loc.Get("Settings.About.GitHubRepo.AccessibleName"));
+        GitHubRepoLink.Content = Loc.Get("Settings.About.GitHubRepo.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            ReleaseNotesLink,
+            Loc.Get("Settings.About.ReleaseNotes.AccessibleName"));
+        ReleaseNotesLink.Content = Loc.Get("Settings.About.ReleaseNotes.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            IssueFeedbackLink,
+            Loc.Get("Settings.About.IssueFeedback.AccessibleName"));
+        IssueFeedbackLink.Content = Loc.Get("Settings.About.IssueFeedback.Label");
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
@@ -108,7 +236,9 @@ public sealed partial class SettingsPage : Page
             ProductIdentityPresentation identity =
                 ProductIdentityPresentationPolicy.FromAssembly(typeof(SettingsPage).Assembly);
             AboutVersionText.Text = $"AutoEnvPlus {identity.DisplayVersion} · "
-                + (identity.ReleaseStage == "preview" ? "预览阶段" : "稳定阶段");
+                + (identity.ReleaseStage == "preview"
+                    ? Loc.Get("Settings.About.Stage.Preview")
+                    : Loc.Get("Settings.About.Stage.Stable"));
         }
         catch (InvalidOperationException)
         {
@@ -116,8 +246,8 @@ public sealed partial class SettingsPage : Page
         }
 
         AboutManagedRootText.Text = _managedRoot is null
-            ? "受管根目录尚未配置。"
-            : $"受管根目录：{_managedRoot}";
+            ? Loc.Get("Settings.About.ManagedRootUnset")
+            : Loc.Format("Settings.About.ManagedRootSet", _managedRoot);
     }
 
     private void OnBackdropStatusChanged(object? sender, EventArgs args) =>
@@ -134,37 +264,45 @@ public sealed partial class SettingsPage : Page
     {
         StartupDestinationPicker.ItemsSource = new SettingChoice<StartupDestination>[]
         {
-            new("概览", StartupDestination.Overview),
-            new("语言", StartupDestination.Languages),
-            new("项目环境", StartupDestination.Projects),
-            new("环境诊断", StartupDestination.Diagnostics),
+            new(Loc.Get("Settings.Startup.Option.Overview"), StartupDestination.Overview),
+            new(Loc.Get("Settings.Startup.Option.Languages"), StartupDestination.Languages),
+            new(Loc.Get("Settings.Startup.Option.Projects"), StartupDestination.Projects),
+            new(Loc.Get("Settings.Startup.Option.Diagnostics"), StartupDestination.Diagnostics),
         };
         LanguageVisibilityPicker.ItemsSource = new SettingChoice<LanguageVisibilityPolicy>[]
         {
-            new("Top 10 与本机已发现（推荐）", LanguageVisibilityPolicy.TopTenAndDetected),
-            new("只显示手动启用", LanguageVisibilityPolicy.EnabledOnly),
-            new("显示全部内置语言", LanguageVisibilityPolicy.AllBuiltIn),
+            new(
+                Loc.Get("Settings.LanguageCatalog.Visibility.Option.TopTenAndDetected"),
+                LanguageVisibilityPolicy.TopTenAndDetected),
+            new(
+                Loc.Get("Settings.LanguageCatalog.Visibility.Option.EnabledOnly"),
+                LanguageVisibilityPolicy.EnabledOnly),
+            new(
+                Loc.Get("Settings.LanguageCatalog.Visibility.Option.AllBuiltIn"),
+                LanguageVisibilityPolicy.AllBuiltIn),
         };
         DefaultConnectionsPicker.ItemsSource = new[] { 1, 2, 4, 8, 16 }
-            .Select(value => new SettingChoice<int>($"{value} 个连接", value))
+            .Select(value => new SettingChoice<int>(
+                Loc.Format("Settings.DownloadDefaults.Connections.Option", value),
+                value))
             .ToArray();
         ThemePicker.ItemsSource = new SettingChoice<ApplicationThemePreference>[]
         {
-            new("跟随系统", ApplicationThemePreference.System),
-            new("浅色", ApplicationThemePreference.Light),
-            new("深色", ApplicationThemePreference.Dark),
+            new(Loc.Get("Settings.Appearance.Theme.Option.System"), ApplicationThemePreference.System),
+            new(Loc.Get("Settings.Appearance.Theme.Option.Light"), ApplicationThemePreference.Light),
+            new(Loc.Get("Settings.Appearance.Theme.Option.Dark"), ApplicationThemePreference.Dark),
         };
         BackdropPicker.ItemsSource = new SettingChoice<BackdropPreference>[]
         {
-            new("自动选择", BackdropPreference.Automatic),
-            new("优先 Mica", BackdropPreference.Mica),
-            new("优先 Acrylic", BackdropPreference.Acrylic),
-            new("纯色", BackdropPreference.Solid),
+            new(Loc.Get("Settings.Appearance.Backdrop.Option.Automatic"), BackdropPreference.Automatic),
+            new(Loc.Get("Settings.Appearance.Backdrop.Option.Mica"), BackdropPreference.Mica),
+            new(Loc.Get("Settings.Appearance.Backdrop.Option.Acrylic"), BackdropPreference.Acrylic),
+            new(Loc.Get("Settings.Appearance.Backdrop.Option.Solid"), BackdropPreference.Solid),
         };
         DensityPicker.ItemsSource = new SettingChoice<InterfaceDensity>[]
         {
-            new("舒适", InterfaceDensity.Comfortable),
-            new("紧凑", InterfaceDensity.Compact),
+            new(Loc.Get("Settings.Appearance.Density.Option.Comfortable"), InterfaceDensity.Comfortable),
+            new(Loc.Get("Settings.Appearance.Density.Option.Compact"), InterfaceDensity.Compact),
         };
         LanguagePicker.ItemsSource = new SettingChoice<LanguagePreference>[]
         {
@@ -218,15 +356,15 @@ public sealed partial class SettingsPage : Page
         SaveProxyButton.IsEnabled = IsProxyTextValid(HttpProxyTextBox.Text)
             && IsProxyTextValid(HttpsProxyTextBox.Text);
         HttpProxyHintText.Text = IsProxyTextEmpty(HttpProxyTextBox.Text)
-            ? "留空表示不使用代理；必须是带主机的绝对地址（如 http://proxy.example:8080）。"
+            ? Loc.Get("Settings.Network.ProxyHint")
             : IsProxyTextValid(HttpProxyTextBox.Text)
-                ? "格式有效。"
-                : "格式无效：必须是带主机的绝对地址（如 http://proxy.example:8080）。";
+                ? Loc.Get("Settings.Network.ProxyValid")
+                : Loc.Get("Settings.Network.ProxyInvalid");
         HttpsProxyHintText.Text = IsProxyTextEmpty(HttpsProxyTextBox.Text)
-            ? "留空表示不使用代理；必须是带主机的绝对地址（如 http://proxy.example:8080）。"
+            ? Loc.Get("Settings.Network.ProxyHint")
             : IsProxyTextValid(HttpsProxyTextBox.Text)
-                ? "格式有效。"
-                : "格式无效：必须是带主机的绝对地址（如 http://proxy.example:8080）。";
+                ? Loc.Get("Settings.Network.ProxyValid")
+                : Loc.Get("Settings.Network.ProxyInvalid");
     }
 
     private static bool IsProxyTextEmpty(string text) => string.IsNullOrWhiteSpace(text);
@@ -310,7 +448,7 @@ public sealed partial class SettingsPage : Page
         {
             SetSettingsInfo(
                 InfoBarSeverity.Error,
-                "无法读取应用设置",
+                Loc.Get("Settings.LoadFailed.Title"),
                 exception.Message);
         }
         finally
@@ -330,7 +468,10 @@ public sealed partial class SettingsPage : Page
         try
         {
             long maximumBytes = checked(
-                (long)Math.Round(RequiredNumber(MaxDownloadGbNumber, "单文件默认上限"))
+                (long)Math.Round(
+                    RequiredNumber(
+                        MaxDownloadGbNumber,
+                        Loc.Get("Settings.DownloadDefaults.MaxSize.ValidationName")))
                 * 1024 * 1024 * 1024);
             StartupDestination startupDestination = SelectedChoice<StartupDestination>(
                 StartupDestinationPicker);
@@ -344,7 +485,7 @@ public sealed partial class SettingsPage : Page
                 SelectedChoice<LanguagePreference>(LanguagePicker);
             int logRetentionDays = checked((int)Math.Round(RequiredNumber(
                 LogRetentionNumber,
-                "日志保留天数")));
+                Loc.Get("Settings.Logging.Retention.ValidationName"))));
             bool showExperimentalTools = ExperimentalToolsToggle.IsOn;
             AutoEnvPlusApplicationSettings settings = await _settingsStore.UpdateAsync(current =>
                 current with
@@ -370,12 +511,12 @@ public sealed partial class SettingsPage : Page
 
             SetSettingsInfo(
                 InfoBarSeverity.Success,
-                "应用设置已保存",
-                "主题、背景材质和界面密度已应用；启动页、语言、下载默认值和日志保留策略将在对应功能中生效。界面语言更改将在下次启动时生效。首页始终只读快照。");
+                Loc.Get("Settings.SaveSucceeded.Title"),
+                Loc.Get("Settings.SaveSucceeded.Message"));
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.SettingsChange,
                 ActivityStatus.Succeeded,
-                "已更新启动页、语言可见性、下载、外观和日志保留设置。",
+                Loc.Get("Settings.ActivityLog.SettingsSaved"),
                 [_settingsStore.SettingsPath]);
         }
         catch (Exception exception) when (exception is IOException
@@ -384,7 +525,10 @@ public sealed partial class SettingsPage : Page
             or InvalidOperationException
             or OverflowException)
         {
-            SetSettingsInfo(InfoBarSeverity.Error, "无法保存应用设置", exception.Message);
+            SetSettingsInfo(
+                InfoBarSeverity.Error,
+                Loc.Get("Settings.SaveFailed.Title"),
+                exception.Message);
         }
         finally
         {
@@ -407,8 +551,10 @@ public sealed partial class SettingsPage : Page
             {
                 SetSettingsInfo(
                     InfoBarSeverity.Warning,
-                    "代理设置不可用",
-                    string.Join("；", result.Errors.Select(error => error.Message)));
+                    Loc.Get("Settings.ProxyUnavailable.Title"),
+                    string.Join(
+                        Loc.Get("Settings.Common.ErrorSeparator"),
+                        result.Errors.Select(error => error.Message)));
                 return;
             }
 
@@ -421,7 +567,10 @@ public sealed partial class SettingsPage : Page
             or UnauthorizedAccessException
             or InvalidDataException)
         {
-            SetSettingsInfo(InfoBarSeverity.Warning, "代理设置不可用", exception.Message);
+            SetSettingsInfo(
+                InfoBarSeverity.Warning,
+                Loc.Get("Settings.ProxyUnavailable.Title"),
+                exception.Message);
         }
     }
 
@@ -466,15 +615,18 @@ public sealed partial class SettingsPage : Page
 
             SetSettingsInfo(
                 InfoBarSeverity.Success,
-                "全局代理已保存",
-                "语言工具镜像仍由对应 Provider 单独管理；这里没有修改任何镜像地址。");
+                Loc.Get("Settings.ProxySaveSucceeded.Title"),
+                Loc.Get("Settings.ProxySaveSucceeded.Message"));
         }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
             or InvalidDataException
             or InvalidOperationException)
         {
-            SetSettingsInfo(InfoBarSeverity.Error, "无法保存代理", exception.Message);
+            SetSettingsInfo(
+                InfoBarSeverity.Error,
+                Loc.Get("Settings.ProxySaveFailed.Title"),
+                exception.Message);
         }
         finally
         {
@@ -494,20 +646,20 @@ public sealed partial class SettingsPage : Page
             : Visibility.Visible;
         if (_managedRoot is null)
         {
-            ManagedRootText.Text = "无法解析受管数据根";
+            ManagedRootText.Text = Loc.Get("Settings.ManagedRoot.Unresolved");
             ManagedRootDescriptionText.Text = _managedRootError
-                ?? "请修正 AUTOENVPLUS_HOME 后重新启动 AutoEnvPlus。";
+                ?? Loc.Get("Settings.ManagedRoot.FixEnvHint");
             ChooseManagedRootButton.IsEnabled = true;
             SetManagedRootInfo(
                 InfoBarSeverity.Error,
-                "受管数据根配置无效",
-                _managedRootError ?? "请修正 AUTOENVPLUS_HOME 后重新启动 AutoEnvPlus。");
+                Loc.Get("Settings.ManagedRoot.Invalid.Title"),
+                _managedRootError ?? Loc.Get("Settings.ManagedRoot.FixEnvHint"));
             return;
         }
 
         ManagedRootText.Text = _managedRoot;
         ManagedRootDescriptionText.Text =
-            "当前进程启动时使用此目录。修改 AUTOENVPLUS_HOME 后，重启 AutoEnvPlus 才会生效。";
+            Loc.Get("Settings.ManagedRoot.CurrentProcessHint");
         ChooseManagedRootButton.IsEnabled = true;
         ManagedRootInfo.IsOpen = false;
     }
@@ -525,7 +677,7 @@ public sealed partial class SettingsPage : Page
             {
                 SuggestedStartLocation = PickerLocationId.ComputerFolder,
                 ViewMode = PickerViewMode.List,
-                CommitButtonText = "选择数据根",
+                CommitButtonText = Loc.Get("Settings.ManagedRoot.Choose.Label"),
             };
             InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(window));
             StorageFolder? folder = await picker.PickSingleFolderAsync();
@@ -542,23 +694,23 @@ public sealed partial class SettingsPage : Page
             {
                 SetManagedRootInfo(
                     InfoBarSeverity.Error,
-                    "无法使用此目录",
-                    normalizationError ?? "目录路径无效。");
+                    Loc.Get("Settings.ManagedRoot.ChooseFailed.Title"),
+                    normalizationError ?? Loc.Get("Settings.ManagedRoot.InvalidPath"));
                 return;
             }
 
             ContentDialog confirmation = new()
             {
                 XamlRoot = XamlRoot,
-                Title = "更改受管数据根",
+                Title = Loc.Get("Settings.ManagedRoot.ChangeDialog.Title"),
                 Content = new TextBlock
                 {
                     IsTextSelectionEnabled = true,
                     Text = BuildManagedRootChangeText(selectedRoot),
                     TextWrapping = TextWrapping.Wrap,
                 },
-                PrimaryButtonText = "保存并提示重启",
-                CloseButtonText = "取消",
+                PrimaryButtonText = Loc.Get("Settings.ManagedRoot.ChangeDialog.PrimaryButton"),
+                CloseButtonText = Loc.Get("Settings.Common.Cancel"),
                 DefaultButton = ContentDialogButton.Close,
             };
             if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -573,14 +725,20 @@ public sealed partial class SettingsPage : Page
             bool broadcast = BroadcastEnvironmentChange();
             SetManagedRootInfo(
                 InfoBarSeverity.Success,
-                "受管数据根已保存",
+                Loc.Get("Settings.ManagedRoot.SaveSucceeded.Title"),
                 broadcast
-                    ? $"已写入用户级 {ManagedRootResolver.EnvironmentVariableName}。不会迁移或删除旧目录；请重启 AutoEnvPlus 后使用新目录。"
-                    : $"已写入用户级 {ManagedRootResolver.EnvironmentVariableName}。环境变更广播未确认；请重启 AutoEnvPlus 后使用新目录。");
+                    ? Loc.Format(
+                        "Settings.ManagedRoot.SaveSucceeded.Message",
+                        ManagedRootResolver.EnvironmentVariableName)
+                    : Loc.Format(
+                        "Settings.ManagedRoot.SaveSucceeded.NoBroadcastMessage",
+                        ManagedRootResolver.EnvironmentVariableName));
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.SettingsChange,
                 ActivityStatus.Succeeded,
-                $"已保存新的用户级 {ManagedRootResolver.EnvironmentVariableName}；重启后生效，旧目录未迁移或删除。",
+                Loc.Format(
+                    "Settings.ManagedRoot.ActivityLog.Saved",
+                    ManagedRootResolver.EnvironmentVariableName),
                 _managedRoot is null ? [selectedRoot] : [_managedRoot, selectedRoot]);
         }
         catch (Exception exception) when (exception is IOException
@@ -590,14 +748,21 @@ public sealed partial class SettingsPage : Page
             or System.Runtime.InteropServices.COMException
             or System.Security.SecurityException)
         {
-            SetManagedRootInfo(InfoBarSeverity.Error, "保存受管数据根失败", exception.Message);
+            SetManagedRootInfo(
+                InfoBarSeverity.Error,
+                Loc.Get("Settings.ManagedRoot.SaveFailed.Title"),
+                exception.Message);
         }
     }
 
     private string BuildManagedRootChangeText(string selectedRoot)
     {
-        string currentRoot = _managedRoot ?? "当前配置无效";
-        return $"当前目录\n{currentRoot}\n\n新目录\n{selectedRoot}\n\nAutoEnvPlus 只会写入用户级 {ManagedRootResolver.EnvironmentVariableName}。不会自动迁移语言工具、缓存、快照或删除旧目录；请重启应用后使新目录生效。";
+        string currentRoot = _managedRoot ?? Loc.Get("Settings.ManagedRoot.CurrentInvalid");
+        return Loc.Format(
+            "Settings.ManagedRoot.ChangeDialog.Message",
+            currentRoot,
+            selectedRoot,
+            ManagedRootResolver.EnvironmentVariableName);
     }
 
     private void SetManagedRootInfo(InfoBarSeverity severity, string title, string message)
@@ -631,8 +796,10 @@ public sealed partial class SettingsPage : Page
             {
                 SetManagedRootInfo(
                     InfoBarSeverity.Informational,
-                    "没有需要恢复的覆盖",
-                    $"当前没有设置用户级 {ManagedRootResolver.EnvironmentVariableName}；应用已在使用默认目录。");
+                    Loc.Get("Settings.ManagedRoot.ResetNothing.Title"),
+                    Loc.Format(
+                        "Settings.ManagedRoot.ResetNothing.Message",
+                        ManagedRootResolver.EnvironmentVariableName));
                 return;
             }
 
@@ -643,17 +810,19 @@ public sealed partial class SettingsPage : Page
             ContentDialog confirmation = new()
             {
                 XamlRoot = XamlRoot,
-                Title = "恢复默认受管数据根",
+                Title = Loc.Get("Settings.ManagedRoot.ResetDialog.Title"),
                 Content = new TextBlock
                 {
                     IsTextSelectionEnabled = true,
-                    Text = $"将清除用户级 {ManagedRootResolver.EnvironmentVariableName}（当前值\n{currentOverride}）。\n\n"
-                        + $"重启后使用默认目录\n{defaultRoot}\n\n"
-                        + "不会迁移或删除任何目录中的数据；两个目录中的受管状态相互独立。",
+                    Text = Loc.Format(
+                        "Settings.ManagedRoot.ResetDialog.Message",
+                        ManagedRootResolver.EnvironmentVariableName,
+                        currentOverride,
+                        defaultRoot),
                     TextWrapping = TextWrapping.Wrap,
                 },
-                PrimaryButtonText = "清除并提示重启",
-                CloseButtonText = "取消",
+                PrimaryButtonText = Loc.Get("Settings.ManagedRoot.ResetDialog.PrimaryButton"),
+                CloseButtonText = Loc.Get("Settings.Common.Cancel"),
                 DefaultButton = ContentDialogButton.Close,
             };
             if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -668,14 +837,20 @@ public sealed partial class SettingsPage : Page
             bool broadcast = BroadcastEnvironmentChange();
             SetManagedRootInfo(
                 InfoBarSeverity.Success,
-                "已恢复默认受管数据根",
+                Loc.Get("Settings.ManagedRoot.ResetSucceeded.Title"),
                 broadcast
-                    ? $"已清除用户级 {ManagedRootResolver.EnvironmentVariableName}。请重启 AutoEnvPlus 后使用默认目录。"
-                    : $"已清除用户级 {ManagedRootResolver.EnvironmentVariableName}。环境变更广播未确认；请重启 AutoEnvPlus 后使用默认目录。");
+                    ? Loc.Format(
+                        "Settings.ManagedRoot.ResetSucceeded.Message",
+                        ManagedRootResolver.EnvironmentVariableName)
+                    : Loc.Format(
+                        "Settings.ManagedRoot.ResetSucceeded.NoBroadcastMessage",
+                        ManagedRootResolver.EnvironmentVariableName));
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.SettingsChange,
                 ActivityStatus.Succeeded,
-                $"已清除用户级 {ManagedRootResolver.EnvironmentVariableName}；重启后使用默认受管数据根。",
+                Loc.Format(
+                    "Settings.ManagedRoot.ActivityLog.Reset",
+                    ManagedRootResolver.EnvironmentVariableName),
                 [currentOverride, defaultRoot]);
             UpdateManagedRootStatus();
         }
@@ -686,7 +861,10 @@ public sealed partial class SettingsPage : Page
             or System.Runtime.InteropServices.COMException
             or System.Security.SecurityException)
         {
-            SetManagedRootInfo(InfoBarSeverity.Error, "恢复默认受管数据根失败", exception.Message);
+            SetManagedRootInfo(
+                InfoBarSeverity.Error,
+                Loc.Get("Settings.ManagedRoot.ResetFailed.Title"),
+                exception.Message);
         }
     }
 
@@ -697,12 +875,15 @@ public sealed partial class SettingsPage : Page
             ShowPreview(CreatePlan());
             SetInfo(
                 InfoBarSeverity.Informational,
-                "预览已刷新",
-                "尚未写入 Profile、模块或环境变量。");
+                Loc.Get("Settings.PowerShell.PreviewRefreshed.Title"),
+                Loc.Get("Settings.PowerShell.PreviewRefreshed.Message"));
         }
         catch (Exception exception) when (IsExpectedIntegrationException(exception))
         {
-            SetInfo(InfoBarSeverity.Error, "无法生成 PowerShell 预览", exception.Message);
+            SetInfo(
+                InfoBarSeverity.Error,
+                Loc.Get("Settings.PowerShell.PreviewFailed.Title"),
+                exception.Message);
         }
     }
 
@@ -716,22 +897,25 @@ public sealed partial class SettingsPage : Page
         }
         catch (Exception exception) when (IsExpectedIntegrationException(exception))
         {
-            SetInfo(InfoBarSeverity.Error, "无法生成 PowerShell 计划", exception.Message);
+            SetInfo(
+                InfoBarSeverity.Error,
+                Loc.Get("Settings.PowerShell.PlanFailed.Title"),
+                exception.Message);
             return;
         }
 
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = "安装 PowerShell 会话集成",
+            Title = Loc.Get("Settings.PowerShell.InstallDialog.Title"),
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
                 Text = BuildConfirmationText(plan),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "安装",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Settings.PowerShell.Install.Label"),
+            CloseButtonText = Loc.Get("Settings.Common.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -751,21 +935,31 @@ public sealed partial class SettingsPage : Page
             if (!result.Success)
             {
                 throw new InvalidOperationException(
-                    result.Error ?? "PowerShell Profile 修改失败。");
+                    result.Error ?? Loc.Get("Settings.PowerShell.ApplyFailed"));
             }
 
             _lastSnapshotPath = result.SnapshotPath;
             RollbackPowerShellButton.IsEnabled = _lastSnapshotPath is not null;
             SetInfo(
                 InfoBarSeverity.Success,
-                "PowerShell 集成已安装",
+                Loc.Get("Settings.PowerShell.InstallSucceeded.Title"),
                 result.SnapshotPath is null
-                    ? $"模块与 {shims.ShimFiles.Count} 个 {shims.Implementation} 会话 Shim 已是最新状态。"
-                    : $"已生成 {shims.ShimFiles.Count} 个 {shims.Implementation} 会话 Shim；Profile 快照：{result.SnapshotPath}");
+                    ? Loc.Format(
+                        "Settings.PowerShell.InstallSucceeded.UpToDateMessage",
+                        shims.ShimFiles.Count,
+                        shims.Implementation)
+                    : Loc.Format(
+                        "Settings.PowerShell.InstallSucceeded.Message",
+                        shims.ShimFiles.Count,
+                        shims.Implementation,
+                        result.SnapshotPath));
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PowerShellIntegration,
                 ActivityStatus.Succeeded,
-                $"已安装 PowerShell 会话集成与 {shims.ShimFiles.Count} 个 {shims.Implementation} Shim。",
+                Loc.Format(
+                    "Settings.PowerShell.ActivityLog.Installed",
+                    shims.ShimFiles.Count,
+                    shims.Implementation),
                 [plan.ProfilePath, plan.ModulePath, shims.ShimDirectory],
                 result.SnapshotPath,
                 result.SnapshotPath);
@@ -773,11 +967,16 @@ public sealed partial class SettingsPage : Page
         }
         catch (Exception exception) when (IsExpectedIntegrationException(exception))
         {
-            SetInfo(InfoBarSeverity.Error, "PowerShell 集成安装失败", exception.Message);
+            SetInfo(
+                InfoBarSeverity.Error,
+                Loc.Get("Settings.PowerShell.InstallFailed.Title"),
+                exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PowerShellIntegration,
                 ActivityStatus.Failed,
-                $"PowerShell 会话集成安装失败。错误类型：{exception.GetType().Name}。",
+                Loc.Format(
+                    "Settings.PowerShell.ActivityLog.InstallFailed",
+                    exception.GetType().Name),
                 [plan.ProfilePath, plan.ModulePath]);
         }
         finally
@@ -797,15 +996,15 @@ public sealed partial class SettingsPage : Page
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = "回滚 PowerShell Profile",
+            Title = Loc.Get("Settings.PowerShell.RollbackDialog.Title"),
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"将恢复安装前的 Profile。\n\n快照\n{snapshotPath}\n\n如果 Profile 在安装后被修改，AutoEnvPlus 会拒绝覆盖。",
+                Text = Loc.Format("Settings.PowerShell.RollbackDialog.Message", snapshotPath),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "回滚",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Settings.PowerShell.Rollback.Label"),
+            CloseButtonText = Loc.Get("Settings.Common.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -822,19 +1021,19 @@ public sealed partial class SettingsPage : Page
             if (!result.Success)
             {
                 throw new InvalidOperationException(
-                    result.Error ?? "PowerShell Profile 回滚失败。");
+                    result.Error ?? Loc.Get("Settings.PowerShell.RollbackApplyFailed"));
             }
 
             _lastSnapshotPath = null;
             RollbackPowerShellButton.IsEnabled = false;
             SetInfo(
                 InfoBarSeverity.Success,
-                "PowerShell Profile 已回滚",
-                "模块与 Shim 保留在 AutoEnvPlus 受管目录中，不会再由 Profile 自动加载。");
+                Loc.Get("Settings.PowerShell.RollbackSucceeded.Title"),
+                Loc.Get("Settings.PowerShell.RollbackSucceeded.Message"));
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PowerShellIntegration,
                 ActivityStatus.Succeeded,
-                "已回滚 PowerShell Profile；受管模块与 Shim 保持不变。",
+                Loc.Get("Settings.PowerShell.ActivityLog.RolledBack"),
                 [_profilePath, snapshotPath],
                 snapshotPath,
                 snapshotPath);
@@ -842,11 +1041,16 @@ public sealed partial class SettingsPage : Page
         }
         catch (Exception exception) when (IsExpectedIntegrationException(exception))
         {
-            SetInfo(InfoBarSeverity.Error, "PowerShell Profile 回滚失败", exception.Message);
+            SetInfo(
+                InfoBarSeverity.Error,
+                Loc.Get("Settings.PowerShell.RollbackFailed.Title"),
+                exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PowerShellIntegration,
                 ActivityStatus.Failed,
-                $"PowerShell Profile 回滚失败。错误类型：{exception.GetType().Name}。",
+                Loc.Format(
+                    "Settings.PowerShell.ActivityLog.RollbackFailed",
+                    exception.GetType().Name),
                 [_profilePath, snapshotPath],
                 snapshotPath,
                 snapshotPath);
@@ -865,7 +1069,7 @@ public sealed partial class SettingsPage : Page
         if (!File.Exists(_cliPath))
         {
             throw new FileNotFoundException(
-                "缺少 AutoEnvPlus CLI 组件，请重新构建或安装应用。",
+                Loc.Get("Settings.PowerShell.CliMissing"),
                 _cliPath);
         }
 
@@ -876,17 +1080,19 @@ public sealed partial class SettingsPage : Page
     {
         StringBuilder summary = new();
         summary.AppendLine($"Profile: {plan.ProfilePath}");
-        summary.AppendLine($"模块: {plan.ModulePath}");
+        summary.AppendLine(Loc.Format("Settings.PowerShell.Preview.ModulePath", plan.ModulePath));
         summary.AppendLine($"Shim: {Path.Combine(RequireManagedRoot(), "shims")}");
         summary.AppendLine();
         summary.AppendLine(plan.ProfileChanged
-            ? "Profile: 创建或更新；写入前保存快照"
-            : "Profile: 管理块已是最新状态");
+            ? Loc.Get("Settings.PowerShell.Preview.ProfileChanged")
+            : Loc.Get("Settings.PowerShell.Preview.ProfileUnchanged"));
         summary.AppendLine(plan.ModuleChanged
-            ? "模块: 原子创建或更新"
-            : "模块: 已是最新状态");
-        summary.AppendLine($"现有 AutoEnvPlus 管理块: {plan.ExistingProfileBlockCount}");
-        summary.AppendLine("用户 Profile 之外的系统配置: 不修改");
+            ? Loc.Get("Settings.PowerShell.Preview.ModuleChanged")
+            : Loc.Get("Settings.PowerShell.Preview.ModuleUnchanged"));
+        summary.AppendLine(Loc.Format(
+            "Settings.PowerShell.Preview.ExistingBlocks",
+            plan.ExistingProfileBlockCount));
+        summary.AppendLine(Loc.Get("Settings.PowerShell.Preview.SystemConfigUnchanged"));
 
         PowerShellSummaryText.Text = summary.ToString();
         PowerShellProfilePreviewText.Text = plan.After;
@@ -897,10 +1103,17 @@ public sealed partial class SettingsPage : Page
     private static string BuildConfirmationText(PowerShellIntegrationPlan plan)
     {
         string profileChange = plan.ProfileChanged
-            ? "写入受管块，并在修改前创建快照"
-            : "受管块已是最新状态";
-        string moduleChange = plan.ModuleChanged ? "原子创建或更新" : "已是最新状态";
-        return $"Profile\n{plan.ProfilePath}\n{profileChange}\n\n模块\n{plan.ModulePath}\n{moduleChange}\n\n不会修改系统 PATH。";
+            ? Loc.Get("Settings.PowerShell.Plan.ProfileChanged")
+            : Loc.Get("Settings.PowerShell.Plan.ProfileUnchanged");
+        string moduleChange = plan.ModuleChanged
+            ? Loc.Get("Settings.PowerShell.Plan.ModuleChanged")
+            : Loc.Get("Settings.PowerShell.Plan.ModuleUnchanged");
+        return Loc.Format(
+            "Settings.PowerShell.InstallDialog.Message",
+            plan.ProfilePath,
+            profileChange,
+            plan.ModulePath,
+            moduleChange);
     }
 
     private void SetBusy(bool isBusy)
@@ -952,7 +1165,8 @@ public sealed partial class SettingsPage : Page
 
     private static double RequiredNumber(NumberBox input, string description) =>
         double.IsNaN(input.Value) || double.IsInfinity(input.Value)
-            ? throw new InvalidDataException($"{description}必须是有效数字。")
+            ? throw new InvalidDataException(
+                Loc.Format("Settings.Validation.NumberRequired", description))
             : input.Value;
 
     private static string? EmptyToNull(string value)

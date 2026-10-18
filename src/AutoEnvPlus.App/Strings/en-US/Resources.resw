@@ -2889,4 +2889,990 @@ pip output (tail):
   <data name="Path.Activity.RepairFailed" xml:space="preserve">
     <value>Smart repair of the user PATH failed ({0})</value>
   </data>
+
+  <data name="Dashboard.Page.AccessibleName" xml:space="preserve">
+    <value>Overview content</value>
+  </data>
+  <data name="Dashboard.Header.Title" xml:space="preserve">
+    <value>Environment snapshot</value>
+  </data>
+  <data name="Dashboard.Header.Subtitle" xml:space="preserve">
+    <value>Language tools, projects, command routing, transfers, and storage status</value>
+  </data>
+  <data name="Dashboard.Refresh.ProgressAccessibleName" xml:space="preserve">
+    <value>Updating environment snapshot</value>
+  </data>
+  <data name="Dashboard.Refresh.Quick.HelpText" xml:space="preserve">
+    <value>Reads managed state without checking PATH, commands, or cache directories.</value>
+  </data>
+  <data name="Dashboard.Refresh.Quick.AccessibleName" xml:space="preserve">
+    <value>Quick refresh overview</value>
+  </data>
+  <data name="Dashboard.Refresh.Quick.Label" xml:space="preserve">
+    <value>Quick refresh</value>
+  </data>
+  <data name="Dashboard.Refresh.FullScan.HelpText" xml:space="preserve">
+    <value>Read-only check of PATH, command versions, runtimes, and cache sizes.</value>
+  </data>
+  <data name="Dashboard.Refresh.FullScan.AccessibleName" xml:space="preserve">
+    <value>Full environment scan</value>
+  </data>
+  <data name="Dashboard.Refresh.FullScan.ToolTip" xml:space="preserve">
+    <value>Check PATH, command versions, and cache sizes</value>
+  </data>
+  <data name="Dashboard.Messages.LoadingTitle" xml:space="preserve">
+    <value>Loading last overview</value>
+  </data>
+  <data name="Dashboard.CancelScan.AccessibleName" xml:space="preserve">
+    <value>Cancel current scan</value>
+  </data>
+  <data name="Dashboard.CancelScan.Label" xml:space="preserve">
+    <value>Cancel scan</value>
+  </data>
+  <data name="Dashboard.Update.AvailableAccessibleName" xml:space="preserve">
+    <value>App update notice</value>
+  </data>
+  <data name="Dashboard.Update.AvailableTitle" xml:space="preserve">
+    <value>A new version is available</value>
+  </data>
+  <data name="Dashboard.Update.ReleaseLinkAccessibleName" xml:space="preserve">
+    <value>Open the latest release page</value>
+  </data>
+  <data name="Dashboard.Update.ReleaseLinkLabel" xml:space="preserve">
+    <value>View release page</value>
+  </data>
+  <data name="Dashboard.Update.Message" xml:space="preserve">
+    <value>Current {0}, latest v{1}.</value>
+  </data>
+  <data name="Dashboard.QuickActions.Title" xml:space="preserve">
+    <value>Quick actions</value>
+  </data>
+  <data name="Dashboard.QuickAction.Runtime.AccessibleName" xml:space="preserve">
+    <value>Manage language tools</value>
+  </data>
+  <data name="Dashboard.QuickAction.Runtime.Label" xml:space="preserve">
+    <value>Language tools</value>
+  </data>
+  <data name="Dashboard.QuickAction.Projects.AccessibleName" xml:space="preserve">
+    <value>Open project environments</value>
+  </data>
+  <data name="Dashboard.QuickAction.Projects.Label" xml:space="preserve">
+    <value>Projects</value>
+  </data>
+  <data name="Dashboard.QuickAction.Network.AccessibleName" xml:space="preserve">
+    <value>Configure command versions</value>
+  </data>
+  <data name="Dashboard.QuickAction.Network.Label" xml:space="preserve">
+    <value>Commands</value>
+  </data>
+  <data name="Dashboard.QuickAction.Downloads.AccessibleName" xml:space="preserve">
+    <value>Open download center</value>
+  </data>
+  <data name="Dashboard.QuickAction.Downloads.Label" xml:space="preserve">
+    <value>Downloads</value>
+  </data>
+  <data name="Dashboard.QuickAction.Path.Label" xml:space="preserve">
+    <value>Check PATH</value>
+  </data>
+  <data name="Dashboard.QuickAction.Storage.AccessibleName" xml:space="preserve">
+    <value>Manage cache and storage</value>
+  </data>
+  <data name="Dashboard.QuickAction.Storage.Label" xml:space="preserve">
+    <value>Cache &amp; storage</value>
+  </data>
+  <data name="Dashboard.QuickAction.Doctor.AccessibleName" xml:space="preserve">
+    <value>Run environment diagnostics</value>
+  </data>
+  <data name="Dashboard.QuickAction.Doctor.Label" xml:space="preserve">
+    <value>Diagnostics</value>
+  </data>
+  <data name="Dashboard.QuickAction.Activity.AccessibleName" xml:space="preserve">
+    <value>View activity log</value>
+  </data>
+  <data name="Dashboard.QuickAction.Activity.Label" xml:space="preserve">
+    <value>Activity</value>
+  </data>
+  <data name="Dashboard.QuickAction.Plugins.AccessibleName" xml:space="preserve">
+    <value>Manage language packs and providers</value>
+  </data>
+  <data name="Dashboard.Plugins.Title" xml:space="preserve">
+    <value>Language packs &amp; providers</value>
+  </data>
+  <data name="Dashboard.Runtime.Title" xml:space="preserve">
+    <value>Language tool status</value>
+  </data>
+  <data name="Dashboard.Runtime.Subtitle" xml:space="preserve">
+    <value>Managed versions, global selections, and discovery status</value>
+  </data>
+  <data name="Dashboard.Runtime.OpenLink" xml:space="preserve">
+    <value>Open language tools page</value>
+  </data>
+  <data name="Dashboard.PathHealth.Title" xml:space="preserve">
+    <value>PATH health</value>
+  </data>
+  <data name="Dashboard.PathHealth.DirectoryCountLabel" xml:space="preserve">
+    <value>PATH directories</value>
+  </data>
+  <data name="Dashboard.PathHealth.MissingCountLabel" xml:space="preserve">
+    <value>Missing directories</value>
+  </data>
+  <data name="Dashboard.PathHealth.DuplicateCountLabel" xml:space="preserve">
+    <value>Duplicate directories</value>
+  </data>
+  <data name="Dashboard.PathHealth.ConflictCountLabel" xml:space="preserve">
+    <value>Command conflicts</value>
+  </data>
+  <data name="Dashboard.PathHealth.Checking" xml:space="preserve">
+    <value>Checking current process PATH…</value>
+  </data>
+  <data name="Dashboard.PathHealth.NotScanned" xml:space="preserve">
+    <value>No full PATH scan has been run yet.</value>
+  </data>
+  <data name="Dashboard.PathHealth.NoSnapshot" xml:space="preserve">
+    <value>No scan snapshot yet.</value>
+  </data>
+  <data name="Dashboard.Storage.Title" xml:space="preserve">
+    <value>Cache and managed data</value>
+  </data>
+  <data name="Dashboard.Storage.OpenLink" xml:space="preserve">
+    <value>Open cache and storage page</value>
+  </data>
+  <data name="Dashboard.Storage.NoCacheFound" xml:space="preserve">
+    <value>No non-empty cache found</value>
+  </data>
+  <data name="Dashboard.Storage.LargestCache" xml:space="preserve">
+    <value>Largest directory {0} ({1})</value>
+  </data>
+  <data name="Dashboard.Storage.DriveFree" xml:space="preserve">
+    <value> · {0} free on managed drive</value>
+  </data>
+  <data name="Dashboard.Storage.Summary" xml:space="preserve">
+    <value>{0} existing directories · {1} files · {2}{3}</value>
+  </data>
+  <data name="Dashboard.Storage.Errors" xml:space="preserve">
+    <value> · {0} items could not be fully counted</value>
+  </data>
+  <data name="Dashboard.Storage.NoStats" xml:space="preserve">
+    <value>No stats yet</value>
+  </data>
+  <data name="Dashboard.Storage.FullScanOnly" xml:space="preserve">
+    <value>Cache sizes update only during a full scan.</value>
+  </data>
+  <data name="Dashboard.Common.Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="Dashboard.Common.NoSnapshot" xml:space="preserve">
+    <value>No snapshot yet</value>
+  </data>
+  <data name="Dashboard.Network.Title" xml:space="preserve">
+    <value>Global proxy</value>
+  </data>
+  <data name="Dashboard.Network.OpenSettings" xml:space="preserve">
+    <value>Open proxy settings</value>
+  </data>
+  <data name="Dashboard.Network.OpenDownloads" xml:space="preserve">
+    <value>Open downloads page</value>
+  </data>
+  <data name="Dashboard.Network.EmptyDetail" xml:space="preserve">
+    <value>Configure the global proxy in settings; mirrors live on each provider.</value>
+  </data>
+  <data name="Dashboard.Transfer.Title" xml:space="preserve">
+    <value>Managed transfers</value>
+  </data>
+  <data name="Dashboard.Transfer.None" xml:space="preserve">
+    <value>No active transfers</value>
+  </data>
+  <data name="Dashboard.Transfer.Failed" xml:space="preserve">
+    <value>Last task failed · {0}</value>
+  </data>
+  <data name="Dashboard.Transfer.SegmentsDone" xml:space="preserve">
+    <value>{0} segments complete</value>
+  </data>
+  <data name="Dashboard.Transfer.SingleConnectionDone" xml:space="preserve">
+    <value>Single connection complete</value>
+  </data>
+  <data name="Dashboard.Transfer.Ready" xml:space="preserve">
+    <value>Last ready: {0} · {1}</value>
+  </data>
+  <data name="Dashboard.Transfer.Cancelled" xml:space="preserve">
+    <value>Last cancelled: {0}</value>
+  </data>
+  <data name="Dashboard.Transfer.Segments" xml:space="preserve">
+    <value> · Segments {0}/{1}</value>
+  </data>
+  <data name="Dashboard.Transfer.InProgress" xml:space="preserve">
+    <value>Transferring {0} · {1}{2}</value>
+  </data>
+  <data name="Dashboard.Transfer.LibrarySummary" xml:space="preserve">
+    <value>{0} files · {1}</value>
+  </data>
+  <data name="Dashboard.Plugins.Detail" xml:space="preserve">
+    <value>Providers belong to language tools; mirror slots are configured with their provider.</value>
+  </data>
+  <data name="Dashboard.Plugins.OpenLink" xml:space="preserve">
+    <value>Open language packs and providers</value>
+  </data>
+  <data name="Dashboard.Plugins.Summary" xml:space="preserve">
+    <value>Catalog {0} · enabled extensions {1} · disabled {2}</value>
+  </data>
+  <data name="Dashboard.Plugins.Classification" xml:space="preserve">
+    <value>Providers and mirror slots are grouped by language tool; language packs can extend the language catalog.</value>
+  </data>
+  <data name="Dashboard.Plugins.Errors" xml:space="preserve">
+    <value>{0} provider manifests or statuses need attention.</value>
+  </data>
+  <data name="Dashboard.Plugins.EmptyDetail" xml:space="preserve">
+    <value>The language catalog appears after a quick refresh.</value>
+  </data>
+  <data name="Dashboard.RecentProjects.Title" xml:space="preserve">
+    <value>Recent projects</value>
+  </data>
+  <data name="Dashboard.RecentProjects.OpenLink" xml:space="preserve">
+    <value>Open projects page</value>
+  </data>
+  <data name="Dashboard.RecentProjects.Empty" xml:space="preserve">
+    <value>No projects recorded yet.</value>
+  </data>
+  <data name="Dashboard.RecentProjects.MissingDirectory" xml:space="preserve">
+    <value>Directory does not exist</value>
+  </data>
+  <data name="Dashboard.RecentProjects.OpenAutomationName" xml:space="preserve">
+    <value>Open recent project {0}</value>
+  </data>
+  <data name="Dashboard.RecentProjects.MissingAutomationName" xml:space="preserve">
+    <value>Recent project {0}&apos;s directory does not exist</value>
+  </data>
+  <data name="Dashboard.RecentActivity.Title" xml:space="preserve">
+    <value>Recent activity</value>
+  </data>
+  <data name="Dashboard.RecentActivity.OpenLink" xml:space="preserve">
+    <value>Open activity page</value>
+  </data>
+  <data name="Dashboard.RecentActivity.Empty" xml:space="preserve">
+    <value>No activity yet.</value>
+  </data>
+  <data name="Dashboard.Messages.ReadFailedTitle" xml:space="preserve">
+    <value>Could not read last overview</value>
+  </data>
+  <data name="Dashboard.Messages.ReadFailedMessage" xml:space="preserve">
+    <value>No environment scan was run. {0}</value>
+  </data>
+  <data name="Dashboard.Messages.FullScanTitle" xml:space="preserve">
+    <value>Full scan in progress</value>
+  </data>
+  <data name="Dashboard.Messages.QuickRefreshTitle" xml:space="preserve">
+    <value>Quick refresh in progress</value>
+  </data>
+  <data name="Dashboard.Messages.FullScanMessage" xml:space="preserve">
+    <value>Reading runtimes, PATH, commands, and cache state.</value>
+  </data>
+  <data name="Dashboard.Messages.QuickRefreshMessage" xml:space="preserve">
+    <value>Reading AutoEnvPlus managed state.</value>
+  </data>
+  <data name="Dashboard.Messages.RefreshFailedTitle" xml:space="preserve">
+    <value>Could not read environment overview</value>
+  </data>
+  <data name="Dashboard.Messages.PartialUnavailableTitle" xml:space="preserve">
+    <value>Some environment summaries unavailable</value>
+  </data>
+  <data name="Dashboard.Messages.ErrorSeparator" xml:space="preserve">
+    <value>; </value>
+  </data>
+  <data name="Dashboard.Messages.MoreErrors" xml:space="preserve">
+    <value>; {0} more</value>
+  </data>
+  <data name="Dashboard.Messages.ActionableTitle" xml:space="preserve">
+    <value>Items need attention</value>
+  </data>
+  <data name="Dashboard.Messages.ActionableSuffix" xml:space="preserve">
+    <value> · PATH has missing, duplicate, or conflicting commands.</value>
+  </data>
+  <data name="Dashboard.Messages.LoadedTitle" xml:space="preserve">
+    <value>Loaded last overview</value>
+  </data>
+  <data name="Dashboard.Messages.FullScanDoneTitle" xml:space="preserve">
+    <value>Full scan complete</value>
+  </data>
+  <data name="Dashboard.Messages.QuickDoneTitle" xml:space="preserve">
+    <value>Quick refresh complete</value>
+  </data>
+  <data name="Dashboard.Messages.EmptyTitle" xml:space="preserve">
+    <value>No environment overview yet</value>
+  </data>
+  <data name="Dashboard.Messages.EmptyMessage" xml:space="preserve">
+    <value>For first use, run a quick refresh to read managed state; a full scan additionally checks PATH, command versions, and cache sizes.</value>
+  </data>
+  <data name="Dashboard.Messages.CancellingTitle" xml:space="preserve">
+    <value>Cancelling scan</value>
+  </data>
+  <data name="Dashboard.Messages.CancellingMessage" xml:space="preserve">
+    <value>Stopping remaining checks; completed reads will be discarded.</value>
+  </data>
+  <data name="Dashboard.Refresh.FirstRunAccessibleName" xml:space="preserve">
+    <value>First quick refresh of overview</value>
+  </data>
+  <data name="Dashboard.Timestamp.SnapshotSource" xml:space="preserve">
+    <value>Snapshot</value>
+  </data>
+  <data name="Dashboard.Timestamp.UpdateSource" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="Dashboard.Timestamp.LastFullScan" xml:space="preserve">
+    <value> · last full scan {0}</value>
+  </data>
+  <data name="Dashboard.Timestamp.NeverFullScanned" xml:space="preserve">
+    <value> · never fully scanned</value>
+  </data>
+  <data name="Dashboard.Timestamp.Caption" xml:space="preserve">
+    <value>{0} time {1}{2}</value>
+  </data>
+  <data name="Dashboard.Area.RuntimeDiscovery" xml:space="preserve">
+    <value>Runtime discovery</value>
+  </data>
+  <data name="Dashboard.Area.ManagedRuntimes" xml:space="preserve">
+    <value>Managed language tools</value>
+  </data>
+  <data name="Dashboard.Area.GlobalSelection" xml:space="preserve">
+    <value>Global version selection</value>
+  </data>
+  <data name="Dashboard.Area.CacheStats" xml:space="preserve">
+    <value>Cache statistics</value>
+  </data>
+  <data name="Dashboard.Area.NetworkSettings" xml:space="preserve">
+    <value>Network settings</value>
+  </data>
+  <data name="Dashboard.Area.DownloadLibrary" xml:space="preserve">
+    <value>Download library</value>
+  </data>
+  <data name="Dashboard.Area.ProviderPlugins" xml:space="preserve">
+    <value>Provider plugins</value>
+  </data>
+  <data name="Dashboard.Errors.AreaMessage" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="Dashboard.Errors.ProviderPlugins" xml:space="preserve">
+    <value>Provider plugins: {0} manifest or status errors</value>
+  </data>
+  <data name="Dashboard.Network.UnavailableSummary" xml:space="preserve">
+    <value>Global proxy settings unavailable</value>
+  </data>
+  <data name="Dashboard.Network.UnavailableDetail" xml:space="preserve">
+    <value>Provider mirror configuration remains in each language tool.</value>
+  </data>
+  <data name="Dashboard.Network.DirectSummary" xml:space="preserve">
+    <value>Direct connection</value>
+  </data>
+  <data name="Dashboard.Network.ProxySummary" xml:space="preserve">
+    <value>{0} global proxy endpoints configured</value>
+  </data>
+  <data name="Dashboard.Network.DefaultDetail" xml:space="preserve">
+    <value>Provider mirrors inherit official sources or language page settings</value>
+  </data>
+  <data name="Dashboard.Network.OverrideDetail" xml:space="preserve">
+    <value>{0} tools keep compatibility overrides · {1} bypass entries</value>
+  </data>
+  <data name="Dashboard.Language.NotInstalled" xml:space="preserve">
+    <value>Not installed</value>
+  </data>
+  <data name="Dashboard.Language.ManagedDetail" xml:space="preserve">
+    <value>{0} managed versions · {1} global selections</value>
+  </data>
+  <data name="Dashboard.Language.PathDetail" xml:space="preserve">
+    <value>PATH found {0} tool entries</value>
+  </data>
+  <data name="Dashboard.Language.FullScanNone" xml:space="preserve">
+    <value>Full scan found no usable tools</value>
+  </data>
+  <data name="Dashboard.Language.QuickNoProbe" xml:space="preserve">
+    <value>Quick refresh did not probe PATH</value>
+  </data>
+  <data name="Dashboard.PathStatus.Healthy" xml:space="preserve">
+    <value>No missing directories, duplicates, or known command conflicts found.</value>
+  </data>
+  <data name="Dashboard.PathStatus.Issues" xml:space="preserve">
+    <value>The read-only check found PATH items that need attention. Open the PATH &amp; commands page for details.</value>
+  </data>
+  <data name="Dashboard.Operation.RuntimeInstall" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="Dashboard.Operation.RuntimeUninstall" xml:space="preserve">
+    <value>Uninstall</value>
+  </data>
+  <data name="Dashboard.Operation.RuntimeSwitch" xml:space="preserve">
+    <value>Version switch</value>
+  </data>
+  <data name="Dashboard.Operation.PathChange" xml:space="preserve">
+    <value>PATH</value>
+  </data>
+  <data name="Dashboard.Operation.PathRollback" xml:space="preserve">
+    <value>PATH rollback</value>
+  </data>
+  <data name="Dashboard.Operation.CacheMigration" xml:space="preserve">
+    <value>Cache migration</value>
+  </data>
+  <data name="Dashboard.Operation.CacheRollback" xml:space="preserve">
+    <value>Cache rollback</value>
+  </data>
+  <data name="Dashboard.Operation.CacheCleanup" xml:space="preserve">
+    <value>Cache cleanup</value>
+  </data>
+  <data name="Dashboard.Operation.ToolchainInstall" xml:space="preserve">
+    <value>Toolchain</value>
+  </data>
+  <data name="Dashboard.Operation.ProjectImport" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="Dashboard.Operation.CMakePreset" xml:space="preserve">
+    <value>CMake</value>
+  </data>
+  <data name="Dashboard.Operation.DiagnosticExport" xml:space="preserve">
+    <value>Diagnostics</value>
+  </data>
+  <data name="Dashboard.Operation.SettingsChange" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Dashboard.Operation.PackageDownload" xml:space="preserve">
+    <value>Download</value>
+  </data>
+  <data name="Dashboard.Operation.PackageImport" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Dashboard.Operation.PackageInstall" xml:space="preserve">
+    <value>Package install</value>
+  </data>
+  <data name="Dashboard.Operation.ProviderPluginImport" xml:space="preserve">
+    <value>Plugin import</value>
+  </data>
+  <data name="Dashboard.Operation.ProviderPluginStateChange" xml:space="preserve">
+    <value>Plugin state</value>
+  </data>
+  <data name="Dashboard.Operation.ProviderPluginDelete" xml:space="preserve">
+    <value>Plugin delete</value>
+  </data>
+  <data name="Dashboard.Operation.Other" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="Settings.Appearance.SectionTitle" xml:space="preserve">
+    <value>Appearance &amp; accessibility</value>
+  </data>
+  <data name="Settings.Appearance.SectionSubtitle" xml:space="preserve">
+    <value>Current window backdrop</value>
+  </data>
+  <data name="Settings.Appearance.Theme.Label" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="Settings.Appearance.Theme.AccessibleName" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="Settings.Appearance.Theme.Option.System" xml:space="preserve">
+    <value>Follow system</value>
+  </data>
+  <data name="Settings.Appearance.Theme.Option.Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Settings.Appearance.Theme.Option.Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Settings.Appearance.Backdrop.Label" xml:space="preserve">
+    <value>Window backdrop</value>
+  </data>
+  <data name="Settings.Appearance.Backdrop.AccessibleName" xml:space="preserve">
+    <value>Window backdrop</value>
+  </data>
+  <data name="Settings.Appearance.Backdrop.Option.Automatic" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="Settings.Appearance.Backdrop.Option.Mica" xml:space="preserve">
+    <value>Prefer Mica</value>
+  </data>
+  <data name="Settings.Appearance.Backdrop.Option.Acrylic" xml:space="preserve">
+    <value>Prefer Acrylic</value>
+  </data>
+  <data name="Settings.Appearance.Backdrop.Option.Solid" xml:space="preserve">
+    <value>Solid color</value>
+  </data>
+  <data name="Settings.Appearance.Density.Label" xml:space="preserve">
+    <value>Interface density</value>
+  </data>
+  <data name="Settings.Appearance.Density.AccessibleName" xml:space="preserve">
+    <value>Interface density</value>
+  </data>
+  <data name="Settings.Appearance.Density.Option.Comfortable" xml:space="preserve">
+    <value>Comfortable</value>
+  </data>
+  <data name="Settings.Appearance.Density.Option.Compact" xml:space="preserve">
+    <value>Compact</value>
+  </data>
+  <data name="Settings.Startup.Header" xml:space="preserve">
+    <value>Startup &amp; snapshots</value>
+  </data>
+  <data name="Settings.Startup.Destination.Label" xml:space="preserve">
+    <value>Startup page</value>
+  </data>
+  <data name="Settings.Startup.Destination.AccessibleName" xml:space="preserve">
+    <value>Startup page</value>
+  </data>
+  <data name="Settings.Startup.Option.Overview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="Settings.Startup.Option.Languages" xml:space="preserve">
+    <value>Languages</value>
+  </data>
+  <data name="Settings.Startup.Option.Projects" xml:space="preserve">
+    <value>Project environments</value>
+  </data>
+  <data name="Settings.Startup.Option.Diagnostics" xml:space="preserve">
+    <value>Environment diagnostics</value>
+  </data>
+  <data name="Settings.Startup.ScanPolicy.Title" xml:space="preserve">
+    <value>No environment scan on page load</value>
+  </data>
+  <data name="Settings.Startup.ScanPolicy.Message" xml:space="preserve">
+    <value>The overview and language pages only read snapshots when opened. PATH checks, version commands, cache traversal, and network detection can only be started explicitly on their pages.</value>
+  </data>
+  <data name="Settings.LanguageCatalog.Header" xml:space="preserve">
+    <value>Language catalog &amp; experimental tools</value>
+  </data>
+  <data name="Settings.LanguageCatalog.Visibility.Label" xml:space="preserve">
+    <value>Default language visibility</value>
+  </data>
+  <data name="Settings.LanguageCatalog.Visibility.AccessibleName" xml:space="preserve">
+    <value>Default language visibility</value>
+  </data>
+  <data name="Settings.LanguageCatalog.Visibility.Option.TopTenAndDetected" xml:space="preserve">
+    <value>Top 10 and detected on this machine (recommended)</value>
+  </data>
+  <data name="Settings.LanguageCatalog.Visibility.Option.EnabledOnly" xml:space="preserve">
+    <value>Only manually enabled</value>
+  </data>
+  <data name="Settings.LanguageCatalog.Visibility.Option.AllBuiltIn" xml:space="preserve">
+    <value>Show all built-in languages</value>
+  </data>
+  <data name="Settings.LanguageCatalog.ExperimentalTools.Header" xml:space="preserve">
+    <value>Show experimental language tools</value>
+  </data>
+  <data name="Settings.LanguageCatalog.ExperimentalTools.OffContent" xml:space="preserve">
+    <value>Hide</value>
+  </data>
+  <data name="Settings.LanguageCatalog.ExperimentalTools.OnContent" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="Settings.LanguageCatalog.ExperimentalTools.Hint" xml:space="preserve">
+    <value>Language packs and tool providers still need to be imported, reviewed, and enabled separately; this setting does not bypass security checks.</value>
+  </data>
+  <data name="Settings.DownloadDefaults.Header" xml:space="preserve">
+    <value>Download defaults</value>
+  </data>
+  <data name="Settings.DownloadDefaults.Connections.Label" xml:space="preserve">
+    <value>Default concurrent connections</value>
+  </data>
+  <data name="Settings.DownloadDefaults.Connections.AccessibleName" xml:space="preserve">
+    <value>Default concurrent connections</value>
+  </data>
+  <data name="Settings.DownloadDefaults.Connections.Option" xml:space="preserve">
+    <value>{0} connections</value>
+  </data>
+  <data name="Settings.DownloadDefaults.MaxSize.Label" xml:space="preserve">
+    <value>Default per-file limit (GB)</value>
+  </data>
+  <data name="Settings.DownloadDefaults.MaxSize.AccessibleName" xml:space="preserve">
+    <value>Default per-file limit (GB)</value>
+  </data>
+  <data name="Settings.DownloadDefaults.MaxSize.ValidationName" xml:space="preserve">
+    <value>Default per-file limit</value>
+  </data>
+  <data name="Settings.Network.Header" xml:space="preserve">
+    <value>Network &amp; proxy</value>
+  </data>
+  <data name="Settings.Network.Intro" xml:space="preserve">
+    <value>Only the general proxy is configured here. Mirrors are declared and managed by each language tool provider; you can add custom mirrors on the corresponding language pages.</value>
+  </data>
+  <data name="Settings.Network.HttpProxy.Label" xml:space="preserve">
+    <value>HTTP proxy</value>
+  </data>
+  <data name="Settings.Network.HttpProxy.AccessibleName" xml:space="preserve">
+    <value>HTTP proxy</value>
+  </data>
+  <data name="Settings.Network.HttpsProxy.Label" xml:space="preserve">
+    <value>HTTPS proxy</value>
+  </data>
+  <data name="Settings.Network.HttpsProxy.AccessibleName" xml:space="preserve">
+    <value>HTTPS proxy</value>
+  </data>
+  <data name="Settings.Network.ProxyHint" xml:space="preserve">
+    <value>Leave empty for no proxy; must be an absolute address with a host (e.g. http://proxy.example:8080).</value>
+  </data>
+  <data name="Settings.Network.ProxyValid" xml:space="preserve">
+    <value>Valid format.</value>
+  </data>
+  <data name="Settings.Network.ProxyInvalid" xml:space="preserve">
+    <value>Invalid format: must be an absolute address with a host (e.g. http://proxy.example:8080).</value>
+  </data>
+  <data name="Settings.Network.NoProxy.Label" xml:space="preserve">
+    <value>No proxy</value>
+  </data>
+  <data name="Settings.Network.NoProxy.AccessibleName" xml:space="preserve">
+    <value>Addresses that bypass the proxy</value>
+  </data>
+  <data name="Settings.Network.SaveProxy.Label" xml:space="preserve">
+    <value>Save proxy</value>
+  </data>
+  <data name="Settings.Network.SaveProxy.AccessibleName" xml:space="preserve">
+    <value>Save global proxy settings</value>
+  </data>
+  <data name="Settings.Logging.Header" xml:space="preserve">
+    <value>Logging &amp; security policy</value>
+  </data>
+  <data name="Settings.Logging.SecurityContract.Title" xml:space="preserve">
+    <value>The security contract cannot be turned off</value>
+  </data>
+  <data name="Settings.Logging.SecurityContract.Message" xml:space="preserve">
+    <value>Delete, uninstall, and permanent cleanup always require explicit confirmation; shims are fixed version-routing infrastructure. Language packs and provider updates are only imported manually by you; no background directory updates are performed.</value>
+  </data>
+  <data name="Settings.Logging.Retention.Label" xml:space="preserve">
+    <value>Activity log retention (days)</value>
+  </data>
+  <data name="Settings.Logging.Retention.AccessibleName" xml:space="preserve">
+    <value>Activity log retention (days)</value>
+  </data>
+  <data name="Settings.Logging.Retention.Hint" xml:space="preserve">
+    <value>Expired records are cleaned up in the same managed lock and atomic rewrite transaction when new activity is written; logs remain capped at 1000 entries and 2 MiB.</value>
+  </data>
+  <data name="Settings.Logging.Retention.ValidationName" xml:space="preserve">
+    <value>Log retention days</value>
+  </data>
+  <data name="Settings.ManagedRoot.SectionTitle" xml:space="preserve">
+    <value>Managed data root</value>
+  </data>
+  <data name="Settings.ManagedRoot.SectionSubtitle" xml:space="preserve">
+    <value>Language tools, shims, the registry, project state, and diagnostic snapshots are all stored here. Old directories are never migrated or deleted automatically.</value>
+  </data>
+  <data name="Settings.ManagedRoot.Choose.Label" xml:space="preserve">
+    <value>Choose data root</value>
+  </data>
+  <data name="Settings.ManagedRoot.Choose.ToolTip" xml:space="preserve">
+    <value>Choose the managed data directory on a non-system drive</value>
+  </data>
+  <data name="Settings.ManagedRoot.Reset.Label" xml:space="preserve">
+    <value>Restore default directory</value>
+  </data>
+  <data name="Settings.ManagedRoot.Reset.AccessibleName" xml:space="preserve">
+    <value>Restore the default managed data root</value>
+  </data>
+  <data name="Settings.ManagedRoot.Reset.ToolTip" xml:space="preserve">
+    <value>Clears the user-level AUTOENVPLUS_HOME and restores %LOCALAPPDATA%\\AutoEnvPlus</value>
+  </data>
+  <data name="Settings.ManagedRoot.Unresolved" xml:space="preserve">
+    <value>The managed data root could not be resolved</value>
+  </data>
+  <data name="Settings.ManagedRoot.FixEnvHint" xml:space="preserve">
+    <value>Fix AUTOENVPLUS_HOME and restart AutoEnvPlus.</value>
+  </data>
+  <data name="Settings.ManagedRoot.Invalid.Title" xml:space="preserve">
+    <value>Invalid managed data root configuration</value>
+  </data>
+  <data name="Settings.ManagedRoot.CurrentProcessHint" xml:space="preserve">
+    <value>The current process uses this directory from startup. After changing AUTOENVPLUS_HOME, restart AutoEnvPlus for the change to take effect.</value>
+  </data>
+  <data name="Settings.ManagedRoot.CurrentInvalid" xml:space="preserve">
+    <value>Current configuration is invalid</value>
+  </data>
+  <data name="Settings.ManagedRoot.InvalidPath" xml:space="preserve">
+    <value>The directory path is invalid.</value>
+  </data>
+  <data name="Settings.ManagedRoot.ChooseFailed.Title" xml:space="preserve">
+    <value>This directory cannot be used</value>
+  </data>
+  <data name="Settings.ManagedRoot.ChangeDialog.Title" xml:space="preserve">
+    <value>Change the managed data root</value>
+  </data>
+  <data name="Settings.ManagedRoot.ChangeDialog.PrimaryButton" xml:space="preserve">
+    <value>Save and prompt to restart</value>
+  </data>
+  <data name="Settings.ManagedRoot.ChangeDialog.Message" xml:space="preserve">
+    <value>Current directory
+{0}
+
+New directory
+{1}
+
+AutoEnvPlus only writes the user-level {2}. Language tools, caches, and snapshots are not migrated or deleted automatically; restart the app for the new directory to take effect.</value>
+  </data>
+  <data name="Settings.ManagedRoot.SaveSucceeded.Title" xml:space="preserve">
+    <value>Managed data root saved</value>
+  </data>
+  <data name="Settings.ManagedRoot.SaveSucceeded.Message" xml:space="preserve">
+    <value>The user-level {0} has been written. Old directories are not migrated or deleted; restart AutoEnvPlus and use the new directory.</value>
+  </data>
+  <data name="Settings.ManagedRoot.SaveSucceeded.NoBroadcastMessage" xml:space="preserve">
+    <value>The user-level {0} has been written. The environment change broadcast was not confirmed; restart AutoEnvPlus and use the new directory.</value>
+  </data>
+  <data name="Settings.ManagedRoot.SaveFailed.Title" xml:space="preserve">
+    <value>Failed to save the managed data root</value>
+  </data>
+  <data name="Settings.ManagedRoot.ResetNothing.Title" xml:space="preserve">
+    <value>No override to restore</value>
+  </data>
+  <data name="Settings.ManagedRoot.ResetNothing.Message" xml:space="preserve">
+    <value>No user-level {0} is currently set; the app is already using the default directory.</value>
+  </data>
+  <data name="Settings.ManagedRoot.ResetDialog.Title" xml:space="preserve">
+    <value>Restore the default managed data root</value>
+  </data>
+  <data name="Settings.ManagedRoot.ResetDialog.PrimaryButton" xml:space="preserve">
+    <value>Clear and prompt to restart</value>
+  </data>
+  <data name="Settings.ManagedRoot.ResetDialog.Message" xml:space="preserve">
+    <value>This clears the user-level {0} (current value
+{1}).
+
+After a restart the default directory is used
+{2}
+
+Data in either directory is not migrated or deleted; the managed state in the two directories is independent.</value>
+  </data>
+  <data name="Settings.ManagedRoot.ResetSucceeded.Title" xml:space="preserve">
+    <value>Default managed data root restored</value>
+  </data>
+  <data name="Settings.ManagedRoot.ResetSucceeded.Message" xml:space="preserve">
+    <value>The user-level {0} has been cleared. Restart AutoEnvPlus to use the default directory.</value>
+  </data>
+  <data name="Settings.ManagedRoot.ResetSucceeded.NoBroadcastMessage" xml:space="preserve">
+    <value>The user-level {0} has been cleared. The environment change broadcast was not confirmed; restart AutoEnvPlus to use the default directory.</value>
+  </data>
+  <data name="Settings.ManagedRoot.ResetFailed.Title" xml:space="preserve">
+    <value>Failed to restore the default managed data root</value>
+  </data>
+  <data name="Settings.ManagedRoot.ActivityLog.Saved" xml:space="preserve">
+    <value>Saved a new user-level {0}; it takes effect after restart. Old directories were not migrated or deleted.</value>
+  </data>
+  <data name="Settings.ManagedRoot.ActivityLog.Reset" xml:space="preserve">
+    <value>Cleared the user-level {0}; the default managed data root is used after restart.</value>
+  </data>
+  <data name="Settings.PowerShell.SectionTitle" xml:space="preserve">
+    <value>PowerShell session integration</value>
+  </data>
+  <data name="Settings.PowerShell.SectionSubtitle" xml:space="preserve">
+    <value>Current user profile</value>
+  </data>
+  <data name="Settings.PowerShell.Preview.Label" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Settings.PowerShell.Preview.ToolTip" xml:space="preserve">
+    <value>Preview profile and module changes</value>
+  </data>
+  <data name="Settings.PowerShell.PreviewRefreshed.Title" xml:space="preserve">
+    <value>Preview refreshed</value>
+  </data>
+  <data name="Settings.PowerShell.PreviewRefreshed.Message" xml:space="preserve">
+    <value>Nothing has been written to the profile, modules, or environment variables yet.</value>
+  </data>
+  <data name="Settings.PowerShell.PreviewFailed.Title" xml:space="preserve">
+    <value>Could not generate the PowerShell preview</value>
+  </data>
+  <data name="Settings.PowerShell.Preview.ModulePath" xml:space="preserve">
+    <value>Module: {0}</value>
+  </data>
+  <data name="Settings.PowerShell.Preview.ProfileChanged" xml:space="preserve">
+    <value>Profile: create or update; a snapshot is saved before writing</value>
+  </data>
+  <data name="Settings.PowerShell.Preview.ProfileUnchanged" xml:space="preserve">
+    <value>Profile: managed block is already up to date</value>
+  </data>
+  <data name="Settings.PowerShell.Preview.ModuleChanged" xml:space="preserve">
+    <value>Module: atomic create or update</value>
+  </data>
+  <data name="Settings.PowerShell.Preview.ModuleUnchanged" xml:space="preserve">
+    <value>Module: already up to date</value>
+  </data>
+  <data name="Settings.PowerShell.Preview.ExistingBlocks" xml:space="preserve">
+    <value>Existing AutoEnvPlus managed blocks: {0}</value>
+  </data>
+  <data name="Settings.PowerShell.Preview.SystemConfigUnchanged" xml:space="preserve">
+    <value>System configuration outside the user profile: not modified</value>
+  </data>
+  <data name="Settings.PowerShell.Install.Label" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="Settings.PowerShell.Install.ToolTip" xml:space="preserve">
+    <value>Install the PowerShell integration after confirming</value>
+  </data>
+  <data name="Settings.PowerShell.InstallDialog.Title" xml:space="preserve">
+    <value>Install PowerShell session integration</value>
+  </data>
+  <data name="Settings.PowerShell.InstallDialog.Message" xml:space="preserve">
+    <value>Profile
+{0}
+{1}
+
+Module
+{2}
+{3}
+
+The system PATH is not modified.</value>
+  </data>
+  <data name="Settings.PowerShell.InstallSucceeded.Title" xml:space="preserve">
+    <value>PowerShell integration installed</value>
+  </data>
+  <data name="Settings.PowerShell.InstallSucceeded.Message" xml:space="preserve">
+    <value>Generated {0} {1} session shims; profile snapshot: {2}</value>
+  </data>
+  <data name="Settings.PowerShell.InstallSucceeded.UpToDateMessage" xml:space="preserve">
+    <value>Modules and {0} {1} session shims are already up to date.</value>
+  </data>
+  <data name="Settings.PowerShell.InstallFailed.Title" xml:space="preserve">
+    <value>PowerShell integration installation failed</value>
+  </data>
+  <data name="Settings.PowerShell.PlanFailed.Title" xml:space="preserve">
+    <value>Could not generate the PowerShell plan</value>
+  </data>
+  <data name="Settings.PowerShell.ApplyFailed" xml:space="preserve">
+    <value>Failed to modify the PowerShell profile.</value>
+  </data>
+  <data name="Settings.PowerShell.CliMissing" xml:space="preserve">
+    <value>The AutoEnvPlus CLI component is missing; rebuild or reinstall the app.</value>
+  </data>
+  <data name="Settings.PowerShell.Rollback.Label" xml:space="preserve">
+    <value>Roll back</value>
+  </data>
+  <data name="Settings.PowerShell.Rollback.ToolTip" xml:space="preserve">
+    <value>Restore the profile snapshot taken before installation</value>
+  </data>
+  <data name="Settings.PowerShell.RollbackDialog.Title" xml:space="preserve">
+    <value>Roll back the PowerShell profile</value>
+  </data>
+  <data name="Settings.PowerShell.RollbackDialog.Message" xml:space="preserve">
+    <value>This restores the profile from before installation.
+
+Snapshot
+{0}
+
+If the profile was modified after installation, AutoEnvPlus refuses to overwrite it.</value>
+  </data>
+  <data name="Settings.PowerShell.RollbackSucceeded.Title" xml:space="preserve">
+    <value>PowerShell profile rolled back</value>
+  </data>
+  <data name="Settings.PowerShell.RollbackSucceeded.Message" xml:space="preserve">
+    <value>Modules and shims stay in the AutoEnvPlus managed directory and are no longer auto-loaded by the profile.</value>
+  </data>
+  <data name="Settings.PowerShell.RollbackFailed.Title" xml:space="preserve">
+    <value>PowerShell profile rollback failed</value>
+  </data>
+  <data name="Settings.PowerShell.RollbackApplyFailed" xml:space="preserve">
+    <value>Failed to roll back the PowerShell profile.</value>
+  </data>
+  <data name="Settings.PowerShell.Plan.ProfileChanged" xml:space="preserve">
+    <value>Write the managed block and create a snapshot before modifying</value>
+  </data>
+  <data name="Settings.PowerShell.Plan.ProfileUnchanged" xml:space="preserve">
+    <value>Managed block is already up to date</value>
+  </data>
+  <data name="Settings.PowerShell.Plan.ModuleChanged" xml:space="preserve">
+    <value>Atomic create or update</value>
+  </data>
+  <data name="Settings.PowerShell.Plan.ModuleUnchanged" xml:space="preserve">
+    <value>Already up to date</value>
+  </data>
+  <data name="Settings.PowerShell.Progress.AccessibleName" xml:space="preserve">
+    <value>PowerShell integration operation progress</value>
+  </data>
+  <data name="Settings.PowerShell.Summary.Header" xml:space="preserve">
+    <value>Summary</value>
+  </data>
+  <data name="Settings.PowerShell.Summary.AccessibleName" xml:space="preserve">
+    <value>PowerShell integration summary preview</value>
+  </data>
+  <data name="Settings.PowerShell.ProfilePreview.AccessibleName" xml:space="preserve">
+    <value>PowerShell profile preview</value>
+  </data>
+  <data name="Settings.PowerShell.Module.Header" xml:space="preserve">
+    <value>Module</value>
+  </data>
+  <data name="Settings.PowerShell.ModulePreview.AccessibleName" xml:space="preserve">
+    <value>PowerShell module preview</value>
+  </data>
+  <data name="Settings.PowerShell.ActivityLog.Installed" xml:space="preserve">
+    <value>Installed PowerShell session integration with {0} {1} shims.</value>
+  </data>
+  <data name="Settings.PowerShell.ActivityLog.InstallFailed" xml:space="preserve">
+    <value>PowerShell session integration installation failed. Error type: {0}.</value>
+  </data>
+  <data name="Settings.PowerShell.ActivityLog.RolledBack" xml:space="preserve">
+    <value>Rolled back the PowerShell profile; managed modules and shims are unchanged.</value>
+  </data>
+  <data name="Settings.PowerShell.ActivityLog.RollbackFailed" xml:space="preserve">
+    <value>PowerShell profile rollback failed. Error type: {0}.</value>
+  </data>
+  <data name="Settings.About.SectionTitle" xml:space="preserve">
+    <value>About AutoEnvPlus</value>
+  </data>
+  <data name="Settings.About.Tagline" xml:space="preserve">
+    <value>Windows development environment control center · WinUI 3 · License GNU AGPL-3.0</value>
+  </data>
+  <data name="Settings.About.Stage.Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Settings.About.Stage.Stable" xml:space="preserve">
+    <value>Stable</value>
+  </data>
+  <data name="Settings.About.ManagedRootUnset" xml:space="preserve">
+    <value>The managed root is not configured yet.</value>
+  </data>
+  <data name="Settings.About.ManagedRootSet" xml:space="preserve">
+    <value>Managed root: {0}</value>
+  </data>
+  <data name="Settings.About.GitHubRepo.AccessibleName" xml:space="preserve">
+    <value>Open the GitHub repository</value>
+  </data>
+  <data name="Settings.About.GitHubRepo.Label" xml:space="preserve">
+    <value>GitHub repository</value>
+  </data>
+  <data name="Settings.About.ReleaseNotes.AccessibleName" xml:space="preserve">
+    <value>View release notes</value>
+  </data>
+  <data name="Settings.About.ReleaseNotes.Label" xml:space="preserve">
+    <value>Release notes</value>
+  </data>
+  <data name="Settings.About.IssueFeedback.AccessibleName" xml:space="preserve">
+    <value>Submit issue feedback</value>
+  </data>
+  <data name="Settings.About.IssueFeedback.Label" xml:space="preserve">
+    <value>Feedback</value>
+  </data>
+  <data name="Settings.LoadFailed.Title" xml:space="preserve">
+    <value>Could not read app settings</value>
+  </data>
+  <data name="Settings.SaveSucceeded.Title" xml:space="preserve">
+    <value>App settings saved</value>
+  </data>
+  <data name="Settings.SaveSucceeded.Message" xml:space="preserve">
+    <value>Theme, backdrop, and interface density have been applied; the startup page, language, download defaults, and log retention policy take effect in their features. Interface language changes take effect on the next launch. The home page always reads snapshots only.</value>
+  </data>
+  <data name="Settings.SaveFailed.Title" xml:space="preserve">
+    <value>Could not save app settings</value>
+  </data>
+  <data name="Settings.ProxyUnavailable.Title" xml:space="preserve">
+    <value>Proxy settings unavailable</value>
+  </data>
+  <data name="Settings.ProxySaveSucceeded.Title" xml:space="preserve">
+    <value>Global proxy saved</value>
+  </data>
+  <data name="Settings.ProxySaveSucceeded.Message" xml:space="preserve">
+    <value>Language tool mirrors are still managed separately by their providers; no mirror addresses were changed here.</value>
+  </data>
+  <data name="Settings.ProxySaveFailed.Title" xml:space="preserve">
+    <value>Could not save the proxy</value>
+  </data>
+  <data name="Settings.ActivityLog.SettingsSaved" xml:space="preserve">
+    <value>Updated startup page, language visibility, download, appearance, and log retention settings.</value>
+  </data>
+  <data name="Settings.Common.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Settings.Common.ErrorSeparator" xml:space="preserve">
+    <value>; </value>
+  </data>
+  <data name="Settings.Validation.NumberRequired" xml:space="preserve">
+    <value>{0} must be a valid number.</value>
+  </data>
 </root>

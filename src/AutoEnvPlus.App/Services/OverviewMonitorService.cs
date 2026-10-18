@@ -1,4 +1,5 @@
 using AutoEnvPlus.App.Downloads;
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Activity;
 using AutoEnvPlus.Core.Discovery;
 using AutoEnvPlus.Core.Diagnostics;
@@ -341,72 +342,85 @@ public sealed class OverviewMonitorService : IDisposable
             ? null
             : await TryLoadAsync(
                 discoveredTask,
-                "语言工具发现",
+                Loc.Get("Dashboard.Area.RuntimeDiscovery"),
                 errors,
                 cancellationToken).ConfigureAwait(false);
         RegistryLoadResult? registry = await TryLoadAsync(
             registryTask,
-            "托管语言工具",
+            Loc.Get("Dashboard.Area.ManagedRuntimes"),
             errors,
             cancellationToken).ConfigureAwait(false);
         RuntimeProfile? global = await TryLoadAsync(
             globalTask,
-            "全局版本选择",
+            Loc.Get("Dashboard.Area.GlobalSelection"),
             errors,
             cancellationToken).ConfigureAwait(false);
         IReadOnlyList<KnownProject>? projects = await TryLoadAsync(
             projectsTask,
-            "最近项目",
+            Loc.Get("Dashboard.RecentProjects.Title"),
             errors,
             cancellationToken).ConfigureAwait(false);
         ActivityLogLoadResult? activity = await TryLoadAsync(
             activityTask,
-            "活动记录",
+            Loc.Get("Dashboard.QuickAction.Activity.Label"),
             errors,
             cancellationToken).ConfigureAwait(false);
         OverviewStorageStatus? storage = storageTask is null
             ? null
             : await TryLoadAsync(
                 storageTask,
-                "缓存统计",
+                Loc.Get("Dashboard.Area.CacheStats"),
                 errors,
                 cancellationToken).ConfigureAwait(false);
         NetworkSettingsLoadResult? network = await TryLoadAsync(
             networkTask,
-            "网络设置",
+            Loc.Get("Dashboard.Area.NetworkSettings"),
             errors,
             cancellationToken).ConfigureAwait(false);
         DownloadOverview? downloads = await TryLoadAsync(
             downloadsTask,
-            "下载库",
+            Loc.Get("Dashboard.Area.DownloadLibrary"),
             errors,
             cancellationToken).ConfigureAwait(false);
         RuntimeProviderPluginListResult? plugins = await TryLoadAsync(
             pluginsTask,
-            "Provider 插件",
+            Loc.Get("Dashboard.Area.ProviderPlugins"),
             errors,
             cancellationToken).ConfigureAwait(false);
 
         cancellationToken.ThrowIfCancellationRequested();
         if (registry?.Errors.Count > 0)
         {
-            errors.AddRange(registry.Errors.Select(error => $"托管语言工具：{error}"));
+            errors.AddRange(registry.Errors.Select(error =>
+                Loc.Format(
+                    "Dashboard.Errors.AreaMessage",
+                    Loc.Get("Dashboard.Area.ManagedRuntimes"),
+                    error)));
         }
 
         if (activity?.Errors.Count > 0)
         {
-            errors.AddRange(activity.Errors.Select(error => $"活动记录：{error}"));
+            errors.AddRange(activity.Errors.Select(error =>
+                Loc.Format(
+                    "Dashboard.Errors.AreaMessage",
+                    Loc.Get("Dashboard.QuickAction.Activity.Label"),
+                    error)));
         }
 
         if (network is { Success: false })
         {
             errors.AddRange(network.Errors.Select(error =>
-                $"网络设置：{error.Message}"));
+                Loc.Format(
+                    "Dashboard.Errors.AreaMessage",
+                    Loc.Get("Dashboard.Area.NetworkSettings"),
+                    error.Message)));
         }
 
         if (plugins?.Errors.Count > 0)
         {
-            errors.Add($"Provider 插件：{plugins.Errors.Count} 个清单或状态错误");
+            errors.Add(Loc.Format(
+                "Dashboard.Errors.ProviderPlugins",
+                plugins.Errors.Count));
         }
 
         DateTimeOffset capturedAtUtc = DateTimeOffset.UtcNow;
@@ -473,7 +487,7 @@ public sealed class OverviewMonitorService : IDisposable
             or System.Text.Json.JsonException
             or System.ComponentModel.Win32Exception)
         {
-            errors.Add($"{area}：{exception.Message}");
+            errors.Add(Loc.Format("Dashboard.Errors.AreaMessage", area, exception.Message));
             return default;
         }
     }
@@ -528,8 +542,8 @@ public sealed class OverviewMonitorService : IDisposable
             return new OverviewNetworkStatus(
                 0,
                 0,
-                "全局代理设置不可用",
-                "Provider 镜像配置仍保留在各语言工具中。");
+                Loc.Get("Dashboard.Network.UnavailableSummary"),
+                Loc.Get("Dashboard.Network.UnavailableDetail"));
         }
 
         GlobalNetworkSettings global = settings.Global ?? new GlobalNetworkSettings();
@@ -537,11 +551,14 @@ public sealed class OverviewMonitorService : IDisposable
         int proxyCount = (global.HttpProxy is null ? 0 : 1)
             + (global.HttpsProxy is null ? 0 : 1);
         string summary = proxyCount == 0
-            ? "全局直连"
-            : $"已配置 {proxyCount} 个全局代理端点";
+            ? Loc.Get("Dashboard.Network.DirectSummary")
+            : Loc.Format("Dashboard.Network.ProxySummary", proxyCount);
         string detail = overrideCount == 0
-            ? "Provider 镜像分别继承官方源或语言页设置"
-            : $"{overrideCount} 个工具保留兼容覆盖 · 绕过项 {global.NoProxy?.Count ?? 0}";
+            ? Loc.Get("Dashboard.Network.DefaultDetail")
+            : Loc.Format(
+                "Dashboard.Network.OverrideDetail",
+                overrideCount,
+                global.NoProxy?.Count ?? 0);
         return new OverviewNetworkStatus(proxyCount, overrideCount, summary, detail);
     }
 
@@ -603,14 +620,17 @@ public sealed class OverviewMonitorService : IDisposable
                 .Concat(pathTools.Select(tool => tool.Version?.ToString()))
                 .Where(value => !string.IsNullOrWhiteSpace(value))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .FirstOrDefault() ?? "未安装";
+                .FirstOrDefault() ?? Loc.Get("Dashboard.Language.NotInstalled");
             string detail = managed.Length > 0
-                ? $"托管 {managed.Length} 个版本 · 全局选择 {configuredSelections} 项"
+                ? Loc.Format(
+                    "Dashboard.Language.ManagedDetail",
+                    managed.Length,
+                    configuredSelections)
                 : fullScan && pathTools.Length > 0
-                    ? $"PATH 发现 {pathTools.Length} 个工具入口"
+                    ? Loc.Format("Dashboard.Language.PathDetail", pathTools.Length)
                     : fullScan
-                        ? "完整扫描未发现可用工具"
-                        : "快速刷新未执行 PATH 探测";
+                        ? Loc.Get("Dashboard.Language.FullScanNone")
+                        : Loc.Get("Dashboard.Language.QuickNoProbe");
             rows.Add(new OverviewLanguageStatus(
                 language.Id,
                 language.DisplayName,
@@ -634,8 +654,8 @@ public sealed class OverviewMonitorService : IDisposable
             report.DuplicateCount,
             report.Conflicts.Count,
             report.IsHealthy
-            ? "没有发现失效目录、重复项或已知命令冲突。"
-            : "只读检查发现需要处理的 PATH 项。打开 PATH 与命令页面查看详情。");
+            ? Loc.Get("Dashboard.PathStatus.Healthy")
+            : Loc.Get("Dashboard.PathStatus.Issues"));
     }
 
     private static long? TryGetFreeBytes(string path)
@@ -665,26 +685,26 @@ public sealed class OverviewMonitorService : IDisposable
 
     private static string OperationText(ActivityOperationType type) => type switch
     {
-        ActivityOperationType.RuntimeInstall => "安装",
-        ActivityOperationType.RuntimeUninstall => "卸载",
-        ActivityOperationType.RuntimeSwitch => "版本切换",
-        ActivityOperationType.PathChange => "PATH",
-        ActivityOperationType.PathRollback => "PATH 回滚",
-        ActivityOperationType.CacheMigration => "缓存迁移",
-        ActivityOperationType.CacheRollback => "缓存回滚",
-        ActivityOperationType.CacheCleanup => "缓存清理",
-        ActivityOperationType.ToolchainInstall => "编译工具",
-        ActivityOperationType.ProjectImport => "项目",
-        ActivityOperationType.CMakePreset => "CMake",
-        ActivityOperationType.DiagnosticExport => "诊断",
-        ActivityOperationType.SettingsChange => "设置",
-        ActivityOperationType.PackageDownload => "下载",
-        ActivityOperationType.PackageImport => "导入",
-        ActivityOperationType.PackageInstall => "包安装",
-        ActivityOperationType.ProviderPluginImport => "插件导入",
-        ActivityOperationType.ProviderPluginStateChange => "插件状态",
-        ActivityOperationType.ProviderPluginDelete => "插件删除",
-        _ => "其他",
+        ActivityOperationType.RuntimeInstall => Loc.Get("Dashboard.Operation.RuntimeInstall"),
+        ActivityOperationType.RuntimeUninstall => Loc.Get("Dashboard.Operation.RuntimeUninstall"),
+        ActivityOperationType.RuntimeSwitch => Loc.Get("Dashboard.Operation.RuntimeSwitch"),
+        ActivityOperationType.PathChange => Loc.Get("Dashboard.Operation.PathChange"),
+        ActivityOperationType.PathRollback => Loc.Get("Dashboard.Operation.PathRollback"),
+        ActivityOperationType.CacheMigration => Loc.Get("Dashboard.Operation.CacheMigration"),
+        ActivityOperationType.CacheRollback => Loc.Get("Dashboard.Operation.CacheRollback"),
+        ActivityOperationType.CacheCleanup => Loc.Get("Dashboard.Operation.CacheCleanup"),
+        ActivityOperationType.ToolchainInstall => Loc.Get("Dashboard.Operation.ToolchainInstall"),
+        ActivityOperationType.ProjectImport => Loc.Get("Dashboard.Operation.ProjectImport"),
+        ActivityOperationType.CMakePreset => Loc.Get("Dashboard.Operation.CMakePreset"),
+        ActivityOperationType.DiagnosticExport => Loc.Get("Dashboard.Operation.DiagnosticExport"),
+        ActivityOperationType.SettingsChange => Loc.Get("Dashboard.Operation.SettingsChange"),
+        ActivityOperationType.PackageDownload => Loc.Get("Dashboard.Operation.PackageDownload"),
+        ActivityOperationType.PackageImport => Loc.Get("Dashboard.Operation.PackageImport"),
+        ActivityOperationType.PackageInstall => Loc.Get("Dashboard.Operation.PackageInstall"),
+        ActivityOperationType.ProviderPluginImport => Loc.Get("Dashboard.Operation.ProviderPluginImport"),
+        ActivityOperationType.ProviderPluginStateChange => Loc.Get("Dashboard.Operation.ProviderPluginStateChange"),
+        ActivityOperationType.ProviderPluginDelete => Loc.Get("Dashboard.Operation.ProviderPluginDelete"),
+        _ => Loc.Get("Dashboard.Operation.Other"),
     };
 
     private sealed record LanguageOverviewDefinition(

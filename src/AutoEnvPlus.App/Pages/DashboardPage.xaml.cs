@@ -28,8 +28,159 @@ public sealed partial class DashboardPage : Page
         _downloadManager = app.DownloadManager;
         _monitor = app.OverviewMonitor;
         InitializeComponent();
+        ApplyLocalizedStrings();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+    }
+
+    /// <summary>
+    /// Applies every localized string for this page from the resource table.
+    /// Unpackaged WinUI 3 apps cannot use x:Uid: the XAML loader resolves
+    /// ms-resource property bags against the OS system language only, so it
+    /// neither matches the standard dotted-key PRI layout nor honors the
+    /// in-app language preference. Code-behind assignment through
+    /// <see cref="Loc"/> is the only path that follows
+    /// <c>Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride</c>.
+    /// </summary>
+    private void ApplyLocalizedStrings()
+    {
+        AutomationProperties.SetName(this, Loc.Get("Dashboard.Page.AccessibleName"));
+        OverviewTitleText.Text = Loc.Get("Dashboard.Header.Title");
+        OverviewSubtitleText.Text = Loc.Get("Dashboard.Header.Subtitle");
+        AutomationProperties.SetName(
+            RefreshProgress,
+            Loc.Get("Dashboard.Refresh.ProgressAccessibleName"));
+        AutomationProperties.SetHelpText(
+            QuickRefreshButton,
+            Loc.Get("Dashboard.Refresh.Quick.HelpText"));
+        AutomationProperties.SetName(
+            QuickRefreshButton,
+            Loc.Get("Dashboard.Refresh.Quick.AccessibleName"));
+        ToolTipService.SetToolTip(
+            QuickRefreshButton,
+            Loc.Get("Dashboard.Refresh.Quick.Label"));
+        AutomationProperties.SetHelpText(
+            FullScanButton,
+            Loc.Get("Dashboard.Refresh.FullScan.HelpText"));
+        AutomationProperties.SetName(
+            FullScanButton,
+            Loc.Get("Dashboard.Refresh.FullScan.AccessibleName"));
+        ToolTipService.SetToolTip(
+            FullScanButton,
+            Loc.Get("Dashboard.Refresh.FullScan.ToolTip"));
+        OverviewInfo.Title = Loc.Get("Dashboard.Messages.LoadingTitle");
+        AutomationProperties.SetName(
+            CancelScanButton,
+            Loc.Get("Dashboard.CancelScan.AccessibleName"));
+        CancelScanButton.Content = Loc.Get("Dashboard.CancelScan.Label");
+        AutomationProperties.SetName(
+            UpdateAvailableInfo,
+            Loc.Get("Dashboard.Update.AvailableAccessibleName"));
+        UpdateAvailableInfo.Title = Loc.Get("Dashboard.Update.AvailableTitle");
+        AutomationProperties.SetName(
+            UpdateReleaseLink,
+            Loc.Get("Dashboard.Update.ReleaseLinkAccessibleName"));
+        UpdateReleaseLink.Content = Loc.Get("Dashboard.Update.ReleaseLinkLabel");
+        QuickActionsTitleText.Text = Loc.Get("Dashboard.QuickActions.Title");
+        AutomationProperties.SetName(
+            RuntimeQuickAction,
+            Loc.Get("Dashboard.QuickAction.Runtime.AccessibleName"));
+        RuntimeQuickActionText.Text = Loc.Get("Dashboard.QuickAction.Runtime.Label");
+        AutomationProperties.SetName(
+            ProjectsQuickAction,
+            Loc.Get("Dashboard.QuickAction.Projects.AccessibleName"));
+        ProjectsQuickActionText.Text = Loc.Get("Dashboard.QuickAction.Projects.Label");
+        AutomationProperties.SetName(
+            NetworkQuickAction,
+            Loc.Get("Dashboard.QuickAction.Network.AccessibleName"));
+        NetworkQuickActionText.Text = Loc.Get("Dashboard.QuickAction.Network.Label");
+        AutomationProperties.SetName(
+            DownloadsQuickAction,
+            Loc.Get("Dashboard.QuickAction.Downloads.AccessibleName"));
+        DownloadsQuickActionText.Text = Loc.Get("Dashboard.QuickAction.Downloads.Label");
+        AutomationProperties.SetName(
+            PathQuickAction,
+            Loc.Get("Dashboard.QuickAction.Path.Label"));
+        PathQuickActionText.Text = Loc.Get("Dashboard.QuickAction.Path.Label");
+        AutomationProperties.SetName(
+            StorageQuickAction,
+            Loc.Get("Dashboard.QuickAction.Storage.AccessibleName"));
+        StorageQuickActionText.Text = Loc.Get("Dashboard.QuickAction.Storage.Label");
+        AutomationProperties.SetName(
+            DoctorQuickAction,
+            Loc.Get("Dashboard.QuickAction.Doctor.AccessibleName"));
+        DoctorQuickActionText.Text = Loc.Get("Dashboard.QuickAction.Doctor.Label");
+        AutomationProperties.SetName(
+            ActivityQuickAction,
+            Loc.Get("Dashboard.QuickAction.Activity.AccessibleName"));
+        ActivityQuickActionText.Text = Loc.Get("Dashboard.QuickAction.Activity.Label");
+        AutomationProperties.SetName(
+            PluginsQuickAction,
+            Loc.Get("Dashboard.QuickAction.Plugins.AccessibleName"));
+        PluginsQuickActionText.Text = Loc.Get("Dashboard.Plugins.Title");
+        RuntimeOverviewTitleText.Text = Loc.Get("Dashboard.Runtime.Title");
+        RuntimeOverviewSubtitleText.Text = Loc.Get("Dashboard.Runtime.Subtitle");
+        AutomationProperties.SetName(
+            RuntimeOverviewLink,
+            Loc.Get("Dashboard.Runtime.OpenLink"));
+        ToolTipService.SetToolTip(
+            RuntimeOverviewLink,
+            Loc.Get("Dashboard.Runtime.OpenLink"));
+        PathHealthTitleText.Text = Loc.Get("Dashboard.PathHealth.Title");
+        PathDirectoryCountLabel.Text = Loc.Get("Dashboard.PathHealth.DirectoryCountLabel");
+        PathMissingCountLabel.Text = Loc.Get("Dashboard.PathHealth.MissingCountLabel");
+        PathDuplicateCountLabel.Text = Loc.Get("Dashboard.PathHealth.DuplicateCountLabel");
+        PathConflictCountLabel.Text = Loc.Get("Dashboard.PathHealth.ConflictCountLabel");
+        PathDetailText.Text = Loc.Get("Dashboard.PathHealth.Checking");
+        StorageTitleText.Text = Loc.Get("Dashboard.Storage.Title");
+        StorageUsageText.Text = Loc.Get("Dashboard.Common.Loading");
+        AutomationProperties.SetName(
+            StorageLink,
+            Loc.Get("Dashboard.Storage.OpenLink"));
+        ToolTipService.SetToolTip(
+            StorageLink,
+            Loc.Get("Dashboard.Storage.OpenLink"));
+        NetworkTitleText.Text = Loc.Get("Dashboard.Network.Title");
+        NetworkProfileText.Text = Loc.Get("Dashboard.Common.Loading");
+        TransferTitleText.Text = Loc.Get("Dashboard.Transfer.Title");
+        DownloadLibraryText.Text = Loc.Get("Dashboard.Common.Loading");
+        AutomationProperties.SetName(
+            NetworkSettingsLink,
+            Loc.Get("Dashboard.Network.OpenSettings"));
+        ToolTipService.SetToolTip(
+            NetworkSettingsLink,
+            Loc.Get("Dashboard.Network.OpenSettings"));
+        AutomationProperties.SetName(
+            DownloadsLink,
+            Loc.Get("Dashboard.Network.OpenDownloads"));
+        ToolTipService.SetToolTip(
+            DownloadsLink,
+            Loc.Get("Dashboard.Network.OpenDownloads"));
+        PluginsTitleText.Text = Loc.Get("Dashboard.Plugins.Title");
+        PluginSummaryText.Text = Loc.Get("Dashboard.Common.Loading");
+        PluginDetailText.Text = Loc.Get("Dashboard.Plugins.Detail");
+        AutomationProperties.SetName(
+            PluginsLink,
+            Loc.Get("Dashboard.Plugins.OpenLink"));
+        ToolTipService.SetToolTip(
+            PluginsLink,
+            Loc.Get("Dashboard.Plugins.OpenLink"));
+        RecentProjectsTitleText.Text = Loc.Get("Dashboard.RecentProjects.Title");
+        AutomationProperties.SetName(
+            RecentProjectsLink,
+            Loc.Get("Dashboard.RecentProjects.OpenLink"));
+        ToolTipService.SetToolTip(
+            RecentProjectsLink,
+            Loc.Get("Dashboard.RecentProjects.OpenLink"));
+        ProjectsEmptyText.Text = Loc.Get("Dashboard.RecentProjects.Empty");
+        RecentActivityTitleText.Text = Loc.Get("Dashboard.RecentActivity.Title");
+        AutomationProperties.SetName(
+            RecentActivityLink,
+            Loc.Get("Dashboard.RecentActivity.OpenLink"));
+        ToolTipService.SetToolTip(
+            RecentActivityLink,
+            Loc.Get("Dashboard.RecentActivity.OpenLink"));
+        ActivityEmptyText.Text = Loc.Get("Dashboard.RecentActivity.Empty");
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
@@ -91,8 +242,10 @@ public sealed partial class DashboardPage : Page
                 return;
             }
 
-            UpdateAvailableInfo.Message =
-                $"当前 {identity.DisplayVersion}，最新 v{update.LatestVersion}。";
+            UpdateAvailableInfo.Message = Loc.Format(
+                "Dashboard.Update.Message",
+                identity.DisplayVersion,
+                update.LatestVersion);
             UpdateReleaseLink.NavigateUri = update.ReleaseUrl;
             UpdateAvailableInfo.IsOpen = true;
         }
@@ -179,8 +332,10 @@ public sealed partial class DashboardPage : Page
             or NotSupportedException)
         {
             OverviewInfo.Severity = InfoBarSeverity.Warning;
-            OverviewInfo.Title = "无法读取上次概览";
-            OverviewInfo.Message = $"没有执行环境扫描。{exception.Message}";
+            OverviewInfo.Title = Loc.Get("Dashboard.Messages.ReadFailedTitle");
+            OverviewInfo.Message = Loc.Format(
+                "Dashboard.Messages.ReadFailedMessage",
+                exception.Message);
         }
     }
 
@@ -188,10 +343,12 @@ public sealed partial class DashboardPage : Page
     {
         SetBusy(true);
         OverviewInfo.Severity = InfoBarSeverity.Informational;
-        OverviewInfo.Title = fullScan ? "正在完整扫描" : "正在快速刷新";
+        OverviewInfo.Title = fullScan
+            ? Loc.Get("Dashboard.Messages.FullScanTitle")
+            : Loc.Get("Dashboard.Messages.QuickRefreshTitle");
         OverviewInfo.Message = fullScan
-            ? "正在读取运行时、PATH、命令和缓存状态。"
-            : "正在读取 AutoEnvPlus 受管状态。";
+            ? Loc.Get("Dashboard.Messages.FullScanMessage")
+            : Loc.Get("Dashboard.Messages.QuickRefreshMessage");
 
         try
         {
@@ -215,7 +372,7 @@ public sealed partial class DashboardPage : Page
             or NotSupportedException)
         {
             OverviewInfo.Severity = InfoBarSeverity.Error;
-            OverviewInfo.Title = "无法读取开发环境概览";
+            OverviewInfo.Title = Loc.Get("Dashboard.Messages.RefreshFailedTitle");
             OverviewInfo.Message = CoreErrorText.Localize(exception.Message);
         }
         finally
@@ -251,28 +408,35 @@ public sealed partial class DashboardPage : Page
     {
         if (snapshot is null)
         {
-            DownloadTransferText.Text = "当前没有活动传输";
+            DownloadTransferText.Text = Loc.Get("Dashboard.Transfer.None");
             return;
         }
 
         if (snapshot.Error is not null)
         {
-            DownloadTransferText.Text = $"最近任务失败 · {snapshot.FileName}";
+            DownloadTransferText.Text = Loc.Format(
+                "Dashboard.Transfer.Failed",
+                snapshot.FileName);
             return;
         }
 
         if (snapshot.Phase == ManagedTransferPhase.Completed)
         {
             string mode = snapshot.TransferMode == DownloadTransferMode.Segmented
-                ? $"{snapshot.TotalSegments} 段完成"
-                : "单连接完成";
-            DownloadTransferText.Text = $"最近就绪：{snapshot.FileName} · {mode}";
+                ? Loc.Format("Dashboard.Transfer.SegmentsDone", snapshot.TotalSegments)
+                : Loc.Get("Dashboard.Transfer.SingleConnectionDone");
+            DownloadTransferText.Text = Loc.Format(
+                "Dashboard.Transfer.Ready",
+                snapshot.FileName,
+                mode);
             return;
         }
 
         if (snapshot.Phase == ManagedTransferPhase.Cancelled)
         {
-            DownloadTransferText.Text = $"最近已取消：{snapshot.FileName}";
+            DownloadTransferText.Text = Loc.Format(
+                "Dashboard.Transfer.Cancelled",
+                snapshot.FileName);
             return;
         }
 
@@ -280,9 +444,16 @@ public sealed partial class DashboardPage : Page
             ? $"{snapshot.CompletedBytes * 100d / total:F0}%"
             : FormatBytes(snapshot.CompletedBytes);
         string segments = snapshot.TotalSegments > 0
-            ? $" · 分段 {snapshot.CompletedSegments}/{snapshot.TotalSegments}"
+            ? Loc.Format(
+                "Dashboard.Transfer.Segments",
+                snapshot.CompletedSegments,
+                snapshot.TotalSegments)
             : string.Empty;
-        DownloadTransferText.Text = $"正在传输 {snapshot.FileName} · {progress}{segments}";
+        DownloadTransferText.Text = Loc.Format(
+            "Dashboard.Transfer.InProgress",
+            snapshot.FileName,
+            progress,
+            segments);
     }
 
     private void RenderSnapshot(OverviewSnapshot snapshot, bool cached)
@@ -311,45 +482,59 @@ public sealed partial class DashboardPage : Page
             PathMissingCountText.Text = "—";
             PathDuplicateCountText.Text = "—";
             PathConflictCountText.Text = "—";
-            PathDetailText.Text = "尚未执行完整 PATH 扫描。";
+            PathDetailText.Text = Loc.Get("Dashboard.PathHealth.NotScanned");
         }
 
         if (snapshot.Storage is OverviewStorageStatus storage)
         {
             StorageUsageText.Text = FormatBytes(storage.TotalBytes);
             string largest = storage.LargestCacheName is null
-                ? "没有发现非空缓存"
-                : $"最大目录 {storage.LargestCacheName}（{FormatBytes(storage.LargestCacheBytes)}）";
+                ? Loc.Get("Dashboard.Storage.NoCacheFound")
+                : Loc.Format(
+                    "Dashboard.Storage.LargestCache",
+                    storage.LargestCacheName,
+                    FormatBytes(storage.LargestCacheBytes));
             string free = storage.ManagedDriveFreeBytes is long freeBytes
-                ? $" · 受管盘可用 {FormatBytes(freeBytes)}"
+                ? Loc.Format("Dashboard.Storage.DriveFree", FormatBytes(freeBytes))
                 : string.Empty;
-            StorageDetailText.Text =
-                $"{storage.ExistingDirectoryCount} 个现有目录 · {storage.TotalFiles:N0} 个文件 · {largest}{free}";
+            StorageDetailText.Text = Loc.Format(
+                "Dashboard.Storage.Summary",
+                storage.ExistingDirectoryCount,
+                storage.TotalFiles.ToString("N0"),
+                largest,
+                free);
             if (storage.Errors.Count > 0)
             {
-                StorageDetailText.Text += $" · {storage.Errors.Count} 个项目未能完整统计";
+                StorageDetailText.Text += Loc.Format(
+                    "Dashboard.Storage.Errors",
+                    storage.Errors.Count);
             }
         }
         else
         {
-            StorageUsageText.Text = "尚无统计";
-            StorageDetailText.Text = "缓存大小只在完整扫描时更新。";
+            StorageUsageText.Text = Loc.Get("Dashboard.Storage.NoStats");
+            StorageDetailText.Text = Loc.Get("Dashboard.Storage.FullScanOnly");
         }
 
         ManagedRootText.Text = snapshot.ManagedRoot;
         NetworkProfileText.Text = snapshot.Network.Summary;
         NetworkDetailText.Text = snapshot.Network.Detail;
-        DownloadLibraryText.Text =
-            $"{snapshot.Downloads.FileCount:N0} 个文件 · {FormatBytes(snapshot.Downloads.TotalBytes)}";
+        DownloadLibraryText.Text = Loc.Format(
+            "Dashboard.Transfer.LibrarySummary",
+            snapshot.Downloads.FileCount.ToString("N0"),
+            FormatBytes(snapshot.Downloads.TotalBytes));
         UpdateDownloadTransfer(_downloadManager.Snapshot);
 
         int disabledProviderCount = snapshot.Providers.ImportedProviderCount
             - snapshot.Providers.EnabledImportedProviderCount;
-        PluginSummaryText.Text =
-            $"目录 {snapshot.Providers.BuiltInProviderCount} · 已启用扩展 {snapshot.Providers.EnabledImportedProviderCount} · 已停用 {disabledProviderCount}";
+        PluginSummaryText.Text = Loc.Format(
+            "Dashboard.Plugins.Summary",
+            snapshot.Providers.BuiltInProviderCount,
+            snapshot.Providers.EnabledImportedProviderCount,
+            disabledProviderCount);
         PluginDetailText.Text = snapshot.Providers.ErrorCount == 0
-            ? "Provider 和镜像槽按语言工具归类；语言包可扩展语言目录。"
-            : $"{snapshot.Providers.ErrorCount} 个 Provider 清单或状态需要检查。";
+            ? Loc.Get("Dashboard.Plugins.Classification")
+            : Loc.Format("Dashboard.Plugins.Errors", snapshot.Providers.ErrorCount);
 
         RecentProjectRow[] projectRows = snapshot.Projects
             .Take(4)
@@ -372,10 +557,12 @@ public sealed partial class DashboardPage : Page
         if (snapshot.Errors.Count > 0)
         {
             OverviewInfo.Severity = InfoBarSeverity.Warning;
-            OverviewInfo.Title = "部分环境摘要不可用";
-            OverviewInfo.Message = string.Join("；", snapshot.Errors.Take(3))
+            OverviewInfo.Title = Loc.Get("Dashboard.Messages.PartialUnavailableTitle");
+            OverviewInfo.Message = string.Join(
+                    Loc.Get("Dashboard.Messages.ErrorSeparator"),
+                    snapshot.Errors.Take(3))
                 + (snapshot.Errors.Count > 3
-                    ? $"；另有 {snapshot.Errors.Count - 3} 项"
+                    ? Loc.Format("Dashboard.Messages.MoreErrors", snapshot.Errors.Count - 3)
                     : string.Empty);
             return;
         }
@@ -386,9 +573,9 @@ public sealed partial class DashboardPage : Page
                 || pathSummary.CommandConflictCount > 0))
         {
             OverviewInfo.Severity = InfoBarSeverity.Warning;
-            OverviewInfo.Title = "环境中有可处理项";
+            OverviewInfo.Title = Loc.Get("Dashboard.Messages.ActionableTitle");
             OverviewInfo.Message = CreateSnapshotTimestamp(snapshot, cached)
-                + " · PATH 存在失效、重复或命令冲突。";
+                + Loc.Get("Dashboard.Messages.ActionableSuffix");
             return;
         }
 
@@ -396,10 +583,10 @@ public sealed partial class DashboardPage : Page
             ? InfoBarSeverity.Informational
             : InfoBarSeverity.Success;
         OverviewInfo.Title = cached
-            ? "已载入上次概览"
+            ? Loc.Get("Dashboard.Messages.LoadedTitle")
             : snapshot.Depth == OverviewSnapshotDepth.Full
-                ? "完整扫描已完成"
-                : "快速刷新已完成";
+                ? Loc.Get("Dashboard.Messages.FullScanDoneTitle")
+                : Loc.Get("Dashboard.Messages.QuickDoneTitle");
         OverviewInfo.Message = CreateSnapshotTimestamp(snapshot, cached);
     }
 
@@ -410,23 +597,23 @@ public sealed partial class DashboardPage : Page
         PathMissingCountText.Text = "—";
         PathDuplicateCountText.Text = "—";
         PathConflictCountText.Text = "—";
-        PathDetailText.Text = "尚无扫描快照。";
-        StorageUsageText.Text = "尚无统计";
-        StorageDetailText.Text = "缓存大小只在完整扫描时更新。";
+        PathDetailText.Text = Loc.Get("Dashboard.PathHealth.NoSnapshot");
+        StorageUsageText.Text = Loc.Get("Dashboard.Storage.NoStats");
+        StorageDetailText.Text = Loc.Get("Dashboard.Storage.FullScanOnly");
         ManagedRootText.Text = managedRoot;
-        NetworkProfileText.Text = "尚无快照";
-        NetworkDetailText.Text = "全局代理可在设置中配置；镜像位于具体 Provider。";
-        DownloadLibraryText.Text = "尚无快照";
+        NetworkProfileText.Text = Loc.Get("Dashboard.Common.NoSnapshot");
+        NetworkDetailText.Text = Loc.Get("Dashboard.Network.EmptyDetail");
+        DownloadLibraryText.Text = Loc.Get("Dashboard.Common.NoSnapshot");
         UpdateDownloadTransfer(_downloadManager.Snapshot);
-        PluginSummaryText.Text = "尚无快照";
-        PluginDetailText.Text = "语言目录将在快速刷新后显示。";
+        PluginSummaryText.Text = Loc.Get("Dashboard.Common.NoSnapshot");
+        PluginDetailText.Text = Loc.Get("Dashboard.Plugins.EmptyDetail");
         RecentProjectsList.ItemsSource = Array.Empty<RecentProjectRow>();
         ProjectsEmptyText.Visibility = Visibility.Visible;
         RecentActivityList.ItemsSource = Array.Empty<RecentActivityRow>();
         ActivityEmptyText.Visibility = Visibility.Visible;
         OverviewInfo.Severity = InfoBarSeverity.Informational;
-        OverviewInfo.Title = "尚无环境概览";
-        OverviewInfo.Message = "首次使用建议先快速刷新读取受管状态；完整扫描会额外检查 PATH、命令版本和缓存体积。";
+        OverviewInfo.Title = Loc.Get("Dashboard.Messages.EmptyTitle");
+        OverviewInfo.Message = Loc.Get("Dashboard.Messages.EmptyMessage");
         // First-run guidance must be actionable: the refresh affordance is a
         // small icon button in the header, easy for a new user to miss.
         OverviewInfo.ActionButton = CreateFirstRunRefreshButton();
@@ -434,8 +621,8 @@ public sealed partial class DashboardPage : Page
 
     private Button CreateFirstRunRefreshButton()
     {
-        Button button = new() { Content = "快速刷新" };
-        AutomationProperties.SetName(button, "首次快速刷新概览");
+        Button button = new() { Content = Loc.Get("Dashboard.Refresh.Quick.Label") };
+        AutomationProperties.SetName(button, Loc.Get("Dashboard.Refresh.FirstRunAccessibleName"));
         button.Click += async (_, _) =>
         {
             OverviewInfo.ActionButton = CancelScanButton;
@@ -446,11 +633,19 @@ public sealed partial class DashboardPage : Page
 
     private static string CreateSnapshotTimestamp(OverviewSnapshot snapshot, bool cached)
     {
-        string source = cached ? "快照" : "更新";
+        string source = cached
+            ? Loc.Get("Dashboard.Timestamp.SnapshotSource")
+            : Loc.Get("Dashboard.Timestamp.UpdateSource");
         string fullScan = snapshot.LastFullScanAtUtc is DateTimeOffset full
-            ? $" · 上次完整扫描 {full.ToLocalTime():yyyy-MM-dd HH:mm}"
-            : " · 尚未完整扫描";
-        return $"{source}时间 {snapshot.CapturedAtUtc.ToLocalTime():yyyy-MM-dd HH:mm}{fullScan}";
+            ? Loc.Format(
+                "Dashboard.Timestamp.LastFullScan",
+                full.ToLocalTime().ToString("yyyy-MM-dd HH:mm"))
+            : Loc.Get("Dashboard.Timestamp.NeverFullScanned");
+        return Loc.Format(
+            "Dashboard.Timestamp.Caption",
+            source,
+            snapshot.CapturedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm"),
+            fullScan);
     }
 
     private void SetBusy(bool busy)
@@ -471,8 +666,8 @@ public sealed partial class DashboardPage : Page
         // it to stop. Completed reads are discarded with the cancellation.
         _monitor.CancelActiveRefresh();
         OverviewInfo.Severity = InfoBarSeverity.Informational;
-        OverviewInfo.Title = "正在取消扫描";
-        OverviewInfo.Message = "正在停止剩余检查；已完成的读取会被丢弃。";
+        OverviewInfo.Title = Loc.Get("Dashboard.Messages.CancellingTitle");
+        OverviewInfo.Message = Loc.Get("Dashboard.Messages.CancellingMessage");
     }
 
     private void RestoreActionFocus(object sender)
@@ -541,10 +736,10 @@ public sealed partial class DashboardPage : Page
             Exists = Directory.Exists(project.ProjectRoot);
             LastSeenText = Exists
                 ? project.LastSeenUtc.ToLocalTime().ToString("MM-dd HH:mm")
-                : "目录不存在";
+                : Loc.Get("Dashboard.RecentProjects.MissingDirectory");
             AutomationName = Exists
-                ? $"打开最近项目 {Name}"
-                : $"最近项目 {Name} 的目录不存在";
+                ? Loc.Format("Dashboard.RecentProjects.OpenAutomationName", Name)
+                : Loc.Format("Dashboard.RecentProjects.MissingAutomationName", Name);
         }
 
         public string Name { get; }

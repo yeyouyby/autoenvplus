@@ -173,11 +173,11 @@
 
                     <StackPanel Grid.Column="1" Spacing="5">
                         <TextBlock
-                            Style="{StaticResource SubtitleTextBlockStyle}"
-                            Text="外观与无障碍" />
+                            x:Name="AppearanceSectionTitleText"
+                            Style="{StaticResource SubtitleTextBlockStyle}" />
                         <TextBlock
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="当前窗口背景" />
+                            x:Name="AppearanceSectionSubtitleText"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         <TextBlock
                             x:Name="EffectiveBackdropText"
                             AutomationProperties.LiveSetting="Polite"
@@ -200,10 +200,9 @@
                                 <RowDefinition x:Name="AppearanceDensityRow" Height="0" />
                             </Grid.RowDefinitions>
                             <StackPanel x:Name="ThemeField" Spacing="4">
-                                <TextBlock Text="主题" />
+                                <TextBlock x:Name="ThemeFieldLabelText" />
                                 <ComboBox
                                     x:Name="ThemePicker"
-                                    AutomationProperties.Name="主题"
                                     HorizontalAlignment="Stretch"
                                     DisplayMemberPath="Label" />
                             </StackPanel>
@@ -211,10 +210,9 @@
                                 x:Name="BackdropField"
                                 Grid.Column="1"
                                 Spacing="4">
-                                <TextBlock Text="窗口材质" />
+                                <TextBlock x:Name="BackdropFieldLabelText" />
                                 <ComboBox
                                     x:Name="BackdropPicker"
-                                    AutomationProperties.Name="窗口材质"
                                     HorizontalAlignment="Stretch"
                                     DisplayMemberPath="Label" />
                             </StackPanel>
@@ -222,10 +220,9 @@
                                 x:Name="DensityField"
                                 Grid.Column="2"
                                 Spacing="4">
-                                <TextBlock Text="界面密度" />
+                                <TextBlock x:Name="DensityFieldLabelText" />
                                 <ComboBox
                                     x:Name="DensityPicker"
-                                    AutomationProperties.Name="界面密度"
                                     HorizontalAlignment="Stretch"
                                     DisplayMemberPath="Label" />
                             </StackPanel>
@@ -234,62 +231,53 @@
                 </Grid>
             </Border>
 
-            <Expander Header="启动与快照" IsExpanded="True">
+            <Expander x:Name="StartupSnapshotExpander" IsExpanded="True">
                 <StackPanel Padding="0,12,0,6" Spacing="12">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="启动页面" />
+                        <TextBlock x:Name="StartupDestinationLabelText" />
                         <ComboBox
                             x:Name="StartupDestinationPicker"
-                            AutomationProperties.Name="启动页面"
                             HorizontalAlignment="Stretch"
                             DisplayMemberPath="Label" />
                     </StackPanel>
                     <InfoBar
+                        x:Name="StartupScanPolicyInfoBar"
                         IsClosable="False"
                         IsOpen="True"
-                        Message="概览和语言页面打开时只读取快照。PATH、版本命令、缓存遍历和网络检测只能由用户在对应页面显式启动。"
-                        Severity="Informational"
-                        Title="页面加载不扫描环境" />
+                        Severity="Informational" />
                 </StackPanel>
             </Expander>
 
-            <Expander Header="语言目录与实验工具">
+            <Expander x:Name="LanguageCatalogExpander">
                 <StackPanel Padding="0,12,0,6" Spacing="12">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="默认语言可见性" />
+                        <TextBlock x:Name="LanguageVisibilityLabelText" />
                         <ComboBox
                             x:Name="LanguageVisibilityPicker"
-                            AutomationProperties.Name="默认语言可见性"
                             HorizontalAlignment="Stretch"
                             DisplayMemberPath="Label" />
                     </StackPanel>
-                    <ToggleSwitch
-                        x:Name="ExperimentalToolsToggle"
-                        Header="显示实验性语言工具"
-                        OffContent="隐藏"
-                        OnContent="显示" />
+                    <ToggleSwitch x:Name="ExperimentalToolsToggle" />
                     <TextBlock
+                        x:Name="ExperimentalToolsHintText"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="语言包和工具 Provider 仍需单独导入、审核并启用；此设置不会绕过安全检查。"
                         TextWrapping="Wrap" />
                 </StackPanel>
             </Expander>
 
-            <Expander Header="下载默认值">
+            <Expander x:Name="DownloadDefaultsExpander">
                 <StackPanel Padding="0,12,0,6" Spacing="12">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="默认并发连接数" />
+                        <TextBlock x:Name="DefaultConnectionsLabelText" />
                         <ComboBox
                             x:Name="DefaultConnectionsPicker"
-                            AutomationProperties.Name="默认并发连接数"
                             HorizontalAlignment="Stretch"
                             DisplayMemberPath="Label" />
                     </StackPanel>
                     <StackPanel Spacing="4">
-                        <TextBlock Text="单文件默认上限（GB）" />
+                        <TextBlock x:Name="MaxDownloadGbLabelText" />
                         <NumberBox
                             x:Name="MaxDownloadGbNumber"
-                            AutomationProperties.Name="单文件默认上限（GB）"
                             Minimum="1"
                             Maximum="1024"
                             SpinButtonPlacementMode="Compact" />
@@ -297,81 +285,73 @@
                 </StackPanel>
             </Expander>
 
-            <Expander Header="网络与代理">
+            <Expander x:Name="NetworkProxyExpander">
                 <StackPanel Padding="0,12,0,6" Spacing="12">
                     <TextBlock
+                        x:Name="NetworkProxyIntroText"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="这里只配置通用代理。镜像由每个语言工具 Provider 声明和管理，用户可在对应语言子页添加自定义镜像。"
                         TextWrapping="Wrap" />
                     <StackPanel Spacing="4">
-                        <TextBlock Text="HTTP 代理" />
+                        <TextBlock x:Name="HttpProxyLabelText" />
                         <TextBox
                             x:Name="HttpProxyTextBox"
-                            AutomationProperties.Name="HTTP 代理"
                             PlaceholderText="http://proxy.example:8080" />
                         <TextBlock
                             x:Name="HttpProxyHintText"
                             FontSize="12"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="留空表示不使用代理；必须是带主机的绝对地址（如 http://proxy.example:8080）。"
                             TextWrapping="Wrap" />
                     </StackPanel>
                     <StackPanel Spacing="4">
-                        <TextBlock Text="HTTPS 代理" />
+                        <TextBlock x:Name="HttpsProxyLabelText" />
                         <TextBox
                             x:Name="HttpsProxyTextBox"
-                            AutomationProperties.Name="HTTPS 代理"
                             PlaceholderText="http://proxy.example:8080" />
                         <TextBlock
                             x:Name="HttpsProxyHintText"
                             FontSize="12"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="留空表示不使用代理；必须是带主机的绝对地址（如 http://proxy.example:8080）。"
                             TextWrapping="Wrap" />
                     </StackPanel>
                     <StackPanel Spacing="4">
-                        <TextBlock Text="不使用代理" />
+                        <TextBlock x:Name="NoProxyLabelText" />
                         <TextBox
                             x:Name="NoProxyTextBox"
                             AcceptsReturn="True"
-                            AutomationProperties.Name="不使用代理的地址"
                             MinHeight="72"
                             PlaceholderText="localhost, 127.0.0.1, *.internal"
                             TextWrapping="Wrap" />
                     </StackPanel>
                     <Button
                         x:Name="SaveProxyButton"
-                        AutomationProperties.Name="保存全局代理设置"
                         Click="OnSaveProxyClicked"
                         HorizontalAlignment="Left">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <SymbolIcon Symbol="Globe" />
-                            <TextBlock Text="保存代理" />
+                            <TextBlock x:Name="SaveProxyButtonText" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
             </Expander>
 
-            <Expander Header="日志与安全策略">
+            <Expander x:Name="LoggingPolicyExpander">
                 <StackPanel Padding="0,12,0,6" Spacing="12">
                     <InfoBar
+                        x:Name="SecurityContractInfoBar"
                         IsClosable="False"
                         IsOpen="True"
-                        Message="删除、卸载和永久清理始终要求显式确认；Shim 是版本路由的固定基础设施。语言包与 Provider 更新只由用户手动导入，不执行后台目录更新。"
-                        Severity="Informational"
-                        Title="安全合同不可关闭" />
+                        Severity="Informational" />
                     <StackPanel Spacing="4">
-                        <TextBlock Text="活动日志保留天数" />
+                        <TextBlock x:Name="LogRetentionLabelText" />
                         <NumberBox
                             x:Name="LogRetentionNumber"
-                            AutomationProperties.Name="活动日志保留天数"
                             Minimum="1"
                             Maximum="365"
                             SpinButtonPlacementMode="Compact" />
                     </StackPanel>
                     <TextBlock
+                        x:Name="LogRetentionHintText"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="新活动写入时会在同一受管锁和原子重写事务中清理过期记录；日志仍同时受 1000 条和 2 MiB 上限约束。"
                         TextWrapping="Wrap" />
                 </StackPanel>
             </Expander>
@@ -389,11 +369,11 @@
 
                     <StackPanel Spacing="6">
                         <TextBlock
-                            Style="{StaticResource SubtitleTextBlockStyle}"
-                            Text="受管数据根" />
+                            x:Name="ManagedRootSectionTitleText"
+                            Style="{StaticResource SubtitleTextBlockStyle}" />
                         <TextBlock
+                            x:Name="ManagedRootSectionSubtitleText"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="语言工具、Shim、注册表、项目状态和诊断快照都保存在这里。不会自动迁移或删除旧目录。"
                             TextWrapping="Wrap" />
                         <TextBlock
                             x:Name="ManagedRootText"
@@ -413,21 +393,18 @@
                         Spacing="8">
                         <Button
                             x:Name="ChooseManagedRootButton"
-                            Click="OnChooseManagedRootClicked"
-                            ToolTipService.ToolTip="选择非系统盘上的受管数据目录">
+                            Click="OnChooseManagedRootClicked">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <SymbolIcon Symbol="OpenFile" />
-                                <TextBlock Text="选择数据根" />
+                                <TextBlock x:Name="ChooseManagedRootButtonText" />
                             </StackPanel>
                         </Button>
                         <Button
                             x:Name="ResetManagedRootButton"
-                            AutomationProperties.Name="恢复默认受管数据根"
-                            Click="OnResetManagedRootClicked"
-                            ToolTipService.ToolTip="清除用户级 AUTOENVPLUS_HOME，恢复 %LOCALAPPDATA%\\AutoEnvPlus">
+                            Click="OnResetManagedRootClicked">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <SymbolIcon Symbol="Undo" />
-                                <TextBlock Text="恢复默认目录" />
+                                <TextBlock x:Name="ResetManagedRootButtonText" />
                             </StackPanel>
                         </Button>
                     </StackPanel>
@@ -453,11 +430,11 @@
 
                     <StackPanel Spacing="6">
                         <TextBlock
-                            Style="{StaticResource SubtitleTextBlockStyle}"
-                            Text="PowerShell 会话集成" />
+                            x:Name="PowerShellSectionTitleText"
+                            Style="{StaticResource SubtitleTextBlockStyle}" />
                         <TextBlock
+                            x:Name="PowerShellSectionSubtitleText"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="当前用户 Profile"
                             TextWrapping="Wrap" />
                         <TextBlock
                             x:Name="ProfilePathText"
@@ -472,38 +449,34 @@
                         Spacing="8">
                         <Button
                             x:Name="PreviewPowerShellButton"
-                            Click="OnPreviewPowerShellClicked"
-                            ToolTipService.ToolTip="预览 Profile 与模块变更">
+                            Click="OnPreviewPowerShellClicked">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <SymbolIcon Symbol="View" />
-                                <TextBlock Text="预览" />
+                                <TextBlock x:Name="PreviewPowerShellButtonText" />
                             </StackPanel>
                         </Button>
                         <Button
                             x:Name="InstallPowerShellButton"
                             Click="OnInstallPowerShellClicked"
-                            Style="{StaticResource AccentButtonStyle}"
-                            ToolTipService.ToolTip="确认后安装 PowerShell 集成">
+                            Style="{StaticResource AccentButtonStyle}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <SymbolIcon Symbol="Accept" />
-                                <TextBlock Text="安装" />
+                                <TextBlock x:Name="InstallPowerShellButtonText" />
                             </StackPanel>
                         </Button>
                         <Button
                             x:Name="RollbackPowerShellButton"
                             Click="OnRollbackPowerShellClicked"
-                            IsEnabled="False"
-                            ToolTipService.ToolTip="恢复本次安装前的 Profile 快照">
+                            IsEnabled="False">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <SymbolIcon Symbol="Undo" />
-                                <TextBlock Text="回滚" />
+                                <TextBlock x:Name="RollbackPowerShellButtonText" />
                             </StackPanel>
                         </Button>
                         <ProgressRing
                             x:Name="PowerShellProgress"
                             Width="20"
                             Height="20"
-                            AutomationProperties.Name="PowerShell 集成操作进度"
                             IsActive="False" />
                     </StackPanel>
                 </Grid>
@@ -516,13 +489,12 @@
                 IsOpen="False" />
 
             <Pivot x:Name="PowerShellPreviewPivot" Visibility="Collapsed">
-                <PivotItem Header="摘要">
+                <PivotItem x:Name="PowerShellSummaryPivotItem">
                     <TextBox
                         x:Name="PowerShellSummaryText"
                         MinHeight="150"
                         MaxHeight="280"
                         AcceptsReturn="True"
-                        AutomationProperties.Name="PowerShell 集成摘要预览"
                         FontFamily="Consolas"
                         IsReadOnly="True"
                         TextWrapping="Wrap" />
@@ -533,7 +505,6 @@
                         MinHeight="220"
                         MaxHeight="420"
                         AcceptsReturn="True"
-                        AutomationProperties.Name="PowerShell Profile 预览"
                         FontFamily="Consolas"
                         IsReadOnly="True"
                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
@@ -541,13 +512,12 @@
                         TextWrapping="NoWrap"
                         />
                 </PivotItem>
-                <PivotItem Header="模块">
+                <PivotItem x:Name="PowerShellModulePivotItem">
                     <TextBox
                         x:Name="PowerShellModulePreviewText"
                         MinHeight="220"
                         MaxHeight="420"
                         AcceptsReturn="True"
-                        AutomationProperties.Name="PowerShell 模块预览"
                         FontFamily="Consolas"
                         IsReadOnly="True"
                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
@@ -562,30 +532,27 @@
                 BorderThickness="0,1,0,1"
                 Padding="0,18">
                 <StackPanel Spacing="10">
-                    <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="关于 AutoEnvPlus" />
+                    <TextBlock x:Name="AboutSectionTitleText" Style="{StaticResource SubtitleTextBlockStyle}" />
                     <StackPanel Spacing="2">
                         <TextBlock
                             x:Name="AboutVersionText"
                             FontWeight="SemiBold"
                             IsTextSelectionEnabled="True" />
                         <TextBlock
+                            x:Name="AboutTaglineText"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             IsTextSelectionEnabled="True"
-                            Text="Windows 开发环境控制中心 · WinUI 3 · 许可证 GNU AGPL-3.0"
                             TextWrapping="Wrap" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <HyperlinkButton
-                            AutomationProperties.Name="打开 GitHub 仓库"
-                            Content="GitHub 仓库"
+                            x:Name="GitHubRepoLink"
                             NavigateUri="https://github.com/yeyouyby/autoenvplus" />
                         <HyperlinkButton
-                            AutomationProperties.Name="查看发布说明"
-                            Content="发布说明"
+                            x:Name="ReleaseNotesLink"
                             NavigateUri="https://github.com/yeyouyby/autoenvplus/releases" />
                         <HyperlinkButton
-                            AutomationProperties.Name="提交问题反馈"
-                            Content="问题反馈"
+                            x:Name="IssueFeedbackLink"
                             NavigateUri="https://github.com/yeyouyby/autoenvplus/issues" />
                     </StackPanel>
                     <TextBlock
