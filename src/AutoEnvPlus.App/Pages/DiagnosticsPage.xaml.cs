@@ -73,6 +73,9 @@ public sealed partial class DiagnosticsPage : Page
         ToolTipService.SetToolTip(
             RefreshButton,
             Loc.Get("Diagnostics.Scan.ToolTip"));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            RefreshButton,
+            Loc.Get("Diagnostics.Scan.AccessibleName"));
         ScanButtonText.Text = Loc.Get("Diagnostics.Scan.Label");
         ScopeExpander.Header = Loc.Get("Diagnostics.Scope.Header");
         PathScopeCheckBox.Content = Loc.Get("Diagnostics.Scope.Path");

@@ -3963,4 +3963,8 @@ AutoEnvPlus 只会写入用户级 {2}。不会自动迁移语言工具、缓存�
   <data name="Diagnostics.Repair.Activity.Failed" xml:space="preserve">
     <value>诊断修复失败（{0}）</value>
   </data>
+
+  <data name="Diagnostics.Scan.AccessibleName" xml:space="preserve">
+    <value>开始环境诊断扫描</value>
+  </data>
 </root>

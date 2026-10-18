@@ -3960,4 +3960,8 @@ If the profile was modified after installation, AutoEnvPlus refuses to overwrite
   <data name="Diagnostics.Repair.Activity.Failed" xml:space="preserve">
     <value>Diagnostic repair failed ({0})</value>
   </data>
+
+  <data name="Diagnostics.Scan.AccessibleName" xml:space="preserve">
+    <value>Start environment scan</value>
+  </data>
 </root>
