@@ -4,6 +4,20 @@
 
 ## Unreleased
 
+## 0.0.4 - 2026-10-11
+
+单文件启动修复版：v0.0.3 的单文件 EXE 在部分机器上首次 WinUI 激活即崩溃（COMException 0x80040111，无窗口无日志），portable 与 MSI 不受影响。核心引擎、CLI 与 Shim 行为不变。已作为 GitHub prerelease `v0.0.4` 发布并完成签名与资产回读。
+
+### Fixed
+
+- 单文件 EXE 启动崩溃：Windows App SDK 的 undocked reg-free WinRT 目录以裸文件名加载 WinUI 原生 DLL，而 .NET 8.0.27+ 的单文件宿主不再预加载解压目录中的原生 DLL，裸名搜索找不到目标导致首次激活失败。捆绑的运行时版本随 SDK 补丁浮动（CI 解析到 8.0.27，本地为 8.0.25），因此 CI 产物损坏而本地冒烟通过。现由自定义入口点在 `Application.Start` 前调用 `SetDllDirectoryW(AppContext.BaseDirectory)` 修复，已在本地复现的 8.0.27 捆绑包与 8.0.25 上验证窗口正常出现；
+- 早期启动失败静默退出：激活前的异常现在会写入 `%TEMP%\autoenvplus-startup-failure.log` 并弹出提示，不再无声消失。
+
+### Changed
+
+- 发布可追溯性：单文件发布脚本从 bundle 输入清单提取并打印捆绑的 .NET 运行时包版本；
+- 发布门禁：GitHub Release 发布前在 CI 上实际启动签名后的单文件 EXE 与 portable App.exe 冒烟验证——v0.0.3 带病发布的直接原因就是此前没有任何门禁真正启动过产物。
+
 ## 0.0.3 - 2026-10-10
 
 产品打磨版：五页产品审计发现的全部 UI/UX 缺口与四项功能级改进。核心引擎、CLI 与 Shim 行为不变。已作为 GitHub prerelease `v0.0.3` 发布并完成签名与资产回读。
