@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Localized UI strings for AutoEnvPlus (Simplified Chinese, the default
+    language). Keys are logical "<Scope>.<Element>" names resolved through
+    Loc.Get in code-behind; unpackaged WinUI 3 cannot use x:Uid (the XAML
+    loader ignores both the dotted-key PRI layout and the in-app language
+    override), so every user-visible string is assigned from code. Add every
+    new string here first, then mirror it in Strings/en-US/Resources.resw.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Settings.Page.Title" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="Settings.Page.Subtitle" xml:space="preserve">
+    <value>启动与快照、语言可见性、下载、代理、外观、日志与受管数据</value>
+  </data>
+  <data name="Settings.SaveProgress.AccessibleName" xml:space="preserve">
+    <value>设置保存进度</value>
+  </data>
+  <data name="Settings.SaveButton.AccessibleName" xml:space="preserve">
+    <value>保存应用设置</value>
+  </data>
+  <data name="Settings.SaveButton.Label" xml:space="preserve">
+    <value>保存设置</value>
+  </data>
+  <data name="Settings.Language.SectionTitle" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="Settings.Language.SectionSubtitle" xml:space="preserve">
+    <value>界面显示语言；更改后重启应用生效</value>
+  </data>
+  <data name="Settings.Language.FieldLabel" xml:space="preserve">
+    <value>界面语言</value>
+  </data>
+  <data name="Settings.Language.Picker.AccessibleName" xml:space="preserve">
+    <value>界面语言</value>
+  </data>
+  <data name="Settings.Language.Option.System" xml:space="preserve">
+    <value>跟随系统</value>
+  </data>
+  <data name="Settings.Language.Option.ChineseSimplified" xml:space="preserve">
+    <value>简体中文</value>
+  </data>
+  <data name="Settings.Language.Option.English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Settings.Language.RestartHint" xml:space="preserve">
+    <value>语言更改将在下次启动时生效。</value>
+  </data>
+</root>

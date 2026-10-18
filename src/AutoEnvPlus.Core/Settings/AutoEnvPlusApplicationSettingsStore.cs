@@ -33,6 +33,7 @@ public sealed class AutoEnvPlusApplicationSettingsStore
             "logRetentionDays",
             "requireDestructiveActionConfirmation",
             "showExperimentalTools",
+            "languagePreference",
         ],
         StringComparer.Ordinal);
 
@@ -249,7 +250,8 @@ public sealed class AutoEnvPlusApplicationSettingsStore
         CatalogUpdatePolicy CatalogUpdatePolicy,
         int LogRetentionDays,
         bool RequireDestructiveActionConfirmation,
-        bool ShowExperimentalTools)
+        bool ShowExperimentalTools,
+        LanguagePreference LanguagePreference)
     {
         public AutoEnvPlusApplicationSettings ToSettings() => new(
             StartupDestination,
@@ -266,7 +268,8 @@ public sealed class AutoEnvPlusApplicationSettingsStore
             CatalogUpdatePolicy,
             LogRetentionDays,
             RequireDestructiveActionConfirmation,
-            ShowExperimentalTools);
+            ShowExperimentalTools,
+            LanguagePreference);
 
         public static SettingsDocument FromSettings(
             AutoEnvPlusApplicationSettings settings) => new(
@@ -285,6 +288,7 @@ public sealed class AutoEnvPlusApplicationSettingsStore
             settings.CatalogUpdatePolicy,
             settings.LogRetentionDays,
             settings.RequireDestructiveActionConfirmation,
-            settings.ShowExperimentalTools);
+            settings.ShowExperimentalTools,
+            settings.LanguagePreference);
     }
 }
