@@ -1,4 +1,5 @@
 using AutoEnvPlus.App.Downloads;
+using AutoEnvPlus.App.Services;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Settings;
 using Microsoft.UI.Xaml;
@@ -8,6 +9,7 @@ namespace AutoEnvPlus.App;
 public partial class App : Application
 {
     private AppDownloadManager? _downloadManager;
+    private OverviewMonitorService? _overviewMonitor;
     private DateTimeOffset _lastRuntimeErrorDialogAtUtc = DateTimeOffset.MinValue;
     private System.Threading.Mutex? _singleInstanceMutex;
 
@@ -18,6 +20,14 @@ public partial class App : Application
 
     internal AppDownloadManager DownloadManager => _downloadManager ??=
         new AppDownloadManager(ManagedRootResolver.ResolveOrThrow());
+
+    /// <summary>
+    /// App-lifetime overview statistics monitor. Owns snapshot collection so
+    /// the environment statistics keep refreshing in the background even
+    /// when no dashboard page is visible.
+    /// </summary>
+    internal OverviewMonitorService OverviewMonitor =>
+        _overviewMonitor ??= new OverviewMonitorService(DownloadManager);
 
     public App()
     {
@@ -157,6 +167,14 @@ public partial class App : Application
             CurrentSettings = settings;
             MainWindowInstance = new MainWindow(settings);
             MainWindowInstance.Activate();
+            if (managedRoot is not null)
+            {
+                // Background statistics: quick-refresh the overview snapshot
+                // every 5 minutes for the lifetime of the app so the data is
+                // sustainable across page switches. Full scans stay
+                // user-initiated (they probe processes and walk caches).
+                OverviewMonitor.StartAutoRefresh(managedRoot, TimeSpan.FromMinutes(5));
+            }
         }
         catch (Exception exception)
         {
