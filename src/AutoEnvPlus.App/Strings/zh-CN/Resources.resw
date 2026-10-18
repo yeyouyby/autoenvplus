@@ -1475,4 +1475,1333 @@ PATH 变化
   <data name="Shell.Pages.settings.Subtitle" xml:space="preserve">
     <value>外观、启动、网络与日志</value>
   </data>
+
+  <data name="Projects.Header.Title" xml:space="preserve">
+    <value>项目环境</value>
+  </data>
+  <data name="Projects.Header.Subtitle" xml:space="preserve">
+    <value>导入版本文件、生成 autoenvplus.toml/lock，并打开只对新 PowerShell 生效的精确项目环境。</value>
+  </data>
+  <data name="Projects.Actions.ChooseProjectFolder" xml:space="preserve">
+    <value>选择项目文件夹</value>
+  </data>
+  <data name="Projects.Info.InitialTitle" xml:space="preserve">
+    <value>尚未选择项目</value>
+  </data>
+  <data name="Projects.Info.InitialMessage" xml:space="preserve">
+    <value>支持 .python-version、.nvmrc、.node-version、.java-version、package.json 和 global.json；项目终端不会修改全局 PATH。</value>
+  </data>
+  <data name="Projects.Details.Placeholder" xml:space="preserve">
+    <value>选择一个项目后显示解析来源。</value>
+  </data>
+  <data name="Projects.Actions.OpenTerminal" xml:space="preserve">
+    <value>打开已激活终端</value>
+  </data>
+  <data name="Projects.Actions.CreateManifest" xml:space="preserve">
+    <value>生成 autoenvplus.toml</value>
+  </data>
+  <data name="Projects.Actions.CreateLock" xml:space="preserve">
+    <value>生成 autoenvplus.lock</value>
+  </data>
+  <data name="Projects.Actions.CreateCMakePreset" xml:space="preserve">
+    <value>生成 CMake Preset</value>
+  </data>
+  <data name="Projects.Actions.RollbackCMakePreset" xml:space="preserve">
+    <value>回滚 CMake Preset</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.SectionTitle" xml:space="preserve">
+    <value>项目虚拟环境</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.SectionSubtitle" xml:space="preserve">
+    <value>只读解析项目内已有环境、包管理器锁、工具清单和 Wrapper，不执行任何外部命令。</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.Discover.ToolTip" xml:space="preserve">
+    <value>扫描当前项目的虚拟环境证据</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.Discover.Label" xml:space="preserve">
+    <value>解析虚拟环境</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.Progress.AccessibleName" xml:space="preserve">
+    <value>虚拟环境解析进度</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.Progress.Label" xml:space="preserve">
+    <value>正在读取有界候选路径…</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.Placeholder" xml:space="preserve">
+    <value>选择项目后，可按需解析项目内已有虚拟环境。</value>
+  </data>
+  <data name="Projects.Picker.CommitButton" xml:space="preserve">
+    <value>选择项目</value>
+  </data>
+  <data name="Projects.Messages.ProjectRootMissing" xml:space="preserve">
+    <value>项目目录不存在：{0}</value>
+  </data>
+  <data name="Projects.Messages.LoadFailedTitle" xml:space="preserve">
+    <value>无法读取项目环境</value>
+  </data>
+  <data name="Projects.Details.ImportedDeclarations" xml:space="preserve">
+    <value>发现可导入的版本声明：</value>
+  </data>
+  <data name="Projects.Details.WarningLine" xml:space="preserve">
+    <value>警告：{0}</value>
+  </data>
+  <data name="Projects.Details.NoDeclarations" xml:space="preserve">
+    <value>没有发现 AutoEnvPlus 支持的版本声明文件。可以手动创建 autoenvplus.toml。</value>
+  </data>
+  <data name="Projects.Messages.LoadedTitle" xml:space="preserve">
+    <value>项目环境已读取</value>
+  </data>
+  <data name="Projects.Messages.LoadedWithManifest" xml:space="preserve">
+    <value>可以使用已安装语言工具生成精确锁文件。</value>
+  </data>
+  <data name="Projects.Messages.LoadedWithoutManifest" xml:space="preserve">
+    <value>确认导入来源后可生成 autoenvplus.toml。</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.ScanningTitle" xml:space="preserve">
+    <value>正在解析项目虚拟环境</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.ScanningMessage" xml:space="preserve">
+    <value>只读取固定候选路径和受大小限制的配置文件。</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.CancelledTitle" xml:space="preserve">
+    <value>解析已取消</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.CancelledMessage" xml:space="preserve">
+    <value>没有修改项目文件或环境设置。</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.CancelledHint" xml:space="preserve">
+    <value>可再次点击“解析虚拟环境”。</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.FailedTitle" xml:space="preserve">
+    <value>无法解析虚拟环境</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.FailedHint" xml:space="preserve">
+    <value>扫描失败；项目内容未被修改。</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.ResetHint" xml:space="preserve">
+    <value>点击“解析虚拟环境”读取当前项目的本地证据。</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.NoneFoundTitle" xml:space="preserve">
+    <value>未发现项目虚拟环境</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.FoundTitle" xml:space="preserve">
+    <value>发现 {0} 项本地环境证据</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.NoneFoundMessage" xml:space="preserve">
+    <value>已检查 {0} 个固定候选路径；没有执行外部命令。</value>
+  </data>
+  <data name="Projects.Separator" xml:space="preserve">
+    <value>；</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.FoundMessage" xml:space="preserve">
+    <value>需注意 {0} 项 · 无效 {1} 项 · 检查路径 {2} 个</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.ScanLimitSuffix" xml:space="preserve">
+    <value> · 已达到扫描上限</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.EmptyResult" xml:space="preserve">
+    <value>没有发现 .venv/Conda、Node 依赖环境、.NET 工具清单、Java Wrapper、Rust 或 Go 工作区。</value>
+  </data>
+  <data name="Projects.Messages.ManifestCreatedTitle" xml:space="preserve">
+    <value>项目清单已创建</value>
+  </data>
+  <data name="Projects.Messages.ManifestCreatedActivity" xml:space="preserve">
+    <value>已从现有版本声明生成 autoenvplus.toml。</value>
+  </data>
+  <data name="Projects.Messages.ManifestFailedTitle" xml:space="preserve">
+    <value>无法创建项目清单</value>
+  </data>
+  <data name="Projects.Messages.ManifestFailedActivity" xml:space="preserve">
+    <value>生成 autoenvplus.toml 失败。错误类型：{0}。</value>
+  </data>
+  <data name="Projects.Terminal.HostLabel" xml:space="preserve">
+    <value>终端主机</value>
+  </data>
+  <data name="Projects.Terminal.WindowsTerminalUnavailableTitle" xml:space="preserve">
+    <value>Windows Terminal 不可用</value>
+  </data>
+  <data name="Projects.Terminal.WindowsTerminalUnavailableMessage" xml:space="preserve">
+    <value>当前未检测到 wt.exe，本次将打开 Windows PowerShell。</value>
+  </data>
+  <data name="Projects.Terminal.DialogTitle" xml:space="preserve">
+    <value>打开项目已激活终端</value>
+  </data>
+  <data name="Projects.Dialogs.Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Projects.Terminal.OpenInWindowsTerminal" xml:space="preserve">
+    <value>在 Windows Terminal 中打开</value>
+  </data>
+  <data name="Projects.Terminal.OpenNewPowerShell" xml:space="preserve">
+    <value>打开新 PowerShell</value>
+  </data>
+  <data name="Projects.Terminal.LaunchedTitle" xml:space="preserve">
+    <value>项目终端已启动</value>
+  </data>
+  <data name="Projects.Terminal.LaunchedMessage" xml:space="preserve">
+    <value>PID {0} · {1} · 会话级精确版本，不修改用户 PATH 或全局默认。</value>
+  </data>
+  <data name="Projects.Terminal.LaunchFailedTitle" xml:space="preserve">
+    <value>无法打开项目终端</value>
+  </data>
+  <data name="Projects.Terminal.Preview.Project" xml:space="preserve">
+    <value>项目
+{0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.Manifest" xml:space="preserve">
+    <value>
+清单
+{0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.Host" xml:space="preserve">
+    <value>
+终端主机
+{0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.SelectionsHeader" xml:space="preserve">
+    <value>
+精确语言工具</value>
+  </data>
+  <data name="Projects.Terminal.Preview.SelectionsEmpty" xml:space="preserve">
+    <value>（没有可由 AutoEnvPlus Shim 激活的语言工具）</value>
+  </data>
+  <data name="Projects.Terminal.Preview.SessionVariablesHeader" xml:space="preserve">
+    <value>
+会话变量（只写入新终端进程）</value>
+  </data>
+  <data name="Projects.Terminal.Preview.SessionVariablesEmpty" xml:space="preserve">
+    <value>（无）</value>
+  </data>
+  <data name="Projects.Terminal.Preview.PathOverride" xml:space="preserve">
+    <value>  {0}=&lt;Shim 目录已置于首位&gt;</value>
+  </data>
+  <data name="Projects.Terminal.Preview.RedactedValue" xml:space="preserve">
+    <value>  {0}=&lt;已配置，不回显&gt;</value>
+  </data>
+  <data name="Projects.Terminal.Preview.NetworkHeader" xml:space="preserve">
+    <value>
+网络环境</value>
+  </data>
+  <data name="Projects.Terminal.Preview.NetworkNotApplied" xml:space="preserve">
+    <value>项目没有 Python 或 Node.js 网络工具，未注入包源环境。</value>
+  </data>
+  <data name="Projects.Terminal.Preview.ProxySource" xml:space="preserve">
+    <value>代理来源：{0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.ProxyLine" xml:space="preserve">
+    <value>HTTP：{0} · HTTPS：{1} · 绕过项：{2}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.PipMirror" xml:space="preserve">
+    <value>pip 镜像：{0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.NpmRegistry" xml:space="preserve">
+    <value>npm registry：{0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.EnvironmentRemovals" xml:space="preserve">
+    <value>将清除 {0} 个不应继承的网络环境变量。</value>
+  </data>
+  <data name="Projects.Terminal.Preview.WarningLine" xml:space="preserve">
+    <value>
+警告：{0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.ErrorLine" xml:space="preserve">
+    <value>
+错误：{0}</value>
+  </data>
+  <data name="Projects.Terminal.ProxySource.Pip" xml:space="preserve">
+    <value>pip 工具覆盖</value>
+  </data>
+  <data name="Projects.Terminal.ProxySource.Npm" xml:space="preserve">
+    <value>npm 工具覆盖</value>
+  </data>
+  <data name="Projects.Terminal.ProxySource.Matching" xml:space="preserve">
+    <value>pip 与 npm 一致配置</value>
+  </data>
+  <data name="Projects.Terminal.ProxySource.Downloads" xml:space="preserve">
+    <value>下载中心回退配置</value>
+  </data>
+  <data name="Projects.Terminal.DirectConnection" xml:space="preserve">
+    <value>直连</value>
+  </data>
+  <data name="Projects.Terminal.ProxyConfigured" xml:space="preserve">
+    <value>已配置代理</value>
+  </data>
+  <data name="Projects.Terminal.MirrorConfigured" xml:space="preserve">
+    <value>已配置</value>
+  </data>
+  <data name="Projects.Terminal.MirrorOfficial" xml:space="preserve">
+    <value>官方源</value>
+  </data>
+  <data name="Projects.Messages.LockNotGeneratedTitle" xml:space="preserve">
+    <value>锁文件尚未生成</value>
+  </data>
+  <data name="Projects.Messages.LockNotGeneratedActivity" xml:space="preserve">
+    <value>项目精确锁文件未生成；语言工具解析存在未满足项。</value>
+  </data>
+  <data name="Projects.Messages.LockCreatedTitle" xml:space="preserve">
+    <value>项目锁文件已生成</value>
+  </data>
+  <data name="Projects.Messages.LockCreatedMessage" xml:space="preserve">
+    <value>{0} · {1} 个精确语言工具</value>
+  </data>
+  <data name="Projects.Messages.LockCreatedActivity" xml:space="preserve">
+    <value>已生成包含 {0} 个精确语言工具的项目锁文件。</value>
+  </data>
+  <data name="Projects.Messages.LockFailedTitle" xml:space="preserve">
+    <value>无法生成项目锁文件</value>
+  </data>
+  <data name="Projects.Messages.LockFailedActivity" xml:space="preserve">
+    <value>项目锁文件生成失败。错误类型：{0}。</value>
+  </data>
+  <data name="Projects.CMake.NoMsvcPairs" xml:space="preserve">
+    <value>没有发现可用于 CMake Preset 的 MSVC Host/Target 组合。</value>
+  </data>
+  <data name="Projects.CMake.SelectorAccessibleName" xml:space="preserve">
+    <value>CMake MSVC 配置</value>
+  </data>
+  <data name="Projects.CMake.SelectDialogTitle" xml:space="preserve">
+    <value>选择 CMake MSVC 配置</value>
+  </data>
+  <data name="Projects.CMake.PreviewJson" xml:space="preserve">
+    <value>预览 JSON</value>
+  </data>
+  <data name="Projects.CMake.WriteDialogTitle" xml:space="preserve">
+    <value>写入 {0}</value>
+  </data>
+  <data name="Projects.CMake.WriteAndSnapshot" xml:space="preserve">
+    <value>写入并保存快照</value>
+  </data>
+  <data name="Projects.CMake.WriteFailed" xml:space="preserve">
+    <value>CMake Preset 写入失败。</value>
+  </data>
+  <data name="Projects.CMake.WrittenTitle" xml:space="preserve">
+    <value>CMake User Preset 已写入</value>
+  </data>
+  <data name="Projects.CMake.WrittenMessage" xml:space="preserve">
+    <value>{0} · {1} · 快照 {2}</value>
+  </data>
+  <data name="Projects.CMake.WrittenActivity" xml:space="preserve">
+    <value>已写入项目级 {0}：{1}。</value>
+  </data>
+  <data name="Projects.CMake.FailedTitle" xml:space="preserve">
+    <value>无法生成 CMake Preset</value>
+  </data>
+  <data name="Projects.CMake.FailedActivity" xml:space="preserve">
+    <value>项目级 CMake User Preset 写入失败。错误类型：{0}。</value>
+  </data>
+  <data name="Projects.CMake.RollbackDialogTitle" xml:space="preserve">
+    <value>回滚 CMake User Presets</value>
+  </data>
+  <data name="Projects.CMake.RollbackDialogText" xml:space="preserve">
+    <value>项目
+{0}
+
+快照
+{1}
+
+如果文件后来被修改，AutoEnvPlus 会拒绝覆盖。</value>
+  </data>
+  <data name="Projects.CMake.RollbackButton" xml:space="preserve">
+    <value>回滚</value>
+  </data>
+  <data name="Projects.CMake.RollbackFailedTitle" xml:space="preserve">
+    <value>CMake Preset 回滚失败</value>
+  </data>
+  <data name="Projects.CMake.RollbackRejectedActivity" xml:space="preserve">
+    <value>CMake User Preset 回滚在执行时复检阶段被拒绝。</value>
+  </data>
+  <data name="Projects.CMake.RollbackSucceededTitle" xml:space="preserve">
+    <value>CMake User Presets 已回滚</value>
+  </data>
+  <data name="Projects.CMake.RollbackSucceededActivity" xml:space="preserve">
+    <value>已回滚项目级 CMake User Preset。</value>
+  </data>
+  <data name="Projects.CMake.RollbackFailedActivity" xml:space="preserve">
+    <value>CMake User Preset 回滚失败。错误类型：{0}。</value>
+  </data>
+  <data name="Projects.Environment.Healthy" xml:space="preserve">
+    <value>正常</value>
+  </data>
+  <data name="Projects.Environment.NeedsAttention" xml:space="preserve">
+    <value>需要检查</value>
+  </data>
+  <data name="Projects.Environment.Invalid" xml:space="preserve">
+    <value>不可用</value>
+  </data>
+  <data name="Projects.Environment.VersionText" xml:space="preserve">
+    <value>版本：{0}</value>
+  </data>
+  <data name="Projects.Environment.ExecutableText" xml:space="preserve">
+    <value>入口：{0}</value>
+  </data>
+  <data name="Projects.Environment.EvidenceText" xml:space="preserve">
+    <value>证据：{0}</value>
+  </data>
+  <data name="Projects.Environment.WarningText" xml:space="preserve">
+    <value>注意：{0}</value>
+  </data>
+  <data name="Projects.Environment.Kind.VirtualEnvironment" xml:space="preserve">
+    <value>虚拟环境</value>
+  </data>
+  <data name="Projects.Environment.Kind.CondaEnvironment" xml:space="preserve">
+    <value>Conda 环境</value>
+  </data>
+  <data name="Projects.Environment.Kind.EnvironmentDefinition" xml:space="preserve">
+    <value>环境管理声明</value>
+  </data>
+  <data name="Projects.Environment.Kind.DependencyEnvironment" xml:space="preserve">
+    <value>依赖环境</value>
+  </data>
+  <data name="Projects.Environment.Kind.LocalToolManifest" xml:space="preserve">
+    <value>本地工具清单</value>
+  </data>
+  <data name="Projects.Environment.Kind.BuildWrapper" xml:space="preserve">
+    <value>构建 Wrapper</value>
+  </data>
+  <data name="Projects.Environment.Kind.ToolchainSelection" xml:space="preserve">
+    <value>编译工具选择</value>
+  </data>
+  <data name="Projects.Environment.Kind.BuildOutput" xml:space="preserve">
+    <value>构建输出</value>
+  </data>
+  <data name="Projects.Environment.Kind.Workspace" xml:space="preserve">
+    <value>工作区</value>
+  </data>
+  <data name="Projects.CMake.ChoiceLabel" xml:space="preserve">
+    <value>{0} · {1} 目标 · {2} Host</value>
+  </data>
+
+  <data name="Storage.Header.Title" xml:space="preserve">
+    <value>缓存与存储</value>
+  </data>
+  <data name="Storage.Header.Subtitle" xml:space="preserve">
+    <value>识别 pip、npm、pnpm、Yarn、NuGet、Maven、Gradle、vcpkg 和 Conan 的真实存储位置与配置来源。</value>
+  </data>
+  <data name="Storage.Progress.AccessibleName" xml:space="preserve">
+    <value>存储操作进度</value>
+  </data>
+  <data name="Storage.Actions.CancelOperation.ToolTip" xml:space="preserve">
+    <value>取消当前存储操作</value>
+  </data>
+  <data name="Storage.Actions.CancelOperation.Label" xml:space="preserve">
+    <value>取消当前操作</value>
+  </data>
+  <data name="Storage.Actions.Rollback.ToolTip" xml:space="preserve">
+    <value>恢复最近一次迁移前的工具配置</value>
+  </data>
+  <data name="Storage.Actions.Rollback.Label" xml:space="preserve">
+    <value>回滚最近配置</value>
+  </data>
+  <data name="Storage.Actions.MeasureAll" xml:space="preserve">
+    <value>计算全部大小</value>
+  </data>
+  <data name="Storage.Info.InitialTitle" xml:space="preserve">
+    <value>已读取当前配置</value>
+  </data>
+  <data name="Storage.Info.InitialMessage" xml:space="preserve">
+    <value>迁移保留原目录；安全清理先移入同卷隔离区。Gradle 与 Conan 根目录包含配置，不提供整目录清理。</value>
+  </data>
+  <data name="Storage.Cleanup.SectionTitle" xml:space="preserve">
+    <value>安全隔离区</value>
+  </data>
+  <data name="Storage.Cleanup.EmptyCount" xml:space="preserve">
+    <value>无待处理项</value>
+  </data>
+  <data name="Storage.Cleanup.CountFormat" xml:space="preserve">
+    <value>{0:N0} 项</value>
+  </data>
+  <data name="Storage.Cleanup.Picker.AccessibleName" xml:space="preserve">
+    <value>选择安全隔离区项目</value>
+  </data>
+  <data name="Storage.Cleanup.Picker.Placeholder" xml:space="preserve">
+    <value>没有可恢复或清空的缓存</value>
+  </data>
+  <data name="Storage.Cleanup.Restore.ToolTip" xml:space="preserve">
+    <value>将隔离内容移回原缓存目录</value>
+  </data>
+  <data name="Storage.Cleanup.Restore.Label" xml:space="preserve">
+    <value>恢复</value>
+  </data>
+  <data name="Storage.Cleanup.Restore.DefaultToolTip" xml:space="preserve">
+    <value>选择一个可恢复的隔离项</value>
+  </data>
+  <data name="Storage.Cleanup.Restore.BlockedFallback" xml:space="preserve">
+    <value>永久清空已经开始，不能再恢复</value>
+  </data>
+  <data name="Storage.Cleanup.Purge.ToolTip" xml:space="preserve">
+    <value>永久删除已复检的隔离内容</value>
+  </data>
+  <data name="Storage.Cleanup.Purge.Label" xml:space="preserve">
+    <value>永久清空</value>
+  </data>
+  <data name="Storage.Cleanup.State.Recoverable" xml:space="preserve">
+    <value>可恢复</value>
+  </data>
+  <data name="Storage.Cleanup.State.RestoreBlocked" xml:space="preserve">
+    <value>恢复已阻止</value>
+  </data>
+  <data name="Storage.Cleanup.State.RestorePending" xml:space="preserve">
+    <value>待继续恢复</value>
+  </data>
+  <data name="Storage.Cleanup.State.PurgePending" xml:space="preserve">
+    <value>待继续永久清空</value>
+  </data>
+  <data name="Storage.Cache.Columns.Tool" xml:space="preserve">
+    <value>工具</value>
+  </data>
+  <data name="Storage.Cache.Columns.Directory" xml:space="preserve">
+    <value>目录</value>
+  </data>
+  <data name="Storage.Cache.Columns.Source" xml:space="preserve">
+    <value>来源</value>
+  </data>
+  <data name="Storage.Cache.Columns.Size" xml:space="preserve">
+    <value>大小</value>
+  </data>
+  <data name="Storage.Cache.Columns.Actions" xml:space="preserve">
+    <value>操作</value>
+  </data>
+  <data name="Storage.Cache.Actions.Open.Label" xml:space="preserve">
+    <value>打开</value>
+  </data>
+  <data name="Storage.Cache.Actions.Open.ToolTip" xml:space="preserve">
+    <value>在文件资源管理器中打开实际目录</value>
+  </data>
+  <data name="Storage.Cache.Actions.Migrate" xml:space="preserve">
+    <value>迁移</value>
+  </data>
+  <data name="Storage.Cache.Actions.Cleanup" xml:space="preserve">
+    <value>清理</value>
+  </data>
+  <data name="Storage.Cache.Size.NotMeasured" xml:space="preserve">
+    <value>尚未计算</value>
+  </data>
+  <data name="Storage.Cache.Size.Measuring" xml:space="preserve">
+    <value>计算中…</value>
+  </data>
+  <data name="Storage.Cache.Size.Missing" xml:space="preserve">
+    <value>目录不存在</value>
+  </data>
+  <data name="Storage.Cache.Size.Summary" xml:space="preserve">
+    <value>{0} · {1:N0} 文件</value>
+  </data>
+  <data name="Storage.Cache.CleanupToolTip.Missing" xml:space="preserve">
+    <value>缓存目录不存在</value>
+  </data>
+  <data name="Storage.Cache.CleanupToolTip.NotSupported" xml:space="preserve">
+    <value>该根目录包含配置或其他非缓存数据，仅支持迁移，不提供整目录清理</value>
+  </data>
+  <data name="Storage.Cache.CleanupToolTip.Unsafe" xml:space="preserve">
+    <value>当前配置无法安全确认，请刷新或修复配置后再清理</value>
+  </data>
+  <data name="Storage.Cache.CleanupToolTip.Default" xml:space="preserve">
+    <value>先将缓存内容同卷移入可恢复的安全隔离区</value>
+  </data>
+  <data name="Storage.Separator" xml:space="preserve">
+    <value>；</value>
+  </data>
+  <data name="Storage.Messages.RefreshFailedTitle" xml:space="preserve">
+    <value>无法刷新缓存与隔离区</value>
+  </data>
+  <data name="Storage.Messages.RefreshPartialTitle" xml:space="preserve">
+    <value>{0}，但列表刷新失败</value>
+  </data>
+  <data name="Storage.Messages.RefreshPartialMessage" xml:space="preserve">
+    <value>{0} 刷新错误：{1}</value>
+  </data>
+  <data name="Storage.Messages.CleanupRecheckFailedTitle" xml:space="preserve">
+    <value>部分隔离项未通过安全复检</value>
+  </data>
+  <data name="Storage.Messages.MeasuringTitle" xml:space="preserve">
+    <value>正在计算缓存大小</value>
+  </data>
+  <data name="Storage.Messages.MeasurePartialTitle" xml:space="preserve">
+    <value>缓存统计完成（部分目录失败）</value>
+  </data>
+  <data name="Storage.Messages.MeasureCompletedTitle" xml:space="preserve">
+    <value>缓存统计完成</value>
+  </data>
+  <data name="Storage.Messages.MeasureCompletedMessage" xml:space="preserve">
+    <value>迁移事务将在复制和校验完成后才切换工具配置，原目录不会自动删除。</value>
+  </data>
+  <data name="Storage.Messages.MeasureCancelledTitle" xml:space="preserve">
+    <value>统计已取消</value>
+  </data>
+  <data name="Storage.Picker.MigrateCommitButton" xml:space="preserve">
+    <value>选择缓存目标磁盘或父目录</value>
+  </data>
+  <data name="Storage.Messages.MigrationPlanFailedTitle" xml:space="preserve">
+    <value>无法创建迁移计划</value>
+  </data>
+  <data name="Storage.Migration.DialogTitle" xml:space="preserve">
+    <value>迁移 {0} 缓存</value>
+  </data>
+  <data name="Storage.Migration.DialogText" xml:space="preserve">
+    <value>源目录
+{0}
+
+目标目录
+{1}
+
+配置
+{2}
+
+文件会逐个校验；切换前保存配置快照，原目录不会自动删除。
+
+请先关闭正在使用该缓存的包管理器与构建进程；迁移不会冻结或枚举外部进程，复检之后仍持有旧配置的进程可能继续写入。</value>
+  </data>
+  <data name="Storage.Migration.ConfirmButton" xml:space="preserve">
+    <value>复制、校验并切换</value>
+  </data>
+  <data name="Storage.Dialogs.Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Storage.Migration.Stage.Measure" xml:space="preserve">
+    <value>正在检查源目录</value>
+  </data>
+  <data name="Storage.Migration.Stage.Copy" xml:space="preserve">
+    <value>正在复制并校验</value>
+  </data>
+  <data name="Storage.Migration.Stage.Commit" xml:space="preserve">
+    <value>正在提交新目录</value>
+  </data>
+  <data name="Storage.Migration.Stage.Configure" xml:space="preserve">
+    <value>正在切换工具配置</value>
+  </data>
+  <data name="Storage.Migration.Stage.Complete" xml:space="preserve">
+    <value>迁移完成</value>
+  </data>
+  <data name="Storage.Migration.Failed" xml:space="preserve">
+    <value>迁移失败。</value>
+  </data>
+  <data name="Storage.Messages.MigrationCompletedTitle" xml:space="preserve">
+    <value>缓存迁移完成</value>
+  </data>
+  <data name="Storage.Messages.MigrationCompletedNoSnapshot" xml:space="preserve">
+    <value>新目录：{0}。原目录仍保留，请确认工具工作正常后手动清理。</value>
+  </data>
+  <data name="Storage.Messages.MigrationCompletedWithSnapshot" xml:space="preserve">
+    <value>新目录：{0}。配置快照：{1}。原目录仍保留。</value>
+  </data>
+  <data name="Storage.Messages.MigrationCompletedActivity" xml:space="preserve">
+    <value>已迁移 {0} 缓存并切换工具配置；原目录保持不变。</value>
+  </data>
+  <data name="Storage.Messages.MigrationCancelledTitle" xml:space="preserve">
+    <value>迁移已取消</value>
+  </data>
+  <data name="Storage.Messages.MigrationCancelledMessage" xml:space="preserve">
+    <value>原目录和原配置保持不变。</value>
+  </data>
+  <data name="Storage.Messages.MigrationCancelledActivity" xml:space="preserve">
+    <value>{0} 缓存迁移已取消；原目录和原配置保持不变。</value>
+  </data>
+  <data name="Storage.Messages.MigrationFailedTitle" xml:space="preserve">
+    <value>缓存迁移失败</value>
+  </data>
+  <data name="Storage.Messages.MigrationFailedActivity" xml:space="preserve">
+    <value>{0} 缓存迁移失败。错误类型：{1}。</value>
+  </data>
+  <data name="Storage.Messages.CleanupCheckingTitle" xml:space="preserve">
+    <value>正在检查 {0} 缓存</value>
+  </data>
+  <data name="Storage.Messages.CleanupCheckingMessage" xml:space="preserve">
+    <value>正在复检目录边界、重解析点、文件数量和大小。</value>
+  </data>
+  <data name="Storage.Messages.CleanupPlanCancelledTitle" xml:space="preserve">
+    <value>清理计划已取消</value>
+  </data>
+  <data name="Storage.Messages.CleanupPlanFailedTitle" xml:space="preserve">
+    <value>无法创建安全清理计划</value>
+  </data>
+  <data name="Storage.Cleanup.DialogTitle" xml:space="preserve">
+    <value>隔离 {0} 缓存内容</value>
+  </data>
+  <data name="Storage.Cleanup.DialogText" xml:space="preserve">
+    <value>缓存目录（保留）
+{0}
+
+安全隔离区
+{1}
+
+影响
+{2:N0} 个文件 · {3} · {4:N0} 个顶层项
+
+内容将通过同卷重命名移入隔离区，缓存目录和工具配置保持不变。此阶段不会释放磁盘空间；可先恢复，或稍后单独确认永久清空。
+
+请先关闭正在使用该缓存的包管理器与构建进程；隔离不会冻结或枚举外部进程，占用中的文件可能使隔离失败。</value>
+  </data>
+  <data name="Storage.Cleanup.ConfirmButton" xml:space="preserve">
+    <value>移入安全隔离区</value>
+  </data>
+  <data name="Storage.Cleanup.ProgressIsolating" xml:space="preserve">
+    <value>正在隔离缓存内容</value>
+  </data>
+  <data name="Storage.Messages.CleanupIsolatedTitle" xml:space="preserve">
+    <value>缓存内容已安全隔离</value>
+  </data>
+  <data name="Storage.Messages.CleanupIsolatedMessage" xml:space="preserve">
+    <value>已隔离 {0:N0} 个文件（{1}）。缓存根目录仍保留；可从安全隔离区恢复或永久清空。</value>
+  </data>
+  <data name="Storage.Messages.CleanupCancelledTitle" xml:space="preserve">
+    <value>缓存清理已取消</value>
+  </data>
+  <data name="Storage.Messages.CleanupIncompleteTitle" xml:space="preserve">
+    <value>缓存清理未完成</value>
+  </data>
+  <data name="Storage.Messages.CleanupKeptMessage" xml:space="preserve">
+    <value>缓存内容保持在原目录或受控隔离区。</value>
+  </data>
+  <data name="Storage.Messages.CleanupIsolatedActivity" xml:space="preserve">
+    <value>已把 {0} 纯缓存移入同卷安全隔离区；尚未永久释放空间。</value>
+  </data>
+  <data name="Storage.Messages.CleanupCancelledConsistentActivity" xml:space="preserve">
+    <value>{0} 缓存隔离已取消，并保存为一致状态。</value>
+  </data>
+  <data name="Storage.Messages.CleanupIncompleteActivity" xml:space="preserve">
+    <value>{0} 缓存隔离未完成。</value>
+  </data>
+  <data name="Storage.Messages.CleanupCancelledActivity" xml:space="preserve">
+    <value>{0} 缓存隔离已取消。</value>
+  </data>
+  <data name="Storage.Messages.CleanupFailedTitle" xml:space="preserve">
+    <value>缓存清理失败</value>
+  </data>
+  <data name="Storage.Messages.CleanupFailedActivity" xml:space="preserve">
+    <value>{0} 缓存隔离失败。错误类型：{1}。</value>
+  </data>
+  <data name="Storage.Restore.DialogTitle" xml:space="preserve">
+    <value>恢复 {0} 缓存</value>
+  </data>
+  <data name="Storage.Restore.DialogText" xml:space="preserve">
+    <value>原缓存目录
+{0}
+
+隔离目录
+{1}
+
+将恢复 {2:N0} 个文件（{3}）。执行前会再次复检；原目录出现任何后续数据时都拒绝覆盖。</value>
+  </data>
+  <data name="Storage.Restore.ConfirmButton" xml:space="preserve">
+    <value>恢复到原目录</value>
+  </data>
+  <data name="Storage.Restore.ProgressRestoring" xml:space="preserve">
+    <value>正在恢复缓存内容</value>
+  </data>
+  <data name="Storage.Messages.RestoreCompletedTitle" xml:space="preserve">
+    <value>缓存内容已恢复</value>
+  </data>
+  <data name="Storage.Messages.RestoreCancelledTitle" xml:space="preserve">
+    <value>缓存恢复已取消</value>
+  </data>
+  <data name="Storage.Messages.RestoreRejectedTitle" xml:space="preserve">
+    <value>缓存恢复被拒绝</value>
+  </data>
+  <data name="Storage.Messages.RestoreCompletedMessage" xml:space="preserve">
+    <value>已将 {0:N0} 个文件（{1}）恢复到原缓存目录。</value>
+  </data>
+  <data name="Storage.Messages.RestoreKeptMessage" xml:space="preserve">
+    <value>隔离内容仍保留。</value>
+  </data>
+  <data name="Storage.Messages.RestoreCompletedActivity" xml:space="preserve">
+    <value>已恢复 {0} 的隔离缓存内容。</value>
+  </data>
+  <data name="Storage.Messages.RestoreCancelledActivity" xml:space="preserve">
+    <value>恢复 {0} 隔离缓存已取消。</value>
+  </data>
+  <data name="Storage.Messages.RestoreRejectedActivity" xml:space="preserve">
+    <value>恢复 {0} 隔离缓存被拒绝。</value>
+  </data>
+  <data name="Storage.Messages.RestoreCancelledMessage" xml:space="preserve">
+    <value>隔离项已保存为可继续处理的一致状态。</value>
+  </data>
+  <data name="Storage.Messages.RestoreFailedTitle" xml:space="preserve">
+    <value>缓存恢复失败</value>
+  </data>
+  <data name="Storage.Messages.RestoreFailedActivity" xml:space="preserve">
+    <value>恢复 {0} 隔离缓存失败。错误类型：{1}。</value>
+  </data>
+  <data name="Storage.Purge.DialogTitle" xml:space="preserve">
+    <value>永久清空 {0} 隔离内容</value>
+  </data>
+  <data name="Storage.Purge.DialogText" xml:space="preserve">
+    <value>受信隔离目录
+{0}
+
+将永久删除 {1:N0} 个文件（{2}）。此操作不可撤销；开始后该隔离项不能再恢复。原缓存目录和工具配置不会修改。</value>
+  </data>
+  <data name="Storage.Purge.ConfirmButton" xml:space="preserve">
+    <value>永久删除</value>
+  </data>
+  <data name="Storage.Purge.ProgressPurging" xml:space="preserve">
+    <value>正在永久清空隔离内容</value>
+  </data>
+  <data name="Storage.Messages.PurgeCompletedTitle" xml:space="preserve">
+    <value>隔离内容已永久清空</value>
+  </data>
+  <data name="Storage.Messages.PurgeInterruptedTitle" xml:space="preserve">
+    <value>永久清空已中断</value>
+  </data>
+  <data name="Storage.Messages.PurgeIncompleteTitle" xml:space="preserve">
+    <value>永久清空未完成</value>
+  </data>
+  <data name="Storage.Messages.PurgeCompletedMessage" xml:space="preserve">
+    <value>已释放隔离内容占用的 {0}；原缓存目录保持不变。</value>
+  </data>
+  <data name="Storage.Messages.PurgePendingFallback" xml:space="preserve">
+    <value>仍有隔离内容待处理。</value>
+  </data>
+  <data name="Storage.Messages.PurgeResumeHint" xml:space="preserve">
+    <value>已开始永久清空的项目不能恢复，可再次选择“永久清空”继续。</value>
+  </data>
+  <data name="Storage.Messages.PurgeCompletedActivity" xml:space="preserve">
+    <value>已永久清空 {0} 的受信隔离内容并释放空间。</value>
+  </data>
+  <data name="Storage.Messages.PurgeInterruptedActivity" xml:space="preserve">
+    <value>永久清空 {0} 隔离内容已中断，只能继续清空。</value>
+  </data>
+  <data name="Storage.Messages.PurgeIncompleteActivity" xml:space="preserve">
+    <value>永久清空 {0} 隔离内容未完成。</value>
+  </data>
+  <data name="Storage.Messages.PurgeFailedTitle" xml:space="preserve">
+    <value>永久清空失败</value>
+  </data>
+  <data name="Storage.Messages.PurgeFailedActivity" xml:space="preserve">
+    <value>永久清空 {0} 隔离内容失败。错误类型：{1}。</value>
+  </data>
+  <data name="Storage.Messages.OpenFolderFailedTitle" xml:space="preserve">
+    <value>无法打开缓存目录</value>
+  </data>
+  <data name="Storage.Rollback.DialogTitle" xml:space="preserve">
+    <value>回滚最近一次存储配置</value>
+  </data>
+  <data name="Storage.Rollback.DialogText" xml:space="preserve">
+    <value>快照
+{0}
+
+只恢复工具配置；已复制的新目录会保留。如果配置后来被修改，AutoEnvPlus 会拒绝覆盖。</value>
+  </data>
+  <data name="Storage.Rollback.ConfirmButton" xml:space="preserve">
+    <value>恢复配置</value>
+  </data>
+  <data name="Storage.Rollback.Failed" xml:space="preserve">
+    <value>配置回滚失败。</value>
+  </data>
+  <data name="Storage.Messages.RollbackCompletedTitle" xml:space="preserve">
+    <value>存储配置已回滚</value>
+  </data>
+  <data name="Storage.Messages.RollbackCompletedMessage" xml:space="preserve">
+    <value>工具已重新指向原目录。迁移副本仍保留在 {0}。</value>
+  </data>
+  <data name="Storage.Messages.RollbackCompletedActivity" xml:space="preserve">
+    <value>已回滚最近一次缓存迁移配置；迁移副本保持不变。</value>
+  </data>
+  <data name="Storage.Messages.RollbackCancelledTitle" xml:space="preserve">
+    <value>回滚已取消</value>
+  </data>
+  <data name="Storage.Messages.RollbackCancelledActivity" xml:space="preserve">
+    <value>缓存迁移配置回滚已取消。</value>
+  </data>
+  <data name="Storage.Messages.RollbackFailedTitle" xml:space="preserve">
+    <value>存储配置回滚失败</value>
+  </data>
+  <data name="Storage.Messages.RollbackFailedActivity" xml:space="preserve">
+    <value>缓存迁移配置回滚失败。错误类型：{0}。</value>
+  </data>
+  <data name="Storage.Messages.CancellingTitle" xml:space="preserve">
+    <value>正在取消当前存储操作</value>
+  </data>
+  <data name="Storage.Messages.CancellingMessage" xml:space="preserve">
+    <value>正在完成当前原子步骤并保存一致状态。</value>
+  </data>
+
+  <data name="Downloads.Header.Title" xml:space="preserve">
+    <value>下载中心</value>
+  </data>
+  <data name="Downloads.Header.Subtitle" xml:space="preserve">
+    <value>把直接 HTTPS 文件通过多连接分段下载或本地导入到受管库；文件不会自动执行。</value>
+  </data>
+  <data name="Downloads.Actions.Import.ToolTip" xml:space="preserve">
+    <value>复制本地包到受管下载库</value>
+  </data>
+  <data name="Downloads.Actions.Import.Label" xml:space="preserve">
+    <value>导入本地文件</value>
+  </data>
+  <data name="Downloads.Actions.OpenLibrary.ToolTip" xml:space="preserve">
+    <value>在文件资源管理器中打开受管下载库</value>
+  </data>
+  <data name="Downloads.Actions.OpenLibrary.Label" xml:space="preserve">
+    <value>打开下载库</value>
+  </data>
+  <data name="Downloads.Info.InitialTitle" xml:space="preserve">
+    <value>受管传输</value>
+  </data>
+  <data name="Downloads.Info.InitialMessage" xml:space="preserve">
+    <value>服务器不支持稳定的 HTTP Range 时会自动从零开始单连接下载；不会降低 HTTPS 或摘要校验要求。</value>
+  </data>
+  <data name="Downloads.AddFromUrl.SectionTitle" xml:space="preserve">
+    <value>从 URL 添加</value>
+  </data>
+  <data name="Downloads.AddFromUrl.SourceUrl.Header" xml:space="preserve">
+    <value>HTTPS 文件地址</value>
+  </data>
+  <data name="Downloads.AddFromUrl.FileName.Header" xml:space="preserve">
+    <value>库内文件名</value>
+  </data>
+  <data name="Downloads.AddFromUrl.ConnectionCount.Header" xml:space="preserve">
+    <value>连接数</value>
+  </data>
+  <data name="Downloads.AddFromUrl.MaximumSize.Header" xml:space="preserve">
+    <value>最大大小 (MB)</value>
+  </data>
+  <data name="Downloads.AddFromUrl.Integrity.Header" xml:space="preserve">
+    <value>预期摘要</value>
+  </data>
+  <data name="Downloads.AddFromUrl.Integrity.Off" xml:space="preserve">
+    <value>未提供，仅计算内容 SHA-256</value>
+  </data>
+  <data name="Downloads.AddFromUrl.Integrity.On" xml:space="preserve">
+    <value>下载完成后必须匹配</value>
+  </data>
+  <data name="Downloads.AddFromUrl.HashAlgorithm.Header" xml:space="preserve">
+    <value>算法</value>
+  </data>
+  <data name="Downloads.AddFromUrl.ExpectedHash.Header" xml:space="preserve">
+    <value>预期十六进制摘要</value>
+  </data>
+  <data name="Downloads.AddFromUrl.ExpectedHash.Placeholder" xml:space="preserve">
+    <value>64 位 SHA-256 或 128 位 SHA-512</value>
+  </data>
+  <data name="Downloads.Actions.StartDownload" xml:space="preserve">
+    <value>开始下载</value>
+  </data>
+  <data name="Downloads.Actions.CancelTransfer.ToolTip" xml:space="preserve">
+    <value>取消任务并尝试清理所有未完成分段</value>
+  </data>
+  <data name="Downloads.Actions.CancelTransfer.Label" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Downloads.Transfer.IdleTitle" xml:space="preserve">
+    <value>当前没有任务</value>
+  </data>
+  <data name="Downloads.Transfer.Progress.AccessibleName" xml:space="preserve">
+    <value>当前受管传输进度</value>
+  </data>
+  <data name="Downloads.Library.SectionTitle" xml:space="preserve">
+    <value>下载库</value>
+  </data>
+  <data name="Downloads.Library.SummaryLoading" xml:space="preserve">
+    <value>正在读取…</value>
+  </data>
+  <data name="Downloads.Library.Refresh.AccessibleName" xml:space="preserve">
+    <value>刷新下载库</value>
+  </data>
+  <data name="Downloads.Library.Refresh.ToolTip" xml:space="preserve">
+    <value>重新读取下载库</value>
+  </data>
+  <data name="Downloads.Library.Install.ToolTip" xml:space="preserve">
+    <value>安装到受管 Python 虚拟环境</value>
+  </data>
+  <data name="Downloads.Library.Install.Label" xml:space="preserve">
+    <value>安装</value>
+  </data>
+  <data name="Downloads.Library.OpenLocation.ToolTip" xml:space="preserve">
+    <value>打开文件所在位置</value>
+  </data>
+  <data name="Downloads.Library.Delete.ToolTip" xml:space="preserve">
+    <value>从受管下载库删除</value>
+  </data>
+  <data name="Downloads.Messages.DefaultsUnavailableTitle" xml:space="preserve">
+    <value>下载默认值不可用</value>
+  </data>
+  <data name="Downloads.Messages.DefaultsUnavailableMessage" xml:space="preserve">
+    <value>已使用内置默认值；{0}</value>
+  </data>
+  <data name="Downloads.Messages.DownloadFailedToStartTitle" xml:space="preserve">
+    <value>无法开始下载</value>
+  </data>
+  <data name="Downloads.Messages.DownloadInvalidUrl" xml:space="preserve">
+    <value>文件地址必须是不包含用户名或密码的绝对 HTTPS URL。</value>
+  </data>
+  <data name="Downloads.Messages.DownloadMissingFileName" xml:space="preserve">
+    <value>请提供下载库内文件名。</value>
+  </data>
+  <data name="Downloads.Messages.InvalidInput" xml:space="preserve">
+    <value>输入无效。</value>
+  </data>
+  <data name="Downloads.Messages.InvalidHash" xml:space="preserve">
+    <value>摘要无效。</value>
+  </data>
+  <data name="Downloads.Transfer.ModeSegmented" xml:space="preserve">
+    <value>{0} 段</value>
+  </data>
+  <data name="Downloads.Transfer.ModeSingle" xml:space="preserve">
+    <value>单连接</value>
+  </data>
+  <data name="Downloads.Transfer.ModeSingleFallback" xml:space="preserve">
+    <value>单连接（自动降级：{0}）</value>
+  </data>
+  <data name="Downloads.Messages.DownloadCompletedTitle" xml:space="preserve">
+    <value>文件已加入下载库</value>
+  </data>
+  <data name="Downloads.Messages.DownloadCompletedActivity" xml:space="preserve">
+    <value>已完成受管包下载：{0}；传输模式：{1}。</value>
+  </data>
+  <data name="Downloads.Messages.DownloadCancelledTitle" xml:space="preserve">
+    <value>下载已取消</value>
+  </data>
+  <data name="Downloads.Messages.DownloadCancelledMessage" xml:space="preserve">
+    <value>未完成内容没有提交到下载库；程序已尝试清理受管暂存目录。</value>
+  </data>
+  <data name="Downloads.Messages.DownloadCancelledActivity" xml:space="preserve">
+    <value>受管包下载已取消：{0}。</value>
+  </data>
+  <data name="Downloads.Messages.DownloadIncompleteTitle" xml:space="preserve">
+    <value>下载未完成</value>
+  </data>
+  <data name="Downloads.Messages.DownloadFailedActivity" xml:space="preserve">
+    <value>受管包下载失败：{0}；错误类型：{1}。</value>
+  </data>
+  <data name="Downloads.Picker.ImportCommitButton" xml:space="preserve">
+    <value>导入受管下载库</value>
+  </data>
+  <data name="Downloads.Messages.ImportFailedTitle" xml:space="preserve">
+    <value>无法导入文件</value>
+  </data>
+  <data name="Downloads.Import.DialogTitle" xml:space="preserve">
+    <value>导入 {0}</value>
+  </data>
+  <data name="Downloads.Import.DialogText" xml:space="preserve">
+    <value>源文件
+{0}
+
+下载库
+{1}
+
+文件将被复制，源文件不会移动或删除；导入后不会自动执行。</value>
+  </data>
+  <data name="Downloads.Import.ConflictNote" xml:space="preserve">
+    <value>
+
+注意：下载库中已存在同名文件；继续会先删除现有文件。</value>
+  </data>
+  <data name="Downloads.Import.OverwriteButton" xml:space="preserve">
+    <value>覆盖并复制</value>
+  </data>
+  <data name="Downloads.Import.CopyButton" xml:space="preserve">
+    <value>复制并计算摘要</value>
+  </data>
+  <data name="Downloads.Dialogs.Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Downloads.Messages.OverwriteFailedTitle" xml:space="preserve">
+    <value>无法覆盖现有文件</value>
+  </data>
+  <data name="Downloads.Messages.ImportCompletedTitle" xml:space="preserve">
+    <value>本地文件已导入</value>
+  </data>
+  <data name="Downloads.Messages.ImportVerifiedMessage" xml:space="preserve">
+    <value>{0} · 预期 {1} 已验证</value>
+  </data>
+  <data name="Downloads.Messages.ImportUnverifiedMessage" xml:space="preserve">
+    <value>{0} · 已计算内容 SHA-256，来源真实性未知</value>
+  </data>
+  <data name="Downloads.Messages.ImportCompletedActivity" xml:space="preserve">
+    <value>已把本地包复制到受管下载库：{0}。</value>
+  </data>
+  <data name="Downloads.Messages.ImportCancelledTitle" xml:space="preserve">
+    <value>导入已取消</value>
+  </data>
+  <data name="Downloads.Messages.ImportCancelledMessage" xml:space="preserve">
+    <value>源文件未修改，未完成副本没有提交；程序已尝试清理受管暂存目录。</value>
+  </data>
+  <data name="Downloads.Messages.ImportCancelledActivity" xml:space="preserve">
+    <value>本地包导入已取消：{0}。</value>
+  </data>
+  <data name="Downloads.Messages.ImportIncompleteTitle" xml:space="preserve">
+    <value>导入未完成</value>
+  </data>
+  <data name="Downloads.Messages.ImportFailedActivity" xml:space="preserve">
+    <value>本地包导入失败：{0}；错误类型：{1}。</value>
+  </data>
+  <data name="Downloads.Replace.DialogTitle" xml:space="preserve">
+    <value>下载库中已存在同名文件</value>
+  </data>
+  <data name="Downloads.Replace.DialogText" xml:space="preserve">
+    <value>{0}
+
+继续会先删除现有文件，再下载新内容；取消则不做任何更改。</value>
+  </data>
+  <data name="Downloads.Replace.ConfirmButton" xml:space="preserve">
+    <value>覆盖现有文件</value>
+  </data>
+  <data name="Downloads.Delete.DialogTitle" xml:space="preserve">
+    <value>删除 {0}</value>
+  </data>
+  <data name="Downloads.Delete.DialogText" xml:space="preserve">
+    <value>将从受管下载库永久删除此文件和对应清单记录：
+{0}
+
+源下载地址或原始导入文件不会受到影响。</value>
+  </data>
+  <data name="Downloads.Delete.ConfirmButton" xml:space="preserve">
+    <value>永久删除</value>
+  </data>
+  <data name="Downloads.Messages.DeleteCompletedTitle" xml:space="preserve">
+    <value>下载库文件已删除</value>
+  </data>
+  <data name="Downloads.Messages.DeleteMissingTitle" xml:space="preserve">
+    <value>文件已不存在</value>
+  </data>
+  <data name="Downloads.Messages.DeleteFailedTitle" xml:space="preserve">
+    <value>无法删除下载库文件</value>
+  </data>
+  <data name="Downloads.Messages.PythonRegistryReadFailedTitle" xml:space="preserve">
+    <value>无法读取受管 Python</value>
+  </data>
+  <data name="Downloads.Messages.PythonRegistryInvalidTitle" xml:space="preserve">
+    <value>受管语言工具注册表无效</value>
+  </data>
+  <data name="Downloads.Separator" xml:space="preserve">
+    <value>；</value>
+  </data>
+  <data name="Downloads.Messages.NoManagedPythonTitle" xml:space="preserve">
+    <value>没有可用的受管 Python</value>
+  </data>
+  <data name="Downloads.Messages.NoManagedPythonMessage" xml:space="preserve">
+    <value>请先在 Python 语言页安装 CPython，再创建隔离虚拟环境。</value>
+  </data>
+  <data name="Downloads.Pip.BasePythonHeader" xml:space="preserve">
+    <value>基础 Python</value>
+  </data>
+  <data name="Downloads.Pip.EnvironmentNameHeader" xml:space="preserve">
+    <value>虚拟环境名称</value>
+  </data>
+  <data name="Downloads.Pip.SourceModeHeader" xml:space="preserve">
+    <value>依赖来源</value>
+  </data>
+  <data name="Downloads.Pip.SourceMode.Offline" xml:space="preserve">
+    <value>严格离线（仅此 wheel，不解析依赖）</value>
+  </data>
+  <data name="Downloads.Pip.SourceMode.Network" xml:space="preserve">
+    <value>当前 pip Provider 源与代理</value>
+  </data>
+  <data name="Downloads.Pip.NonTransactionalTitle" xml:space="preserve">
+    <value>pip 安装不是事务操作</value>
+  </data>
+  <data name="Downloads.Pip.NonTransactionalMessage" xml:space="preserve">
+    <value>环境、缓存和临时文件固定在受管数据根，但包自身的构建脚本仍可能修改环境；失败时不会声称已自动回滚。</value>
+  </data>
+  <data name="Downloads.Pip.DialogTitle" xml:space="preserve">
+    <value>安装 {0}</value>
+  </data>
+  <data name="Downloads.Pip.PlanButton" xml:space="preserve">
+    <value>生成安装计划</value>
+  </data>
+  <data name="Downloads.Messages.PipPlanFailedTitle" xml:space="preserve">
+    <value>无法生成 pip 安装计划</value>
+  </data>
+  <data name="Downloads.Pip.ReuseEnvironmentStep" xml:space="preserve">
+    <value>使用已有且已复检的虚拟环境</value>
+  </data>
+  <data name="Downloads.Pip.ConfirmDialogTitle" xml:space="preserve">
+    <value>确认本地 wheel 安装计划</value>
+  </data>
+  <data name="Downloads.Pip.ConfirmDialogText" xml:space="preserve">
+    <value>wheel
+{0}
+
+目标环境
+{1}
+
+创建环境
+{2}
+
+安装命令
+{3}
+
+TEMP / TMP
+{4}
+
+pip 缓存
+{5}
+
+回滚边界
+此操作不是事务安装。严格离线模式使用 --no-deps，只安装当前已审核 wheel，不解析或安装任何依赖；需要解析依赖时必须显式选择联网模式。</value>
+  </data>
+  <data name="Downloads.Pip.ExecuteButton" xml:space="preserve">
+    <value>执行已审核计划</value>
+  </data>
+  <data name="Downloads.Messages.PipCompletedTitle" xml:space="preserve">
+    <value>wheel 已安装到受管虚拟环境</value>
+  </data>
+  <data name="Downloads.Messages.PipCompletedActivity" xml:space="preserve">
+    <value>已把 {0} 安装到受管 Python 虚拟环境 {1}；该操作不支持事务回滚。</value>
+  </data>
+  <data name="Downloads.Messages.PipCancelledTitle" xml:space="preserve">
+    <value>pip 安装已取消</value>
+  </data>
+  <data name="Downloads.Messages.PipCancelledMessage" xml:space="preserve">
+    <value>子进程已停止；环境可能包含部分更改，不会声称已回滚。</value>
+  </data>
+  <data name="Downloads.Messages.PipCancelledActivity" xml:space="preserve">
+    <value>安装 {0} 的 pip 进程已取消；虚拟环境可能包含部分更改。</value>
+  </data>
+  <data name="Downloads.Messages.PipIncompleteTitle" xml:space="preserve">
+    <value>pip 安装未完成</value>
+  </data>
+  <data name="Downloads.Messages.PipFailedFallback" xml:space="preserve">
+    <value>pip 返回失败状态。</value>
+  </data>
+  <data name="Downloads.Messages.PipFailedActivity" xml:space="preserve">
+    <value>安装 {0} 失败；虚拟环境可能包含部分更改。</value>
+  </data>
+  <data name="Downloads.Messages.PipPlanInvalidTitle" xml:space="preserve">
+    <value>pip 安装计划已失效</value>
+  </data>
+  <data name="Downloads.Messages.NetworkSettingsReadFailedTitle" xml:space="preserve">
+    <value>无法读取下载网络设置</value>
+  </data>
+  <data name="Downloads.Messages.DownloadNetworkSettingsInvalidTitle" xml:space="preserve">
+    <value>下载中心网络设置无效</value>
+  </data>
+  <data name="Downloads.Messages.ToolNetworkSettingsInvalidTitle" xml:space="preserve">
+    <value>{0} 网络设置无效</value>
+  </data>
+  <data name="Downloads.Pip.Stage.Validating" xml:space="preserve">
+    <value>正在复检安装计划</value>
+  </data>
+  <data name="Downloads.Pip.Stage.CreatingEnvironment" xml:space="preserve">
+    <value>正在创建虚拟环境</value>
+  </data>
+  <data name="Downloads.Pip.Stage.InstallingPackage" xml:space="preserve">
+    <value>正在运行 pip</value>
+  </data>
+  <data name="Downloads.Pip.Stage.Completed" xml:space="preserve">
+    <value>pip 安装完成</value>
+  </data>
+  <data name="Downloads.Pip.Stage.Cancelled" xml:space="preserve">
+    <value>pip 安装已取消</value>
+  </data>
+  <data name="Downloads.Pip.OutputTruncatedNotice" xml:space="preserve">
+    <value>{0}
+
+{1} 已截断；结果仅保留末尾 {2:N0} 个字符。</value>
+  </data>
+  <data name="Downloads.Pip.OutputTail" xml:space="preserve">
+    <value>
+
+pip 输出（末尾）：
+{0}</value>
+  </data>
+  <data name="Downloads.Messages.InvalidHashFormat" xml:space="preserve">
+    <value>预期摘要必须是有效的 {0} 十六进制值。</value>
+  </data>
+  <data name="Downloads.Messages.InvalidMaximumSize" xml:space="preserve">
+    <value>最大大小必须介于 1 MB 与 {0:F0} MB 之间。</value>
+  </data>
+  <data name="Downloads.Transfer.ProgressFormat" xml:space="preserve">
+    <value>{0} / {1}（{2:F0}%）</value>
+  </data>
+  <data name="Downloads.Transfer.SegmentsSuffix" xml:space="preserve">
+    <value> · 分段 {0}/{1}</value>
+  </data>
+  <data name="Downloads.Transfer.SpeedWithEta" xml:space="preserve">
+    <value> · {0} · 剩余约 {1}</value>
+  </data>
+  <data name="Downloads.Transfer.EtaHours" xml:space="preserve">
+    <value>{0:F1} 小时</value>
+  </data>
+  <data name="Downloads.Transfer.EtaMinutesSeconds" xml:space="preserve">
+    <value>{0} 分 {1} 秒</value>
+  </data>
+  <data name="Downloads.Transfer.EtaSeconds" xml:space="preserve">
+    <value>{0} 秒</value>
+  </data>
+  <data name="Downloads.Library.SummaryFormat" xml:space="preserve">
+    <value>{0:N0} 个文件 · {1} · {2}</value>
+  </data>
+  <data name="Downloads.Library.SummaryFailed" xml:space="preserve">
+    <value>下载库清单未通过安全检查</value>
+  </data>
+  <data name="Downloads.Messages.LibraryReadFailedTitle" xml:space="preserve">
+    <value>无法读取下载库</value>
+  </data>
+  <data name="Downloads.Messages.OpenLibraryFailedTitle" xml:space="preserve">
+    <value>无法打开下载库</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Failed" xml:space="preserve">
+    <value>失败</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Probing" xml:space="preserve">
+    <value>正在探测服务器</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Downloading" xml:space="preserve">
+    <value>正在下载</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Copying" xml:space="preserve">
+    <value>正在复制</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Verifying" xml:space="preserve">
+    <value>正在计算并验证摘要</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Committing" xml:space="preserve">
+    <value>正在提交到下载库</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Completed" xml:space="preserve">
+    <value>已就绪</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Cancelled" xml:space="preserve">
+    <value>已取消</value>
+  </data>
+  <data name="Downloads.Transfer.Fallback.RangeNotSupported" xml:space="preserve">
+    <value>服务器不支持 Range</value>
+  </data>
+  <data name="Downloads.Transfer.Fallback.StableEntityUnavailable" xml:space="preserve">
+    <value>缺少稳定实体标识</value>
+  </data>
+  <data name="Downloads.Transfer.Fallback.EntityChanged" xml:space="preserve">
+    <value>远端实体发生变化</value>
+  </data>
+  <data name="Downloads.Library.InstallActionAccessibleName" xml:space="preserve">
+    <value>安装 {0} 到受管 Python 虚拟环境</value>
+  </data>
+  <data name="Downloads.Library.OpenLocationActionAccessibleName" xml:space="preserve">
+    <value>打开 {0} 所在位置</value>
+  </data>
+  <data name="Downloads.Library.DeleteActionAccessibleName" xml:space="preserve">
+    <value>从受管下载库删除 {0}</value>
+  </data>
+  <data name="Downloads.Library.Origin.Network" xml:space="preserve">
+    <value>网络下载</value>
+  </data>
+  <data name="Downloads.Library.Origin.LocalImport" xml:space="preserve">
+    <value>本地导入</value>
+  </data>
+  <data name="Downloads.Library.Origin.Existing" xml:space="preserve">
+    <value>现有文件</value>
+  </data>
+  <data name="Downloads.Library.TransferMode.Segmented" xml:space="preserve">
+    <value>多连接分段</value>
+  </data>
+  <data name="Downloads.Library.TransferMode.LocalCopy" xml:space="preserve">
+    <value>本地复制</value>
+  </data>
+  <data name="Downloads.Library.SourceUnknown" xml:space="preserve">
+    <value>来源未记录</value>
+  </data>
+  <data name="Downloads.Library.IntegrityVerified" xml:space="preserve">
+    <value>预期 {0} 已重新验证 · {1}</value>
+  </data>
+  <data name="Downloads.Library.IntegrityChanged" xml:space="preserve">
+    <value>文件内容已变化；导入/下载时记录的预期哈希证据不再适用</value>
+  </data>
+  <data name="Downloads.Library.IntegrityRecordedOnly" xml:space="preserve">
+    <value>预期哈希仅在导入/下载提交时验证，当前内容尚未重新验证</value>
+  </data>
+  <data name="Downloads.Library.IntegritySha256" xml:space="preserve">
+    <value>提交时记录内容 SHA-256，来源真实性未知 · {0}</value>
+  </data>
+  <data name="Downloads.Library.IntegrityNone" xml:space="preserve">
+    <value>摘要尚未记录</value>
+  </data>
 </root>

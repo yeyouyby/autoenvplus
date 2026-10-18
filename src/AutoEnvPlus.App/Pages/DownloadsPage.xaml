@@ -90,10 +90,10 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <StackPanel Spacing="4">
-                    <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="下载中心" />
+                    <TextBlock x:Name="PageTitleText" Style="{StaticResource TitleTextBlockStyle}" />
                     <TextBlock
+                        x:Name="PageSubtitleText"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="把直接 HTTPS 文件通过多连接分段下载或本地导入到受管库；文件不会自动执行。"
                         TextWrapping="Wrap" />
                 </StackPanel>
                 <StackPanel
@@ -104,19 +104,18 @@
                     Spacing="8">
                     <Button
                         x:Name="ImportButton"
-                        Click="OnImportClicked"
-                        ToolTipService.ToolTip="复制本地包到受管下载库">
+                        Click="OnImportClicked">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <SymbolIcon Symbol="OpenFile" />
-                            <TextBlock Text="导入本地文件" />
+                            <TextBlock x:Name="ImportButtonText" />
                         </StackPanel>
                     </Button>
                     <Button
-                        Click="OnOpenLibraryClicked"
-                        ToolTipService.ToolTip="在文件资源管理器中打开受管下载库">
+                        x:Name="OpenLibraryButton"
+                        Click="OnOpenLibraryClicked">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <SymbolIcon Symbol="Folder" />
-                            <TextBlock Text="打开下载库" />
+                            <TextBlock x:Name="OpenLibraryButtonText" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -127,15 +126,12 @@
                 AutomationProperties.LiveSetting="Polite"
                 IsClosable="False"
                 IsOpen="True"
-                Message="服务器不支持稳定的 HTTP Range 时会自动从零开始单连接下载；不会降低 HTTPS 或摘要校验要求。"
-                Severity="Informational"
-                Title="受管传输" />
+                Severity="Informational" />
 
             <StackPanel Spacing="12">
-                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="从 URL 添加" />
+                <TextBlock x:Name="AddFromUrlSectionTitleText" Style="{StaticResource SubtitleTextBlockStyle}" />
                 <TextBox
                     x:Name="SourceUrlTextBox"
-                    Header="HTTPS 文件地址"
                     PlaceholderText="https://download.example/package.whl"
                     TextChanged="OnSourceUrlChanged" />
                 <Grid ColumnSpacing="12" RowSpacing="12">
@@ -151,17 +147,14 @@
                     </Grid.RowDefinitions>
                     <TextBox
                         x:Name="FileNameTextBox"
-                        Header="库内文件名"
                         PlaceholderText="package.whl"
                         TextChanged="OnFileNameChanged" />
                     <ComboBox
                         x:Name="ConnectionCountPicker"
-                        Grid.Column="1"
-                        Header="连接数" />
+                        Grid.Column="1" />
                     <NumberBox
                         x:Name="MaximumSizeBox"
                         Grid.Column="2"
-                        Header="最大大小 (MB)"
                         LargeChange="1024"
                         Maximum="1048576"
                         Minimum="1"
@@ -172,9 +165,6 @@
 
                 <ToggleSwitch
                     x:Name="IntegrityToggle"
-                    Header="预期摘要"
-                    OffContent="未提供，仅计算内容 SHA-256"
-                    OnContent="下载完成后必须匹配"
                     Toggled="OnIntegrityToggled" />
                 <Grid x:Name="IntegrityFields" ColumnSpacing="12" RowSpacing="12">
                     <Grid.ColumnDefinitions>
@@ -185,17 +175,13 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition x:Name="IntegrityHashRow" Height="0" />
                     </Grid.RowDefinitions>
-                    <ComboBox
-                        x:Name="HashAlgorithmPicker"
-                        Header="算法">
+                    <ComboBox x:Name="HashAlgorithmPicker">
                         <ComboBoxItem Content="SHA-256" Tag="sha256" />
                         <ComboBoxItem Content="SHA-512" Tag="sha512" />
                     </ComboBox>
                     <TextBox
                         x:Name="ExpectedHashTextBox"
-                        Grid.Column="1"
-                        Header="预期十六进制摘要"
-                        PlaceholderText="64 位 SHA-256 或 128 位 SHA-512" />
+                        Grid.Column="1" />
                 </Grid>
 
                 <StackPanel
@@ -208,17 +194,16 @@
                         Style="{StaticResource AccentButtonStyle}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <SymbolIcon Symbol="Download" />
-                            <TextBlock Text="开始下载" />
+                            <TextBlock x:Name="StartDownloadButtonText" />
                         </StackPanel>
                     </Button>
                     <Button
                         x:Name="CancelTransferButton"
                         Click="OnCancelTransferClicked"
-                        IsEnabled="False"
-                        ToolTipService.ToolTip="取消任务并尝试清理所有未完成分段">
+                        IsEnabled="False">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <SymbolIcon Symbol="Cancel" />
-                            <TextBlock Text="取消" />
+                            <TextBlock x:Name="CancelTransferButtonText" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -246,7 +231,6 @@
                     <TextBlock
                         x:Name="TransferTitleText"
                         FontWeight="SemiBold"
-                        Text="当前没有任务"
                         TextWrapping="Wrap" />
                     <TextBlock
                         x:Name="TransferBytesText"
@@ -257,8 +241,7 @@
                 <ProgressBar
                     x:Name="TransferProgressBar"
                     Grid.Row="1"
-                    Height="4"
-                    AutomationProperties.Name="当前受管传输进度" />
+                    Height="4" />
                 <TextBlock
                     x:Name="TransferDetailText"
                     Grid.Row="2"
@@ -276,20 +259,18 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Spacing="2">
-                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="下载库" />
+                        <TextBlock x:Name="LibrarySectionTitleText" Style="{StaticResource SubtitleTextBlockStyle}" />
                         <TextBlock
                             x:Name="LibrarySummaryText"
                             AutomationProperties.LiveSetting="Polite"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="正在读取…"
                             TextWrapping="Wrap" />
                     </StackPanel>
                     <Button
-                        AutomationProperties.Name="刷新下载库"
+                        x:Name="RefreshLibraryButton"
                         Grid.Column="1"
                         VerticalAlignment="Bottom"
-                        Click="OnRefreshLibraryClicked"
-                        ToolTipService.ToolTip="重新读取下载库">
+                        Click="OnRefreshLibraryClicked">
                         <SymbolIcon Symbol="Refresh" />
                     </Button>
                 </Grid>
@@ -361,26 +342,26 @@
                                     <Button
                                         AutomationProperties.Name="{Binding InstallActionAutomationName}"
                                         Click="OnInstallWheelClicked"
+                                        Loaded="OnInstallWheelButtonLoaded"
                                         Tag="{Binding}"
-                                        Visibility="{Binding PipInstallVisibility}"
-                                        ToolTipService.ToolTip="安装到 D 盘受管 Python 虚拟环境">
+                                        Visibility="{Binding PipInstallVisibility}">
                                         <StackPanel Orientation="Horizontal" Spacing="6">
                                             <FontIcon Glyph="&#xE950;" />
-                                            <TextBlock Text="安装" />
+                                            <TextBlock Loaded="OnInstallWheelButtonTextLoaded" />
                                         </StackPanel>
                                     </Button>
                                     <Button
                                         AutomationProperties.Name="{Binding OpenLocationActionAutomationName}"
                                         Click="OnOpenItemFolderClicked"
-                                        Tag="{Binding}"
-                                        ToolTipService.ToolTip="打开文件所在位置">
+                                        Loaded="OnOpenItemFolderButtonLoaded"
+                                        Tag="{Binding}">
                                         <SymbolIcon Symbol="Folder" />
                                     </Button>
                                     <Button
                                         AutomationProperties.Name="{Binding DeleteActionAutomationName}"
                                         Click="OnDeleteLibraryItemClicked"
-                                        Tag="{Binding}"
-                                        ToolTipService.ToolTip="从受管下载库删除">
+                                        Loaded="OnDeleteLibraryItemButtonLoaded"
+                                        Tag="{Binding}">
                                         <SymbolIcon Symbol="Delete" />
                                     </Button>
                                 </StackPanel>

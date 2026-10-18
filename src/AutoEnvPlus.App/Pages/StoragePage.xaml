@@ -79,10 +79,10 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <StackPanel Spacing="4">
-                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="缓存与存储" />
+                <TextBlock x:Name="PageTitleText" Style="{StaticResource TitleTextBlockStyle}" />
                 <TextBlock
+                    x:Name="PageSubtitleText"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="识别 pip、npm、pnpm、Yarn、NuGet、Maven、Gradle、vcpkg 和 Conan 的真实存储位置与配置来源。"
                     TextWrapping="Wrap" />
             </StackPanel>
             <StackPanel
@@ -95,32 +95,28 @@
                     x:Name="StorageOperationProgress"
                     Width="20"
                     Height="20"
-                    AutomationProperties.Name="存储操作进度"
                     IsActive="False" />
                 <Button
                     x:Name="CancelStorageOperationButton"
                     Click="OnCancelStorageOperationClicked"
-                    IsEnabled="False"
-                    ToolTipService.ToolTip="取消当前存储操作">
+                    IsEnabled="False">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <SymbolIcon Symbol="Cancel" />
-                        <TextBlock Text="取消当前操作" />
+                        <TextBlock x:Name="CancelStorageOperationButtonText" />
                     </StackPanel>
                 </Button>
                 <Button
                     x:Name="RollbackButton"
                     Click="OnRollbackClicked"
-                    IsEnabled="False"
-                    ToolTipService.ToolTip="恢复最近一次迁移前的工具配置">
+                    IsEnabled="False">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <SymbolIcon Symbol="Undo" />
-                        <TextBlock Text="回滚最近配置" />
+                        <TextBlock x:Name="RollbackButtonText" />
                     </StackPanel>
                 </Button>
                 <Button
                     x:Name="MeasureButton"
-                    Click="OnMeasureClicked"
-                    Content="计算全部大小" />
+                    Click="OnMeasureClicked" />
             </StackPanel>
         </Grid>
 
@@ -130,9 +126,7 @@
             AutomationProperties.LiveSetting="Polite"
             IsClosable="False"
             IsOpen="True"
-            Message="迁移保留原目录；安全清理先移入同卷隔离区。Gradle 与 Conan 根目录包含配置，不提供整目录清理。"
-            Severity="Informational"
-            Title="已读取当前配置" />
+            Severity="Informational" />
 
         <Grid
             Grid.Row="2"
@@ -151,21 +145,18 @@
                 <RowDefinition x:Name="CleanupActionsRow" Height="0" />
             </Grid.RowDefinitions>
             <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
-                <TextBlock FontWeight="SemiBold" Text="安全隔离区" />
+                <TextBlock x:Name="CleanupSectionTitleText" FontWeight="SemiBold" />
                 <TextBlock
                     x:Name="CleanupItemCountText"
                     AutomationProperties.LiveSetting="Polite"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="无待处理项" />
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
             </StackPanel>
             <ComboBox
                 x:Name="CleanupItemPicker"
                 Grid.Column="1"
                 MinWidth="0"
-                AutomationProperties.Name="选择安全隔离区项目"
                 HorizontalAlignment="Stretch"
                 DisplayMemberPath="DisplayText"
-                PlaceholderText="没有可恢复或清空的缓存"
                 SelectionChanged="OnCleanupItemSelectionChanged" />
             <StackPanel
                 x:Name="CleanupActions"
@@ -175,21 +166,19 @@
                 <Button
                     x:Name="RestoreCleanupButton"
                     Click="OnRestoreCleanupClicked"
-                    IsEnabled="False"
-                    ToolTipService.ToolTip="将隔离内容移回原缓存目录">
+                    IsEnabled="False">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <SymbolIcon Symbol="Undo" />
-                        <TextBlock Text="恢复" />
+                        <TextBlock x:Name="RestoreCleanupButtonText" />
                     </StackPanel>
                 </Button>
                 <Button
                     x:Name="PurgeCleanupButton"
                     Click="OnPurgeCleanupClicked"
-                    IsEnabled="False"
-                    ToolTipService.ToolTip="永久删除已复检的隔离内容">
+                    IsEnabled="False">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <SymbolIcon Symbol="Delete" />
-                        <TextBlock Text="永久清空" />
+                        <TextBlock x:Name="PurgeCleanupButtonText" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -207,11 +196,11 @@
                 <ColumnDefinition Width="110" />
                 <ColumnDefinition Width="210" />
             </Grid.ColumnDefinitions>
-            <TextBlock FontWeight="SemiBold" Text="工具" />
-            <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="目录" />
-            <TextBlock Grid.Column="2" FontWeight="SemiBold" Text="来源" />
-            <TextBlock Grid.Column="3" FontWeight="SemiBold" Text="大小" />
-            <TextBlock Grid.Column="4" FontWeight="SemiBold" Text="操作" />
+            <TextBlock x:Name="CacheToolColumnHeaderText" FontWeight="SemiBold" />
+            <TextBlock x:Name="CacheDirectoryColumnHeaderText" Grid.Column="1" FontWeight="SemiBold" />
+            <TextBlock x:Name="CacheSourceColumnHeaderText" Grid.Column="2" FontWeight="SemiBold" />
+            <TextBlock x:Name="CacheSizeColumnHeaderText" Grid.Column="3" FontWeight="SemiBold" />
+            <TextBlock x:Name="CacheActionsColumnHeaderText" Grid.Column="4" FontWeight="SemiBold" />
         </Grid>
 
         <ListView
@@ -340,14 +329,13 @@
                             Spacing="8">
                             <Button
                                 Click="OnOpenFolderClicked"
-                                Content="打开"
                                 IsEnabled="{Binding CanOpen}"
-                                Tag="{Binding}"
-                                ToolTipService.ToolTip="在文件资源管理器中打开实际目录" />
+                                Loaded="OnOpenFolderButtonLoaded"
+                                Tag="{Binding}" />
                             <Button
                                 Click="OnMigrateClicked"
-                                Content="迁移"
                                 IsEnabled="{Binding CanMigrate}"
+                                Loaded="OnMigrateButtonLoaded"
                                 Tag="{Binding}" />
                             <Button
                                 Click="OnCleanupClicked"
@@ -356,7 +344,7 @@
                                 ToolTipService.ToolTip="{Binding CleanupToolTip}">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <SymbolIcon Symbol="Delete" />
-                                    <TextBlock Text="清理" />
+                                    <TextBlock Loaded="OnCleanupButtonTextLoaded" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>

@@ -1472,4 +1472,1333 @@ The current PATH is re-checked before the operation; if other changes were made 
   <data name="Shell.Pages.settings.Subtitle" xml:space="preserve">
     <value>Appearance, startup, network, and logging</value>
   </data>
+
+  <data name="Projects.Header.Title" xml:space="preserve">
+    <value>Project environments</value>
+  </data>
+  <data name="Projects.Header.Subtitle" xml:space="preserve">
+    <value>Import version files, generate autoenvplus.toml/lock, and open exact project environments that apply only to new PowerShell sessions.</value>
+  </data>
+  <data name="Projects.Actions.ChooseProjectFolder" xml:space="preserve">
+    <value>Choose project folder</value>
+  </data>
+  <data name="Projects.Info.InitialTitle" xml:space="preserve">
+    <value>No project selected</value>
+  </data>
+  <data name="Projects.Info.InitialMessage" xml:space="preserve">
+    <value>Supports .python-version, .nvmrc, .node-version, .java-version, package.json, and global.json; the project terminal never modifies the global PATH.</value>
+  </data>
+  <data name="Projects.Details.Placeholder" xml:space="preserve">
+    <value>Resolved sources appear after you choose a project.</value>
+  </data>
+  <data name="Projects.Actions.OpenTerminal" xml:space="preserve">
+    <value>Open activated terminal</value>
+  </data>
+  <data name="Projects.Actions.CreateManifest" xml:space="preserve">
+    <value>Generate autoenvplus.toml</value>
+  </data>
+  <data name="Projects.Actions.CreateLock" xml:space="preserve">
+    <value>Generate autoenvplus.lock</value>
+  </data>
+  <data name="Projects.Actions.CreateCMakePreset" xml:space="preserve">
+    <value>Generate CMake Preset</value>
+  </data>
+  <data name="Projects.Actions.RollbackCMakePreset" xml:space="preserve">
+    <value>Roll back CMake Preset</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.SectionTitle" xml:space="preserve">
+    <value>Project virtual environments</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.SectionSubtitle" xml:space="preserve">
+    <value>Read-only parsing of existing environments, package manager locks, tool manifests, and wrappers inside the project; no external commands are executed.</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.Discover.ToolTip" xml:space="preserve">
+    <value>Scan the current project for virtual environment evidence</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.Discover.Label" xml:space="preserve">
+    <value>Parse virtual environments</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.Progress.AccessibleName" xml:space="preserve">
+    <value>Virtual environment parsing progress</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.Progress.Label" xml:space="preserve">
+    <value>Reading bounded candidate paths…</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.Placeholder" xml:space="preserve">
+    <value>After choosing a project, parse its existing virtual environments on demand.</value>
+  </data>
+  <data name="Projects.Picker.CommitButton" xml:space="preserve">
+    <value>Choose project</value>
+  </data>
+  <data name="Projects.Messages.ProjectRootMissing" xml:space="preserve">
+    <value>Project directory does not exist: {0}</value>
+  </data>
+  <data name="Projects.Messages.LoadFailedTitle" xml:space="preserve">
+    <value>Could not read the project environment</value>
+  </data>
+  <data name="Projects.Details.ImportedDeclarations" xml:space="preserve">
+    <value>Importable version declarations found:</value>
+  </data>
+  <data name="Projects.Details.WarningLine" xml:space="preserve">
+    <value>Warning: {0}</value>
+  </data>
+  <data name="Projects.Details.NoDeclarations" xml:space="preserve">
+    <value>No version declaration files supported by AutoEnvPlus were found. You can create autoenvplus.toml manually.</value>
+  </data>
+  <data name="Projects.Messages.LoadedTitle" xml:space="preserve">
+    <value>Project environment loaded</value>
+  </data>
+  <data name="Projects.Messages.LoadedWithManifest" xml:space="preserve">
+    <value>You can generate an exact lock file with the installed language tools.</value>
+  </data>
+  <data name="Projects.Messages.LoadedWithoutManifest" xml:space="preserve">
+    <value>Confirm the import sources to generate autoenvplus.toml.</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.ScanningTitle" xml:space="preserve">
+    <value>Parsing project virtual environments</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.ScanningMessage" xml:space="preserve">
+    <value>Only fixed candidate paths and size-limited configuration files are read.</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.CancelledTitle" xml:space="preserve">
+    <value>Parsing cancelled</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.CancelledMessage" xml:space="preserve">
+    <value>No project files or environment settings were modified.</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.CancelledHint" xml:space="preserve">
+    <value>You can click &quot;Parse virtual environments&quot; again.</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.FailedTitle" xml:space="preserve">
+    <value>Could not parse virtual environments</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.FailedHint" xml:space="preserve">
+    <value>Scan failed; project contents were not modified.</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.ResetHint" xml:space="preserve">
+    <value>Click &quot;Parse virtual environments&quot; to read the current project&apos;s local evidence.</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.NoneFoundTitle" xml:space="preserve">
+    <value>No project virtual environments found</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.FoundTitle" xml:space="preserve">
+    <value>Found {0} local environment evidence items</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.NoneFoundMessage" xml:space="preserve">
+    <value>Checked {0} fixed candidate paths; no external commands were run.</value>
+  </data>
+  <data name="Projects.Separator" xml:space="preserve">
+    <value>; </value>
+  </data>
+  <data name="Projects.VirtualEnvironments.FoundMessage" xml:space="preserve">
+    <value>Needs attention: {0} · invalid: {1} · paths checked: {2}</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.ScanLimitSuffix" xml:space="preserve">
+    <value> · scan limit reached</value>
+  </data>
+  <data name="Projects.VirtualEnvironments.EmptyResult" xml:space="preserve">
+    <value>No .venv/Conda, Node dependency environments, .NET tool manifests, Java wrappers, Rust, or Go workspaces were found.</value>
+  </data>
+  <data name="Projects.Messages.ManifestCreatedTitle" xml:space="preserve">
+    <value>Project manifest created</value>
+  </data>
+  <data name="Projects.Messages.ManifestCreatedActivity" xml:space="preserve">
+    <value>Generated autoenvplus.toml from existing version declarations.</value>
+  </data>
+  <data name="Projects.Messages.ManifestFailedTitle" xml:space="preserve">
+    <value>Could not create the project manifest</value>
+  </data>
+  <data name="Projects.Messages.ManifestFailedActivity" xml:space="preserve">
+    <value>Failed to generate autoenvplus.toml. Error type: {0}.</value>
+  </data>
+  <data name="Projects.Terminal.HostLabel" xml:space="preserve">
+    <value>Terminal host</value>
+  </data>
+  <data name="Projects.Terminal.WindowsTerminalUnavailableTitle" xml:space="preserve">
+    <value>Windows Terminal unavailable</value>
+  </data>
+  <data name="Projects.Terminal.WindowsTerminalUnavailableMessage" xml:space="preserve">
+    <value>wt.exe was not detected; Windows PowerShell will open instead.</value>
+  </data>
+  <data name="Projects.Terminal.DialogTitle" xml:space="preserve">
+    <value>Open activated project terminal</value>
+  </data>
+  <data name="Projects.Dialogs.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Projects.Terminal.OpenInWindowsTerminal" xml:space="preserve">
+    <value>Open in Windows Terminal</value>
+  </data>
+  <data name="Projects.Terminal.OpenNewPowerShell" xml:space="preserve">
+    <value>Open new PowerShell</value>
+  </data>
+  <data name="Projects.Terminal.LaunchedTitle" xml:space="preserve">
+    <value>Project terminal started</value>
+  </data>
+  <data name="Projects.Terminal.LaunchedMessage" xml:space="preserve">
+    <value>PID {0} · {1} · session-scoped exact versions; the user PATH and global defaults are not modified.</value>
+  </data>
+  <data name="Projects.Terminal.LaunchFailedTitle" xml:space="preserve">
+    <value>Could not open the project terminal</value>
+  </data>
+  <data name="Projects.Terminal.Preview.Project" xml:space="preserve">
+    <value>Project
+{0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.Manifest" xml:space="preserve">
+    <value>
+Manifest
+{0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.Host" xml:space="preserve">
+    <value>
+Terminal host
+{0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.SelectionsHeader" xml:space="preserve">
+    <value>
+Exact language tools</value>
+  </data>
+  <data name="Projects.Terminal.Preview.SelectionsEmpty" xml:space="preserve">
+    <value>(No language tools for the AutoEnvPlus shim to activate)</value>
+  </data>
+  <data name="Projects.Terminal.Preview.SessionVariablesHeader" xml:space="preserve">
+    <value>
+Session variables (written only to the new terminal process)</value>
+  </data>
+  <data name="Projects.Terminal.Preview.SessionVariablesEmpty" xml:space="preserve">
+    <value>(None)</value>
+  </data>
+  <data name="Projects.Terminal.Preview.PathOverride" xml:space="preserve">
+    <value>  {0}=&lt;Shim directory prepended&gt;</value>
+  </data>
+  <data name="Projects.Terminal.Preview.RedactedValue" xml:space="preserve">
+    <value>  {0}=&lt;configured, not echoed&gt;</value>
+  </data>
+  <data name="Projects.Terminal.Preview.NetworkHeader" xml:space="preserve">
+    <value>
+Network environment</value>
+  </data>
+  <data name="Projects.Terminal.Preview.NetworkNotApplied" xml:space="preserve">
+    <value>The project has no Python or Node.js network tools; no package source environment was injected.</value>
+  </data>
+  <data name="Projects.Terminal.Preview.ProxySource" xml:space="preserve">
+    <value>Proxy source: {0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.ProxyLine" xml:space="preserve">
+    <value>HTTP: {0} · HTTPS: {1} · bypass entries: {2}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.PipMirror" xml:space="preserve">
+    <value>pip mirror: {0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.NpmRegistry" xml:space="preserve">
+    <value>npm registry: {0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.EnvironmentRemovals" xml:space="preserve">
+    <value>{0} network environment variables that should not be inherited will be removed.</value>
+  </data>
+  <data name="Projects.Terminal.Preview.WarningLine" xml:space="preserve">
+    <value>
+Warning: {0}</value>
+  </data>
+  <data name="Projects.Terminal.Preview.ErrorLine" xml:space="preserve">
+    <value>
+Error: {0}</value>
+  </data>
+  <data name="Projects.Terminal.ProxySource.Pip" xml:space="preserve">
+    <value>pip tool override</value>
+  </data>
+  <data name="Projects.Terminal.ProxySource.Npm" xml:space="preserve">
+    <value>npm tool override</value>
+  </data>
+  <data name="Projects.Terminal.ProxySource.Matching" xml:space="preserve">
+    <value>pip and npm shared configuration</value>
+  </data>
+  <data name="Projects.Terminal.ProxySource.Downloads" xml:space="preserve">
+    <value>Download center fallback configuration</value>
+  </data>
+  <data name="Projects.Terminal.DirectConnection" xml:space="preserve">
+    <value>Direct connection</value>
+  </data>
+  <data name="Projects.Terminal.ProxyConfigured" xml:space="preserve">
+    <value>Proxy configured</value>
+  </data>
+  <data name="Projects.Terminal.MirrorConfigured" xml:space="preserve">
+    <value>Configured</value>
+  </data>
+  <data name="Projects.Terminal.MirrorOfficial" xml:space="preserve">
+    <value>Official source</value>
+  </data>
+  <data name="Projects.Messages.LockNotGeneratedTitle" xml:space="preserve">
+    <value>Lock file not generated yet</value>
+  </data>
+  <data name="Projects.Messages.LockNotGeneratedActivity" xml:space="preserve">
+    <value>The exact project lock file was not generated; language tool resolution has unmet requirements.</value>
+  </data>
+  <data name="Projects.Messages.LockCreatedTitle" xml:space="preserve">
+    <value>Project lock file generated</value>
+  </data>
+  <data name="Projects.Messages.LockCreatedMessage" xml:space="preserve">
+    <value>{0} · {1} exact language tools</value>
+  </data>
+  <data name="Projects.Messages.LockCreatedActivity" xml:space="preserve">
+    <value>Generated a project lock file with {0} exact language tools.</value>
+  </data>
+  <data name="Projects.Messages.LockFailedTitle" xml:space="preserve">
+    <value>Could not generate the project lock file</value>
+  </data>
+  <data name="Projects.Messages.LockFailedActivity" xml:space="preserve">
+    <value>Project lock file generation failed. Error type: {0}.</value>
+  </data>
+  <data name="Projects.CMake.NoMsvcPairs" xml:space="preserve">
+    <value>No MSVC host/target pairs available for a CMake preset.</value>
+  </data>
+  <data name="Projects.CMake.SelectorAccessibleName" xml:space="preserve">
+    <value>CMake MSVC configuration</value>
+  </data>
+  <data name="Projects.CMake.SelectDialogTitle" xml:space="preserve">
+    <value>Choose a CMake MSVC configuration</value>
+  </data>
+  <data name="Projects.CMake.PreviewJson" xml:space="preserve">
+    <value>Preview JSON</value>
+  </data>
+  <data name="Projects.CMake.WriteDialogTitle" xml:space="preserve">
+    <value>Write {0}</value>
+  </data>
+  <data name="Projects.CMake.WriteAndSnapshot" xml:space="preserve">
+    <value>Write and save snapshot</value>
+  </data>
+  <data name="Projects.CMake.WriteFailed" xml:space="preserve">
+    <value>CMake preset write failed.</value>
+  </data>
+  <data name="Projects.CMake.WrittenTitle" xml:space="preserve">
+    <value>CMake User Preset written</value>
+  </data>
+  <data name="Projects.CMake.WrittenMessage" xml:space="preserve">
+    <value>{0} · {1} · snapshot {2}</value>
+  </data>
+  <data name="Projects.CMake.WrittenActivity" xml:space="preserve">
+    <value>Wrote project-level {0}: {1}.</value>
+  </data>
+  <data name="Projects.CMake.FailedTitle" xml:space="preserve">
+    <value>Could not generate the CMake preset</value>
+  </data>
+  <data name="Projects.CMake.FailedActivity" xml:space="preserve">
+    <value>Project-level CMake User Preset write failed. Error type: {0}.</value>
+  </data>
+  <data name="Projects.CMake.RollbackDialogTitle" xml:space="preserve">
+    <value>Roll back CMake User Presets</value>
+  </data>
+  <data name="Projects.CMake.RollbackDialogText" xml:space="preserve">
+    <value>Project
+{0}
+
+Snapshot
+{1}
+
+If the file was modified afterwards, AutoEnvPlus will refuse to overwrite it.</value>
+  </data>
+  <data name="Projects.CMake.RollbackButton" xml:space="preserve">
+    <value>Roll back</value>
+  </data>
+  <data name="Projects.CMake.RollbackFailedTitle" xml:space="preserve">
+    <value>CMake preset rollback failed</value>
+  </data>
+  <data name="Projects.CMake.RollbackRejectedActivity" xml:space="preserve">
+    <value>The CMake User Preset rollback was rejected at the execution re-check stage.</value>
+  </data>
+  <data name="Projects.CMake.RollbackSucceededTitle" xml:space="preserve">
+    <value>CMake User Presets rolled back</value>
+  </data>
+  <data name="Projects.CMake.RollbackSucceededActivity" xml:space="preserve">
+    <value>Rolled back the project-level CMake User Preset.</value>
+  </data>
+  <data name="Projects.CMake.RollbackFailedActivity" xml:space="preserve">
+    <value>CMake User Preset rollback failed. Error type: {0}.</value>
+  </data>
+  <data name="Projects.Environment.Healthy" xml:space="preserve">
+    <value>Healthy</value>
+  </data>
+  <data name="Projects.Environment.NeedsAttention" xml:space="preserve">
+    <value>Needs attention</value>
+  </data>
+  <data name="Projects.Environment.Invalid" xml:space="preserve">
+    <value>Unavailable</value>
+  </data>
+  <data name="Projects.Environment.VersionText" xml:space="preserve">
+    <value>Version: {0}</value>
+  </data>
+  <data name="Projects.Environment.ExecutableText" xml:space="preserve">
+    <value>Entry: {0}</value>
+  </data>
+  <data name="Projects.Environment.EvidenceText" xml:space="preserve">
+    <value>Evidence: {0}</value>
+  </data>
+  <data name="Projects.Environment.WarningText" xml:space="preserve">
+    <value>Note: {0}</value>
+  </data>
+  <data name="Projects.Environment.Kind.VirtualEnvironment" xml:space="preserve">
+    <value>Virtual environment</value>
+  </data>
+  <data name="Projects.Environment.Kind.CondaEnvironment" xml:space="preserve">
+    <value>Conda environment</value>
+  </data>
+  <data name="Projects.Environment.Kind.EnvironmentDefinition" xml:space="preserve">
+    <value>Environment management declaration</value>
+  </data>
+  <data name="Projects.Environment.Kind.DependencyEnvironment" xml:space="preserve">
+    <value>Dependency environment</value>
+  </data>
+  <data name="Projects.Environment.Kind.LocalToolManifest" xml:space="preserve">
+    <value>Local tool manifest</value>
+  </data>
+  <data name="Projects.Environment.Kind.BuildWrapper" xml:space="preserve">
+    <value>Build wrapper</value>
+  </data>
+  <data name="Projects.Environment.Kind.ToolchainSelection" xml:space="preserve">
+    <value>Toolchain selection</value>
+  </data>
+  <data name="Projects.Environment.Kind.BuildOutput" xml:space="preserve">
+    <value>Build output</value>
+  </data>
+  <data name="Projects.Environment.Kind.Workspace" xml:space="preserve">
+    <value>Workspace</value>
+  </data>
+  <data name="Projects.CMake.ChoiceLabel" xml:space="preserve">
+    <value>{0} · {1} target · {2} host</value>
+  </data>
+
+  <data name="Storage.Header.Title" xml:space="preserve">
+    <value>Cache &amp; storage</value>
+  </data>
+  <data name="Storage.Header.Subtitle" xml:space="preserve">
+    <value>Identify the real storage locations and configuration sources of pip, npm, pnpm, Yarn, NuGet, Maven, Gradle, vcpkg, and Conan.</value>
+  </data>
+  <data name="Storage.Progress.AccessibleName" xml:space="preserve">
+    <value>Storage operation progress</value>
+  </data>
+  <data name="Storage.Actions.CancelOperation.ToolTip" xml:space="preserve">
+    <value>Cancel the current storage operation</value>
+  </data>
+  <data name="Storage.Actions.CancelOperation.Label" xml:space="preserve">
+    <value>Cancel current operation</value>
+  </data>
+  <data name="Storage.Actions.Rollback.ToolTip" xml:space="preserve">
+    <value>Restore the tool configuration from before the latest migration</value>
+  </data>
+  <data name="Storage.Actions.Rollback.Label" xml:space="preserve">
+    <value>Roll back latest configuration</value>
+  </data>
+  <data name="Storage.Actions.MeasureAll" xml:space="preserve">
+    <value>Measure all sizes</value>
+  </data>
+  <data name="Storage.Info.InitialTitle" xml:space="preserve">
+    <value>Current configuration loaded</value>
+  </data>
+  <data name="Storage.Info.InitialMessage" xml:space="preserve">
+    <value>Migration keeps the original directory; safe cleanup first moves content into a same-volume quarantine. Gradle and Conan root directories contain configuration and do not offer whole-directory cleanup.</value>
+  </data>
+  <data name="Storage.Cleanup.SectionTitle" xml:space="preserve">
+    <value>Safe quarantine</value>
+  </data>
+  <data name="Storage.Cleanup.EmptyCount" xml:space="preserve">
+    <value>No pending items</value>
+  </data>
+  <data name="Storage.Cleanup.CountFormat" xml:space="preserve">
+    <value>{0:N0} items</value>
+  </data>
+  <data name="Storage.Cleanup.Picker.AccessibleName" xml:space="preserve">
+    <value>Choose a quarantine item</value>
+  </data>
+  <data name="Storage.Cleanup.Picker.Placeholder" xml:space="preserve">
+    <value>No caches to restore or purge</value>
+  </data>
+  <data name="Storage.Cleanup.Restore.ToolTip" xml:space="preserve">
+    <value>Move quarantined content back to the original cache directory</value>
+  </data>
+  <data name="Storage.Cleanup.Restore.Label" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="Storage.Cleanup.Restore.DefaultToolTip" xml:space="preserve">
+    <value>Select a quarantine item to restore</value>
+  </data>
+  <data name="Storage.Cleanup.Restore.BlockedFallback" xml:space="preserve">
+    <value>Purge has already started; restore is no longer possible</value>
+  </data>
+  <data name="Storage.Cleanup.Purge.ToolTip" xml:space="preserve">
+    <value>Permanently delete the re-verified quarantined content</value>
+  </data>
+  <data name="Storage.Cleanup.Purge.Label" xml:space="preserve">
+    <value>Purge permanently</value>
+  </data>
+  <data name="Storage.Cleanup.State.Recoverable" xml:space="preserve">
+    <value>Recoverable</value>
+  </data>
+  <data name="Storage.Cleanup.State.RestoreBlocked" xml:space="preserve">
+    <value>Restore blocked</value>
+  </data>
+  <data name="Storage.Cleanup.State.RestorePending" xml:space="preserve">
+    <value>Restore pending</value>
+  </data>
+  <data name="Storage.Cleanup.State.PurgePending" xml:space="preserve">
+    <value>Purge pending</value>
+  </data>
+  <data name="Storage.Cache.Columns.Tool" xml:space="preserve">
+    <value>Tool</value>
+  </data>
+  <data name="Storage.Cache.Columns.Directory" xml:space="preserve">
+    <value>Directory</value>
+  </data>
+  <data name="Storage.Cache.Columns.Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="Storage.Cache.Columns.Size" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="Storage.Cache.Columns.Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Storage.Cache.Actions.Open.Label" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Storage.Cache.Actions.Open.ToolTip" xml:space="preserve">
+    <value>Open the actual directory in File Explorer</value>
+  </data>
+  <data name="Storage.Cache.Actions.Migrate" xml:space="preserve">
+    <value>Migrate</value>
+  </data>
+  <data name="Storage.Cache.Actions.Cleanup" xml:space="preserve">
+    <value>Clean up</value>
+  </data>
+  <data name="Storage.Cache.Size.NotMeasured" xml:space="preserve">
+    <value>Not measured yet</value>
+  </data>
+  <data name="Storage.Cache.Size.Measuring" xml:space="preserve">
+    <value>Measuring…</value>
+  </data>
+  <data name="Storage.Cache.Size.Missing" xml:space="preserve">
+    <value>Directory does not exist</value>
+  </data>
+  <data name="Storage.Cache.Size.Summary" xml:space="preserve">
+    <value>{0} · {1:N0} files</value>
+  </data>
+  <data name="Storage.Cache.CleanupToolTip.Missing" xml:space="preserve">
+    <value>Cache directory does not exist</value>
+  </data>
+  <data name="Storage.Cache.CleanupToolTip.NotSupported" xml:space="preserve">
+    <value>This root directory contains configuration or other non-cache data; only migration is supported, whole-directory cleanup is not available</value>
+  </data>
+  <data name="Storage.Cache.CleanupToolTip.Unsafe" xml:space="preserve">
+    <value>The current configuration cannot be safely verified; refresh or repair it before cleaning up</value>
+  </data>
+  <data name="Storage.Cache.CleanupToolTip.Default" xml:space="preserve">
+    <value>First moves cache content into a recoverable safe quarantine on the same volume</value>
+  </data>
+  <data name="Storage.Separator" xml:space="preserve">
+    <value>; </value>
+  </data>
+  <data name="Storage.Messages.RefreshFailedTitle" xml:space="preserve">
+    <value>Could not refresh caches and quarantine</value>
+  </data>
+  <data name="Storage.Messages.RefreshPartialTitle" xml:space="preserve">
+    <value>{0}, but the list refresh failed</value>
+  </data>
+  <data name="Storage.Messages.RefreshPartialMessage" xml:space="preserve">
+    <value>{0} Refresh error: {1}</value>
+  </data>
+  <data name="Storage.Messages.CleanupRecheckFailedTitle" xml:space="preserve">
+    <value>Some quarantine items failed the safety re-check</value>
+  </data>
+  <data name="Storage.Messages.MeasuringTitle" xml:space="preserve">
+    <value>Measuring cache sizes</value>
+  </data>
+  <data name="Storage.Messages.MeasurePartialTitle" xml:space="preserve">
+    <value>Cache measurement complete (some directories failed)</value>
+  </data>
+  <data name="Storage.Messages.MeasureCompletedTitle" xml:space="preserve">
+    <value>Cache measurement complete</value>
+  </data>
+  <data name="Storage.Messages.MeasureCompletedMessage" xml:space="preserve">
+    <value>The migration transaction switches tool configuration only after copying and verification complete; the original directory is never deleted automatically.</value>
+  </data>
+  <data name="Storage.Messages.MeasureCancelledTitle" xml:space="preserve">
+    <value>Measurement cancelled</value>
+  </data>
+  <data name="Storage.Picker.MigrateCommitButton" xml:space="preserve">
+    <value>Choose cache destination disk or parent folder</value>
+  </data>
+  <data name="Storage.Messages.MigrationPlanFailedTitle" xml:space="preserve">
+    <value>Could not create a migration plan</value>
+  </data>
+  <data name="Storage.Migration.DialogTitle" xml:space="preserve">
+    <value>Migrate the {0} cache</value>
+  </data>
+  <data name="Storage.Migration.DialogText" xml:space="preserve">
+    <value>Source directory
+{0}
+
+Destination directory
+{1}
+
+Configuration
+{2}
+
+Files are verified one by one; a configuration snapshot is saved before switching, and the original directory is never deleted automatically.
+
+Close the package managers and build processes using this cache first; migration does not freeze or enumerate external processes, and processes still holding the old configuration after the re-check may continue writing.</value>
+  </data>
+  <data name="Storage.Migration.ConfirmButton" xml:space="preserve">
+    <value>Copy, verify, and switch</value>
+  </data>
+  <data name="Storage.Dialogs.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Storage.Migration.Stage.Measure" xml:space="preserve">
+    <value>Checking source directory</value>
+  </data>
+  <data name="Storage.Migration.Stage.Copy" xml:space="preserve">
+    <value>Copying and verifying</value>
+  </data>
+  <data name="Storage.Migration.Stage.Commit" xml:space="preserve">
+    <value>Committing new directory</value>
+  </data>
+  <data name="Storage.Migration.Stage.Configure" xml:space="preserve">
+    <value>Switching tool configuration</value>
+  </data>
+  <data name="Storage.Migration.Stage.Complete" xml:space="preserve">
+    <value>Migration complete</value>
+  </data>
+  <data name="Storage.Migration.Failed" xml:space="preserve">
+    <value>Migration failed.</value>
+  </data>
+  <data name="Storage.Messages.MigrationCompletedTitle" xml:space="preserve">
+    <value>Cache migration complete</value>
+  </data>
+  <data name="Storage.Messages.MigrationCompletedNoSnapshot" xml:space="preserve">
+    <value>New directory: {0}. The original directory is kept; clean it up manually after confirming the tools work.</value>
+  </data>
+  <data name="Storage.Messages.MigrationCompletedWithSnapshot" xml:space="preserve">
+    <value>New directory: {0}. Configuration snapshot: {1}. The original directory is kept.</value>
+  </data>
+  <data name="Storage.Messages.MigrationCompletedActivity" xml:space="preserve">
+    <value>Migrated the {0} cache and switched tool configuration; the original directory is unchanged.</value>
+  </data>
+  <data name="Storage.Messages.MigrationCancelledTitle" xml:space="preserve">
+    <value>Migration cancelled</value>
+  </data>
+  <data name="Storage.Messages.MigrationCancelledMessage" xml:space="preserve">
+    <value>The original directory and configuration are unchanged.</value>
+  </data>
+  <data name="Storage.Messages.MigrationCancelledActivity" xml:space="preserve">
+    <value>The {0} cache migration was cancelled; the original directory and configuration are unchanged.</value>
+  </data>
+  <data name="Storage.Messages.MigrationFailedTitle" xml:space="preserve">
+    <value>Cache migration failed</value>
+  </data>
+  <data name="Storage.Messages.MigrationFailedActivity" xml:space="preserve">
+    <value>The {0} cache migration failed. Error type: {1}.</value>
+  </data>
+  <data name="Storage.Messages.CleanupCheckingTitle" xml:space="preserve">
+    <value>Checking the {0} cache</value>
+  </data>
+  <data name="Storage.Messages.CleanupCheckingMessage" xml:space="preserve">
+    <value>Re-checking directory boundaries, reparse points, file counts, and sizes.</value>
+  </data>
+  <data name="Storage.Messages.CleanupPlanCancelledTitle" xml:space="preserve">
+    <value>Cleanup plan cancelled</value>
+  </data>
+  <data name="Storage.Messages.CleanupPlanFailedTitle" xml:space="preserve">
+    <value>Could not create a safe cleanup plan</value>
+  </data>
+  <data name="Storage.Cleanup.DialogTitle" xml:space="preserve">
+    <value>Quarantine the {0} cache content</value>
+  </data>
+  <data name="Storage.Cleanup.DialogText" xml:space="preserve">
+    <value>Cache directory (kept)
+{0}
+
+Safe quarantine
+{1}
+
+Impact
+{2:N0} files · {3} · {4:N0} top-level entries
+
+Content moves into the quarantine by same-volume rename; the cache directory and tool configuration are unchanged. This stage does not free disk space; you can restore first, or separately confirm a permanent purge later.
+
+Close the package managers and build processes using this cache first; quarantine does not freeze or enumerate external processes, and in-use files can make it fail.</value>
+  </data>
+  <data name="Storage.Cleanup.ConfirmButton" xml:space="preserve">
+    <value>Move to safe quarantine</value>
+  </data>
+  <data name="Storage.Cleanup.ProgressIsolating" xml:space="preserve">
+    <value>Quarantining cache content</value>
+  </data>
+  <data name="Storage.Messages.CleanupIsolatedTitle" xml:space="preserve">
+    <value>Cache content safely quarantined</value>
+  </data>
+  <data name="Storage.Messages.CleanupIsolatedMessage" xml:space="preserve">
+    <value>Quarantined {0:N0} files ({1}). The cache root directory is kept; restore or permanently purge it from the safe quarantine.</value>
+  </data>
+  <data name="Storage.Messages.CleanupCancelledTitle" xml:space="preserve">
+    <value>Cache cleanup cancelled</value>
+  </data>
+  <data name="Storage.Messages.CleanupIncompleteTitle" xml:space="preserve">
+    <value>Cache cleanup incomplete</value>
+  </data>
+  <data name="Storage.Messages.CleanupKeptMessage" xml:space="preserve">
+    <value>Cache content remains in the original directory or the controlled quarantine.</value>
+  </data>
+  <data name="Storage.Messages.CleanupIsolatedActivity" xml:space="preserve">
+    <value>Moved the {0} pure cache into the same-volume safe quarantine; space has not been permanently freed yet.</value>
+  </data>
+  <data name="Storage.Messages.CleanupCancelledConsistentActivity" xml:space="preserve">
+    <value>The {0} cache quarantine was cancelled and saved in a consistent state.</value>
+  </data>
+  <data name="Storage.Messages.CleanupIncompleteActivity" xml:space="preserve">
+    <value>The {0} cache quarantine is incomplete.</value>
+  </data>
+  <data name="Storage.Messages.CleanupCancelledActivity" xml:space="preserve">
+    <value>The {0} cache quarantine was cancelled.</value>
+  </data>
+  <data name="Storage.Messages.CleanupFailedTitle" xml:space="preserve">
+    <value>Cache cleanup failed</value>
+  </data>
+  <data name="Storage.Messages.CleanupFailedActivity" xml:space="preserve">
+    <value>The {0} cache quarantine failed. Error type: {1}.</value>
+  </data>
+  <data name="Storage.Restore.DialogTitle" xml:space="preserve">
+    <value>Restore the {0} cache</value>
+  </data>
+  <data name="Storage.Restore.DialogText" xml:space="preserve">
+    <value>Original cache directory
+{0}
+
+Quarantine directory
+{1}
+
+{2:N0} files will be restored ({3}). A re-check runs before execution; any later data in the original directory refuses to be overwritten.</value>
+  </data>
+  <data name="Storage.Restore.ConfirmButton" xml:space="preserve">
+    <value>Restore to original directory</value>
+  </data>
+  <data name="Storage.Restore.ProgressRestoring" xml:space="preserve">
+    <value>Restoring cache content</value>
+  </data>
+  <data name="Storage.Messages.RestoreCompletedTitle" xml:space="preserve">
+    <value>Cache content restored</value>
+  </data>
+  <data name="Storage.Messages.RestoreCancelledTitle" xml:space="preserve">
+    <value>Cache restore cancelled</value>
+  </data>
+  <data name="Storage.Messages.RestoreRejectedTitle" xml:space="preserve">
+    <value>Cache restore rejected</value>
+  </data>
+  <data name="Storage.Messages.RestoreCompletedMessage" xml:space="preserve">
+    <value>Restored {0:N0} files ({1}) to the original cache directory.</value>
+  </data>
+  <data name="Storage.Messages.RestoreKeptMessage" xml:space="preserve">
+    <value>The quarantined content is kept.</value>
+  </data>
+  <data name="Storage.Messages.RestoreCompletedActivity" xml:space="preserve">
+    <value>Restored the quarantined cache content of {0}.</value>
+  </data>
+  <data name="Storage.Messages.RestoreCancelledActivity" xml:space="preserve">
+    <value>Restoring the {0} quarantined cache was cancelled.</value>
+  </data>
+  <data name="Storage.Messages.RestoreRejectedActivity" xml:space="preserve">
+    <value>Restoring the {0} quarantined cache was rejected.</value>
+  </data>
+  <data name="Storage.Messages.RestoreCancelledMessage" xml:space="preserve">
+    <value>The quarantine item was saved in a consistent state and can still be processed.</value>
+  </data>
+  <data name="Storage.Messages.RestoreFailedTitle" xml:space="preserve">
+    <value>Cache restore failed</value>
+  </data>
+  <data name="Storage.Messages.RestoreFailedActivity" xml:space="preserve">
+    <value>Restoring the {0} quarantined cache failed. Error type: {1}.</value>
+  </data>
+  <data name="Storage.Purge.DialogTitle" xml:space="preserve">
+    <value>Permanently purge the {0} quarantined content</value>
+  </data>
+  <data name="Storage.Purge.DialogText" xml:space="preserve">
+    <value>Trusted quarantine directory
+{0}
+
+{1:N0} files will be permanently deleted ({2}). This action is irreversible; once started, the quarantine item can no longer be restored. The original cache directory and tool configuration are not modified.</value>
+  </data>
+  <data name="Storage.Purge.ConfirmButton" xml:space="preserve">
+    <value>Delete permanently</value>
+  </data>
+  <data name="Storage.Purge.ProgressPurging" xml:space="preserve">
+    <value>Purging quarantined content</value>
+  </data>
+  <data name="Storage.Messages.PurgeCompletedTitle" xml:space="preserve">
+    <value>Quarantined content purged</value>
+  </data>
+  <data name="Storage.Messages.PurgeInterruptedTitle" xml:space="preserve">
+    <value>Purge interrupted</value>
+  </data>
+  <data name="Storage.Messages.PurgeIncompleteTitle" xml:space="preserve">
+    <value>Purge incomplete</value>
+  </data>
+  <data name="Storage.Messages.PurgeCompletedMessage" xml:space="preserve">
+    <value>Freed the {0} occupied by quarantined content; the original cache directory is unchanged.</value>
+  </data>
+  <data name="Storage.Messages.PurgePendingFallback" xml:space="preserve">
+    <value>Quarantined content still pending.</value>
+  </data>
+  <data name="Storage.Messages.PurgeResumeHint" xml:space="preserve">
+    <value>Items whose purge has started cannot be restored; choose &quot;Purge permanently&quot; again to continue.</value>
+  </data>
+  <data name="Storage.Messages.PurgeCompletedActivity" xml:space="preserve">
+    <value>Permanently purged the trusted quarantined content of {0} and freed space.</value>
+  </data>
+  <data name="Storage.Messages.PurgeInterruptedActivity" xml:space="preserve">
+    <value>The purge of {0} quarantined content was interrupted; it can only continue purging.</value>
+  </data>
+  <data name="Storage.Messages.PurgeIncompleteActivity" xml:space="preserve">
+    <value>The purge of {0} quarantined content is incomplete.</value>
+  </data>
+  <data name="Storage.Messages.PurgeFailedTitle" xml:space="preserve">
+    <value>Purge failed</value>
+  </data>
+  <data name="Storage.Messages.PurgeFailedActivity" xml:space="preserve">
+    <value>Purging the {0} quarantined content failed. Error type: {1}.</value>
+  </data>
+  <data name="Storage.Messages.OpenFolderFailedTitle" xml:space="preserve">
+    <value>Could not open the cache directory</value>
+  </data>
+  <data name="Storage.Rollback.DialogTitle" xml:space="preserve">
+    <value>Roll back the latest storage configuration</value>
+  </data>
+  <data name="Storage.Rollback.DialogText" xml:space="preserve">
+    <value>Snapshot
+{0}
+
+Only the tool configuration is restored; the copied new directory is kept. If the configuration was modified afterwards, AutoEnvPlus refuses to overwrite it.</value>
+  </data>
+  <data name="Storage.Rollback.ConfirmButton" xml:space="preserve">
+    <value>Restore configuration</value>
+  </data>
+  <data name="Storage.Rollback.Failed" xml:space="preserve">
+    <value>Configuration rollback failed.</value>
+  </data>
+  <data name="Storage.Messages.RollbackCompletedTitle" xml:space="preserve">
+    <value>Storage configuration rolled back</value>
+  </data>
+  <data name="Storage.Messages.RollbackCompletedMessage" xml:space="preserve">
+    <value>Tools point to the original directory again. The migration copy is kept at {0}.</value>
+  </data>
+  <data name="Storage.Messages.RollbackCompletedActivity" xml:space="preserve">
+    <value>Rolled back the latest cache migration configuration; the migration copy is unchanged.</value>
+  </data>
+  <data name="Storage.Messages.RollbackCancelledTitle" xml:space="preserve">
+    <value>Rollback cancelled</value>
+  </data>
+  <data name="Storage.Messages.RollbackCancelledActivity" xml:space="preserve">
+    <value>The cache migration configuration rollback was cancelled.</value>
+  </data>
+  <data name="Storage.Messages.RollbackFailedTitle" xml:space="preserve">
+    <value>Storage configuration rollback failed</value>
+  </data>
+  <data name="Storage.Messages.RollbackFailedActivity" xml:space="preserve">
+    <value>The cache migration configuration rollback failed. Error type: {0}.</value>
+  </data>
+  <data name="Storage.Messages.CancellingTitle" xml:space="preserve">
+    <value>Cancelling the current storage operation</value>
+  </data>
+  <data name="Storage.Messages.CancellingMessage" xml:space="preserve">
+    <value>Finishing the current atomic step and saving a consistent state.</value>
+  </data>
+
+  <data name="Downloads.Header.Title" xml:space="preserve">
+    <value>Download center</value>
+  </data>
+  <data name="Downloads.Header.Subtitle" xml:space="preserve">
+    <value>Download direct HTTPS files into the managed library via multi-connection segmented transfer, or import local files; files are never executed automatically.</value>
+  </data>
+  <data name="Downloads.Actions.Import.ToolTip" xml:space="preserve">
+    <value>Copy a local package into the managed download library</value>
+  </data>
+  <data name="Downloads.Actions.Import.Label" xml:space="preserve">
+    <value>Import local file</value>
+  </data>
+  <data name="Downloads.Actions.OpenLibrary.ToolTip" xml:space="preserve">
+    <value>Open the managed download library in File Explorer</value>
+  </data>
+  <data name="Downloads.Actions.OpenLibrary.Label" xml:space="preserve">
+    <value>Open download library</value>
+  </data>
+  <data name="Downloads.Info.InitialTitle" xml:space="preserve">
+    <value>Managed transfers</value>
+  </data>
+  <data name="Downloads.Info.InitialMessage" xml:space="preserve">
+    <value>When the server does not support stable HTTP Range, the download automatically restarts from zero over a single connection; HTTPS and digest verification requirements are never lowered.</value>
+  </data>
+  <data name="Downloads.AddFromUrl.SectionTitle" xml:space="preserve">
+    <value>Add from URL</value>
+  </data>
+  <data name="Downloads.AddFromUrl.SourceUrl.Header" xml:space="preserve">
+    <value>HTTPS file URL</value>
+  </data>
+  <data name="Downloads.AddFromUrl.FileName.Header" xml:space="preserve">
+    <value>Library file name</value>
+  </data>
+  <data name="Downloads.AddFromUrl.ConnectionCount.Header" xml:space="preserve">
+    <value>Connections</value>
+  </data>
+  <data name="Downloads.AddFromUrl.MaximumSize.Header" xml:space="preserve">
+    <value>Maximum size (MB)</value>
+  </data>
+  <data name="Downloads.AddFromUrl.Integrity.Header" xml:space="preserve">
+    <value>Expected digest</value>
+  </data>
+  <data name="Downloads.AddFromUrl.Integrity.Off" xml:space="preserve">
+    <value>Not provided; content SHA-256 is still computed</value>
+  </data>
+  <data name="Downloads.AddFromUrl.Integrity.On" xml:space="preserve">
+    <value>Must match after the download completes</value>
+  </data>
+  <data name="Downloads.AddFromUrl.HashAlgorithm.Header" xml:space="preserve">
+    <value>Algorithm</value>
+  </data>
+  <data name="Downloads.AddFromUrl.ExpectedHash.Header" xml:space="preserve">
+    <value>Expected hexadecimal digest</value>
+  </data>
+  <data name="Downloads.AddFromUrl.ExpectedHash.Placeholder" xml:space="preserve">
+    <value>64-digit SHA-256 or 128-digit SHA-512</value>
+  </data>
+  <data name="Downloads.Actions.StartDownload" xml:space="preserve">
+    <value>Start download</value>
+  </data>
+  <data name="Downloads.Actions.CancelTransfer.ToolTip" xml:space="preserve">
+    <value>Cancel the task and try to clean up all unfinished segments</value>
+  </data>
+  <data name="Downloads.Actions.CancelTransfer.Label" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Downloads.Transfer.IdleTitle" xml:space="preserve">
+    <value>No active task</value>
+  </data>
+  <data name="Downloads.Transfer.Progress.AccessibleName" xml:space="preserve">
+    <value>Current managed transfer progress</value>
+  </data>
+  <data name="Downloads.Library.SectionTitle" xml:space="preserve">
+    <value>Download library</value>
+  </data>
+  <data name="Downloads.Library.SummaryLoading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="Downloads.Library.Refresh.AccessibleName" xml:space="preserve">
+    <value>Refresh download library</value>
+  </data>
+  <data name="Downloads.Library.Refresh.ToolTip" xml:space="preserve">
+    <value>Reload the download library</value>
+  </data>
+  <data name="Downloads.Library.Install.ToolTip" xml:space="preserve">
+    <value>Install into the managed Python virtual environment</value>
+  </data>
+  <data name="Downloads.Library.Install.Label" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="Downloads.Library.OpenLocation.ToolTip" xml:space="preserve">
+    <value>Open the file location</value>
+  </data>
+  <data name="Downloads.Library.Delete.ToolTip" xml:space="preserve">
+    <value>Delete from the managed download library</value>
+  </data>
+  <data name="Downloads.Messages.DefaultsUnavailableTitle" xml:space="preserve">
+    <value>Download defaults unavailable</value>
+  </data>
+  <data name="Downloads.Messages.DefaultsUnavailableMessage" xml:space="preserve">
+    <value>Built-in defaults are in use; {0}</value>
+  </data>
+  <data name="Downloads.Messages.DownloadFailedToStartTitle" xml:space="preserve">
+    <value>Could not start the download</value>
+  </data>
+  <data name="Downloads.Messages.DownloadInvalidUrl" xml:space="preserve">
+    <value>The file URL must be an absolute HTTPS URL without a username or password.</value>
+  </data>
+  <data name="Downloads.Messages.DownloadMissingFileName" xml:space="preserve">
+    <value>Provide a file name for the download library.</value>
+  </data>
+  <data name="Downloads.Messages.InvalidInput" xml:space="preserve">
+    <value>Invalid input.</value>
+  </data>
+  <data name="Downloads.Messages.InvalidHash" xml:space="preserve">
+    <value>Invalid digest.</value>
+  </data>
+  <data name="Downloads.Transfer.ModeSegmented" xml:space="preserve">
+    <value>{0} segments</value>
+  </data>
+  <data name="Downloads.Transfer.ModeSingle" xml:space="preserve">
+    <value>Single connection</value>
+  </data>
+  <data name="Downloads.Transfer.ModeSingleFallback" xml:space="preserve">
+    <value>Single connection (automatic fallback: {0})</value>
+  </data>
+  <data name="Downloads.Messages.DownloadCompletedTitle" xml:space="preserve">
+    <value>File added to the download library</value>
+  </data>
+  <data name="Downloads.Messages.DownloadCompletedActivity" xml:space="preserve">
+    <value>Completed the managed package download: {0}; transfer mode: {1}.</value>
+  </data>
+  <data name="Downloads.Messages.DownloadCancelledTitle" xml:space="preserve">
+    <value>Download cancelled</value>
+  </data>
+  <data name="Downloads.Messages.DownloadCancelledMessage" xml:space="preserve">
+    <value>Incomplete content was not committed to the download library; the app tried to clean up the managed staging directory.</value>
+  </data>
+  <data name="Downloads.Messages.DownloadCancelledActivity" xml:space="preserve">
+    <value>The managed package download was cancelled: {0}.</value>
+  </data>
+  <data name="Downloads.Messages.DownloadIncompleteTitle" xml:space="preserve">
+    <value>Download incomplete</value>
+  </data>
+  <data name="Downloads.Messages.DownloadFailedActivity" xml:space="preserve">
+    <value>The managed package download failed: {0}; error type: {1}.</value>
+  </data>
+  <data name="Downloads.Picker.ImportCommitButton" xml:space="preserve">
+    <value>Import into managed download library</value>
+  </data>
+  <data name="Downloads.Messages.ImportFailedTitle" xml:space="preserve">
+    <value>Could not import the file</value>
+  </data>
+  <data name="Downloads.Import.DialogTitle" xml:space="preserve">
+    <value>Import {0}</value>
+  </data>
+  <data name="Downloads.Import.DialogText" xml:space="preserve">
+    <value>Source file
+{0}
+
+Download library
+{1}
+
+The file will be copied; the source is never moved or deleted, and nothing is executed after import.</value>
+  </data>
+  <data name="Downloads.Import.ConflictNote" xml:space="preserve">
+    <value>
+
+Note: a file with the same name already exists in the download library; continuing deletes the existing file first.</value>
+  </data>
+  <data name="Downloads.Import.OverwriteButton" xml:space="preserve">
+    <value>Overwrite and copy</value>
+  </data>
+  <data name="Downloads.Import.CopyButton" xml:space="preserve">
+    <value>Copy and compute digest</value>
+  </data>
+  <data name="Downloads.Dialogs.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Downloads.Messages.OverwriteFailedTitle" xml:space="preserve">
+    <value>Could not overwrite the existing file</value>
+  </data>
+  <data name="Downloads.Messages.ImportCompletedTitle" xml:space="preserve">
+    <value>Local file imported</value>
+  </data>
+  <data name="Downloads.Messages.ImportVerifiedMessage" xml:space="preserve">
+    <value>{0} · expected {1} verified</value>
+  </data>
+  <data name="Downloads.Messages.ImportUnverifiedMessage" xml:space="preserve">
+    <value>{0} · content SHA-256 computed; source authenticity unknown</value>
+  </data>
+  <data name="Downloads.Messages.ImportCompletedActivity" xml:space="preserve">
+    <value>Copied the local package into the managed download library: {0}.</value>
+  </data>
+  <data name="Downloads.Messages.ImportCancelledTitle" xml:space="preserve">
+    <value>Import cancelled</value>
+  </data>
+  <data name="Downloads.Messages.ImportCancelledMessage" xml:space="preserve">
+    <value>The source file is unchanged and the incomplete copy was not committed; the app tried to clean up the managed staging directory.</value>
+  </data>
+  <data name="Downloads.Messages.ImportCancelledActivity" xml:space="preserve">
+    <value>The local package import was cancelled: {0}.</value>
+  </data>
+  <data name="Downloads.Messages.ImportIncompleteTitle" xml:space="preserve">
+    <value>Import incomplete</value>
+  </data>
+  <data name="Downloads.Messages.ImportFailedActivity" xml:space="preserve">
+    <value>The local package import failed: {0}; error type: {1}.</value>
+  </data>
+  <data name="Downloads.Replace.DialogTitle" xml:space="preserve">
+    <value>A file with the same name already exists in the download library</value>
+  </data>
+  <data name="Downloads.Replace.DialogText" xml:space="preserve">
+    <value>{0}
+
+Continuing deletes the existing file first and then downloads the new content; cancelling makes no changes.</value>
+  </data>
+  <data name="Downloads.Replace.ConfirmButton" xml:space="preserve">
+    <value>Overwrite existing file</value>
+  </data>
+  <data name="Downloads.Delete.DialogTitle" xml:space="preserve">
+    <value>Delete {0}</value>
+  </data>
+  <data name="Downloads.Delete.DialogText" xml:space="preserve">
+    <value>This file and its manifest record will be permanently deleted from the managed download library:
+{0}
+
+The original download URL or imported source file is not affected.</value>
+  </data>
+  <data name="Downloads.Delete.ConfirmButton" xml:space="preserve">
+    <value>Delete permanently</value>
+  </data>
+  <data name="Downloads.Messages.DeleteCompletedTitle" xml:space="preserve">
+    <value>Download library file deleted</value>
+  </data>
+  <data name="Downloads.Messages.DeleteMissingTitle" xml:space="preserve">
+    <value>File no longer exists</value>
+  </data>
+  <data name="Downloads.Messages.DeleteFailedTitle" xml:space="preserve">
+    <value>Could not delete the download library file</value>
+  </data>
+  <data name="Downloads.Messages.PythonRegistryReadFailedTitle" xml:space="preserve">
+    <value>Could not read the managed Python</value>
+  </data>
+  <data name="Downloads.Messages.PythonRegistryInvalidTitle" xml:space="preserve">
+    <value>The managed language tool registry is invalid</value>
+  </data>
+  <data name="Downloads.Separator" xml:space="preserve">
+    <value>; </value>
+  </data>
+  <data name="Downloads.Messages.NoManagedPythonTitle" xml:space="preserve">
+    <value>No managed Python available</value>
+  </data>
+  <data name="Downloads.Messages.NoManagedPythonMessage" xml:space="preserve">
+    <value>Install CPython on the Python language page first, then create an isolated virtual environment.</value>
+  </data>
+  <data name="Downloads.Pip.BasePythonHeader" xml:space="preserve">
+    <value>Base Python</value>
+  </data>
+  <data name="Downloads.Pip.EnvironmentNameHeader" xml:space="preserve">
+    <value>Virtual environment name</value>
+  </data>
+  <data name="Downloads.Pip.SourceModeHeader" xml:space="preserve">
+    <value>Dependency source</value>
+  </data>
+  <data name="Downloads.Pip.SourceMode.Offline" xml:space="preserve">
+    <value>Strict offline (this wheel only, no dependency resolution)</value>
+  </data>
+  <data name="Downloads.Pip.SourceMode.Network" xml:space="preserve">
+    <value>Current pip provider source and proxy</value>
+  </data>
+  <data name="Downloads.Pip.NonTransactionalTitle" xml:space="preserve">
+    <value>pip install is not transactional</value>
+  </data>
+  <data name="Downloads.Pip.NonTransactionalMessage" xml:space="preserve">
+    <value>Environments, caches, and temporary files stay inside the managed data root, but the package&apos;s own build scripts may still modify the environment; failures are never reported as automatically rolled back.</value>
+  </data>
+  <data name="Downloads.Pip.DialogTitle" xml:space="preserve">
+    <value>Install {0}</value>
+  </data>
+  <data name="Downloads.Pip.PlanButton" xml:space="preserve">
+    <value>Generate install plan</value>
+  </data>
+  <data name="Downloads.Messages.PipPlanFailedTitle" xml:space="preserve">
+    <value>Could not generate the pip install plan</value>
+  </data>
+  <data name="Downloads.Pip.ReuseEnvironmentStep" xml:space="preserve">
+    <value>Use the existing, re-verified virtual environment</value>
+  </data>
+  <data name="Downloads.Pip.ConfirmDialogTitle" xml:space="preserve">
+    <value>Confirm the local wheel install plan</value>
+  </data>
+  <data name="Downloads.Pip.ConfirmDialogText" xml:space="preserve">
+    <value>Wheel
+{0}
+
+Target environment
+{1}
+
+Create environment
+{2}
+
+Install command
+{3}
+
+TEMP / TMP
+{4}
+
+pip cache
+{5}
+
+Rollback boundary
+This is not a transactional install. Strict offline mode uses --no-deps and installs only the current audited wheel without resolving or installing any dependencies; resolving dependencies requires explicitly choosing networked mode.</value>
+  </data>
+  <data name="Downloads.Pip.ExecuteButton" xml:space="preserve">
+    <value>Execute the audited plan</value>
+  </data>
+  <data name="Downloads.Messages.PipCompletedTitle" xml:space="preserve">
+    <value>Wheel installed into the managed virtual environment</value>
+  </data>
+  <data name="Downloads.Messages.PipCompletedActivity" xml:space="preserve">
+    <value>Installed {0} into the managed Python virtual environment {1}; this operation does not support transactional rollback.</value>
+  </data>
+  <data name="Downloads.Messages.PipCancelledTitle" xml:space="preserve">
+    <value>pip install cancelled</value>
+  </data>
+  <data name="Downloads.Messages.PipCancelledMessage" xml:space="preserve">
+    <value>The subprocess was stopped; the environment may contain partial changes and no rollback is claimed.</value>
+  </data>
+  <data name="Downloads.Messages.PipCancelledActivity" xml:space="preserve">
+    <value>The pip process installing {0} was cancelled; the virtual environment may contain partial changes.</value>
+  </data>
+  <data name="Downloads.Messages.PipIncompleteTitle" xml:space="preserve">
+    <value>pip install incomplete</value>
+  </data>
+  <data name="Downloads.Messages.PipFailedFallback" xml:space="preserve">
+    <value>pip returned a failure status.</value>
+  </data>
+  <data name="Downloads.Messages.PipFailedActivity" xml:space="preserve">
+    <value>Installing {0} failed; the virtual environment may contain partial changes.</value>
+  </data>
+  <data name="Downloads.Messages.PipPlanInvalidTitle" xml:space="preserve">
+    <value>The pip install plan is no longer valid</value>
+  </data>
+  <data name="Downloads.Messages.NetworkSettingsReadFailedTitle" xml:space="preserve">
+    <value>Could not read the download network settings</value>
+  </data>
+  <data name="Downloads.Messages.DownloadNetworkSettingsInvalidTitle" xml:space="preserve">
+    <value>The download center network settings are invalid</value>
+  </data>
+  <data name="Downloads.Messages.ToolNetworkSettingsInvalidTitle" xml:space="preserve">
+    <value>The {0} network settings are invalid</value>
+  </data>
+  <data name="Downloads.Pip.Stage.Validating" xml:space="preserve">
+    <value>Re-verifying the install plan</value>
+  </data>
+  <data name="Downloads.Pip.Stage.CreatingEnvironment" xml:space="preserve">
+    <value>Creating the virtual environment</value>
+  </data>
+  <data name="Downloads.Pip.Stage.InstallingPackage" xml:space="preserve">
+    <value>Running pip</value>
+  </data>
+  <data name="Downloads.Pip.Stage.Completed" xml:space="preserve">
+    <value>pip install complete</value>
+  </data>
+  <data name="Downloads.Pip.Stage.Cancelled" xml:space="preserve">
+    <value>pip install cancelled</value>
+  </data>
+  <data name="Downloads.Pip.OutputTruncatedNotice" xml:space="preserve">
+    <value>{0}
+
+{1} truncated; only the last {2:N0} characters of the output are kept.</value>
+  </data>
+  <data name="Downloads.Pip.OutputTail" xml:space="preserve">
+    <value>
+
+pip output (tail):
+{0}</value>
+  </data>
+  <data name="Downloads.Messages.InvalidHashFormat" xml:space="preserve">
+    <value>The expected digest must be a valid {0} hexadecimal value.</value>
+  </data>
+  <data name="Downloads.Messages.InvalidMaximumSize" xml:space="preserve">
+    <value>The maximum size must be between 1 MB and {0:F0} MB.</value>
+  </data>
+  <data name="Downloads.Transfer.ProgressFormat" xml:space="preserve">
+    <value>{0} / {1} ({2:F0}%)</value>
+  </data>
+  <data name="Downloads.Transfer.SegmentsSuffix" xml:space="preserve">
+    <value> · segments {0}/{1}</value>
+  </data>
+  <data name="Downloads.Transfer.SpeedWithEta" xml:space="preserve">
+    <value> · {0} · about {1} remaining</value>
+  </data>
+  <data name="Downloads.Transfer.EtaHours" xml:space="preserve">
+    <value>{0:F1} hours</value>
+  </data>
+  <data name="Downloads.Transfer.EtaMinutesSeconds" xml:space="preserve">
+    <value>{0} min {1} sec</value>
+  </data>
+  <data name="Downloads.Transfer.EtaSeconds" xml:space="preserve">
+    <value>{0} sec</value>
+  </data>
+  <data name="Downloads.Library.SummaryFormat" xml:space="preserve">
+    <value>{0:N0} files · {1} · {2}</value>
+  </data>
+  <data name="Downloads.Library.SummaryFailed" xml:space="preserve">
+    <value>The download library manifest failed the safety check</value>
+  </data>
+  <data name="Downloads.Messages.LibraryReadFailedTitle" xml:space="preserve">
+    <value>Could not read the download library</value>
+  </data>
+  <data name="Downloads.Messages.OpenLibraryFailedTitle" xml:space="preserve">
+    <value>Could not open the download library</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Failed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Probing" xml:space="preserve">
+    <value>Probing the server</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Downloading" xml:space="preserve">
+    <value>Downloading</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Copying" xml:space="preserve">
+    <value>Copying</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Verifying" xml:space="preserve">
+    <value>Computing and verifying the digest</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Committing" xml:space="preserve">
+    <value>Committing to the download library</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Completed" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="Downloads.Transfer.Phase.Cancelled" xml:space="preserve">
+    <value>Cancelled</value>
+  </data>
+  <data name="Downloads.Transfer.Fallback.RangeNotSupported" xml:space="preserve">
+    <value>Server does not support Range</value>
+  </data>
+  <data name="Downloads.Transfer.Fallback.StableEntityUnavailable" xml:space="preserve">
+    <value>Stable entity identifier unavailable</value>
+  </data>
+  <data name="Downloads.Transfer.Fallback.EntityChanged" xml:space="preserve">
+    <value>Remote entity changed</value>
+  </data>
+  <data name="Downloads.Library.InstallActionAccessibleName" xml:space="preserve">
+    <value>Install {0} into the managed Python virtual environment</value>
+  </data>
+  <data name="Downloads.Library.OpenLocationActionAccessibleName" xml:space="preserve">
+    <value>Open the location of {0}</value>
+  </data>
+  <data name="Downloads.Library.DeleteActionAccessibleName" xml:space="preserve">
+    <value>Delete {0} from the managed download library</value>
+  </data>
+  <data name="Downloads.Library.Origin.Network" xml:space="preserve">
+    <value>Network download</value>
+  </data>
+  <data name="Downloads.Library.Origin.LocalImport" xml:space="preserve">
+    <value>Local import</value>
+  </data>
+  <data name="Downloads.Library.Origin.Existing" xml:space="preserve">
+    <value>Existing file</value>
+  </data>
+  <data name="Downloads.Library.TransferMode.Segmented" xml:space="preserve">
+    <value>Multi-connection segmented</value>
+  </data>
+  <data name="Downloads.Library.TransferMode.LocalCopy" xml:space="preserve">
+    <value>Local copy</value>
+  </data>
+  <data name="Downloads.Library.SourceUnknown" xml:space="preserve">
+    <value>Source not recorded</value>
+  </data>
+  <data name="Downloads.Library.IntegrityVerified" xml:space="preserve">
+    <value>Expected {0} re-verified · {1}</value>
+  </data>
+  <data name="Downloads.Library.IntegrityChanged" xml:space="preserve">
+    <value>File content has changed; the expected hash evidence recorded at import/download no longer applies</value>
+  </data>
+  <data name="Downloads.Library.IntegrityRecordedOnly" xml:space="preserve">
+    <value>The expected hash was verified only at import/download commit; the current content has not been re-verified</value>
+  </data>
+  <data name="Downloads.Library.IntegritySha256" xml:space="preserve">
+    <value>Content SHA-256 recorded at commit; source authenticity unknown · {0}</value>
+  </data>
+  <data name="Downloads.Library.IntegrityNone" xml:space="preserve">
+    <value>No digest recorded yet</value>
+  </data>
 </root>

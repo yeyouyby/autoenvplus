@@ -35,8 +35,44 @@ public sealed partial class ProjectsPage : Page
             ? null
             : Path.GetFullPath(initialProjectRoot);
         InitializeComponent();
+        ApplyLocalizedStrings();
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+    }
+
+    /// <summary>
+    /// Applies every localized string for this page from the resource table.
+    /// Unpackaged WinUI 3 apps cannot use x:Uid: the XAML loader resolves
+    /// ms-resource property bags against the OS system language only, so it
+    /// neither matches the standard dotted-key PRI layout nor honors the
+    /// in-app language preference. Code-behind assignment through
+    /// <see cref="Loc"/> is the only path that follows
+    /// <c>Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride</c>.
+    /// </summary>
+    private void ApplyLocalizedStrings()
+    {
+        PageTitleText.Text = Loc.Get("Projects.Header.Title");
+        PageSubtitleText.Text = Loc.Get("Projects.Header.Subtitle");
+        ChooseProjectButton.Content = Loc.Get("Projects.Actions.ChooseProjectFolder");
+        ProjectInfo.Title = Loc.Get("Projects.Info.InitialTitle");
+        ProjectInfo.Message = Loc.Get("Projects.Info.InitialMessage");
+        ProjectDetailsText.Text = Loc.Get("Projects.Details.Placeholder");
+        OpenProjectTerminalButton.Content = Loc.Get("Projects.Actions.OpenTerminal");
+        CreateManifestButton.Content = Loc.Get("Projects.Actions.CreateManifest");
+        CreateLockButton.Content = Loc.Get("Projects.Actions.CreateLock");
+        CreateCMakePresetButton.Content = Loc.Get("Projects.Actions.CreateCMakePreset");
+        RollbackCMakePresetButton.Content = Loc.Get("Projects.Actions.RollbackCMakePreset");
+        VirtualEnvironmentSectionTitleText.Text = Loc.Get("Projects.VirtualEnvironments.SectionTitle");
+        VirtualEnvironmentSectionSubtitleText.Text = Loc.Get("Projects.VirtualEnvironments.SectionSubtitle");
+        ToolTipService.SetToolTip(
+            DiscoverVirtualEnvironmentsButton,
+            Loc.Get("Projects.VirtualEnvironments.Discover.ToolTip"));
+        DiscoverVirtualEnvironmentsButtonText.Text = Loc.Get("Projects.VirtualEnvironments.Discover.Label");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            VirtualEnvironmentProgressRing,
+            Loc.Get("Projects.VirtualEnvironments.Progress.AccessibleName"));
+        VirtualEnvironmentProgressText.Text = Loc.Get("Projects.VirtualEnvironments.Progress.Label");
+        VirtualEnvironmentEmptyText.Text = Loc.Get("Projects.VirtualEnvironments.Placeholder");
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
@@ -61,7 +97,7 @@ public sealed partial class ProjectsPage : Page
         {
             SuggestedStartLocation = PickerLocationId.ComputerFolder,
             ViewMode = PickerViewMode.List,
-            CommitButtonText = "选择项目",
+            CommitButtonText = Loc.Get("Projects.Picker.CommitButton"),
         };
         picker.FileTypeFilter.Add("*");
         if (((App)Application.Current).MainWindowInstance is not Window window)
@@ -85,7 +121,8 @@ public sealed partial class ProjectsPage : Page
         {
             if (!Directory.Exists(startPath))
             {
-                throw new DirectoryNotFoundException($"项目目录不存在：{startPath}");
+                throw new DirectoryNotFoundException(
+                    Loc.Format("Projects.Messages.ProjectRootMissing", startPath));
             }
 
             await LoadProjectAsync(startPath);
@@ -97,7 +134,7 @@ public sealed partial class ProjectsPage : Page
             or ArgumentException)
         {
             ProjectInfo.Severity = InfoBarSeverity.Error;
-            ProjectInfo.Title = "无法读取项目环境";
+            ProjectInfo.Title = Loc.Get("Projects.Messages.LoadFailedTitle");
             ProjectInfo.Message = CoreErrorText.Localize(exception.Message);
         }
     }
@@ -131,7 +168,7 @@ public sealed partial class ProjectsPage : Page
         }
         else if (_import.Found)
         {
-            details.AppendLine("发现可导入的版本声明：");
+            details.AppendLine(Loc.Get("Projects.Details.ImportedDeclarations"));
             foreach (ImportedRuntimeSelection source in _import.Sources)
             {
                 details.AppendLine($"{source.Kind}: {source.Selector} ← {source.SourcePath} ({source.RawValue})");
@@ -139,12 +176,12 @@ public sealed partial class ProjectsPage : Page
 
             foreach (string warning in _import.Warnings)
             {
-                details.AppendLine($"警告：{warning}");
+                details.AppendLine(Loc.Format("Projects.Details.WarningLine", warning));
             }
         }
         else
         {
-            details.AppendLine("没有发现 AutoEnvPlus 支持的版本声明文件。可以手动创建 autoenvplus.toml。");
+            details.AppendLine(Loc.Get("Projects.Details.NoDeclarations"));
         }
 
         ProjectDetailsText.Text = details.ToString().TrimEnd();
@@ -157,10 +194,10 @@ public sealed partial class ProjectsPage : Page
         ResetVirtualEnvironmentDiscovery();
         await new KnownProjectStore(GetManagedRoot()).AddAsync(_projectRoot!);
         ProjectInfo.Severity = InfoBarSeverity.Success;
-        ProjectInfo.Title = "项目环境已读取";
+        ProjectInfo.Title = Loc.Get("Projects.Messages.LoadedTitle");
         ProjectInfo.Message = _manifestPath is not null
-            ? "可以使用已安装语言工具生成精确锁文件。"
-            : "确认导入来源后可生成 autoenvplus.toml。";
+            ? Loc.Get("Projects.Messages.LoadedWithManifest")
+            : Loc.Get("Projects.Messages.LoadedWithoutManifest");
     }
 
     private async void OnDiscoverVirtualEnvironmentsClicked(object sender, RoutedEventArgs args)
@@ -182,8 +219,8 @@ public sealed partial class ProjectsPage : Page
         VirtualEnvironmentEmptyText.Visibility = Visibility.Collapsed;
         VirtualEnvironmentInfo.IsOpen = true;
         VirtualEnvironmentInfo.Severity = InfoBarSeverity.Informational;
-        VirtualEnvironmentInfo.Title = "正在解析项目虚拟环境";
-        VirtualEnvironmentInfo.Message = "只读取固定候选路径和受大小限制的配置文件。";
+        VirtualEnvironmentInfo.Title = Loc.Get("Projects.VirtualEnvironments.ScanningTitle");
+        VirtualEnvironmentInfo.Message = Loc.Get("Projects.VirtualEnvironments.ScanningMessage");
         try
         {
             ProjectVirtualEnvironmentDiscoveryResult result = await Task.Run(
@@ -204,9 +241,9 @@ public sealed partial class ProjectsPage : Page
             {
                 VirtualEnvironmentInfo.IsOpen = true;
                 VirtualEnvironmentInfo.Severity = InfoBarSeverity.Informational;
-                VirtualEnvironmentInfo.Title = "解析已取消";
-                VirtualEnvironmentInfo.Message = "没有修改项目文件或环境设置。";
-                VirtualEnvironmentEmptyText.Text = "可再次点击“解析虚拟环境”。";
+                VirtualEnvironmentInfo.Title = Loc.Get("Projects.VirtualEnvironments.CancelledTitle");
+                VirtualEnvironmentInfo.Message = Loc.Get("Projects.VirtualEnvironments.CancelledMessage");
+                VirtualEnvironmentEmptyText.Text = Loc.Get("Projects.VirtualEnvironments.CancelledHint");
                 VirtualEnvironmentEmptyText.Visibility = Visibility.Visible;
             }
         }
@@ -220,9 +257,9 @@ public sealed partial class ProjectsPage : Page
             {
                 VirtualEnvironmentInfo.IsOpen = true;
                 VirtualEnvironmentInfo.Severity = InfoBarSeverity.Error;
-                VirtualEnvironmentInfo.Title = "无法解析虚拟环境";
+                VirtualEnvironmentInfo.Title = Loc.Get("Projects.VirtualEnvironments.FailedTitle");
                 VirtualEnvironmentInfo.Message = CoreErrorText.Localize(exception.Message);
-                VirtualEnvironmentEmptyText.Text = "扫描失败；项目内容未被修改。";
+                VirtualEnvironmentEmptyText.Text = Loc.Get("Projects.VirtualEnvironments.FailedHint");
                 VirtualEnvironmentEmptyText.Visibility = Visibility.Visible;
             }
         }
@@ -242,7 +279,7 @@ public sealed partial class ProjectsPage : Page
         VirtualEnvironmentList.ItemsSource = null;
         VirtualEnvironmentList.Visibility = Visibility.Collapsed;
         VirtualEnvironmentInfo.IsOpen = false;
-        VirtualEnvironmentEmptyText.Text = "点击“解析虚拟环境”读取当前项目的本地证据。";
+        VirtualEnvironmentEmptyText.Text = Loc.Get("Projects.VirtualEnvironments.ResetHint");
         VirtualEnvironmentEmptyText.Visibility = Visibility.Visible;
         VirtualEnvironmentProgress.Visibility = Visibility.Collapsed;
         DiscoverVirtualEnvironmentsButton.IsEnabled = _projectRoot is not null;
@@ -265,21 +302,28 @@ public sealed partial class ProjectsPage : Page
                 ? InfoBarSeverity.Warning
                 : InfoBarSeverity.Success;
         VirtualEnvironmentInfo.Title = rows.Length == 0
-            ? "未发现项目虚拟环境"
-            : $"发现 {rows.Length} 项本地环境证据";
+            ? Loc.Get("Projects.VirtualEnvironments.NoneFoundTitle")
+            : Loc.Format("Projects.VirtualEnvironments.FoundTitle", rows.Length);
         VirtualEnvironmentInfo.Message = rows.Length == 0
             ? result.Warnings.Count == 0
-                ? $"已检查 {result.InspectedPathCount} 个固定候选路径；没有执行外部命令。"
-                : string.Join("；", result.Warnings.Take(3))
-            : $"需注意 {attentionCount} 项 · 无效 {invalidCount} 项 · "
-                + $"检查路径 {result.InspectedPathCount} 个"
-                + (result.ScanLimitReached ? " · 已达到扫描上限" : string.Empty);
+                ? Loc.Format(
+                    "Projects.VirtualEnvironments.NoneFoundMessage",
+                    result.InspectedPathCount)
+                : string.Join(Loc.Get("Projects.Separator"), result.Warnings.Take(3))
+            : Loc.Format(
+                    "Projects.VirtualEnvironments.FoundMessage",
+                    attentionCount,
+                    invalidCount,
+                    result.InspectedPathCount)
+                + (result.ScanLimitReached
+                    ? Loc.Get("Projects.VirtualEnvironments.ScanLimitSuffix")
+                    : string.Empty);
 
         if (rows.Length == 0)
         {
             VirtualEnvironmentList.ItemsSource = null;
             VirtualEnvironmentList.Visibility = Visibility.Collapsed;
-            VirtualEnvironmentEmptyText.Text = "没有发现 .venv/Conda、Node 依赖环境、.NET 工具清单、Java Wrapper、Rust 或 Go 工作区。";
+            VirtualEnvironmentEmptyText.Text = Loc.Get("Projects.VirtualEnvironments.EmptyResult");
             VirtualEnvironmentEmptyText.Visibility = Visibility.Visible;
             return;
         }
@@ -319,26 +363,26 @@ public sealed partial class ProjectsPage : Page
         {
             _manifestPath = await new ProjectEnvironmentImportService().WriteManifestAsync(_import);
             ProjectInfo.Severity = InfoBarSeverity.Success;
-            ProjectInfo.Title = "项目清单已创建";
+            ProjectInfo.Title = Loc.Get("Projects.Messages.ManifestCreatedTitle");
             ProjectInfo.Message = _manifestPath;
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.ProjectImport,
                 ActivityStatus.Succeeded,
-                "已从现有版本声明生成 autoenvplus.toml。",
+                Loc.Get("Projects.Messages.ManifestCreatedActivity"),
                 [_projectRoot!, _manifestPath]);
             await LoadProjectAsync(_projectRoot!);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             ProjectInfo.Severity = InfoBarSeverity.Error;
-            ProjectInfo.Title = "无法创建项目清单";
+            ProjectInfo.Title = Loc.Get("Projects.Messages.ManifestFailedTitle");
             ProjectInfo.Message = CoreErrorText.Localize(exception.Message);
             if (_projectRoot is not null)
             {
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.ProjectImport,
                     ActivityStatus.Failed,
-                    $"生成 autoenvplus.toml 失败。错误类型：{exception.GetType().Name}。",
+                    Loc.Format("Projects.Messages.ManifestFailedActivity", exception.GetType().Name),
                     [_projectRoot]);
             }
         }
@@ -375,7 +419,7 @@ public sealed partial class ProjectsPage : Page
                 SelectedIndex = 0,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
             };
-            AutomationProperties.SetName(hostSelector, "终端主机");
+            AutomationProperties.SetName(hostSelector, Loc.Get("Projects.Terminal.HostLabel"));
             TextBlock previewText = new()
             {
                 IsTextSelectionEnabled = true,
@@ -385,7 +429,7 @@ public sealed partial class ProjectsPage : Page
             StackPanel dialogContent = new() { Spacing = 10 };
             dialogContent.Children.Add(new TextBlock
             {
-                Text = "终端主机",
+                Text = Loc.Get("Projects.Terminal.HostLabel"),
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             });
             dialogContent.Children.Add(hostSelector);
@@ -396,8 +440,8 @@ public sealed partial class ProjectsPage : Page
                     IsClosable = false,
                     IsOpen = true,
                     Severity = InfoBarSeverity.Informational,
-                    Title = "Windows Terminal 不可用",
-                    Message = "当前未检测到 wt.exe，本次将打开 Windows PowerShell。",
+                    Title = Loc.Get("Projects.Terminal.WindowsTerminalUnavailableTitle"),
+                    Message = Loc.Get("Projects.Terminal.WindowsTerminalUnavailableMessage"),
                 });
             }
 
@@ -405,14 +449,14 @@ public sealed partial class ProjectsPage : Page
             ContentDialog confirmation = new()
             {
                 XamlRoot = XamlRoot,
-                Title = "打开项目已激活终端",
+                Title = Loc.Get("Projects.Terminal.DialogTitle"),
                 Content = new ScrollViewer
                 {
                     MaxHeight = 560,
                     VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                     Content = dialogContent,
                 },
-                CloseButtonText = "取消",
+                CloseButtonText = Loc.Get("Projects.Dialogs.Cancel"),
                 DefaultButton = ContentDialogButton.Close,
             };
             ProjectTerminalPlan selectedPlan = plans[hostChoices[0].Host];
@@ -426,8 +470,8 @@ public sealed partial class ProjectsPage : Page
                 selectedPlan = plans[choice.Host];
                 previewText.Text = CreateTerminalPreview(selectedPlan);
                 confirmation.PrimaryButtonText = choice.Host == ProjectTerminalHost.WindowsTerminal
-                    ? "在 Windows Terminal 中打开"
-                    : "打开新 PowerShell";
+                    ? Loc.Get("Projects.Terminal.OpenInWindowsTerminal")
+                    : Loc.Get("Projects.Terminal.OpenNewPowerShell");
                 confirmation.IsPrimaryButtonEnabled = selectedPlan.CanLaunch;
             }
 
@@ -440,8 +484,11 @@ public sealed partial class ProjectsPage : Page
 
             int processId = await service.LaunchAsync(selectedPlan);
             ProjectInfo.Severity = InfoBarSeverity.Success;
-            ProjectInfo.Title = "项目终端已启动";
-            ProjectInfo.Message = $"PID {processId} · {TerminalHostDisplayName(selectedPlan.EffectiveHost)} · 会话级精确版本，不修改用户 PATH 或全局默认。";
+            ProjectInfo.Title = Loc.Get("Projects.Terminal.LaunchedTitle");
+            ProjectInfo.Message = Loc.Format(
+                "Projects.Terminal.LaunchedMessage",
+                processId,
+                TerminalHostDisplayName(selectedPlan.EffectiveHost));
         }
         catch (Exception exception) when (exception is FileNotFoundException
             or IOException
@@ -451,7 +498,7 @@ public sealed partial class ProjectsPage : Page
             or System.ComponentModel.Win32Exception)
         {
             ProjectInfo.Severity = InfoBarSeverity.Error;
-            ProjectInfo.Title = "无法打开项目终端";
+            ProjectInfo.Title = Loc.Get("Projects.Terminal.LaunchFailedTitle");
             ProjectInfo.Message = CoreErrorText.Localize(exception.Message);
         }
         finally
@@ -463,15 +510,17 @@ public sealed partial class ProjectsPage : Page
     private static string CreateTerminalPreview(ProjectTerminalPlan plan)
     {
         StringBuilder preview = new();
-        preview.AppendLine($"项目\n{plan.ProjectRoot}");
-        preview.AppendLine($"\n清单\n{plan.ManifestPath}");
-        preview.AppendLine($"\n终端主机\n{TerminalHostDisplayName(plan.EffectiveHost)}");
+        preview.AppendLine(Loc.Format("Projects.Terminal.Preview.Project", plan.ProjectRoot));
+        preview.AppendLine(Loc.Format("Projects.Terminal.Preview.Manifest", plan.ManifestPath));
+        preview.AppendLine(Loc.Format(
+            "Projects.Terminal.Preview.Host",
+            TerminalHostDisplayName(plan.EffectiveHost)));
         preview.AppendLine($"\nShell\n{plan.ShellExecutable} {string.Join(' ', plan.ShellArguments)}");
         preview.AppendLine($"\nShim\n{plan.ShimDirectory}");
-        preview.AppendLine("\n精确语言工具");
+        preview.AppendLine(Loc.Get("Projects.Terminal.Preview.SelectionsHeader"));
         if (plan.Selections.Count == 0)
         {
-            preview.AppendLine("（没有可由 AutoEnvPlus Shim 激活的语言工具）");
+            preview.AppendLine(Loc.Get("Projects.Terminal.Preview.SelectionsEmpty"));
         }
         else
         {
@@ -484,10 +533,10 @@ public sealed partial class ProjectsPage : Page
             }
         }
 
-        preview.AppendLine("\n会话变量（只写入新终端进程）");
+        preview.AppendLine(Loc.Get("Projects.Terminal.Preview.SessionVariablesHeader"));
         if (plan.EnvironmentOverrides.Count == 0)
         {
-            preview.AppendLine("（无）");
+            preview.AppendLine(Loc.Get("Projects.Terminal.Preview.SessionVariablesEmpty"));
         }
         else
         {
@@ -496,14 +545,14 @@ public sealed partial class ProjectsPage : Page
             {
                 if (pair.Key.Equals("PATH", StringComparison.OrdinalIgnoreCase))
                 {
-                    preview.AppendLine($"  {pair.Key}=<Shim 目录已置于首位>");
+                    preview.AppendLine(Loc.Format("Projects.Terminal.Preview.PathOverride", pair.Key));
                 }
                 else if (pair.Key.Contains("PROXY", StringComparison.OrdinalIgnoreCase)
                     || pair.Key.Equals("PIP_INDEX_URL", StringComparison.OrdinalIgnoreCase)
                     || pair.Key.Equals("NPM_CONFIG_REGISTRY", StringComparison.OrdinalIgnoreCase))
                 {
                     // PRODUCT.md: the terminal preview must not echo endpoints.
-                    preview.AppendLine($"  {pair.Key}=<已配置，不回显>");
+                    preview.AppendLine(Loc.Format("Projects.Terminal.Preview.RedactedValue", pair.Key));
                 }
                 else
                 {
@@ -513,40 +562,51 @@ public sealed partial class ProjectsPage : Page
         }
 
         ProjectTerminalNetworkSummary network = plan.NetworkSummary;
-        preview.AppendLine("\n网络环境");
+        preview.AppendLine(Loc.Get("Projects.Terminal.Preview.NetworkHeader"));
         if (!network.Applied)
         {
-            preview.AppendLine("项目没有 Python 或 Node.js 网络工具，未注入包源环境。");
+            preview.AppendLine(Loc.Get("Projects.Terminal.Preview.NetworkNotApplied"));
         }
         else
         {
-            preview.AppendLine($"代理来源：{ProxySourceText(network.ProxySource)}");
-            preview.AppendLine(
-                $"HTTP：{ConfiguredText(network.HttpProxyConfigured)} · HTTPS：{ConfiguredText(network.HttpsProxyConfigured)} · 绕过项：{network.NoProxyEntryCount}");
+            preview.AppendLine(Loc.Format(
+                "Projects.Terminal.Preview.ProxySource",
+                ProxySourceText(network.ProxySource)));
+            preview.AppendLine(Loc.Format(
+                "Projects.Terminal.Preview.ProxyLine",
+                ConfiguredText(network.HttpProxyConfigured),
+                ConfiguredText(network.HttpsProxyConfigured),
+                network.NoProxyEntryCount));
             if (network.PipEnvironmentApplied)
             {
-                preview.AppendLine($"pip 镜像：{MirrorText(network.PipMirrorConfigured)}");
+                preview.AppendLine(Loc.Format(
+                    "Projects.Terminal.Preview.PipMirror",
+                    MirrorText(network.PipMirrorConfigured)));
             }
 
             if (network.NpmEnvironmentApplied)
             {
-                preview.AppendLine($"npm registry：{MirrorText(network.NpmMirrorConfigured)}");
+                preview.AppendLine(Loc.Format(
+                    "Projects.Terminal.Preview.NpmRegistry",
+                    MirrorText(network.NpmMirrorConfigured)));
             }
 
             if (plan.EnvironmentRemovals.Count > 0)
             {
-                preview.AppendLine($"将清除 {plan.EnvironmentRemovals.Count} 个不应继承的网络环境变量。");
+                preview.AppendLine(Loc.Format(
+                    "Projects.Terminal.Preview.EnvironmentRemovals",
+                    plan.EnvironmentRemovals.Count));
             }
         }
 
         foreach (string warning in plan.Warnings)
         {
-            preview.AppendLine($"\n警告：{warning}");
+            preview.AppendLine(Loc.Format("Projects.Terminal.Preview.WarningLine", warning));
         }
 
         foreach (string error in plan.Errors)
         {
-            preview.AppendLine($"\n错误：{error}");
+            preview.AppendLine(Loc.Format("Projects.Terminal.Preview.ErrorLine", error));
         }
 
         return preview.ToString().TrimEnd();
@@ -561,16 +621,20 @@ public sealed partial class ProjectsPage : Page
 
     private static string ProxySourceText(ProjectTerminalProxySource source) => source switch
     {
-        ProjectTerminalProxySource.Pip => "pip 工具覆盖",
-        ProjectTerminalProxySource.Npm => "npm 工具覆盖",
-        ProjectTerminalProxySource.MatchingPackageTools => "pip 与 npm 一致配置",
-        ProjectTerminalProxySource.Downloads => "下载中心回退配置",
-        _ => "直连",
+        ProjectTerminalProxySource.Pip => Loc.Get("Projects.Terminal.ProxySource.Pip"),
+        ProjectTerminalProxySource.Npm => Loc.Get("Projects.Terminal.ProxySource.Npm"),
+        ProjectTerminalProxySource.MatchingPackageTools => Loc.Get("Projects.Terminal.ProxySource.Matching"),
+        ProjectTerminalProxySource.Downloads => Loc.Get("Projects.Terminal.ProxySource.Downloads"),
+        _ => Loc.Get("Projects.Terminal.DirectConnection"),
     };
 
-    private static string ConfiguredText(bool configured) => configured ? "已配置代理" : "直连";
+    private static string ConfiguredText(bool configured) => configured
+        ? Loc.Get("Projects.Terminal.ProxyConfigured")
+        : Loc.Get("Projects.Terminal.DirectConnection");
 
-    private static string MirrorText(bool configured) => configured ? "已配置" : "官方源";
+    private static string MirrorText(bool configured) => configured
+        ? Loc.Get("Projects.Terminal.MirrorConfigured")
+        : Loc.Get("Projects.Terminal.MirrorOfficial");
 
     private async void OnCreateLockClicked(object sender, RoutedEventArgs args)
     {
@@ -588,12 +652,12 @@ public sealed partial class ProjectsPage : Page
             if (!result.Success)
             {
                 ProjectInfo.Severity = InfoBarSeverity.Warning;
-                ProjectInfo.Title = "锁文件尚未生成";
-                ProjectInfo.Message = string.Join("；", result.Errors);
+                ProjectInfo.Title = Loc.Get("Projects.Messages.LockNotGeneratedTitle");
+                ProjectInfo.Message = string.Join(Loc.Get("Projects.Separator"), result.Errors);
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.ProjectImport,
                     ActivityStatus.Failed,
-                    "项目精确锁文件未生成；语言工具解析存在未满足项。",
+                    Loc.Get("Projects.Messages.LockNotGeneratedActivity"),
                     [_manifestPath]);
                 return;
             }
@@ -602,12 +666,15 @@ public sealed partial class ProjectsPage : Page
                 Path.GetDirectoryName(_manifestPath)!,
                 ProjectLockFileService.LockFileName);
             ProjectInfo.Severity = InfoBarSeverity.Success;
-            ProjectInfo.Title = "项目锁文件已生成";
-            ProjectInfo.Message = $"{lockPath} · {result.Document!.Runtimes.Count} 个精确语言工具";
+            ProjectInfo.Title = Loc.Get("Projects.Messages.LockCreatedTitle");
+            ProjectInfo.Message = Loc.Format(
+                "Projects.Messages.LockCreatedMessage",
+                lockPath,
+                result.Document!.Runtimes.Count);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.ProjectImport,
                 ActivityStatus.Succeeded,
-                $"已生成包含 {result.Document.Runtimes.Count} 个精确语言工具的项目锁文件。",
+                Loc.Format("Projects.Messages.LockCreatedActivity", result.Document.Runtimes.Count),
                 [_manifestPath, lockPath]);
         }
         catch (Exception exception) when (exception is IOException
@@ -616,12 +683,12 @@ public sealed partial class ProjectsPage : Page
             or InvalidOperationException)
         {
             ProjectInfo.Severity = InfoBarSeverity.Error;
-            ProjectInfo.Title = "无法生成项目锁文件";
+            ProjectInfo.Title = Loc.Get("Projects.Messages.LockFailedTitle");
             ProjectInfo.Message = CoreErrorText.Localize(exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.ProjectImport,
                 ActivityStatus.Failed,
-                $"项目锁文件生成失败。错误类型：{exception.GetType().Name}。",
+                Loc.Format("Projects.Messages.LockFailedActivity", exception.GetType().Name),
                 [_manifestPath]);
         }
     }
@@ -649,7 +716,7 @@ public sealed partial class ProjectsPage : Page
             if (choices.Length == 0)
             {
                 throw new InvalidOperationException(
-                    "没有发现可用于 CMake Preset 的 MSVC Host/Target 组合。");
+                    Loc.Get("Projects.CMake.NoMsvcPairs"));
             }
 
             ComboBox selector = new()
@@ -660,14 +727,14 @@ public sealed partial class ProjectsPage : Page
                 MinWidth = 500,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
             };
-            AutomationProperties.SetName(selector, "CMake MSVC 配置");
+            AutomationProperties.SetName(selector, Loc.Get("Projects.CMake.SelectorAccessibleName"));
             ContentDialog selection = new()
             {
                 XamlRoot = XamlRoot,
-                Title = "选择 CMake MSVC 配置",
+                Title = Loc.Get("Projects.CMake.SelectDialogTitle"),
                 Content = selector,
-                PrimaryButtonText = "预览 JSON",
-                CloseButtonText = "取消",
+                PrimaryButtonText = Loc.Get("Projects.CMake.PreviewJson"),
+                CloseButtonText = Loc.Get("Projects.Dialogs.Cancel"),
                 DefaultButton = ContentDialogButton.Primary,
             };
             if (await selection.ShowAsync() != ContentDialogResult.Primary
@@ -696,10 +763,12 @@ public sealed partial class ProjectsPage : Page
             ContentDialog confirmation = new()
             {
                 XamlRoot = XamlRoot,
-                Title = $"写入 {CMakeUserPresetsService.PresetsFileName}",
+                Title = Loc.Format(
+                    "Projects.CMake.WriteDialogTitle",
+                    CMakeUserPresetsService.PresetsFileName),
                 Content = preview,
-                PrimaryButtonText = "写入并保存快照",
-                CloseButtonText = "取消",
+                PrimaryButtonText = Loc.Get("Projects.CMake.WriteAndSnapshot"),
+                CloseButtonText = Loc.Get("Projects.Dialogs.Cancel"),
                 DefaultButton = ContentDialogButton.Close,
             };
             if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -710,18 +779,26 @@ public sealed partial class ProjectsPage : Page
             CMakeUserPresetsResult result = await service.ApplyAsync(plan);
             if (!result.Success)
             {
-                throw new InvalidOperationException(result.Error ?? "CMake Preset 写入失败。");
+                throw new InvalidOperationException(
+                    result.Error ?? Loc.Get("Projects.CMake.WriteFailed"));
             }
 
             _lastCMakePresetSnapshot = result.SnapshotPath;
             RollbackCMakePresetButton.IsEnabled = _lastCMakePresetSnapshot is not null;
             ProjectInfo.Severity = InfoBarSeverity.Success;
-            ProjectInfo.Title = "CMake User Preset 已写入";
-            ProjectInfo.Message = $"{result.PresetsPath} · {plan.ConfigurePresetName} · 快照 {result.SnapshotPath}";
+            ProjectInfo.Title = Loc.Get("Projects.CMake.WrittenTitle");
+            ProjectInfo.Message = Loc.Format(
+                "Projects.CMake.WrittenMessage",
+                result.PresetsPath,
+                plan.ConfigurePresetName,
+                result.SnapshotPath);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.CMakePreset,
                 ActivityStatus.Succeeded,
-                $"已写入项目级 {CMakeUserPresetsService.PresetsFileName}：{plan.ConfigurePresetName}。",
+                Loc.Format(
+                    "Projects.CMake.WrittenActivity",
+                    CMakeUserPresetsService.PresetsFileName,
+                    plan.ConfigurePresetName),
                 result.SnapshotPath is null
                     ? [result.PresetsPath]
                     : [result.PresetsPath, result.SnapshotPath],
@@ -735,14 +812,14 @@ public sealed partial class ProjectsPage : Page
             or NotSupportedException)
         {
             ProjectInfo.Severity = InfoBarSeverity.Error;
-            ProjectInfo.Title = "无法生成 CMake Preset";
+            ProjectInfo.Title = Loc.Get("Projects.CMake.FailedTitle");
             ProjectInfo.Message = CoreErrorText.Localize(exception.Message);
             if (_projectRoot is not null)
             {
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.CMakePreset,
                     ActivityStatus.Failed,
-                    $"项目级 CMake User Preset 写入失败。错误类型：{exception.GetType().Name}。",
+                    Loc.Format("Projects.CMake.FailedActivity", exception.GetType().Name),
                     [_projectRoot]);
             }
         }
@@ -831,15 +908,15 @@ public sealed partial class ProjectsPage : Page
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = "回滚 CMake User Presets",
+            Title = Loc.Get("Projects.CMake.RollbackDialogTitle"),
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"项目\n{_projectRoot}\n\n快照\n{snapshot}\n\n如果文件后来被修改，AutoEnvPlus 会拒绝覆盖。",
+                Text = Loc.Format("Projects.CMake.RollbackDialogText", _projectRoot, snapshot),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "回滚",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Projects.CMake.RollbackButton"),
+            CloseButtonText = Loc.Get("Projects.Dialogs.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -855,12 +932,12 @@ public sealed partial class ProjectsPage : Page
             if (!result.Success)
             {
                 ProjectInfo.Severity = InfoBarSeverity.Error;
-                ProjectInfo.Title = "CMake Preset 回滚失败";
+                ProjectInfo.Title = Loc.Get("Projects.CMake.RollbackFailedTitle");
                 ProjectInfo.Message = result.Error;
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.CMakePreset,
                     ActivityStatus.Failed,
-                    "CMake User Preset 回滚在执行时复检阶段被拒绝。",
+                    Loc.Get("Projects.CMake.RollbackRejectedActivity"),
                     [_projectRoot, snapshot],
                     snapshot,
                     snapshot);
@@ -870,12 +947,12 @@ public sealed partial class ProjectsPage : Page
             _lastCMakePresetSnapshot = null;
             RollbackCMakePresetButton.IsEnabled = false;
             ProjectInfo.Severity = InfoBarSeverity.Success;
-            ProjectInfo.Title = "CMake User Presets 已回滚";
+            ProjectInfo.Title = Loc.Get("Projects.CMake.RollbackSucceededTitle");
             ProjectInfo.Message = result.PresetsPath;
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.CMakePreset,
                 ActivityStatus.Succeeded,
-                "已回滚项目级 CMake User Preset。",
+                Loc.Get("Projects.CMake.RollbackSucceededActivity"),
                 [_projectRoot, result.PresetsPath, snapshot],
                 snapshot,
                 snapshot);
@@ -887,12 +964,12 @@ public sealed partial class ProjectsPage : Page
             or NotSupportedException)
         {
             ProjectInfo.Severity = InfoBarSeverity.Error;
-            ProjectInfo.Title = "CMake Preset 回滚失败";
+            ProjectInfo.Title = Loc.Get("Projects.CMake.RollbackFailedTitle");
             ProjectInfo.Message = CoreErrorText.Localize(exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.CMakePreset,
                 ActivityStatus.Failed,
-                $"CMake User Preset 回滚失败。错误类型：{exception.GetType().Name}。",
+                Loc.Format("Projects.CMake.RollbackFailedActivity", exception.GetType().Name),
                 [_projectRoot, snapshot],
                 snapshot,
                 snapshot);
@@ -908,14 +985,14 @@ public sealed partial class ProjectsPage : Page
 
         public string HealthText => Environment.Health switch
         {
-            ProjectVirtualEnvironmentHealth.Healthy => "正常",
-            ProjectVirtualEnvironmentHealth.NeedsAttention => "需要检查",
-            _ => "不可用",
+            ProjectVirtualEnvironmentHealth.Healthy => Loc.Get("Projects.Environment.Healthy"),
+            ProjectVirtualEnvironmentHealth.NeedsAttention => Loc.Get("Projects.Environment.NeedsAttention"),
+            _ => Loc.Get("Projects.Environment.Invalid"),
         };
 
         public string VersionText => Environment.Version is null
             ? string.Empty
-            : $"版本：{Environment.Version}";
+            : Loc.Format("Projects.Environment.VersionText", Environment.Version);
 
         public Visibility VersionVisibility => Environment.Version is null
             ? Visibility.Collapsed
@@ -925,17 +1002,21 @@ public sealed partial class ProjectsPage : Page
 
         public string ExecutableText => Environment.Executable is null
             ? string.Empty
-            : $"入口：{Environment.Executable}";
+            : Loc.Format("Projects.Environment.ExecutableText", Environment.Executable);
 
         public Visibility ExecutableVisibility => Environment.Executable is null
             ? Visibility.Collapsed
             : Visibility.Visible;
 
-        public string EvidenceText => "证据：" + string.Join(" · ", Environment.Evidence);
+        public string EvidenceText => Loc.Format(
+            "Projects.Environment.EvidenceText",
+            string.Join(" · ", Environment.Evidence));
 
         public string WarningText => Environment.Warnings.Count == 0
             ? string.Empty
-            : "注意：" + string.Join("；", Environment.Warnings);
+            : Loc.Format(
+                "Projects.Environment.WarningText",
+                string.Join(Loc.Get("Projects.Separator"), Environment.Warnings));
 
         public Visibility WarningVisibility => Environment.Warnings.Count == 0
             ? Visibility.Collapsed
@@ -954,15 +1035,15 @@ public sealed partial class ProjectsPage : Page
 
         private static string KindName(string kind) => kind switch
         {
-            "virtual-environment" => "虚拟环境",
-            "conda-environment" => "Conda 环境",
-            "environment-definition" => "环境管理声明",
-            "dependency-environment" => "依赖环境",
-            "local-tool-manifest" => "本地工具清单",
-            "build-wrapper" => "构建 Wrapper",
-            "toolchain-selection" => "编译工具选择",
-            "build-output" => "构建输出",
-            "workspace" => "工作区",
+            "virtual-environment" => Loc.Get("Projects.Environment.Kind.VirtualEnvironment"),
+            "conda-environment" => Loc.Get("Projects.Environment.Kind.CondaEnvironment"),
+            "environment-definition" => Loc.Get("Projects.Environment.Kind.EnvironmentDefinition"),
+            "dependency-environment" => Loc.Get("Projects.Environment.Kind.DependencyEnvironment"),
+            "local-tool-manifest" => Loc.Get("Projects.Environment.Kind.LocalToolManifest"),
+            "build-wrapper" => Loc.Get("Projects.Environment.Kind.BuildWrapper"),
+            "toolchain-selection" => Loc.Get("Projects.Environment.Kind.ToolchainSelection"),
+            "build-output" => Loc.Get("Projects.Environment.Kind.BuildOutput"),
+            "workspace" => Loc.Get("Projects.Environment.Kind.Workspace"),
             _ => kind,
         };
     }
@@ -973,6 +1054,10 @@ public sealed partial class ProjectsPage : Page
         VisualCppInstallation Installation,
         CppArchitecturePair Pair)
     {
-        public string Label => $"{Installation.DisplayName} · {Pair.TargetArchitecture} 目标 · {Pair.HostArchitecture} Host";
+        public string Label => Loc.Format(
+            "Projects.CMake.ChoiceLabel",
+            Installation.DisplayName,
+            Pair.TargetArchitecture,
+            Pair.HostArchitecture);
     }
 }

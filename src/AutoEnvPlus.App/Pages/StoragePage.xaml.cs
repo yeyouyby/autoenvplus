@@ -30,6 +30,7 @@ public sealed partial class StoragePage : Page
         _managedRoot = ManagedRootResolver.ResolveOrThrow();
         _cleanupService = new CacheCleanupService(_managedRoot);
         InitializeComponent();
+        ApplyLocalizedStrings();
         CacheList.ItemsSource = _rows;
         CleanupItemPicker.ItemsSource = _cleanupItems;
         Loaded += OnLoaded;
@@ -38,6 +39,81 @@ public sealed partial class StoragePage : Page
             _operationCancellation?.Cancel();
             _pageCancellation.Cancel();
         };
+    }
+
+    /// <summary>
+    /// Applies every localized string for this page from the resource table.
+    /// Unpackaged WinUI 3 apps cannot use x:Uid: the XAML loader resolves
+    /// ms-resource property bags against the OS system language only, so it
+    /// neither matches the standard dotted-key PRI layout nor honors the
+    /// in-app language preference. Code-behind assignment through
+    /// <see cref="Loc"/> is the only path that follows
+    /// <c>Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride</c>.
+    /// </summary>
+    private void ApplyLocalizedStrings()
+    {
+        PageTitleText.Text = Loc.Get("Storage.Header.Title");
+        PageSubtitleText.Text = Loc.Get("Storage.Header.Subtitle");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            StorageOperationProgress,
+            Loc.Get("Storage.Progress.AccessibleName"));
+        ToolTipService.SetToolTip(
+            CancelStorageOperationButton,
+            Loc.Get("Storage.Actions.CancelOperation.ToolTip"));
+        CancelStorageOperationButtonText.Text = Loc.Get("Storage.Actions.CancelOperation.Label");
+        ToolTipService.SetToolTip(
+            RollbackButton,
+            Loc.Get("Storage.Actions.Rollback.ToolTip"));
+        RollbackButtonText.Text = Loc.Get("Storage.Actions.Rollback.Label");
+        MeasureButton.Content = Loc.Get("Storage.Actions.MeasureAll");
+        StorageInfo.Title = Loc.Get("Storage.Info.InitialTitle");
+        StorageInfo.Message = Loc.Get("Storage.Info.InitialMessage");
+        CleanupSectionTitleText.Text = Loc.Get("Storage.Cleanup.SectionTitle");
+        CleanupItemCountText.Text = Loc.Get("Storage.Cleanup.EmptyCount");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            CleanupItemPicker,
+            Loc.Get("Storage.Cleanup.Picker.AccessibleName"));
+        CleanupItemPicker.PlaceholderText = Loc.Get("Storage.Cleanup.Picker.Placeholder");
+        ToolTipService.SetToolTip(
+            RestoreCleanupButton,
+            Loc.Get("Storage.Cleanup.Restore.ToolTip"));
+        RestoreCleanupButtonText.Text = Loc.Get("Storage.Cleanup.Restore.Label");
+        ToolTipService.SetToolTip(
+            PurgeCleanupButton,
+            Loc.Get("Storage.Cleanup.Purge.ToolTip"));
+        PurgeCleanupButtonText.Text = Loc.Get("Storage.Cleanup.Purge.Label");
+        CacheToolColumnHeaderText.Text = Loc.Get("Storage.Cache.Columns.Tool");
+        CacheDirectoryColumnHeaderText.Text = Loc.Get("Storage.Cache.Columns.Directory");
+        CacheSourceColumnHeaderText.Text = Loc.Get("Storage.Cache.Columns.Source");
+        CacheSizeColumnHeaderText.Text = Loc.Get("Storage.Cache.Columns.Size");
+        CacheActionsColumnHeaderText.Text = Loc.Get("Storage.Cache.Columns.Actions");
+    }
+
+    private void OnOpenFolderButtonLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is Button button)
+        {
+            button.Content = Loc.Get("Storage.Cache.Actions.Open.Label");
+            ToolTipService.SetToolTip(
+                button,
+                Loc.Get("Storage.Cache.Actions.Open.ToolTip"));
+        }
+    }
+
+    private void OnMigrateButtonLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is Button button)
+        {
+            button.Content = Loc.Get("Storage.Cache.Actions.Migrate");
+        }
+    }
+
+    private void OnCleanupButtonTextLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is TextBlock textBlock)
+        {
+            textBlock.Text = Loc.Get("Storage.Cache.Actions.Cleanup");
+        }
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
@@ -60,7 +136,7 @@ public sealed partial class StoragePage : Page
             or InvalidOperationException)
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
-            StorageInfo.Title = "无法刷新缓存与隔离区";
+            StorageInfo.Title = Loc.Get("Storage.Messages.RefreshFailedTitle");
             StorageInfo.Message = CoreErrorText.Localize(exception.Message);
         }
     }
@@ -138,8 +214,11 @@ public sealed partial class StoragePage : Page
             string completedTitle = StorageInfo.Title;
             string completedMessage = StorageInfo.Message;
             StorageInfo.Severity = InfoBarSeverity.Warning;
-            StorageInfo.Title = $"{completedTitle}，但列表刷新失败";
-            StorageInfo.Message = $"{completedMessage} 刷新错误：{exception.Message}";
+            StorageInfo.Title = Loc.Format("Storage.Messages.RefreshPartialTitle", completedTitle);
+            StorageInfo.Message = Loc.Format(
+                "Storage.Messages.RefreshPartialMessage",
+                completedMessage,
+                exception.Message);
         }
     }
 
@@ -155,15 +234,17 @@ public sealed partial class StoragePage : Page
         }
 
         CleanupItemCountText.Text = _cleanupItems.Count == 0
-            ? "无待处理项"
-            : $"{_cleanupItems.Count:N0} 项";
+            ? Loc.Get("Storage.Cleanup.EmptyCount")
+            : Loc.Format("Storage.Cleanup.CountFormat", _cleanupItems.Count);
         CleanupItemPicker.SelectedIndex = _cleanupItems.Count > 0 ? 0 : -1;
         UpdateCleanupButtons();
         if (catalog.Errors.Count > 0)
         {
             StorageInfo.Severity = InfoBarSeverity.Warning;
-            StorageInfo.Title = "部分隔离项未通过安全复检";
-            StorageInfo.Message = string.Join("；", catalog.Errors.Take(3));
+            StorageInfo.Title = Loc.Get("Storage.Messages.CleanupRecheckFailedTitle");
+            StorageInfo.Message = string.Join(
+                Loc.Get("Storage.Separator"),
+                catalog.Errors.Take(3));
         }
     }
 
@@ -171,38 +252,45 @@ public sealed partial class StoragePage : Page
     {
         CancellationToken operationToken = BeginStorageOperation();
         StorageInfo.Severity = InfoBarSeverity.Informational;
-        StorageInfo.Title = "正在计算缓存大小";
+        StorageInfo.Title = Loc.Get("Storage.Messages.MeasuringTitle");
         try
         {
             List<string> measurementErrors = [];
             foreach (CacheRow row in _rows)
             {
-                row.SizeText = row.Location.Exists ? "计算中…" : "目录不存在";
+                row.SizeText = row.Location.Exists
+                    ? Loc.Get("Storage.Cache.Size.Measuring")
+                    : Loc.Get("Storage.Cache.Size.Missing");
                 CacheDirectoryMeasurement measurement = await _service.MeasureAsync(
                     row.Location,
                     operationToken);
                 row.SizeText = measurement.Location.Exists
-                    ? $"{FormatBytes(measurement.TotalBytes)} · {measurement.FileCount:N0} 文件"
-                    : "目录不存在";
+                    ? Loc.Format(
+                        "Storage.Cache.Size.Summary",
+                        FormatBytes(measurement.TotalBytes),
+                        measurement.FileCount)
+                    : Loc.Get("Storage.Cache.Size.Missing");
                 measurementErrors.AddRange(measurement.Errors);
             }
 
             if (measurementErrors.Count > 0)
             {
                 StorageInfo.Severity = InfoBarSeverity.Warning;
-                StorageInfo.Title = "缓存统计完成（部分目录失败）";
-                StorageInfo.Message = string.Join("；", measurementErrors.Take(3));
+                StorageInfo.Title = Loc.Get("Storage.Messages.MeasurePartialTitle");
+                StorageInfo.Message = string.Join(
+                    Loc.Get("Storage.Separator"),
+                    measurementErrors.Take(3));
             }
             else
             {
                 StorageInfo.Severity = InfoBarSeverity.Success;
-                StorageInfo.Title = "缓存统计完成";
-                StorageInfo.Message = "迁移事务将在复制和校验完成后才切换工具配置，原目录不会自动删除。";
+                StorageInfo.Title = Loc.Get("Storage.Messages.MeasureCompletedTitle");
+                StorageInfo.Message = Loc.Get("Storage.Messages.MeasureCompletedMessage");
             }
         }
         catch (OperationCanceledException)
         {
-            StorageInfo.Title = "统计已取消";
+            StorageInfo.Title = Loc.Get("Storage.Messages.MeasureCancelledTitle");
             StorageInfo.Message = string.Empty;
         }
         finally
@@ -222,7 +310,7 @@ public sealed partial class StoragePage : Page
         {
             SuggestedStartLocation = PickerLocationId.ComputerFolder,
             ViewMode = PickerViewMode.List,
-            CommitButtonText = "选择缓存目标磁盘或父目录",
+            CommitButtonText = Loc.Get("Storage.Picker.MigrateCommitButton"),
         };
         picker.FileTypeFilter.Add("*");
         if (((App)Application.Current).MainWindowInstance is not Window window)
@@ -250,7 +338,7 @@ public sealed partial class StoragePage : Page
             or DirectoryNotFoundException)
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
-            StorageInfo.Title = "无法创建迁移计划";
+            StorageInfo.Title = Loc.Get("Storage.Messages.MigrationPlanFailedTitle");
             StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             return;
         }
@@ -258,15 +346,19 @@ public sealed partial class StoragePage : Page
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = $"迁移 {row.Name} 缓存",
+            Title = Loc.Format("Storage.Migration.DialogTitle", row.Name),
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"源目录\n{plan.Source.DirectoryPath}\n\n目标目录\n{plan.DestinationPath}\n\n配置\n{plan.ConfigurationDescription}\n\n文件会逐个校验；切换前保存配置快照，原目录不会自动删除。\n\n请先关闭正在使用该缓存的包管理器与构建进程；迁移不会冻结或枚举外部进程，复检之后仍持有旧配置的进程可能继续写入。",
+                Text = Loc.Format(
+                    "Storage.Migration.DialogText",
+                    plan.Source.DirectoryPath,
+                    plan.DestinationPath,
+                    plan.ConfigurationDescription),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "复制、校验并切换",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Storage.Migration.ConfirmButton"),
+            CloseButtonText = Loc.Get("Storage.Dialogs.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -283,11 +375,11 @@ public sealed partial class StoragePage : Page
                 StorageInfo.Severity = InfoBarSeverity.Informational;
                 StorageInfo.Title = value.Stage switch
                 {
-                    "measure" => "正在检查源目录",
-                    "copy" => "正在复制并校验",
-                    "commit" => "正在提交新目录",
-                    "configure" => "正在切换工具配置",
-                    "complete" => "迁移完成",
+                    "measure" => Loc.Get("Storage.Migration.Stage.Measure"),
+                    "copy" => Loc.Get("Storage.Migration.Stage.Copy"),
+                    "commit" => Loc.Get("Storage.Migration.Stage.Commit"),
+                    "configure" => Loc.Get("Storage.Migration.Stage.Configure"),
+                    "complete" => Loc.Get("Storage.Migration.Stage.Complete"),
                     _ => value.Stage,
                 };
                 StorageInfo.Message = value.TotalBytes > 0
@@ -301,20 +393,26 @@ public sealed partial class StoragePage : Page
                 operationToken);
             if (!result.Success)
             {
-                throw new InvalidOperationException(result.Error ?? "迁移失败。");
+                throw new InvalidOperationException(
+                    result.Error ?? Loc.Get("Storage.Migration.Failed"));
             }
 
             _lastMigrationSnapshot = result.SnapshotPath;
             RollbackButton.IsEnabled = _lastMigrationSnapshot is not null;
             StorageInfo.Severity = InfoBarSeverity.Success;
-            StorageInfo.Title = "缓存迁移完成";
+            StorageInfo.Title = Loc.Get("Storage.Messages.MigrationCompletedTitle");
             StorageInfo.Message = result.SnapshotPath is null
-                ? $"新目录：{result.DestinationPath}。原目录仍保留，请确认工具工作正常后手动清理。"
-                : $"新目录：{result.DestinationPath}。配置快照：{result.SnapshotPath}。原目录仍保留。";
+                ? Loc.Format(
+                    "Storage.Messages.MigrationCompletedNoSnapshot",
+                    result.DestinationPath)
+                : Loc.Format(
+                    "Storage.Messages.MigrationCompletedWithSnapshot",
+                    result.DestinationPath,
+                    result.SnapshotPath);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.CacheMigration,
                 ActivityStatus.Succeeded,
-                $"已迁移 {row.Name} 缓存并切换工具配置；原目录保持不变。",
+                Loc.Format("Storage.Messages.MigrationCompletedActivity", row.Name),
                 [plan.Source.DirectoryPath, result.DestinationPath ?? plan.DestinationPath],
                 result.SnapshotPath,
                 result.SnapshotPath);
@@ -324,14 +422,14 @@ public sealed partial class StoragePage : Page
         catch (OperationCanceledException)
         {
             StorageInfo.Severity = InfoBarSeverity.Informational;
-            StorageInfo.Title = "迁移已取消";
-            StorageInfo.Message = "原目录和原配置保持不变。";
+            StorageInfo.Title = Loc.Get("Storage.Messages.MigrationCancelledTitle");
+            StorageInfo.Message = Loc.Get("Storage.Messages.MigrationCancelledMessage");
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.CacheMigration,
                     ActivityStatus.Cancelled,
-                    $"{row.Name} 缓存迁移已取消；原目录和原配置保持不变。",
+                    Loc.Format("Storage.Messages.MigrationCancelledActivity", row.Name),
                     [plan.Source.DirectoryPath, plan.DestinationPath]);
             }
         }
@@ -340,14 +438,17 @@ public sealed partial class StoragePage : Page
             or InvalidOperationException)
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
-            StorageInfo.Title = "缓存迁移失败";
+            StorageInfo.Title = Loc.Get("Storage.Messages.MigrationFailedTitle");
             StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.CacheMigration,
                     ActivityStatus.Failed,
-                    $"{row.Name} 缓存迁移失败。错误类型：{exception.GetType().Name}。",
+                    Loc.Format(
+                        "Storage.Messages.MigrationFailedActivity",
+                        row.Name,
+                        exception.GetType().Name),
                     [plan.Source.DirectoryPath, plan.DestinationPath]);
             }
         }
@@ -367,18 +468,21 @@ public sealed partial class StoragePage : Page
         CacheCleanupPlan plan;
         CancellationToken planCancellation = BeginStorageOperation();
         StorageInfo.Severity = InfoBarSeverity.Informational;
-        StorageInfo.Title = $"正在检查 {row.Name} 缓存";
-        StorageInfo.Message = "正在复检目录边界、重解析点、文件数量和大小。";
+        StorageInfo.Title = Loc.Format("Storage.Messages.CleanupCheckingTitle", row.Name);
+        StorageInfo.Message = Loc.Get("Storage.Messages.CleanupCheckingMessage");
         try
         {
             plan = await _cleanupService.CreatePlanAsync(
                 row.Location,
                 planCancellation);
-            row.SizeText = $"{FormatBytes(plan.TotalBytes)} · {plan.FileCount:N0} 文件";
+            row.SizeText = Loc.Format(
+                "Storage.Cache.Size.Summary",
+                FormatBytes(plan.TotalBytes),
+                plan.FileCount);
         }
         catch (OperationCanceledException)
         {
-            StorageInfo.Title = "清理计划已取消";
+            StorageInfo.Title = Loc.Get("Storage.Messages.CleanupPlanCancelledTitle");
             StorageInfo.Message = string.Empty;
             return;
         }
@@ -390,7 +494,7 @@ public sealed partial class StoragePage : Page
             or NotSupportedException)
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
-            StorageInfo.Title = "无法创建安全清理计划";
+            StorageInfo.Title = Loc.Get("Storage.Messages.CleanupPlanFailedTitle");
             StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             return;
         }
@@ -402,15 +506,21 @@ public sealed partial class StoragePage : Page
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = $"隔离 {row.Name} 缓存内容",
+            Title = Loc.Format("Storage.Cleanup.DialogTitle", row.Name),
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"缓存目录（保留）\n{plan.Source.DirectoryPath}\n\n安全隔离区\n{plan.TrashPath}\n\n影响\n{plan.FileCount:N0} 个文件 · {FormatBytes(plan.TotalBytes)} · {plan.TopLevelEntryCount:N0} 个顶层项\n\n内容将通过同卷重命名移入隔离区，缓存目录和工具配置保持不变。此阶段不会释放磁盘空间；可先恢复，或稍后单独确认永久清空。\n\n请先关闭正在使用该缓存的包管理器与构建进程；隔离不会冻结或枚举外部进程，占用中的文件可能使隔离失败。",
+                Text = Loc.Format(
+                    "Storage.Cleanup.DialogText",
+                    plan.Source.DirectoryPath,
+                    plan.TrashPath,
+                    plan.FileCount,
+                    FormatBytes(plan.TotalBytes),
+                    plan.TopLevelEntryCount),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "移入安全隔离区",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Storage.Cleanup.ConfirmButton"),
+            CloseButtonText = Loc.Get("Storage.Dialogs.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -422,7 +532,8 @@ public sealed partial class StoragePage : Page
         bool terminalActivityWritten = false;
         try
         {
-            Progress<CacheCleanupProgress> progress = CreateCleanupProgress("正在隔离缓存内容");
+            Progress<CacheCleanupProgress> progress = CreateCleanupProgress(
+                Loc.Get("Storage.Cleanup.ProgressIsolating"));
             CacheCleanupOperationResult result = await _cleanupService.CleanupAsync(
                 plan,
                 progress,
@@ -430,16 +541,21 @@ public sealed partial class StoragePage : Page
             if (result.Success)
             {
                 StorageInfo.Severity = InfoBarSeverity.Success;
-                StorageInfo.Title = "缓存内容已安全隔离";
-                StorageInfo.Message = $"已隔离 {result.FileCount:N0} 个文件（{FormatBytes(result.TotalBytes)}）。缓存根目录仍保留；可从安全隔离区恢复或永久清空。";
+                StorageInfo.Title = Loc.Get("Storage.Messages.CleanupIsolatedTitle");
+                StorageInfo.Message = Loc.Format(
+                    "Storage.Messages.CleanupIsolatedMessage",
+                    result.FileCount,
+                    FormatBytes(result.TotalBytes));
             }
             else
             {
                 StorageInfo.Severity = result.Cancelled
                     ? InfoBarSeverity.Informational
                     : InfoBarSeverity.Error;
-                StorageInfo.Title = result.Cancelled ? "缓存清理已取消" : "缓存清理未完成";
-                StorageInfo.Message = result.Error ?? "缓存内容保持在原目录或受控隔离区。";
+                StorageInfo.Title = result.Cancelled
+                    ? Loc.Get("Storage.Messages.CleanupCancelledTitle")
+                    : Loc.Get("Storage.Messages.CleanupIncompleteTitle");
+                StorageInfo.Message = result.Error ?? Loc.Get("Storage.Messages.CleanupKeptMessage");
             }
 
             await AppActivityLog.TryWriteAsync(
@@ -450,10 +566,10 @@ public sealed partial class StoragePage : Page
                         ? ActivityStatus.Cancelled
                         : ActivityStatus.Failed,
                 result.Success
-                    ? $"已把 {row.Name} 纯缓存移入同卷安全隔离区；尚未永久释放空间。"
+                    ? Loc.Format("Storage.Messages.CleanupIsolatedActivity", row.Name)
                     : result.Cancelled
-                        ? $"{row.Name} 缓存隔离已取消，并保存为一致状态。"
-                        : $"{row.Name} 缓存隔离未完成。",
+                        ? Loc.Format("Storage.Messages.CleanupCancelledConsistentActivity", row.Name)
+                        : Loc.Format("Storage.Messages.CleanupIncompleteActivity", row.Name),
                 [plan.Source.DirectoryPath, plan.TrashPath],
                 result.ManifestPath,
                 result.RecoveryAvailable ? result.ManifestPath : null);
@@ -464,14 +580,14 @@ public sealed partial class StoragePage : Page
         catch (OperationCanceledException)
         {
             StorageInfo.Severity = InfoBarSeverity.Informational;
-            StorageInfo.Title = "缓存清理已取消";
-            StorageInfo.Message = "缓存内容保持在原目录或受控隔离区。";
+            StorageInfo.Title = Loc.Get("Storage.Messages.CleanupCancelledTitle");
+            StorageInfo.Message = Loc.Get("Storage.Messages.CleanupKeptMessage");
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.CacheCleanup,
                     ActivityStatus.Cancelled,
-                    $"{row.Name} 缓存隔离已取消。",
+                    Loc.Format("Storage.Messages.CleanupCancelledActivity", row.Name),
                     [plan.Source.DirectoryPath, plan.TrashPath]);
             }
         }
@@ -482,14 +598,17 @@ public sealed partial class StoragePage : Page
             or InvalidOperationException)
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
-            StorageInfo.Title = "缓存清理失败";
+            StorageInfo.Title = Loc.Get("Storage.Messages.CleanupFailedTitle");
             StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.CacheCleanup,
                     ActivityStatus.Failed,
-                    $"{row.Name} 缓存隔离失败。错误类型：{exception.GetType().Name}。",
+                    Loc.Format(
+                        "Storage.Messages.CleanupFailedActivity",
+                        row.Name,
+                        exception.GetType().Name),
                     [plan.Source.DirectoryPath, plan.TrashPath]);
             }
         }
@@ -512,15 +631,20 @@ public sealed partial class StoragePage : Page
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = $"恢复 {row.Item.DisplayName} 缓存",
+            Title = Loc.Format("Storage.Restore.DialogTitle", row.Item.DisplayName),
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"原缓存目录\n{row.Item.SourcePath}\n\n隔离目录\n{row.Item.TrashPath}\n\n将恢复 {row.Item.FileCount:N0} 个文件（{FormatBytes(row.Item.TotalBytes)}）。执行前会再次复检；原目录出现任何后续数据时都拒绝覆盖。",
+                Text = Loc.Format(
+                    "Storage.Restore.DialogText",
+                    row.Item.SourcePath,
+                    row.Item.TrashPath,
+                    row.Item.FileCount,
+                    FormatBytes(row.Item.TotalBytes)),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "恢复到原目录",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Storage.Restore.ConfirmButton"),
+            CloseButtonText = Loc.Get("Storage.Dialogs.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -534,7 +658,7 @@ public sealed partial class StoragePage : Page
         {
             CacheCleanupOperationResult result = await _cleanupService.RestoreAsync(
                 row.Item,
-                CreateCleanupProgress("正在恢复缓存内容"),
+                CreateCleanupProgress(Loc.Get("Storage.Restore.ProgressRestoring")),
                 restoreCancellation);
             StorageInfo.Severity = result.Success
                 ? InfoBarSeverity.Success
@@ -542,13 +666,16 @@ public sealed partial class StoragePage : Page
                     ? InfoBarSeverity.Informational
                     : InfoBarSeverity.Error;
             StorageInfo.Title = result.Success
-                ? "缓存内容已恢复"
+                ? Loc.Get("Storage.Messages.RestoreCompletedTitle")
                 : result.Cancelled
-                    ? "缓存恢复已取消"
-                    : "缓存恢复被拒绝";
+                    ? Loc.Get("Storage.Messages.RestoreCancelledTitle")
+                    : Loc.Get("Storage.Messages.RestoreRejectedTitle");
             StorageInfo.Message = result.Success
-                ? $"已将 {result.FileCount:N0} 个文件（{FormatBytes(result.TotalBytes)}）恢复到原缓存目录。"
-                : result.Error ?? "隔离内容仍保留。";
+                ? Loc.Format(
+                    "Storage.Messages.RestoreCompletedMessage",
+                    result.FileCount,
+                    FormatBytes(result.TotalBytes))
+                : result.Error ?? Loc.Get("Storage.Messages.RestoreKeptMessage");
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.CacheCleanup,
                 result.Success
@@ -557,10 +684,10 @@ public sealed partial class StoragePage : Page
                         ? ActivityStatus.Cancelled
                         : ActivityStatus.Failed,
                 result.Success
-                    ? $"已恢复 {row.Item.DisplayName} 的隔离缓存内容。"
+                    ? Loc.Format("Storage.Messages.RestoreCompletedActivity", row.Item.DisplayName)
                     : result.Cancelled
-                        ? $"恢复 {row.Item.DisplayName} 隔离缓存已取消。"
-                        : $"恢复 {row.Item.DisplayName} 隔离缓存被拒绝。",
+                        ? Loc.Format("Storage.Messages.RestoreCancelledActivity", row.Item.DisplayName)
+                        : Loc.Format("Storage.Messages.RestoreRejectedActivity", row.Item.DisplayName),
                 [row.Item.SourcePath, row.Item.TrashPath],
                 row.Item.ManifestPath,
                 row.Item.ManifestPath);
@@ -570,14 +697,14 @@ public sealed partial class StoragePage : Page
         catch (OperationCanceledException)
         {
             StorageInfo.Severity = InfoBarSeverity.Informational;
-            StorageInfo.Title = "缓存恢复已取消";
-            StorageInfo.Message = "隔离项已保存为可继续处理的一致状态。";
+            StorageInfo.Title = Loc.Get("Storage.Messages.RestoreCancelledTitle");
+            StorageInfo.Message = Loc.Get("Storage.Messages.RestoreCancelledMessage");
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.CacheCleanup,
                     ActivityStatus.Cancelled,
-                    $"恢复 {row.Item.DisplayName} 隔离缓存已取消。",
+                    Loc.Format("Storage.Messages.RestoreCancelledActivity", row.Item.DisplayName),
                     [row.Item.SourcePath, row.Item.TrashPath],
                     row.Item.ManifestPath,
                     row.Item.ManifestPath);
@@ -589,14 +716,17 @@ public sealed partial class StoragePage : Page
             or InvalidOperationException)
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
-            StorageInfo.Title = "缓存恢复失败";
+            StorageInfo.Title = Loc.Get("Storage.Messages.RestoreFailedTitle");
             StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.CacheCleanup,
                     ActivityStatus.Failed,
-                    $"恢复 {row.Item.DisplayName} 隔离缓存失败。错误类型：{exception.GetType().Name}。",
+                    Loc.Format(
+                        "Storage.Messages.RestoreFailedActivity",
+                        row.Item.DisplayName,
+                        exception.GetType().Name),
                     [row.Item.SourcePath, row.Item.TrashPath],
                     row.Item.ManifestPath,
                     row.Item.ManifestPath);
@@ -618,15 +748,19 @@ public sealed partial class StoragePage : Page
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = $"永久清空 {row.Item.DisplayName} 隔离内容",
+            Title = Loc.Format("Storage.Purge.DialogTitle", row.Item.DisplayName),
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"受信隔离目录\n{row.Item.TrashPath}\n\n将永久删除 {row.Item.FileCount:N0} 个文件（{FormatBytes(row.Item.TotalBytes)}）。此操作不可撤销；开始后该隔离项不能再恢复。原缓存目录和工具配置不会修改。",
+                Text = Loc.Format(
+                    "Storage.Purge.DialogText",
+                    row.Item.TrashPath,
+                    row.Item.FileCount,
+                    FormatBytes(row.Item.TotalBytes)),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "永久删除",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Storage.Purge.ConfirmButton"),
+            CloseButtonText = Loc.Get("Storage.Dialogs.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -640,7 +774,7 @@ public sealed partial class StoragePage : Page
         {
             CacheCleanupOperationResult result = await _cleanupService.PurgeAsync(
                 row.Item,
-                CreateCleanupProgress("正在永久清空隔离内容"),
+                CreateCleanupProgress(Loc.Get("Storage.Purge.ProgressPurging")),
                 purgeCancellation);
             StorageInfo.Severity = result.Success
                 ? InfoBarSeverity.Success
@@ -648,13 +782,16 @@ public sealed partial class StoragePage : Page
                     ? InfoBarSeverity.Warning
                     : InfoBarSeverity.Error;
             StorageInfo.Title = result.Success
-                ? "隔离内容已永久清空"
+                ? Loc.Get("Storage.Messages.PurgeCompletedTitle")
                 : result.Cancelled
-                    ? "永久清空已中断"
-                    : "永久清空未完成";
+                    ? Loc.Get("Storage.Messages.PurgeInterruptedTitle")
+                    : Loc.Get("Storage.Messages.PurgeIncompleteTitle");
             StorageInfo.Message = result.Success
-                ? $"已释放隔离内容占用的 {FormatBytes(result.TotalBytes)}；原缓存目录保持不变。"
-                : $"{result.Error ?? "仍有隔离内容待处理。"} 已开始永久清空的项目不能恢复，可再次选择“永久清空”继续。";
+                ? Loc.Format(
+                    "Storage.Messages.PurgeCompletedMessage",
+                    FormatBytes(result.TotalBytes))
+                : $"{result.Error ?? Loc.Get("Storage.Messages.PurgePendingFallback")} "
+                    + Loc.Get("Storage.Messages.PurgeResumeHint");
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.CacheCleanup,
                 result.Success
@@ -663,10 +800,10 @@ public sealed partial class StoragePage : Page
                         ? ActivityStatus.Cancelled
                         : ActivityStatus.Failed,
                 result.Success
-                    ? $"已永久清空 {row.Item.DisplayName} 的受信隔离内容并释放空间。"
+                    ? Loc.Format("Storage.Messages.PurgeCompletedActivity", row.Item.DisplayName)
                     : result.Cancelled
-                        ? $"永久清空 {row.Item.DisplayName} 隔离内容已中断，只能继续清空。"
-                        : $"永久清空 {row.Item.DisplayName} 隔离内容未完成。",
+                        ? Loc.Format("Storage.Messages.PurgeInterruptedActivity", row.Item.DisplayName)
+                        : Loc.Format("Storage.Messages.PurgeIncompleteActivity", row.Item.DisplayName),
                 [row.Item.SourcePath, row.Item.TrashPath],
                 row.Item.ManifestPath);
             terminalActivityWritten = true;
@@ -675,14 +812,14 @@ public sealed partial class StoragePage : Page
         catch (OperationCanceledException)
         {
             StorageInfo.Severity = InfoBarSeverity.Warning;
-            StorageInfo.Title = "永久清空已中断";
-            StorageInfo.Message = "已开始永久清空的项目不能恢复，可再次选择“永久清空”继续。";
+            StorageInfo.Title = Loc.Get("Storage.Messages.PurgeInterruptedTitle");
+            StorageInfo.Message = Loc.Get("Storage.Messages.PurgeResumeHint");
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.CacheCleanup,
                     ActivityStatus.Cancelled,
-                    $"永久清空 {row.Item.DisplayName} 隔离内容已中断，只能继续清空。",
+                    Loc.Format("Storage.Messages.PurgeInterruptedActivity", row.Item.DisplayName),
                     [row.Item.SourcePath, row.Item.TrashPath],
                     row.Item.ManifestPath);
             }
@@ -693,14 +830,17 @@ public sealed partial class StoragePage : Page
             or InvalidOperationException)
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
-            StorageInfo.Title = "永久清空失败";
+            StorageInfo.Title = Loc.Get("Storage.Messages.PurgeFailedTitle");
             StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.CacheCleanup,
                     ActivityStatus.Failed,
-                    $"永久清空 {row.Item.DisplayName} 隔离内容失败。错误类型：{exception.GetType().Name}。",
+                    Loc.Format(
+                        "Storage.Messages.PurgeFailedActivity",
+                        row.Item.DisplayName,
+                        exception.GetType().Name),
                     [row.Item.SourcePath, row.Item.TrashPath],
                     row.Item.ManifestPath);
             }
@@ -741,7 +881,7 @@ public sealed partial class StoragePage : Page
             or System.ComponentModel.Win32Exception)
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
-            StorageInfo.Title = "无法打开缓存目录";
+            StorageInfo.Title = Loc.Get("Storage.Messages.OpenFolderFailedTitle");
             StorageInfo.Message = CoreErrorText.Localize(exception.Message);
         }
     }
@@ -757,15 +897,15 @@ public sealed partial class StoragePage : Page
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = "回滚最近一次存储配置",
+            Title = Loc.Get("Storage.Rollback.DialogTitle"),
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"快照\n{snapshot}\n\n只恢复工具配置；已复制的新目录会保留。如果配置后来被修改，AutoEnvPlus 会拒绝覆盖。",
+                Text = Loc.Format("Storage.Rollback.DialogText", snapshot),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "恢复配置",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Storage.Rollback.ConfirmButton"),
+            CloseButtonText = Loc.Get("Storage.Dialogs.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -783,17 +923,20 @@ public sealed partial class StoragePage : Page
                 rollbackToken);
             if (!result.Success)
             {
-                throw new InvalidOperationException(result.Error ?? "配置回滚失败。");
+                throw new InvalidOperationException(
+                    result.Error ?? Loc.Get("Storage.Rollback.Failed"));
             }
 
             _lastMigrationSnapshot = null;
             StorageInfo.Severity = InfoBarSeverity.Success;
-            StorageInfo.Title = "存储配置已回滚";
-            StorageInfo.Message = $"工具已重新指向原目录。迁移副本仍保留在 {result.DestinationPath}。";
+            StorageInfo.Title = Loc.Get("Storage.Messages.RollbackCompletedTitle");
+            StorageInfo.Message = Loc.Format(
+                "Storage.Messages.RollbackCompletedMessage",
+                result.DestinationPath);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.CacheRollback,
                 ActivityStatus.Succeeded,
-                "已回滚最近一次缓存迁移配置；迁移副本保持不变。",
+                Loc.Get("Storage.Messages.RollbackCompletedActivity"),
                 result.DestinationPath is null ? [snapshot] : [snapshot, result.DestinationPath],
                 snapshot,
                 snapshot);
@@ -803,14 +946,14 @@ public sealed partial class StoragePage : Page
         catch (OperationCanceledException)
         {
             StorageInfo.Severity = InfoBarSeverity.Informational;
-            StorageInfo.Title = "回滚已取消";
+            StorageInfo.Title = Loc.Get("Storage.Messages.RollbackCancelledTitle");
             StorageInfo.Message = string.Empty;
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.CacheRollback,
                     ActivityStatus.Cancelled,
-                    "缓存迁移配置回滚已取消。",
+                    Loc.Get("Storage.Messages.RollbackCancelledActivity"),
                     [snapshot],
                     snapshot,
                     snapshot);
@@ -821,14 +964,16 @@ public sealed partial class StoragePage : Page
             or InvalidOperationException)
         {
             StorageInfo.Severity = InfoBarSeverity.Error;
-            StorageInfo.Title = "存储配置回滚失败";
+            StorageInfo.Title = Loc.Get("Storage.Messages.RollbackFailedTitle");
             StorageInfo.Message = CoreErrorText.Localize(exception.Message);
             if (!terminalActivityWritten)
             {
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.CacheRollback,
                     ActivityStatus.Failed,
-                    $"缓存迁移配置回滚失败。错误类型：{exception.GetType().Name}。",
+                    Loc.Format(
+                        "Storage.Messages.RollbackFailedActivity",
+                        exception.GetType().Name),
                     [snapshot],
                     snapshot,
                     snapshot);
@@ -845,8 +990,8 @@ public sealed partial class StoragePage : Page
         CancelStorageOperationButton.IsEnabled = false;
         _operationCancellation?.Cancel();
         StorageInfo.Severity = InfoBarSeverity.Informational;
-        StorageInfo.Title = "正在取消当前存储操作";
-        StorageInfo.Message = "正在完成当前原子步骤并保存一致状态。";
+        StorageInfo.Title = Loc.Get("Storage.Messages.CancellingTitle");
+        StorageInfo.Message = Loc.Get("Storage.Messages.CancellingMessage");
     }
 
     private CancellationToken BeginStorageOperation()
@@ -889,7 +1034,7 @@ public sealed partial class StoragePage : Page
         PurgeCleanupButton.IsEnabled = !_isBusy && selected?.Item.CanPurge == true;
         ToolTipService.SetToolTip(
             RestoreCleanupButton,
-            selected?.RestoreToolTip ?? "选择一个可恢复的隔离项");
+            selected?.RestoreToolTip ?? Loc.Get("Storage.Cleanup.Restore.DefaultToolTip"));
     }
 
     private static string FormatBytes(long bytes)
@@ -913,7 +1058,9 @@ public sealed partial class StoragePage : Page
         public CacheRow(CacheDirectoryLocation location)
         {
             Location = location;
-            _sizeText = location.Exists ? "尚未计算" : "目录不存在";
+            _sizeText = location.Exists
+                ? Loc.Get("Storage.Cache.Size.NotMeasured")
+                : Loc.Get("Storage.Cache.Size.Missing");
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -939,12 +1086,12 @@ public sealed partial class StoragePage : Page
             && Location.Warning is null;
 
         public string CleanupToolTip => !Location.Exists
-            ? "缓存目录不存在"
+            ? Loc.Get("Storage.Cache.CleanupToolTip.Missing")
             : !Location.Definition.SupportsSafeCleanup
-                ? "该根目录包含配置或其他非缓存数据，仅支持迁移，不提供整目录清理"
+                ? Loc.Get("Storage.Cache.CleanupToolTip.NotSupported")
                 : Location.Warning is not null
-                    ? "当前配置无法安全确认，请刷新或修复配置后再清理"
-                    : "先将缓存内容同卷移入可恢复的安全隔离区";
+                    ? Loc.Get("Storage.Cache.CleanupToolTip.Unsafe")
+                    : Loc.Get("Storage.Cache.CleanupToolTip.Default");
 
         public string SizeText
         {
@@ -969,9 +1116,9 @@ public sealed partial class StoragePage : Page
         public bool CanRestore => Item.CanRestore;
 
         public string RestoreToolTip => Item.CanRestore
-            ? "将隔离内容移回原缓存目录"
+            ? Loc.Get("Storage.Cleanup.Restore.ToolTip")
             : Item.RestoreBlockedReason
-                ?? "永久清空已经开始，不能再恢复";
+                ?? Loc.Get("Storage.Cleanup.Restore.BlockedFallback");
 
         public string DisplayText
         {
@@ -979,11 +1126,16 @@ public sealed partial class StoragePage : Page
             {
                 string state = Item.State switch
                 {
-                    CacheCleanupItemState.Recoverable when Item.CanRestore => "可恢复",
-                    CacheCleanupItemState.Recoverable => "恢复已阻止",
-                    CacheCleanupItemState.RestorePending when Item.CanRestore => "待继续恢复",
-                    CacheCleanupItemState.RestorePending => "恢复已阻止",
-                    CacheCleanupItemState.PurgePending => "待继续永久清空",
+                    CacheCleanupItemState.Recoverable when Item.CanRestore
+                        => Loc.Get("Storage.Cleanup.State.Recoverable"),
+                    CacheCleanupItemState.Recoverable
+                        => Loc.Get("Storage.Cleanup.State.RestoreBlocked"),
+                    CacheCleanupItemState.RestorePending when Item.CanRestore
+                        => Loc.Get("Storage.Cleanup.State.RestorePending"),
+                    CacheCleanupItemState.RestorePending
+                        => Loc.Get("Storage.Cleanup.State.RestoreBlocked"),
+                    CacheCleanupItemState.PurgePending
+                        => Loc.Get("Storage.Cleanup.State.PurgePending"),
                     _ => Item.State.ToString(),
                 };
                 return $"{Item.DisplayName} · {FormatBytes(Item.TotalBytes)} · {state} · {Item.CreatedAtUtc.ToLocalTime():g}";

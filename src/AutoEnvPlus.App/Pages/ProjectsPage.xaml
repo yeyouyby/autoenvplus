@@ -71,18 +71,17 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <StackPanel Spacing="4">
-                    <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="项目环境" />
+                    <TextBlock x:Name="PageTitleText" Style="{StaticResource TitleTextBlockStyle}" />
                     <TextBlock
+                        x:Name="PageSubtitleText"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="导入版本文件、生成 autoenvplus.toml/lock，并打开只对新 PowerShell 生效的精确项目环境。"
                         TextWrapping="Wrap" />
                 </StackPanel>
                 <Button
                     x:Name="ChooseProjectButton"
                     Grid.Column="1"
                     VerticalAlignment="Bottom"
-                    Click="OnChooseProjectClicked"
-                    Content="选择项目文件夹" />
+                    Click="OnChooseProjectClicked" />
             </Grid>
 
             <InfoBar
@@ -90,9 +89,7 @@
                 AutomationProperties.LiveSetting="Polite"
                 IsClosable="False"
                 IsOpen="True"
-                Message="支持 .python-version、.nvmrc、.node-version、.java-version、package.json 和 global.json；项目终端不会修改全局 PATH。"
-                Severity="Informational"
-                Title="尚未选择项目" />
+                Severity="Informational" />
 
             <Border
                 Padding="18"
@@ -110,7 +107,6 @@
                     <TextBlock
                         x:Name="ProjectDetailsText"
                         IsTextSelectionEnabled="True"
-                        Text="选择一个项目后显示解析来源。"
                         TextWrapping="Wrap" />
                     <StackPanel
                         x:Name="ProjectActions"
@@ -119,27 +115,22 @@
                         <Button
                             x:Name="OpenProjectTerminalButton"
                             Click="OnOpenProjectTerminalClicked"
-                            Content="打开已激活终端"
                             IsEnabled="False" />
                         <Button
                             x:Name="CreateManifestButton"
                             Click="OnCreateManifestClicked"
-                            Content="生成 autoenvplus.toml"
                             IsEnabled="False" />
                         <Button
                             x:Name="CreateLockButton"
                             Click="OnCreateLockClicked"
-                            Content="生成 autoenvplus.lock"
                             IsEnabled="False" />
                         <Button
                             x:Name="CreateCMakePresetButton"
                             Click="OnCreateCMakePresetClicked"
-                            Content="生成 CMake Preset"
                             IsEnabled="False" />
                         <Button
                             x:Name="RollbackCMakePresetButton"
                             Click="OnRollbackCMakePresetClicked"
-                            Content="回滚 CMake Preset"
                             IsEnabled="False" />
                     </StackPanel>
                 </StackPanel>
@@ -162,10 +153,10 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <StackPanel Spacing="3">
-                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="项目虚拟环境" />
+                            <TextBlock x:Name="VirtualEnvironmentSectionTitleText" Style="{StaticResource SubtitleTextBlockStyle}" />
                             <TextBlock
+                                x:Name="VirtualEnvironmentSectionSubtitleText"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="只读解析项目内已有环境、包管理器锁、工具清单和 Wrapper，不执行任何外部命令。"
                                 TextWrapping="Wrap" />
                         </StackPanel>
                         <Button
@@ -173,11 +164,10 @@
                             Grid.Column="1"
                             VerticalAlignment="Center"
                             Click="OnDiscoverVirtualEnvironmentsClicked"
-                            IsEnabled="False"
-                            ToolTipService.ToolTip="扫描当前项目的虚拟环境证据">
+                            IsEnabled="False">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <SymbolIcon Symbol="Find" />
-                                <TextBlock Text="解析虚拟环境" />
+                                <TextBlock x:Name="DiscoverVirtualEnvironmentsButtonText" />
                             </StackPanel>
                         </Button>
                     </Grid>
@@ -196,17 +186,16 @@
                         Spacing="10"
                         Visibility="Collapsed">
                         <ProgressRing
+                            x:Name="VirtualEnvironmentProgressRing"
                             Width="20"
                             Height="20"
-                            AutomationProperties.Name="虚拟环境解析进度"
                             IsActive="True" />
-                        <TextBlock VerticalAlignment="Center" Text="正在读取有界候选路径…" />
+                        <TextBlock x:Name="VirtualEnvironmentProgressText" VerticalAlignment="Center" />
                     </StackPanel>
 
                     <TextBlock
                         x:Name="VirtualEnvironmentEmptyText"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="选择项目后，可按需解析项目内已有虚拟环境。"
                         TextWrapping="Wrap" />
 
                     <ItemsControl

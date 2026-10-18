@@ -35,6 +35,7 @@ public sealed partial class DownloadsPage : Page
     public DownloadsPage()
     {
         InitializeComponent();
+        ApplyLocalizedStrings();
         _manager = ((App)Application.Current).DownloadManager;
         ConnectionCountPicker.ItemsSource = ManagedSegmentedDownloader.SupportedConnectionCounts;
         ConnectionCountPicker.SelectedItem = 8;
@@ -43,6 +44,97 @@ public sealed partial class DownloadsPage : Page
         LibraryList.ItemsSource = _libraryRows;
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+    }
+
+    /// <summary>
+    /// Applies every localized string for this page from the resource table.
+    /// Unpackaged WinUI 3 apps cannot use x:Uid: the XAML loader resolves
+    /// ms-resource property bags against the OS system language only, so it
+    /// neither matches the standard dotted-key PRI layout nor honors the
+    /// in-app language preference. Code-behind assignment through
+    /// <see cref="Loc"/> is the only path that follows
+    /// <c>Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride</c>.
+    /// </summary>
+    private void ApplyLocalizedStrings()
+    {
+        PageTitleText.Text = Loc.Get("Downloads.Header.Title");
+        PageSubtitleText.Text = Loc.Get("Downloads.Header.Subtitle");
+        ToolTipService.SetToolTip(
+            ImportButton,
+            Loc.Get("Downloads.Actions.Import.ToolTip"));
+        ImportButtonText.Text = Loc.Get("Downloads.Actions.Import.Label");
+        ToolTipService.SetToolTip(
+            OpenLibraryButton,
+            Loc.Get("Downloads.Actions.OpenLibrary.ToolTip"));
+        OpenLibraryButtonText.Text = Loc.Get("Downloads.Actions.OpenLibrary.Label");
+        DownloadInfo.Title = Loc.Get("Downloads.Info.InitialTitle");
+        DownloadInfo.Message = Loc.Get("Downloads.Info.InitialMessage");
+        AddFromUrlSectionTitleText.Text = Loc.Get("Downloads.AddFromUrl.SectionTitle");
+        SourceUrlTextBox.Header = Loc.Get("Downloads.AddFromUrl.SourceUrl.Header");
+        FileNameTextBox.Header = Loc.Get("Downloads.AddFromUrl.FileName.Header");
+        ConnectionCountPicker.Header = Loc.Get("Downloads.AddFromUrl.ConnectionCount.Header");
+        MaximumSizeBox.Header = Loc.Get("Downloads.AddFromUrl.MaximumSize.Header");
+        IntegrityToggle.Header = Loc.Get("Downloads.AddFromUrl.Integrity.Header");
+        IntegrityToggle.OffContent = Loc.Get("Downloads.AddFromUrl.Integrity.Off");
+        IntegrityToggle.OnContent = Loc.Get("Downloads.AddFromUrl.Integrity.On");
+        HashAlgorithmPicker.Header = Loc.Get("Downloads.AddFromUrl.HashAlgorithm.Header");
+        ExpectedHashTextBox.Header = Loc.Get("Downloads.AddFromUrl.ExpectedHash.Header");
+        ExpectedHashTextBox.PlaceholderText = Loc.Get("Downloads.AddFromUrl.ExpectedHash.Placeholder");
+        StartDownloadButtonText.Text = Loc.Get("Downloads.Actions.StartDownload");
+        ToolTipService.SetToolTip(
+            CancelTransferButton,
+            Loc.Get("Downloads.Actions.CancelTransfer.ToolTip"));
+        CancelTransferButtonText.Text = Loc.Get("Downloads.Actions.CancelTransfer.Label");
+        TransferTitleText.Text = Loc.Get("Downloads.Transfer.IdleTitle");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            TransferProgressBar,
+            Loc.Get("Downloads.Transfer.Progress.AccessibleName"));
+        LibrarySectionTitleText.Text = Loc.Get("Downloads.Library.SectionTitle");
+        LibrarySummaryText.Text = Loc.Get("Downloads.Library.SummaryLoading");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            RefreshLibraryButton,
+            Loc.Get("Downloads.Library.Refresh.AccessibleName"));
+        ToolTipService.SetToolTip(
+            RefreshLibraryButton,
+            Loc.Get("Downloads.Library.Refresh.ToolTip"));
+    }
+
+    private void OnInstallWheelButtonLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is Button button)
+        {
+            ToolTipService.SetToolTip(
+                button,
+                Loc.Get("Downloads.Library.Install.ToolTip"));
+        }
+    }
+
+    private void OnInstallWheelButtonTextLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is TextBlock textBlock)
+        {
+            textBlock.Text = Loc.Get("Downloads.Library.Install.Label");
+        }
+    }
+
+    private void OnOpenItemFolderButtonLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is Button button)
+        {
+            ToolTipService.SetToolTip(
+                button,
+                Loc.Get("Downloads.Library.OpenLocation.ToolTip"));
+        }
+    }
+
+    private void OnDeleteLibraryItemButtonLoaded(object sender, RoutedEventArgs args)
+    {
+        if (sender is Button button)
+        {
+            ToolTipService.SetToolTip(
+                button,
+                Loc.Get("Downloads.Library.Delete.ToolTip"));
+        }
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
@@ -80,8 +172,10 @@ public sealed partial class DownloadsPage : Page
             or InvalidOperationException)
         {
             DownloadInfo.Severity = InfoBarSeverity.Warning;
-            DownloadInfo.Title = "下载默认值不可用";
-            DownloadInfo.Message = $"已使用内置默认值；{exception.Message}";
+            DownloadInfo.Title = Loc.Get("Downloads.Messages.DefaultsUnavailableTitle");
+            DownloadInfo.Message = Loc.Format(
+                "Downloads.Messages.DefaultsUnavailableMessage",
+                exception.Message);
         }
     }
 
@@ -104,14 +198,18 @@ public sealed partial class DownloadsPage : Page
             || sourceUri.Scheme != Uri.UriSchemeHttps
             || !string.IsNullOrEmpty(sourceUri.UserInfo))
         {
-            ShowError("无法开始下载", "文件地址必须是不包含用户名或密码的绝对 HTTPS URL。");
+            ShowError(
+                Loc.Get("Downloads.Messages.DownloadFailedToStartTitle"),
+                Loc.Get("Downloads.Messages.DownloadInvalidUrl"));
             return;
         }
 
         string fileName = FileNameTextBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(fileName))
         {
-            ShowError("无法开始下载", "请提供下载库内文件名。");
+            ShowError(
+                Loc.Get("Downloads.Messages.DownloadFailedToStartTitle"),
+                Loc.Get("Downloads.Messages.DownloadMissingFileName"));
             return;
         }
 
@@ -122,13 +220,17 @@ public sealed partial class DownloadsPage : Page
 
         if (!TryGetMaximumBytes(out long maximumBytes, out string? sizeError))
         {
-            ShowError("无法开始下载", sizeError ?? "输入无效。");
+            ShowError(
+                Loc.Get("Downloads.Messages.DownloadFailedToStartTitle"),
+                sizeError ?? Loc.Get("Downloads.Messages.InvalidInput"));
             return;
         }
 
         if (!TryCreateIntegrity(out PackageHashExpectation? integrity, out string? hashError))
         {
-            ShowError("无法开始下载", hashError ?? "摘要无效。");
+            ShowError(
+                Loc.Get("Downloads.Messages.DownloadFailedToStartTitle"),
+                hashError ?? Loc.Get("Downloads.Messages.InvalidHash"));
             return;
         }
 
@@ -150,38 +252,48 @@ public sealed partial class DownloadsPage : Page
                     integrity),
                 network);
             string mode = result.TransferMode == DownloadTransferMode.Segmented
-                ? $"{result.SegmentCount} 段"
+                ? Loc.Format("Downloads.Transfer.ModeSegmented", result.SegmentCount)
                 : result.FallbackReason is null
-                    ? "单连接"
-                    : $"单连接（自动降级：{FallbackText(result.FallbackReason.Value)}）";
+                    ? Loc.Get("Downloads.Transfer.ModeSingle")
+                    : Loc.Format(
+                        "Downloads.Transfer.ModeSingleFallback",
+                        FallbackText(result.FallbackReason.Value));
             DownloadInfo.Severity = InfoBarSeverity.Success;
-            DownloadInfo.Title = "文件已加入下载库";
+            DownloadInfo.Title = Loc.Get("Downloads.Messages.DownloadCompletedTitle");
             DownloadInfo.Message = $"{result.FilePath} · {mode}";
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PackageDownload,
                 ActivityStatus.Succeeded,
-                $"已完成受管包下载：{Path.GetFileName(result.FilePath)}；传输模式：{mode}。",
+                Loc.Format(
+                    "Downloads.Messages.DownloadCompletedActivity",
+                    Path.GetFileName(result.FilePath),
+                    mode),
                 [result.FilePath]);
             RefreshLibrary();
         }
         catch (OperationCanceledException)
         {
             DownloadInfo.Severity = InfoBarSeverity.Informational;
-            DownloadInfo.Title = "下载已取消";
-            DownloadInfo.Message = "未完成内容没有提交到下载库；程序已尝试清理受管暂存目录。";
+            DownloadInfo.Title = Loc.Get("Downloads.Messages.DownloadCancelledTitle");
+            DownloadInfo.Message = Loc.Get("Downloads.Messages.DownloadCancelledMessage");
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PackageDownload,
                 ActivityStatus.Cancelled,
-                $"受管包下载已取消：{fileName}。",
+                Loc.Format("Downloads.Messages.DownloadCancelledActivity", fileName),
                 [_manager.LibraryRoot]);
         }
         catch (HttpRequestException exception)
         {
-            ShowError("下载未完成", AppDownloadManager.DescribeNetworkFailure(exception));
+            ShowError(
+                Loc.Get("Downloads.Messages.DownloadIncompleteTitle"),
+                AppDownloadManager.DescribeNetworkFailure(exception));
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PackageDownload,
                 ActivityStatus.Failed,
-                $"受管包下载失败：{fileName}；错误类型：{exception.GetType().Name}。",
+                Loc.Format(
+                    "Downloads.Messages.DownloadFailedActivity",
+                    fileName,
+                    exception.GetType().Name),
                 [_manager.LibraryRoot]);
         }
         catch (Exception exception) when (exception is IOException
@@ -189,11 +301,14 @@ public sealed partial class DownloadsPage : Page
             or ArgumentException
             or InvalidOperationException)
         {
-            ShowError("下载未完成", exception.Message);
+            ShowError(Loc.Get("Downloads.Messages.DownloadIncompleteTitle"), exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PackageDownload,
                 ActivityStatus.Failed,
-                $"受管包下载失败：{fileName}；错误类型：{exception.GetType().Name}。",
+                Loc.Format(
+                    "Downloads.Messages.DownloadFailedActivity",
+                    fileName,
+                    exception.GetType().Name),
                 [_manager.LibraryRoot]);
         }
     }
@@ -209,7 +324,7 @@ public sealed partial class DownloadsPage : Page
         FileOpenPicker picker = new()
         {
             SuggestedStartLocation = PickerLocationId.Downloads,
-            CommitButtonText = "导入受管下载库",
+            CommitButtonText = Loc.Get("Downloads.Picker.ImportCommitButton"),
         };
         foreach (string extension in ManagedDownloadLibrary.AllowedExtensions)
         {
@@ -225,13 +340,17 @@ public sealed partial class DownloadsPage : Page
 
         if (!TryGetMaximumBytes(out long maximumBytes, out string? sizeError))
         {
-            ShowError("无法导入文件", sizeError ?? "输入无效。");
+            ShowError(
+                Loc.Get("Downloads.Messages.ImportFailedTitle"),
+                sizeError ?? Loc.Get("Downloads.Messages.InvalidInput"));
             return;
         }
 
         if (!TryCreateIntegrity(out PackageHashExpectation? integrity, out string? hashError))
         {
-            ShowError("无法导入文件", hashError ?? "摘要无效。");
+            ShowError(
+                Loc.Get("Downloads.Messages.ImportFailedTitle"),
+                hashError ?? Loc.Get("Downloads.Messages.InvalidHash"));
             return;
         }
 
@@ -240,19 +359,23 @@ public sealed partial class DownloadsPage : Page
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = $"导入 {file.Name}",
+            Title = Loc.Format("Downloads.Import.DialogTitle", file.Name),
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"源文件\n{file.Path}\n\n下载库\n{_manager.LibraryRoot}\n\n"
-                    + "文件将被复制，源文件不会移动或删除；导入后不会自动执行。"
+                Text = Loc.Format(
+                        "Downloads.Import.DialogText",
+                        file.Path,
+                        _manager.LibraryRoot)
                     + (importConflict
-                        ? $"\n\n注意：下载库中已存在同名文件；继续会先删除现有文件。"
+                        ? Loc.Get("Downloads.Import.ConflictNote")
                         : string.Empty),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = importConflict ? "覆盖并复制" : "复制并计算摘要",
-            CloseButtonText = "取消",
+            PrimaryButtonText = importConflict
+                ? Loc.Get("Downloads.Import.OverwriteButton")
+                : Loc.Get("Downloads.Import.CopyButton"),
+            CloseButtonText = Loc.Get("Downloads.Dialogs.Cancel"),
             DefaultButton = ContentDialogButton.Primary,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -269,7 +392,7 @@ public sealed partial class DownloadsPage : Page
             catch (Exception exception) when (exception is IOException
                 or UnauthorizedAccessException)
             {
-                ShowError("无法覆盖现有文件", exception.Message);
+                ShowError(Loc.Get("Downloads.Messages.OverwriteFailedTitle"), exception.Message);
                 return;
             }
         }
@@ -279,26 +402,31 @@ public sealed partial class DownloadsPage : Page
             LocalPackageImportResult result = await _manager.ImportAsync(
                 new LocalPackageImportRequest(file.Path, null, maximumBytes, integrity));
             DownloadInfo.Severity = InfoBarSeverity.Success;
-            DownloadInfo.Title = "本地文件已导入";
+            DownloadInfo.Title = Loc.Get("Downloads.Messages.ImportCompletedTitle");
             DownloadInfo.Message = result.HasVerifiedExpectedHash
-                ? $"{result.FilePath} · 预期 {result.ExpectedHashAlgorithm?.DisplayName()} 已验证"
-                : $"{result.FilePath} · 已计算内容 SHA-256，来源真实性未知";
+                ? Loc.Format(
+                    "Downloads.Messages.ImportVerifiedMessage",
+                    result.FilePath,
+                    result.ExpectedHashAlgorithm?.DisplayName())
+                : Loc.Format("Downloads.Messages.ImportUnverifiedMessage", result.FilePath);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PackageImport,
                 ActivityStatus.Succeeded,
-                $"已把本地包复制到受管下载库：{Path.GetFileName(result.FilePath)}。",
+                Loc.Format(
+                    "Downloads.Messages.ImportCompletedActivity",
+                    Path.GetFileName(result.FilePath)),
                 [result.FilePath]);
             RefreshLibrary();
         }
         catch (OperationCanceledException)
         {
             DownloadInfo.Severity = InfoBarSeverity.Informational;
-            DownloadInfo.Title = "导入已取消";
-            DownloadInfo.Message = "源文件未修改，未完成副本没有提交；程序已尝试清理受管暂存目录。";
+            DownloadInfo.Title = Loc.Get("Downloads.Messages.ImportCancelledTitle");
+            DownloadInfo.Message = Loc.Get("Downloads.Messages.ImportCancelledMessage");
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PackageImport,
                 ActivityStatus.Cancelled,
-                $"本地包导入已取消：{file.Name}。",
+                Loc.Format("Downloads.Messages.ImportCancelledActivity", file.Name),
                 [_manager.LibraryRoot]);
         }
         catch (Exception exception) when (exception is IOException
@@ -306,11 +434,14 @@ public sealed partial class DownloadsPage : Page
             or ArgumentException
             or InvalidOperationException)
         {
-            ShowError("导入未完成", exception.Message);
+            ShowError(Loc.Get("Downloads.Messages.ImportIncompleteTitle"), exception.Message);
             await AppActivityLog.TryWriteAsync(
                 ActivityOperationType.PackageImport,
                 ActivityStatus.Failed,
-                $"本地包导入失败：{file.Name}；错误类型：{exception.GetType().Name}。",
+                Loc.Format(
+                    "Downloads.Messages.ImportFailedActivity",
+                    file.Name,
+                    exception.GetType().Name),
                 [_manager.LibraryRoot]);
         }
     }
@@ -329,15 +460,15 @@ public sealed partial class DownloadsPage : Page
         ContentDialog dialog = new()
         {
             XamlRoot = XamlRoot,
-            Title = "下载库中已存在同名文件",
+            Title = Loc.Get("Downloads.Replace.DialogTitle"),
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"{targetPath}\n\n继续会先删除现有文件，再下载新内容；取消则不做任何更改。",
+                Text = Loc.Format("Downloads.Replace.DialogText", targetPath),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "覆盖现有文件",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Downloads.Replace.ConfirmButton"),
+            CloseButtonText = Loc.Get("Downloads.Dialogs.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await dialog.ShowAsync() != ContentDialogResult.Primary)
@@ -353,7 +484,7 @@ public sealed partial class DownloadsPage : Page
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException)
         {
-            ShowError("无法覆盖现有文件", exception.Message);
+            ShowError(Loc.Get("Downloads.Messages.OverwriteFailedTitle"), exception.Message);
             return false;
         }
     }
@@ -389,15 +520,15 @@ public sealed partial class DownloadsPage : Page
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = $"删除 {row.FileName}",
+            Title = Loc.Format("Downloads.Delete.DialogTitle", row.FileName),
             Content = new TextBlock
             {
                 IsTextSelectionEnabled = true,
-                Text = $"将从受管下载库永久删除此文件和对应清单记录：\n{row.Item.FilePath}\n\n源下载地址或原始导入文件不会受到影响。",
+                Text = Loc.Format("Downloads.Delete.DialogText", row.Item.FilePath),
                 TextWrapping = TextWrapping.Wrap,
             },
-            PrimaryButtonText = "永久删除",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Downloads.Delete.ConfirmButton"),
+            CloseButtonText = Loc.Get("Downloads.Dialogs.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -409,7 +540,9 @@ public sealed partial class DownloadsPage : Page
         {
             ManagedDownloadDeleteResult result = await _manager.Library.DeleteAsync(row.FileName);
             DownloadInfo.Severity = InfoBarSeverity.Success;
-            DownloadInfo.Title = result.Deleted ? "下载库文件已删除" : "文件已不存在";
+            DownloadInfo.Title = result.Deleted
+                ? Loc.Get("Downloads.Messages.DeleteCompletedTitle")
+                : Loc.Get("Downloads.Messages.DeleteMissingTitle");
             DownloadInfo.Message = row.Item.FilePath;
             RefreshLibrary();
         }
@@ -418,7 +551,7 @@ public sealed partial class DownloadsPage : Page
             or ArgumentException
             or InvalidOperationException)
         {
-            ShowError("无法删除下载库文件", exception.Message);
+            ShowError(Loc.Get("Downloads.Messages.DeleteFailedTitle"), exception.Message);
         }
     }
 
@@ -441,13 +574,15 @@ public sealed partial class DownloadsPage : Page
             or UnauthorizedAccessException
             or InvalidDataException)
         {
-            ShowError("无法读取受管 Python", exception.Message);
+            ShowError(Loc.Get("Downloads.Messages.PythonRegistryReadFailedTitle"), exception.Message);
             return;
         }
 
         if (registry.Errors.Count > 0)
         {
-            ShowError("受管语言工具注册表无效", string.Join("；", registry.Errors.Take(3)));
+            ShowError(
+                Loc.Get("Downloads.Messages.PythonRegistryInvalidTitle"),
+                string.Join(Loc.Get("Downloads.Separator"), registry.Errors.Take(3)));
             return;
         }
 
@@ -458,39 +593,45 @@ public sealed partial class DownloadsPage : Page
             .ToArray();
         if (runtimes.Length == 0)
         {
-            ShowError("没有可用的受管 Python", "请先在 Python 语言页安装 CPython，再创建隔离虚拟环境。");
+            ShowError(
+                Loc.Get("Downloads.Messages.NoManagedPythonTitle"),
+                Loc.Get("Downloads.Messages.NoManagedPythonMessage"));
             return;
         }
 
         ComboBox runtimePicker = new()
         {
-            Header = "基础 Python",
+            Header = Loc.Get("Downloads.Pip.BasePythonHeader"),
             ItemsSource = runtimes,
             DisplayMemberPath = nameof(RuntimeChoice.DisplayName),
             SelectedIndex = 0,
         };
-        AutomationProperties.SetName(runtimePicker, "基础 Python");
+        AutomationProperties.SetName(
+            runtimePicker,
+            Loc.Get("Downloads.Pip.BasePythonHeader"));
         TextBox environmentName = new()
         {
-            Header = "虚拟环境名称",
+            Header = Loc.Get("Downloads.Pip.EnvironmentNameHeader"),
             Text = CreateEnvironmentName(row.FileName),
         };
         ComboBox sourceModePicker = new()
         {
-            Header = "依赖来源",
+            Header = Loc.Get("Downloads.Pip.SourceModeHeader"),
             ItemsSource = new[]
             {
                 new SourceModeChoice(
                     PipPackageSourceMode.OfflineManagedLibrary,
-                    "严格离线（仅此 wheel，不解析依赖）"),
+                    Loc.Get("Downloads.Pip.SourceMode.Offline")),
                 new SourceModeChoice(
                     PipPackageSourceMode.ConfiguredNetwork,
-                    "当前 pip Provider 源与代理"),
+                    Loc.Get("Downloads.Pip.SourceMode.Network")),
             },
             DisplayMemberPath = nameof(SourceModeChoice.DisplayName),
             SelectedIndex = 0,
         };
-        AutomationProperties.SetName(sourceModePicker, "依赖来源");
+        AutomationProperties.SetName(
+            sourceModePicker,
+            Loc.Get("Downloads.Pip.SourceModeHeader"));
         StackPanel choices = new() { Spacing = 12 };
         choices.Children.Add(runtimePicker);
         choices.Children.Add(environmentName);
@@ -500,16 +641,16 @@ public sealed partial class DownloadsPage : Page
             IsClosable = false,
             IsOpen = true,
             Severity = InfoBarSeverity.Warning,
-            Title = "pip 安装不是事务操作",
-            Message = "环境、缓存和临时文件固定在受管数据根，但包自身的构建脚本仍可能修改环境；失败时不会声称已自动回滚。",
+            Title = Loc.Get("Downloads.Pip.NonTransactionalTitle"),
+            Message = Loc.Get("Downloads.Pip.NonTransactionalMessage"),
         });
         ContentDialog optionsDialog = new()
         {
             XamlRoot = XamlRoot,
-            Title = $"安装 {row.FileName}",
+            Title = Loc.Format("Downloads.Pip.DialogTitle", row.FileName),
             Content = choices,
-            PrimaryButtonText = "生成安装计划",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Downloads.Pip.PlanButton"),
+            CloseButtonText = Loc.Get("Downloads.Dialogs.Cancel"),
             DefaultButton = ContentDialogButton.Primary,
         };
         if (await optionsDialog.ShowAsync() != ContentDialogResult.Primary
@@ -545,29 +686,36 @@ public sealed partial class DownloadsPage : Page
             or ArgumentException
             or InvalidOperationException)
         {
-            ShowError("无法生成 pip 安装计划", exception.Message);
+            ShowError(Loc.Get("Downloads.Messages.PipPlanFailedTitle"), exception.Message);
             return;
         }
 
         string createStep = plan.RequiresEnvironmentCreation
             ? FormatCommand(plan.CreateEnvironmentCommand)
-            : "使用已有且已复检的虚拟环境";
+            : Loc.Get("Downloads.Pip.ReuseEnvironmentStep");
         ContentDialog confirmation = new()
         {
             XamlRoot = XamlRoot,
-            Title = "确认本地 wheel 安装计划",
+            Title = Loc.Get("Downloads.Pip.ConfirmDialogTitle"),
             Content = new ScrollViewer
             {
                 MaxHeight = 560,
                 Content = new TextBlock
                 {
                     IsTextSelectionEnabled = true,
-                    Text = $"wheel\n{plan.WheelPath}\n\n目标环境\n{plan.EnvironmentRoot}\n\n创建环境\n{createStep}\n\n安装命令\n{FormatCommand(plan.InstallPackageCommand)}\n\nTEMP / TMP\n{service.TemporaryRoot}\n\npip 缓存\n{service.PipCacheRoot}\n\n回滚边界\n此操作不是事务安装。严格离线模式使用 --no-deps，只安装当前已审核 wheel，不解析或安装任何依赖；需要解析依赖时必须显式选择联网模式。",
+                    Text = Loc.Format(
+                        "Downloads.Pip.ConfirmDialogText",
+                        plan.WheelPath,
+                        plan.EnvironmentRoot,
+                        createStep,
+                        FormatCommand(plan.InstallPackageCommand),
+                        service.TemporaryRoot,
+                        service.PipCacheRoot),
                     TextWrapping = TextWrapping.Wrap,
                 },
             },
-            PrimaryButtonText = "执行已审核计划",
-            CloseButtonText = "取消",
+            PrimaryButtonText = Loc.Get("Downloads.Pip.ExecuteButton"),
+            CloseButtonText = Loc.Get("Downloads.Dialogs.Cancel"),
             DefaultButton = ContentDialogButton.Close,
         };
         if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
@@ -596,40 +744,43 @@ public sealed partial class DownloadsPage : Page
             if (result.Success)
             {
                 DownloadInfo.Severity = InfoBarSeverity.Success;
-                DownloadInfo.Title = "wheel 已安装到受管虚拟环境";
+                DownloadInfo.Title = Loc.Get("Downloads.Messages.PipCompletedTitle");
                 DownloadInfo.Message = AppendPipOutputCaptureNotice(
                     plan.EnvironmentRoot,
                     result);
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.PackageInstall,
                     ActivityStatus.Succeeded,
-                    $"已把 {row.FileName} 安装到受管 Python 虚拟环境 {plan.EnvironmentName}；该操作不支持事务回滚。",
+                    Loc.Format(
+                        "Downloads.Messages.PipCompletedActivity",
+                        row.FileName,
+                        plan.EnvironmentName),
                     [row.Item.FilePath, plan.EnvironmentRoot]);
             }
             else if (result.WasCancelled)
             {
                 DownloadInfo.Severity = InfoBarSeverity.Warning;
-                DownloadInfo.Title = "pip 安装已取消";
+                DownloadInfo.Title = Loc.Get("Downloads.Messages.PipCancelledTitle");
                 DownloadInfo.Message = AppendPipOutputCaptureNotice(
-                    "子进程已停止；环境可能包含部分更改，不会声称已回滚。",
+                    Loc.Get("Downloads.Messages.PipCancelledMessage"),
                     result);
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.PackageInstall,
                     ActivityStatus.Cancelled,
-                    $"安装 {row.FileName} 的 pip 进程已取消；虚拟环境可能包含部分更改。",
+                    Loc.Format("Downloads.Messages.PipCancelledActivity", row.FileName),
                     [plan.EnvironmentRoot]);
             }
             else
             {
                 ShowError(
-                    "pip 安装未完成",
+                    Loc.Get("Downloads.Messages.PipIncompleteTitle"),
                     AppendPipOutputCaptureNotice(
-                        result.Error ?? "pip 返回失败状态。",
+                        result.Error ?? Loc.Get("Downloads.Messages.PipFailedFallback"),
                         result));
                 await AppActivityLog.TryWriteAsync(
                     ActivityOperationType.PackageInstall,
                     ActivityStatus.Failed,
-                    $"安装 {row.FileName} 失败；虚拟环境可能包含部分更改。",
+                    Loc.Format("Downloads.Messages.PipFailedActivity", row.FileName),
                     [plan.EnvironmentRoot]);
             }
         }
@@ -638,7 +789,7 @@ public sealed partial class DownloadsPage : Page
             or ArgumentException
             or InvalidOperationException)
         {
-            ShowError("pip 安装计划已失效", exception.Message);
+            ShowError(Loc.Get("Downloads.Messages.PipPlanInvalidTitle"), exception.Message);
         }
         finally
         {
@@ -687,8 +838,10 @@ public sealed partial class DownloadsPage : Page
         if (!loaded.Success || loaded.Settings is null)
         {
             ShowError(
-                "无法读取下载网络设置",
-                string.Join("；", loaded.Errors.Take(3).Select(error => error.Message)));
+                Loc.Get("Downloads.Messages.NetworkSettingsReadFailedTitle"),
+                string.Join(
+                    Loc.Get("Downloads.Separator"),
+                    loaded.Errors.Take(3).Select(error => error.Message)));
             return null;
         }
 
@@ -698,8 +851,10 @@ public sealed partial class DownloadsPage : Page
         if (!resolved.Success || resolved.EffectiveSettings is null)
         {
             ShowError(
-                "下载中心网络设置无效",
-                string.Join("；", resolved.Errors.Take(3).Select(error => error.Message)));
+                Loc.Get("Downloads.Messages.DownloadNetworkSettingsInvalidTitle"),
+                string.Join(
+                    Loc.Get("Downloads.Separator"),
+                    resolved.Errors.Take(3).Select(error => error.Message)));
             return null;
         }
 
@@ -716,8 +871,8 @@ public sealed partial class DownloadsPage : Page
         if (!loaded.Success || loaded.Settings is null)
         {
             ShowError(
-                "无法读取下载网络设置",
-                string.Join("；", loaded.Errors.Take(3)));
+                Loc.Get("Downloads.Messages.NetworkSettingsReadFailedTitle"),
+                string.Join(Loc.Get("Downloads.Separator"), loaded.Errors.Take(3)));
             return null;
         }
 
@@ -727,8 +882,10 @@ public sealed partial class DownloadsPage : Page
         if (!resolved.Success || resolved.EffectiveSettings is null)
         {
             ShowError(
-                $"{displayName} 网络设置无效",
-                string.Join("；", resolved.Errors.Take(3).Select(error => error.Message)));
+                Loc.Format("Downloads.Messages.ToolNetworkSettingsInvalidTitle", displayName),
+                string.Join(
+                    Loc.Get("Downloads.Separator"),
+                    resolved.Errors.Take(3).Select(error => error.Message)));
             return null;
         }
 
@@ -767,11 +924,11 @@ public sealed partial class DownloadsPage : Page
 
     private static string PipStageText(PipLocalPackageInstallStage stage) => stage switch
     {
-        PipLocalPackageInstallStage.Validating => "正在复检安装计划",
-        PipLocalPackageInstallStage.CreatingEnvironment => "正在创建虚拟环境",
-        PipLocalPackageInstallStage.InstallingPackage => "正在运行 pip",
-        PipLocalPackageInstallStage.Completed => "pip 安装完成",
-        PipLocalPackageInstallStage.Cancelled => "pip 安装已取消",
+        PipLocalPackageInstallStage.Validating => Loc.Get("Downloads.Pip.Stage.Validating"),
+        PipLocalPackageInstallStage.CreatingEnvironment => Loc.Get("Downloads.Pip.Stage.CreatingEnvironment"),
+        PipLocalPackageInstallStage.InstallingPackage => Loc.Get("Downloads.Pip.Stage.InstallingPackage"),
+        PipLocalPackageInstallStage.Completed => Loc.Get("Downloads.Pip.Stage.Completed"),
+        PipLocalPackageInstallStage.Cancelled => Loc.Get("Downloads.Pip.Stage.Cancelled"),
         _ => stage.ToString(),
     };
 
@@ -792,7 +949,11 @@ public sealed partial class DownloadsPage : Page
 
         string notice = truncatedStreams.Count == 0
             ? message
-            : $"{message}\n\n{string.Join('/', truncatedStreams)} 已截断；结果仅保留末尾 {PipLocalPackageProcessRunner.MaximumCapturedOutputCharacters:N0} 个字符。";
+            : Loc.Format(
+                "Downloads.Pip.OutputTruncatedNotice",
+                message,
+                string.Join('/', truncatedStreams),
+                PipLocalPackageProcessRunner.MaximumCapturedOutputCharacters);
         return notice + DescribePipOutput(result);
     }
 
@@ -815,7 +976,7 @@ public sealed partial class DownloadsPage : Page
         string tail = output.Length > MaxTail
             ? "…" + output[^MaxTail..]
             : output;
-        return $"\n\npip 输出（末尾）：\n{tail.TrimEnd()}";
+        return Loc.Format("Downloads.Pip.OutputTail", tail.TrimEnd());
     }
 
     private bool TryCreateIntegrity(
@@ -836,7 +997,9 @@ public sealed partial class DownloadsPage : Page
         string expected = ExpectedHashTextBox.Text.Trim();
         if (!algorithm.IsValidHash(expected))
         {
-            error = $"预期摘要必须是有效的 {algorithm.DisplayName()} 十六进制值。";
+            error = Loc.Format(
+                "Downloads.Messages.InvalidHashFormat",
+                algorithm.DisplayName());
             return false;
         }
 
@@ -853,7 +1016,7 @@ public sealed partial class DownloadsPage : Page
             / (1024d * 1024d);
         if (double.IsNaN(megabytes) || megabytes < 1 || megabytes > maximumMegabytes)
         {
-            error = $"最大大小必须介于 1 MB 与 {maximumMegabytes:F0} MB 之间。";
+            error = Loc.Format("Downloads.Messages.InvalidMaximumSize", maximumMegabytes);
             return false;
         }
 
@@ -882,7 +1045,7 @@ public sealed partial class DownloadsPage : Page
         CancelTransferButton.IsEnabled = busy;
         if (snapshot is null)
         {
-            TransferTitleText.Text = "当前没有任务";
+            TransferTitleText.Text = Loc.Get("Downloads.Transfer.IdleTitle");
             TransferBytesText.Text = string.Empty;
             TransferDetailText.Text = _manager.LibraryRoot;
             TransferProgressBar.IsIndeterminate = false;
@@ -892,7 +1055,11 @@ public sealed partial class DownloadsPage : Page
 
         TransferTitleText.Text = $"{PhaseText(snapshot.Phase, snapshot.Error)} · {snapshot.FileName}";
         string progressText = snapshot.TotalBytes is long total
-            ? $"{FormatBytes(snapshot.CompletedBytes)} / {FormatBytes(total)}（{(total > 0 ? snapshot.CompletedBytes * 100d / total : 0):F0}%）"
+            ? Loc.Format(
+                "Downloads.Transfer.ProgressFormat",
+                FormatBytes(snapshot.CompletedBytes),
+                FormatBytes(total),
+                total > 0 ? snapshot.CompletedBytes * 100d / total : 0)
             : FormatBytes(snapshot.CompletedBytes);
         TransferBytesText.Text = busy
             ? progressText + ComputeSpeedAndEta(snapshot)
@@ -903,7 +1070,10 @@ public sealed partial class DownloadsPage : Page
             TransferProgressBar.Maximum,
             snapshot.CompletedBytes);
         string segments = snapshot.TotalSegments > 0
-            ? $" · 分段 {snapshot.CompletedSegments}/{snapshot.TotalSegments}"
+            ? Loc.Format(
+                "Downloads.Transfer.SegmentsSuffix",
+                snapshot.CompletedSegments,
+                snapshot.TotalSegments)
             : string.Empty;
         TransferDetailText.Text = $"{snapshot.Error ?? snapshot.OutputPath ?? snapshot.SourceDisplay}{segments}";
 
@@ -964,14 +1134,14 @@ public sealed partial class DownloadsPage : Page
 
         TimeSpan eta = TimeSpan.FromSeconds(
             (total - snapshot.CompletedBytes) / bytesPerSecond);
-        return $" · {speed} · 剩余约 {FormatEta(eta)}";
+        return Loc.Format("Downloads.Transfer.SpeedWithEta", speed, FormatEta(eta));
     }
 
     private static string FormatEta(TimeSpan eta) => eta.TotalHours >= 1
-        ? $"{eta.TotalHours:F1} 小时"
+        ? Loc.Format("Downloads.Transfer.EtaHours", eta.TotalHours)
         : eta.TotalMinutes >= 1
-            ? $"{(int)eta.TotalMinutes} 分 {eta.Seconds} 秒"
-            : $"{eta.Seconds} 秒";
+            ? Loc.Format("Downloads.Transfer.EtaMinutesSeconds", (int)eta.TotalMinutes, eta.Seconds)
+            : Loc.Format("Downloads.Transfer.EtaSeconds", eta.Seconds);
 
     private static readonly TimeSpan SpeedSampleWindow = TimeSpan.FromSeconds(6);
 
@@ -987,14 +1157,17 @@ public sealed partial class DownloadsPage : Page
                 _libraryRows.Add(new LibraryRow(item));
             }
 
-            LibrarySummaryText.Text =
-                $"{items.Length:N0} 个文件 · {FormatBytes(items.Sum(item => item.SizeBytes))} · {_manager.LibraryRoot}";
+            LibrarySummaryText.Text = Loc.Format(
+                "Downloads.Library.SummaryFormat",
+                items.Length,
+                FormatBytes(items.Sum(item => item.SizeBytes)),
+                _manager.LibraryRoot);
         }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException)
         {
-            ShowError("无法读取下载库", exception.Message);
-            LibrarySummaryText.Text = "下载库清单未通过安全检查";
+            ShowError(Loc.Get("Downloads.Messages.LibraryReadFailedTitle"), exception.Message);
+            LibrarySummaryText.Text = Loc.Get("Downloads.Library.SummaryFailed");
         }
     }
 
@@ -1015,7 +1188,7 @@ public sealed partial class DownloadsPage : Page
             or UnauthorizedAccessException
             or System.ComponentModel.Win32Exception)
         {
-            ShowError("无法打开下载库", exception.Message);
+            ShowError(Loc.Get("Downloads.Messages.OpenLibraryFailedTitle"), exception.Message);
         }
     }
 
@@ -1027,24 +1200,24 @@ public sealed partial class DownloadsPage : Page
     }
 
     private static string PhaseText(ManagedTransferPhase phase, string? error) => error is not null
-        ? "失败"
+        ? Loc.Get("Downloads.Transfer.Phase.Failed")
         : phase switch
         {
-            ManagedTransferPhase.Probing => "正在探测服务器",
-            ManagedTransferPhase.Downloading => "正在下载",
-            ManagedTransferPhase.Copying => "正在复制",
-            ManagedTransferPhase.Verifying => "正在计算并验证摘要",
-            ManagedTransferPhase.Committing => "正在提交到下载库",
-            ManagedTransferPhase.Completed => "已就绪",
-            ManagedTransferPhase.Cancelled => "已取消",
+            ManagedTransferPhase.Probing => Loc.Get("Downloads.Transfer.Phase.Probing"),
+            ManagedTransferPhase.Downloading => Loc.Get("Downloads.Transfer.Phase.Downloading"),
+            ManagedTransferPhase.Copying => Loc.Get("Downloads.Transfer.Phase.Copying"),
+            ManagedTransferPhase.Verifying => Loc.Get("Downloads.Transfer.Phase.Verifying"),
+            ManagedTransferPhase.Committing => Loc.Get("Downloads.Transfer.Phase.Committing"),
+            ManagedTransferPhase.Completed => Loc.Get("Downloads.Transfer.Phase.Completed"),
+            ManagedTransferPhase.Cancelled => Loc.Get("Downloads.Transfer.Phase.Cancelled"),
             _ => phase.ToString(),
         };
 
     private static string FallbackText(DownloadFallbackReason reason) => reason switch
     {
-        DownloadFallbackReason.RangeNotSupported => "服务器不支持 Range",
-        DownloadFallbackReason.StableEntityUnavailable => "缺少稳定实体标识",
-        DownloadFallbackReason.EntityChanged => "远端实体发生变化",
+        DownloadFallbackReason.RangeNotSupported => Loc.Get("Downloads.Transfer.Fallback.RangeNotSupported"),
+        DownloadFallbackReason.StableEntityUnavailable => Loc.Get("Downloads.Transfer.Fallback.StableEntityUnavailable"),
+        DownloadFallbackReason.EntityChanged => Loc.Get("Downloads.Transfer.Fallback.EntityChanged"),
         _ => reason.ToString(),
     };
 
@@ -1067,13 +1240,13 @@ public sealed partial class DownloadsPage : Page
         public string FileName => Item.FileName;
 
         public string InstallActionAutomationName =>
-            $"安装 {FileName} 到受管 Python 虚拟环境";
+            Loc.Format("Downloads.Library.InstallActionAccessibleName", FileName);
 
         public string OpenLocationActionAutomationName =>
-            $"打开 {FileName} 所在位置";
+            Loc.Format("Downloads.Library.OpenLocationActionAccessibleName", FileName);
 
         public string DeleteActionAutomationName =>
-            $"从受管下载库删除 {FileName}";
+            Loc.Format("Downloads.Library.DeleteActionAccessibleName", FileName);
 
         public Visibility PipInstallVisibility => Item.Extension.Equals(
             ".whl",
@@ -1087,29 +1260,33 @@ public sealed partial class DownloadsPage : Page
             {
                 string origin = Item.Origin switch
                 {
-                    ManagedDownloadOrigin.Network => "网络下载",
-                    ManagedDownloadOrigin.LocalImport => "本地导入",
-                    _ => "现有文件",
+                    ManagedDownloadOrigin.Network => Loc.Get("Downloads.Library.Origin.Network"),
+                    ManagedDownloadOrigin.LocalImport => Loc.Get("Downloads.Library.Origin.LocalImport"),
+                    _ => Loc.Get("Downloads.Library.Origin.Existing"),
                 };
                 string mode = Item.TransferMode switch
                 {
-                    DownloadTransferMode.Segmented => "多连接分段",
-                    DownloadTransferMode.SingleStream => "单连接",
-                    _ => "本地复制",
+                    DownloadTransferMode.Segmented => Loc.Get("Downloads.Library.TransferMode.Segmented"),
+                    DownloadTransferMode.SingleStream => Loc.Get("Downloads.Transfer.ModeSingle"),
+                    _ => Loc.Get("Downloads.Library.TransferMode.LocalCopy"),
                 };
-                return $"{FormatBytes(Item.SizeBytes)} · {origin} · {mode} · {Item.Source ?? "来源未记录"}";
+                return $"{FormatBytes(Item.SizeBytes)} · {origin} · {mode} · "
+                    + (Item.Source ?? Loc.Get("Downloads.Library.SourceUnknown"));
             }
         }
 
         public string IntegritySummary => Item.HasVerifiedExpectedHash
-            ? $"预期 {Item.ExpectedHashAlgorithm?.DisplayName()} 已重新验证 · {Item.VerifiedHash}"
+            ? Loc.Format(
+                "Downloads.Library.IntegrityVerified",
+                Item.ExpectedHashAlgorithm?.DisplayName(),
+                Item.VerifiedHash)
             : Item.HasRecordedExpectedHashEvidence && Item.ContentIdentityChanged
-                ? "文件内容已变化；导入/下载时记录的预期哈希证据不再适用"
+                ? Loc.Get("Downloads.Library.IntegrityChanged")
                 : Item.HasRecordedExpectedHashEvidence
-                    ? "预期哈希仅在导入/下载提交时验证，当前内容尚未重新验证"
+                    ? Loc.Get("Downloads.Library.IntegrityRecordedOnly")
                     : Item.ContentSha256 is string sha256
-                        ? $"提交时记录内容 SHA-256，来源真实性未知 · {sha256}"
-                        : "摘要尚未记录";
+                        ? Loc.Format("Downloads.Library.IntegritySha256", sha256)
+                        : Loc.Get("Downloads.Library.IntegrityNone");
     }
 
     private sealed record RuntimeChoice(ManagedRuntimeEntry Entry)
