@@ -4,23 +4,25 @@
 
 ## Unreleased
 
-### Added
-
-- 本地化框架：应用字符串迁入 MRT Core 资源表（`Strings/zh-CN` 与 `Strings/en-US`），代码后置经 `Loc` 解析；设置页新增"语言"区块（跟随系统/简体中文/English），选择持久化到应用设置并在下次启动经 `Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride` 生效。未打包 WinUI 3 的 `x:Uid` 既不匹配点号键的 PRI 布局、也不跟随应用内语言覆盖，因此全部字符串走代码后置赋值——这是后续全量字符串抽取的既定模式。
-
 ## 0.0.4 - 2026-10-11
 
 单文件启动修复版：v0.0.3 的单文件 EXE 在部分机器上首次 WinUI 激活即崩溃（COMException 0x80040111，无窗口无日志），portable 与 MSI 不受影响。核心引擎、CLI 与 Shim 行为不变。已作为 GitHub prerelease `v0.0.4` 发布并完成签名与资产回读。
 
+### Added
+
+- 本地化框架：应用字符串迁入 MRT Core 资源表（`Strings/zh-CN` 与 `Strings/en-US`），代码后置经 `Loc` 解析；设置页新增"语言"区块（跟随系统/简体中文/English），选择持久化到应用设置并在下次启动经 `Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride` 生效。未打包 WinUI 3 的 `x:Uid` 既不匹配点号键的 PRI 布局、也不跟随应用内语言覆盖，因此全部字符串走代码后置赋值——这是后续全量字符串抽取的既定模式。
+
 ### Fixed
 
-- 单文件 EXE 启动崩溃：Windows App SDK 的 undocked reg-free WinRT 目录以裸文件名加载 WinUI 原生 DLL，而 .NET 8.0.27+ 的单文件宿主不再预加载解压目录中的原生 DLL，裸名搜索找不到目标导致首次激活失败。捆绑的运行时版本随 SDK 补丁浮动（CI 解析到 8.0.27，本地为 8.0.25），因此 CI 产物损坏而本地冒烟通过。现由自定义入口点在 `Application.Start` 前调用 `SetDllDirectoryW(AppContext.BaseDirectory)` 修复，已在本地复现的 8.0.27 捆绑包与 8.0.25 上验证窗口正常出现；
+- 单文件 EXE 启动崩溃（两个独立成因，均已修复并在 8.0.25 捆绑包上实测窗口正常出现）：
+  - Windows App SDK 的 undocked reg-free WinRT 目录以裸文件名加载 WinUI 原生 DLL，而 .NET 8.0.27+ 的单文件宿主不再预加载解压目录中的原生 DLL，裸名搜索找不到目标导致首次激活失败（COMException 0x80040111，无窗口无日志）。现由自定义入口点在 `Application.Start` 前同时调用 `SetDllDirectoryW` 与 `AddDllDirectory`（分别覆盖传统搜索序与 `LOAD_LIBRARY_SEARCH_USER_DIRS` 调用方），把解压目录加入 DLL 搜索路径；`global.json` 改为 `rollForward: disable` 钉死 SDK 10.0.200（运行时包 8.0.25），CI 不再随镜像补丁浮动到 8.0.27；
+  - csproj 设置 `DefaultLanguage`（本地化引入）会让单文件 bundle 在首次 WinUI 激活即失败，移除该属性后语言切换不受影响（实测英文偏好下 UI 正确切换）。语言回退改由 PRI 默认承担：系统语言不匹配 zh-CN/en-US 时回退英文。
 - 早期启动失败静默退出：激活前的异常现在会写入 `%TEMP%\autoenvplus-startup-failure.log` 并弹出提示，不再无声消失。
 
 ### Changed
 
 - 发布可追溯性：单文件发布脚本从 bundle 输入清单提取并打印捆绑的 .NET 运行时包版本；
-- 发布门禁：GitHub Release 发布前在 CI 上实际启动签名后的单文件 EXE 与 portable App.exe 冒烟验证——v0.0.3 带病发布的直接原因就是此前没有任何门禁真正启动过产物。
+- 发布门禁：GitHub Release 发布前在 CI 上实际启动签名后的单文件 EXE 与 portable App.exe 冒烟验证——v0.0.3 带病发布的直接原因就是此前没有任何门禁真正启动过产物；冒烟失败时输出窗口枚举快照（hwnd/可见性/标题）与应用日志（`%TEMP%` 与 `RUNNER_TEMP` 下的 `autoenvplus-*.log`），并接受 `MainWindowHandle` 或直接枚举到的可见窗口作为通过条件。
 
 ## 0.0.3 - 2026-10-10
 

@@ -582,6 +582,69 @@ jobs:
           $portableRoot = Join-Path $env:RUNNER_TEMP 'autoenvplus-release-smoke'
           if (Test-Path -LiteralPath $portableRoot) { Remove-Item -LiteralPath $portableRoot -Recurse -Force }
           Expand-Archive -LiteralPath (Join-Path $releaseRoot 'AutoEnvPlus-win-x64-portable.zip') -DestinationPath $portableRoot
+
+          Add-Type -Namespace AutoEnvPlusSmoke -Name WindowProbe -MemberDefinition @'
+            public delegate bool EnumWindowsProc(System.IntPtr hWnd, System.IntPtr lParam);
+            [System.Runtime.InteropServices.DllImport("user32.dll")]
+            public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, System.IntPtr lParam);
+            [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+            public static extern int GetWindowText(System.IntPtr hWnd, System.Text.StringBuilder text, int maxCount);
+            [System.Runtime.InteropServices.DllImport("user32.dll")]
+            public static extern bool IsWindowVisible(System.IntPtr hWnd);
+            [System.Runtime.InteropServices.DllImport("user32.dll")]
+            public static extern uint GetWindowThreadProcessId(System.IntPtr hWnd, out uint processId);
+          '@
+          function Get-AppWindowSnapshot([int]$ProcessId) {
+            $windows = New-Object System.Collections.Generic.List[string]
+            $callback = [AutoEnvPlusSmoke.WindowProbe+EnumWindowsProc]{
+              param($hwnd, $lparam)
+              $ownerPid = [uint32]0
+              [AutoEnvPlusSmoke.WindowProbe]::GetWindowThreadProcessId($hwnd, [ref]$ownerPid) | Out-Null
+              if ($ownerPid -eq [uint32]$ProcessId) {
+                $text = New-Object System.Text.StringBuilder 256
+                [AutoEnvPlusSmoke.WindowProbe]::GetWindowText($hwnd, $text, 256) | Out-Null
+                $visible = [AutoEnvPlusSmoke.WindowProbe]::IsWindowVisible($hwnd)
+                $windows.Add(("hwnd=0x{0:X} visible={1} title=[{2}]" -f $hwnd.ToInt64(), $visible, $text.ToString()))
+              }
+              return $true
+            }
+            [AutoEnvPlusSmoke.WindowProbe]::EnumWindows($callback, [System.IntPtr]::Zero) | Out-Null
+            return $windows
+          }
+          function Write-AppDiagnostics([string]$Label, [int]$ProcessId) {
+            Write-Host "::group::$Label window snapshot"
+            Get-AppWindowSnapshot -ProcessId $ProcessId | ForEach-Object { Write-Host "  $_" }
+            Write-Host '::endgroup::'
+            Write-Host "::group::$Label app logs"
+            $logRoots = @([System.IO.Path]::GetTempPath(), $env:RUNNER_TEMP) | Select-Object -Unique
+            foreach ($logRoot in $logRoots) {
+              Get-ChildItem -LiteralPath $logRoot -Filter 'autoenvplus-*.log' -File -ErrorAction SilentlyContinue |
+                ForEach-Object {
+                  Write-Host "--- $($_.FullName) ---"
+                  Get-Content -LiteralPath $_.FullName -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
+                }
+            }
+            Write-Host '::endgroup::'
+          }
+
+          function Test-AppMainWindow([int]$ProcessId) {
+            # Process.MainWindowHandle misses windows in some runner sessions;
+            # accept either it or a directly enumerated visible window whose
+            # title matches the product window.
+            $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+            if ($null -ne $process -and $process.MainWindowHandle -ne 0 -and
+                $process.MainWindowTitle -like 'AutoEnvPlus v*') {
+              return $true
+            }
+            $snapshot = Get-AppWindowSnapshot -ProcessId $ProcessId
+            foreach ($entry in $snapshot) {
+              if ($entry -match 'visible=True' -and $entry -match 'title=\[AutoEnvPlus v[^]]+\]') {
+                return $true
+              }
+            }
+            return $false
+          }
+
           $targets = @(
             @{ Label = 'single-file AutoEnvPlus-win-x64.exe'; Path = Join-Path $releaseRoot 'AutoEnvPlus-win-x64.exe' },
             @{ Label = 'portable AutoEnvPlus.App.exe'; Path = Join-Path $portableRoot 'AutoEnvPlus.App.exe' }
@@ -593,21 +656,28 @@ jobs:
             Write-Host "Launching $($target.Label)..."
             $process = Start-Process -FilePath $target.Path -PassThru
             $windowSeen = $false
+            $nextSnapshotAt = [DateTime]::UtcNow.AddSeconds(30)
             try {
               $deadline = [DateTime]::UtcNow.AddSeconds(120)
               while ([DateTime]::UtcNow -lt $deadline) {
                 Start-Sleep -Milliseconds 500
                 $process.Refresh()
                 if ($process.HasExited) {
+                  Write-AppDiagnostics -Label $target.Label -ProcessId $process.Id
                   throw "$($target.Label) exited before showing a window (exit code $($process.ExitCode))."
                 }
-                if ($process.MainWindowHandle -ne 0 -and
-                    $process.MainWindowTitle -like 'AutoEnvPlus v*') {
+                if (Test-AppMainWindow -ProcessId $process.Id) {
                   $windowSeen = $true
                   break
                 }
+                if ([DateTime]::UtcNow -ge $nextSnapshotAt) {
+                  $nextSnapshotAt = $nextSnapshotAt.AddSeconds(30)
+                  Write-Host "Still waiting for the main window of $($target.Label)..."
+                  Get-AppWindowSnapshot -ProcessId $process.Id | ForEach-Object { Write-Host "  $_" }
+                }
               }
               if (-not $windowSeen) {
+                Write-AppDiagnostics -Label $target.Label -ProcessId $process.Id
                 throw "$($target.Label) did not present its main window within 120 seconds."
               }
               Write-Host "$($target.Label) presented its main window."

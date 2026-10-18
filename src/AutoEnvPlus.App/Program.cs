@@ -15,6 +15,12 @@ internal static class Program
     [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
     private static extern bool SetDllDirectoryW(string? path);
 
+    [System.Runtime.InteropServices.DllImport(
+        "kernel32.dll",
+        SetLastError = true,
+        CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern System.IntPtr AddDllDirectory(string newDirectory);
+
     [System.STAThreadAttribute]
     private static void Main(string[] args)
     {
@@ -29,10 +35,17 @@ internal static class Program
             // (CLASS_E_CLASSNOTAVAILABLE), killing the app before a window or
             // any log is produced. Put the app base directory (the extraction
             // directory for single-file apps) on the DLL search path so the
-            // catalog resolves. For regular folder layouts this is the app
-            // directory, which the loader already searches, so the call is a
-            // harmless no-op.
+            // catalog resolves. Both APIs are needed: SetDllDirectoryW covers
+            // the legacy search order, while AddDllDirectory covers callers
+            // that pass LOAD_LIBRARY_SEARCH_USER_DIRS/DEFAULT_DIRS, which
+            // ignore the SetDllDirectory entry. For regular folder layouts
+            // this is the app directory, which the loader already searches,
+            // so both calls are harmless no-ops.
             SetDllDirectoryW(AppContext.BaseDirectory);
+            // AddDllDirectory can fail with ERROR_ACCESS_DENIED on directories
+            // with restrictive ACLs; SetDllDirectoryW above still covers the
+            // legacy search order, so a failure here is non-fatal by design.
+            _ = AddDllDirectory(AppContext.BaseDirectory);
 
             ApplyPersistedInterfaceLanguage();
 

@@ -9,10 +9,15 @@
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <UseWinUI>true</UseWinUI>
-    <!-- zh-CN is the product's default/fallback language: the PRI falls back
-         to it when the user's system language matches none of the Strings/
-         candidates, preserving the pre-localization Chinese UI. -->
-    <DefaultLanguage>zh-CN</DefaultLanguage>
+    <!-- Do NOT set DefaultLanguage here. Empirically, setting it (e.g. zh-CN)
+         makes the single-file bundle die at the first Microsoft.UI.Xaml
+         activation with 0x80040111 before any window or log appears, while
+         the identical source without it launches fine. The PRI keeps both
+         zh-CN and en-US qualified sections from Strings/, and the app sets
+         Microsoft.Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride
+         from the persisted preference, so language switching does not need
+         this property. Systems whose language matches neither candidate fall
+         back to the PRI default (en-US) instead of zh-CN. -->
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>true</EnableMsixTooling>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
