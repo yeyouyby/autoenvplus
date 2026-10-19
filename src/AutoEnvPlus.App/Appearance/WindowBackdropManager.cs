@@ -3,6 +3,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Settings;
 using Windows.UI.ViewManagement;
 
@@ -167,7 +168,7 @@ internal sealed class WindowBackdropManager : IDisposable
         {
             ApplySolidFallback(
                 BackdropSelection.SolidUnsupported,
-                "无法读取系统外观设置，已使用可靠的纯色背景。");
+                Loc.Get("Backdrop.Fallback.SettingsUnavailable"));
             return;
         }
 
@@ -189,7 +190,7 @@ internal sealed class WindowBackdropManager : IDisposable
         {
             ApplySolidFallback(
                 BackdropSelection.SolidUnsupported,
-                "无法完成背景能力检测，已使用可靠的纯色背景。");
+                Loc.Get("Backdrop.Fallback.CapabilityProbeFailed"));
             return;
         }
 
@@ -211,7 +212,7 @@ internal sealed class WindowBackdropManager : IDisposable
 
                 ApplySolidFallback(
                     BackdropSelection.SolidUnsupported,
-                    "系统背景材料初始化失败，已自动切换为纯色背景。");
+                    Loc.Get("Backdrop.Fallback.SystemBackdropInitFailed"));
                 return;
             case BackdropSelection.DesktopAcrylic:
                 if (TryApplySystemBackdrop(new DesktopAcrylicBackdrop(), selection))
@@ -221,7 +222,7 @@ internal sealed class WindowBackdropManager : IDisposable
 
                 ApplySolidFallback(
                     BackdropSelection.SolidUnsupported,
-                    "Desktop Acrylic 初始化失败，已自动切换为纯色背景。");
+                    Loc.Get("Backdrop.Fallback.DesktopAcrylicInitFailed"));
                 return;
             case BackdropSelection.SolidHighContrast:
             case BackdropSelection.SolidTransparencyDisabled:
@@ -230,7 +231,7 @@ internal sealed class WindowBackdropManager : IDisposable
                 ApplySolidFallback(selection);
                 return;
             default:
-                throw new InvalidOperationException($"未知背景选择：{selection}");
+                throw new InvalidOperationException(Loc.Format("Backdrop.Selection.Unknown", selection));
         }
     }
 
@@ -380,33 +381,33 @@ internal sealed class WindowBackdropManager : IDisposable
         BackdropSelection.Mica => new(
             selection,
             "Mica",
-            "系统支持 Mica，且“透明效果”已开启。",
+            Loc.Get("Backdrop.Status.Mica.Description"),
             true),
         BackdropSelection.DesktopAcrylic => new(
             selection,
             "Desktop Acrylic",
-            "当前环境不支持 Mica，已使用兼容 Windows 10 的桌面亚克力背景。",
+            Loc.Get("Backdrop.Status.DesktopAcrylic.Description"),
             true),
         BackdropSelection.SolidHighContrast => new(
             selection,
-            "纯色（高对比度）",
-            "系统高对比度已开启；为保证可读性，背景材料已停用。",
+            Loc.Get("Backdrop.Status.SolidHighContrast.Name"),
+            Loc.Get("Backdrop.Status.SolidHighContrast.Description"),
             false),
         BackdropSelection.SolidTransparencyDisabled => new(
             selection,
-            "纯色（透明效果已关闭）",
-            "遵循 Windows“透明效果”设置，背景材料已停用。",
+            Loc.Get("Backdrop.Status.SolidTransparencyDisabled.Name"),
+            Loc.Get("Backdrop.Status.SolidTransparencyDisabled.Description"),
             false),
         BackdropSelection.SolidPreferred => new(
             selection,
-            "纯色（用户设置）",
-            "已按 AutoEnvPlus 外观设置停用背景材料。",
+            Loc.Get("Backdrop.Status.SolidPreferred.Name"),
+            Loc.Get("Backdrop.Status.SolidPreferred.Description"),
             false),
         BackdropSelection.SolidUnsupported => new(
             selection,
-            "纯色（兼容回退）",
-            "当前系统或图形环境不支持可用的 Fluent 背景材料。",
+            Loc.Get("Backdrop.Status.SolidUnsupported.Name"),
+            Loc.Get("Backdrop.Status.SolidUnsupported.Description"),
             false),
-        _ => throw new InvalidOperationException($"未知背景选择：{selection}"),
+        _ => throw new InvalidOperationException(Loc.Format("Backdrop.Selection.Unknown", selection)),
     };
 }

@@ -1,5 +1,6 @@
 using AutoEnvPlus.App.Downloads;
 using AutoEnvPlus.App.Services;
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Environment;
 using AutoEnvPlus.Core.Settings;
 using Microsoft.UI.Xaml;
@@ -67,10 +68,11 @@ public partial class App : Application
         _lastRuntimeErrorDialogAtUtc = DateTimeOffset.UtcNow;
         MessageBoxW(
             System.IntPtr.Zero,
-            $"AutoEnvPlus 遇到未处理的错误，界面可能处于不一致状态。{Environment.NewLine}{Environment.NewLine}"
-                + $"{exception.GetType().Name}: {exception.Message}{Environment.NewLine}{Environment.NewLine}"
-                + "详细信息已写入临时目录的 autoenvplus-runtime-error.log。"
-                + "建议保存正在进行的工作后重启应用。",
+            Loc.Get("App.UnhandledError.Intro")
+                + Environment.NewLine + Environment.NewLine
+                + $"{exception.GetType().Name}: {exception.Message}"
+                + Environment.NewLine + Environment.NewLine
+                + Loc.Get("App.UnhandledError.Details"),
             "AutoEnvPlus",
             0x00000010u /* MB_ICONERROR */);
         args.Handled = true;
@@ -110,9 +112,11 @@ public partial class App : Application
 
         MessageBoxW(
             System.IntPtr.Zero,
-            $"AutoEnvPlus 启动失败，即将退出。{Environment.NewLine}{Environment.NewLine}"
-                + $"{exception.GetType().Name}: {exception.Message}{Environment.NewLine}{Environment.NewLine}"
-                + "详细信息已写入临时目录的 autoenvplus-startup-failure.log。",
+            Loc.Get("App.StartupFailure.Intro")
+                + Environment.NewLine + Environment.NewLine
+                + $"{exception.GetType().Name}: {exception.Message}"
+                + Environment.NewLine + Environment.NewLine
+                + Loc.Get("App.StartupFailure.Details"),
             "AutoEnvPlus",
             0x00000010u /* MB_ICONERROR */);
         Environment.Exit(1);
@@ -134,9 +138,9 @@ public partial class App : Application
                 {
                     MessageBoxW(
                         System.IntPtr.Zero,
-                        "AutoEnvPlus 已在运行，但未能切换到现有窗口。"
-                            + $"{Environment.NewLine}{Environment.NewLine}"
-                            + "同时运行两个实例会并发修改同一受管目录，因此第二个实例不会启动。",
+                        Loc.Get("App.SingleInstance.SwitchFailed")
+                            + Environment.NewLine + Environment.NewLine
+                            + Loc.Get("App.SingleInstance.Explanation"),
                         "AutoEnvPlus",
                         0x00000030u /* MB_ICONWARNING */);
                 }

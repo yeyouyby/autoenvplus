@@ -3964,4 +3964,164 @@ If the profile was modified after installation, AutoEnvPlus refuses to overwrite
   <data name="Diagnostics.Scan.AccessibleName" xml:space="preserve">
     <value>Start environment scan</value>
   </data>
+
+  <data name="App.UnhandledError.Intro" xml:space="preserve">
+    <value>AutoEnvPlus hit an unhandled error and the UI may be in an inconsistent state.</value>
+  </data>
+  <data name="App.UnhandledError.Details" xml:space="preserve">
+    <value>Details were written to autoenvplus-runtime-error.log in the temp directory. Save your work and restart the app.</value>
+  </data>
+  <data name="App.StartupFailure.Intro" xml:space="preserve">
+    <value>AutoEnvPlus failed to start and will now exit.</value>
+  </data>
+  <data name="App.StartupFailure.Details" xml:space="preserve">
+    <value>Details were written to autoenvplus-startup-failure.log in the temp directory.</value>
+  </data>
+  <data name="App.SingleInstance.SwitchFailed" xml:space="preserve">
+    <value>AutoEnvPlus is already running, but the existing window could not be activated.</value>
+  </data>
+  <data name="App.SingleInstance.Explanation" xml:space="preserve">
+    <value>Two instances would modify the same managed directory concurrently, so the second instance will not start.</value>
+  </data>
+  <data name="Backdrop.Fallback.SettingsUnavailable" xml:space="preserve">
+    <value>System appearance settings could not be read; a reliable solid background is in use.</value>
+  </data>
+  <data name="Backdrop.Fallback.CapabilityProbeFailed" xml:space="preserve">
+    <value>Backdrop capability detection could not be completed; a reliable solid background is in use.</value>
+  </data>
+  <data name="Backdrop.Fallback.SystemBackdropInitFailed" xml:space="preserve">
+    <value>The system backdrop material failed to initialize; a solid background is used instead.</value>
+  </data>
+  <data name="Backdrop.Fallback.DesktopAcrylicInitFailed" xml:space="preserve">
+    <value>Desktop Acrylic failed to initialize; a solid background is used instead.</value>
+  </data>
+  <data name="Backdrop.Selection.Unknown" xml:space="preserve">
+    <value>Unknown backdrop selection: {0}</value>
+  </data>
+  <data name="Backdrop.Status.Mica.Description" xml:space="preserve">
+    <value>Mica is supported on this system and transparency effects are on.</value>
+  </data>
+  <data name="Backdrop.Status.DesktopAcrylic.Description" xml:space="preserve">
+    <value>Mica is not supported in this environment; the Windows 10-compatible Desktop Acrylic backdrop is in use.</value>
+  </data>
+  <data name="Backdrop.Status.SolidHighContrast.Name" xml:space="preserve">
+    <value>Solid (high contrast)</value>
+  </data>
+  <data name="Backdrop.Status.SolidHighContrast.Description" xml:space="preserve">
+    <value>System high contrast is on; backdrop materials are disabled for readability.</value>
+  </data>
+  <data name="Backdrop.Status.SolidTransparencyDisabled.Name" xml:space="preserve">
+    <value>Solid (transparency effects off)</value>
+  </data>
+  <data name="Backdrop.Status.SolidTransparencyDisabled.Description" xml:space="preserve">
+    <value>Following the Windows transparency effects setting, backdrop materials are disabled.</value>
+  </data>
+  <data name="Backdrop.Status.SolidPreferred.Name" xml:space="preserve">
+    <value>Solid (user setting)</value>
+  </data>
+  <data name="Backdrop.Status.SolidPreferred.Description" xml:space="preserve">
+    <value>Backdrop materials are disabled per the AutoEnvPlus appearance setting.</value>
+  </data>
+  <data name="Backdrop.Status.SolidUnsupported.Name" xml:space="preserve">
+    <value>Solid (compatibility fallback)</value>
+  </data>
+  <data name="Backdrop.Status.SolidUnsupported.Description" xml:space="preserve">
+    <value>This system or graphics environment does not support the available Fluent backdrop materials.</value>
+  </data>
+  <data name="Download.Failure.HttpStatus" xml:space="preserve">
+    <value>The download endpoint returned HTTP {0}. Query parameters in the request URL are not shown.</value>
+  </data>
+  <data name="Download.Failure.NoConnection" xml:space="preserve">
+    <value>A managed download connection could not be established. Query parameters in the request URL are not shown.</value>
+  </data>
+  <data name="CoreError.Integrity.HashMismatch" xml:space="preserve">
+    <value>$1 hash mismatch (file $2): expected $3, received $4. The content was not committed to the managed directory.</value>
+  </data>
+  <data name="CoreError.Integrity.ArchivePayloadMissing" xml:space="preserve">
+    <value>The archive payload root does not contain the expected executable &apos;$1&apos;; the package contents do not match the manifest declaration.</value>
+  </data>
+  <data name="CoreError.Integrity.SignatureVerificationMismatch" xml:space="preserve">
+    <value>The post-install signature verification does not match the install plan; the content may have been tampered with during installation.</value>
+  </data>
+  <data name="CoreError.Integrity.DownloadLengthMismatch" xml:space="preserve">
+    <value>The assembled download length does not match the probed length; the remote content may have changed during transfer.</value>
+  </data>
+  <data name="CoreError.Integrity.SegmentContentRangeMismatch" xml:space="preserve">
+    <value>Segment $1 returned a Content-Range that does not match the requested range; the remote content may have changed.</value>
+  </data>
+  <data name="CoreError.Integrity.MissingContentRange" xml:space="preserve">
+    <value>The server did not return Content-Range, so a segmented download is not possible.</value>
+  </data>
+  <data name="CoreError.Integrity.SegmentedRequiresKnownLength" xml:space="preserve">
+    <value>Segmented downloads require a known content length; the server did not provide one.</value>
+  </data>
+  <data name="CoreError.Integrity.SegmentedRequiresStableEntity" xml:space="preserve">
+    <value>Segmented downloads require a stable entity identity; the server response does not provide one.</value>
+  </data>
+  <data name="CoreError.Integrity.InvalidExpectedHash" xml:space="preserve">
+    <value>The expected hash must be a valid $1 hexadecimal value.</value>
+  </data>
+  <data name="CoreError.Destination.AlreadyExists" xml:space="preserve">
+    <value>The destination file &apos;$1&apos; already exists; resolve the existing file first or choose to overwrite it.</value>
+  </data>
+  <data name="CoreError.Destination.MustBeDirectChild" xml:space="preserve">
+    <value>The destination must be a direct child of the managed download library.</value>
+  </data>
+  <data name="CoreError.Destination.UnapprovedExtension" xml:space="preserve">
+    <value>The destination must use an approved package or archive extension.</value>
+  </data>
+  <data name="CoreError.Destination.NotRegularFile" xml:space="preserve">
+    <value>The destination is not a regular file (it may be a directory or device).</value>
+  </data>
+  <data name="CoreError.Destination.ReparsePoint" xml:space="preserve">
+    <value>The destination is a reparse point and cannot be replaced.</value>
+  </data>
+  <data name="CoreError.Destination.StagingDirectoryFailed" xml:space="preserve">
+    <value>A unique transfer staging directory could not be allocated.</value>
+  </data>
+  <data name="CoreError.Library.ManifestEmpty" xml:space="preserve">
+    <value>The download library manifest is empty.</value>
+  </data>
+  <data name="CoreError.Library.ManifestInvalidJson" xml:space="preserve">
+    <value>The download library manifest is not valid JSON.</value>
+  </data>
+  <data name="CoreError.Library.ConnectionCountInvalid" xml:space="preserve">
+    <value>The connection count must be 1, 2, 4, 8, or 16.</value>
+  </data>
+  <data name="CoreError.Pip.WheelNotTopLevel" xml:space="preserve">
+    <value>The wheel must be a top-level file in the managed downloads library.</value>
+  </data>
+  <data name="CoreError.Environment.InvalidName" xml:space="preserve">
+    <value>Environment names must use 1-64 ASCII letters, digits, periods, underscores, or hyphens, with an alphanumeric first and last character.</value>
+  </data>
+  <data name="CoreError.Project.DirectoryMissing" xml:space="preserve">
+    <value>The project directory does not exist: $1</value>
+  </data>
+  <data name="CoreError.CMake.PresetMismatch" xml:space="preserve">
+    <value>The generated CMake configure preset does not match the AutoEnvPlus template; the file may have changed after it was written.</value>
+  </data>
+  <data name="CoreError.Cache.SourceMissing" xml:space="preserve">
+    <value>The cache source directory does not exist: $1</value>
+  </data>
+  <data name="CoreError.Cache.DirectoryMissing" xml:space="preserve">
+    <value>The cache directory does not exist: $1</value>
+  </data>
+  <data name="CoreError.Cache.IsolationTargetNotAllowed" xml:space="preserve">
+    <value>Cache cleanup cannot target an isolation directory.</value>
+  </data>
+  <data name="CoreError.Cache.MigrationSkipsReparseOrDevice" xml:space="preserve">
+    <value>Cache migration does not follow reparse points or device entries: $1</value>
+  </data>
+  <data name="CoreError.Cache.MigrationSkipsReparse" xml:space="preserve">
+    <value>Cache migration does not follow reparse points: $1</value>
+  </data>
+  <data name="CoreError.Session.PinnedRuntimeMismatch" xml:space="preserve">
+    <value>The pinned $1 runtime does not match the requested kind, architecture, active version selector, or Provider. Refresh the session selection.</value>
+  </data>
+  <data name="CoreError.PowerShell.ProfilePreviewMismatch" xml:space="preserve">
+    <value>The PowerShell Profile preview failed its re-check; the file may have changed after previewing.</value>
+  </data>
+  <data name="CoreError.PowerShell.ModulePreviewMismatch" xml:space="preserve">
+    <value>The PowerShell module preview failed its re-check; the file may have changed after previewing.</value>
+  </data>
 </root>

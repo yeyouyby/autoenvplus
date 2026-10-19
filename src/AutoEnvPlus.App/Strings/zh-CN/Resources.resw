@@ -3967,4 +3967,164 @@ AutoEnvPlus 只会写入用户级 {2}。不会自动迁移语言工具、缓存�
   <data name="Diagnostics.Scan.AccessibleName" xml:space="preserve">
     <value>开始环境诊断扫描</value>
   </data>
+
+  <data name="App.UnhandledError.Intro" xml:space="preserve">
+    <value>AutoEnvPlus 遇到未处理的错误，界面可能处于不一致状态。</value>
+  </data>
+  <data name="App.UnhandledError.Details" xml:space="preserve">
+    <value>详细信息已写入临时目录的 autoenvplus-runtime-error.log。建议保存正在进行的工作后重启应用。</value>
+  </data>
+  <data name="App.StartupFailure.Intro" xml:space="preserve">
+    <value>AutoEnvPlus 启动失败，即将退出。</value>
+  </data>
+  <data name="App.StartupFailure.Details" xml:space="preserve">
+    <value>详细信息已写入临时目录的 autoenvplus-startup-failure.log。</value>
+  </data>
+  <data name="App.SingleInstance.SwitchFailed" xml:space="preserve">
+    <value>AutoEnvPlus 已在运行，但未能切换到现有窗口。</value>
+  </data>
+  <data name="App.SingleInstance.Explanation" xml:space="preserve">
+    <value>同时运行两个实例会并发修改同一受管目录，因此第二个实例不会启动。</value>
+  </data>
+  <data name="Backdrop.Fallback.SettingsUnavailable" xml:space="preserve">
+    <value>无法读取系统外观设置，已使用可靠的纯色背景。</value>
+  </data>
+  <data name="Backdrop.Fallback.CapabilityProbeFailed" xml:space="preserve">
+    <value>无法完成背景能力检测，已使用可靠的纯色背景。</value>
+  </data>
+  <data name="Backdrop.Fallback.SystemBackdropInitFailed" xml:space="preserve">
+    <value>系统背景材料初始化失败，已自动切换为纯色背景。</value>
+  </data>
+  <data name="Backdrop.Fallback.DesktopAcrylicInitFailed" xml:space="preserve">
+    <value>Desktop Acrylic 初始化失败，已自动切换为纯色背景。</value>
+  </data>
+  <data name="Backdrop.Selection.Unknown" xml:space="preserve">
+    <value>未知背景选择：{0}</value>
+  </data>
+  <data name="Backdrop.Status.Mica.Description" xml:space="preserve">
+    <value>系统支持 Mica，且“透明效果”已开启。</value>
+  </data>
+  <data name="Backdrop.Status.DesktopAcrylic.Description" xml:space="preserve">
+    <value>当前环境不支持 Mica，已使用兼容 Windows 10 的桌面亚克力背景。</value>
+  </data>
+  <data name="Backdrop.Status.SolidHighContrast.Name" xml:space="preserve">
+    <value>纯色（高对比度）</value>
+  </data>
+  <data name="Backdrop.Status.SolidHighContrast.Description" xml:space="preserve">
+    <value>系统高对比度已开启；为保证可读性，背景材料已停用。</value>
+  </data>
+  <data name="Backdrop.Status.SolidTransparencyDisabled.Name" xml:space="preserve">
+    <value>纯色（透明效果已关闭）</value>
+  </data>
+  <data name="Backdrop.Status.SolidTransparencyDisabled.Description" xml:space="preserve">
+    <value>遵循 Windows“透明效果”设置，背景材料已停用。</value>
+  </data>
+  <data name="Backdrop.Status.SolidPreferred.Name" xml:space="preserve">
+    <value>纯色（用户设置）</value>
+  </data>
+  <data name="Backdrop.Status.SolidPreferred.Description" xml:space="preserve">
+    <value>已按 AutoEnvPlus 外观设置停用背景材料。</value>
+  </data>
+  <data name="Backdrop.Status.SolidUnsupported.Name" xml:space="preserve">
+    <value>纯色（兼容回退）</value>
+  </data>
+  <data name="Backdrop.Status.SolidUnsupported.Description" xml:space="preserve">
+    <value>当前系统或图形环境不支持可用的 Fluent 背景材料。</value>
+  </data>
+  <data name="Download.Failure.HttpStatus" xml:space="preserve">
+    <value>下载端点返回 HTTP {0}。请求地址中的查询参数未显示。</value>
+  </data>
+  <data name="Download.Failure.NoConnection" xml:space="preserve">
+    <value>无法建立受管下载连接。请求地址中的查询参数未显示。</value>
+  </data>
+  <data name="CoreError.Integrity.HashMismatch" xml:space="preserve">
+    <value>$1 校验不匹配（文件 $2）：预期 $3，实际 $4。内容未提交到受管目录。</value>
+  </data>
+  <data name="CoreError.Integrity.ArchivePayloadMissing" xml:space="preserve">
+    <value>压缩包根目录中没有预期的可执行文件“$1”；包内容与清单声明不符。</value>
+  </data>
+  <data name="CoreError.Integrity.SignatureVerificationMismatch" xml:space="preserve">
+    <value>安装完成后的签名复核与安装计划不一致；内容可能在安装过程中被篡改。</value>
+  </data>
+  <data name="CoreError.Integrity.DownloadLengthMismatch" xml:space="preserve">
+    <value>下载完成后的总长度与探测到的长度不一致；远端内容可能在传输中发生了变化。</value>
+  </data>
+  <data name="CoreError.Integrity.SegmentContentRangeMismatch" xml:space="preserve">
+    <value>第 $1 段返回的 Content-Range 与请求范围不一致；远端内容可能已变化。</value>
+  </data>
+  <data name="CoreError.Integrity.MissingContentRange" xml:space="preserve">
+    <value>服务器未返回 Content-Range，无法进行分段下载。</value>
+  </data>
+  <data name="CoreError.Integrity.SegmentedRequiresKnownLength" xml:space="preserve">
+    <value>分段下载需要已知的内容长度；服务器未提供。</value>
+  </data>
+  <data name="CoreError.Integrity.SegmentedRequiresStableEntity" xml:space="preserve">
+    <value>分段下载需要稳定的内容标识；服务器响应不支持。</value>
+  </data>
+  <data name="CoreError.Integrity.InvalidExpectedHash" xml:space="preserve">
+    <value>预期摘要必须是有效的 $1 十六进制值。</value>
+  </data>
+  <data name="CoreError.Destination.AlreadyExists" xml:space="preserve">
+    <value>目标文件“$1”已存在；请先处理同名文件或选择覆盖。</value>
+  </data>
+  <data name="CoreError.Destination.MustBeDirectChild" xml:space="preserve">
+    <value>目标必须是受管下载库的直接子文件。</value>
+  </data>
+  <data name="CoreError.Destination.UnapprovedExtension" xml:space="preserve">
+    <value>目标文件扩展名必须是受支持的包或压缩包格式。</value>
+  </data>
+  <data name="CoreError.Destination.NotRegularFile" xml:space="preserve">
+    <value>目标不是普通文件（可能是目录或设备）。</value>
+  </data>
+  <data name="CoreError.Destination.ReparsePoint" xml:space="preserve">
+    <value>目标是重解析点，不能替换。</value>
+  </data>
+  <data name="CoreError.Destination.StagingDirectoryFailed" xml:space="preserve">
+    <value>无法分配唯一的传输暂存目录。</value>
+  </data>
+  <data name="CoreError.Library.ManifestEmpty" xml:space="preserve">
+    <value>下载库清单为空。</value>
+  </data>
+  <data name="CoreError.Library.ManifestInvalidJson" xml:space="preserve">
+    <value>下载库清单不是有效的 JSON。</value>
+  </data>
+  <data name="CoreError.Library.ConnectionCountInvalid" xml:space="preserve">
+    <value>连接数必须是 1、2、4、8 或 16。</value>
+  </data>
+  <data name="CoreError.Pip.WheelNotTopLevel" xml:space="preserve">
+    <value>wheel 文件必须位于受管下载库顶层。</value>
+  </data>
+  <data name="CoreError.Environment.InvalidName" xml:space="preserve">
+    <value>环境名称必须使用 1-64 个 ASCII 字母、数字、点、下划线或连字符，且首尾为字母或数字。</value>
+  </data>
+  <data name="CoreError.Project.DirectoryMissing" xml:space="preserve">
+    <value>项目目录不存在：$1</value>
+  </data>
+  <data name="CoreError.CMake.PresetMismatch" xml:space="preserve">
+    <value>CMake 配置预设与 AutoEnvPlus 模板不一致；文件可能在写入后被修改。</value>
+  </data>
+  <data name="CoreError.Cache.SourceMissing" xml:space="preserve">
+    <value>缓存源目录不存在：$1</value>
+  </data>
+  <data name="CoreError.Cache.DirectoryMissing" xml:space="preserve">
+    <value>缓存目录不存在：$1</value>
+  </data>
+  <data name="CoreError.Cache.IsolationTargetNotAllowed" xml:space="preserve">
+    <value>缓存清理不能以隔离目录为目标。</value>
+  </data>
+  <data name="CoreError.Cache.MigrationSkipsReparseOrDevice" xml:space="preserve">
+    <value>缓存迁移不跟随重解析点或设备项：$1</value>
+  </data>
+  <data name="CoreError.Cache.MigrationSkipsReparse" xml:space="preserve">
+    <value>缓存迁移不跟随重解析点：$1</value>
+  </data>
+  <data name="CoreError.Session.PinnedRuntimeMismatch" xml:space="preserve">
+    <value>固定的 $1 运行时与请求的类型、架构、版本选择器或 Provider 不一致；请刷新会话选择。</value>
+  </data>
+  <data name="CoreError.PowerShell.ProfilePreviewMismatch" xml:space="preserve">
+    <value>PowerShell Profile 预览复核失败；文件可能在预览后发生了变化。</value>
+  </data>
+  <data name="CoreError.PowerShell.ModulePreviewMismatch" xml:space="preserve">
+    <value>PowerShell 模块预览复核失败；文件可能在预览后发生了变化。</value>
+  </data>
 </root>

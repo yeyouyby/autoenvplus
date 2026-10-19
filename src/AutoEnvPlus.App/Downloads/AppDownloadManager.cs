@@ -1,3 +1,4 @@
+using AutoEnvPlus.App.Text;
 using AutoEnvPlus.Core.Downloads;
 using AutoEnvPlus.Core.Networking;
 
@@ -399,6 +400,6 @@ internal sealed class AppDownloadManager
 
     internal static string DescribeNetworkFailure(HttpRequestException exception) =>
         exception.StatusCode is System.Net.HttpStatusCode statusCode
-            ? $"下载端点返回 HTTP {(int)statusCode}。请求地址中的查询参数未显示。"
-            : "无法建立受管下载连接。请求地址中的查询参数未显示。";
+            ? Loc.Format("Download.Failure.HttpStatus", (int)statusCode)
+            : Loc.Get("Download.Failure.NoConnection");
 }
