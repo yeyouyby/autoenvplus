@@ -122,6 +122,40 @@ public partial class App : Application
         Environment.Exit(1);
     }
 
+    /// <summary>
+    /// The first launch of a freshly downloaded single-file EXE can hit a
+    /// transient <see cref="Microsoft.UI.Xaml.Markup.XamlParseException"/>:
+    /// security software scanning the new download briefly blocks reads of
+    /// the extracted XBF/PRI payload. The identical binary then starts
+    /// cleanly on the next attempt, so retry a few times with a growing
+    /// delay before surfacing the failure dialog.
+    /// </summary>
+    private const int MainWindowCreateAttempts = 3;
+
+    private static async Task<MainWindow> CreateMainWindowWithRetryAsync(
+        AutoEnvPlusApplicationSettings settings)
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return new MainWindow(settings);
+            }
+            catch (Microsoft.UI.Xaml.Markup.XamlParseException exception)
+                when (attempt < MainWindowCreateAttempts)
+            {
+                System.IO.File.AppendAllText(
+                    System.IO.Path.Combine(
+                        System.IO.Path.GetTempPath(),
+                        "autoenvplus-startup-retry.log"),
+                    $"[{DateTimeOffset.Now:O}] attempt {attempt} failed: "
+                        + exception.Message
+                        + Environment.NewLine);
+                await Task.Delay(TimeSpan.FromSeconds(2 * attempt));
+            }
+        }
+    }
+
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         try
@@ -169,7 +203,7 @@ public partial class App : Application
             }
 
             CurrentSettings = settings;
-            MainWindowInstance = new MainWindow(settings);
+            MainWindowInstance = await CreateMainWindowWithRetryAsync(settings);
             MainWindowInstance.Activate();
             if (managedRoot is not null)
             {
