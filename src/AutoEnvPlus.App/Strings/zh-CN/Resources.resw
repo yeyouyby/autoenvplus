@@ -4127,4 +4127,1238 @@ AutoEnvPlus 只会写入用户级 {2}。不会自动迁移语言工具、缓存�
   <data name="CoreError.PowerShell.ModulePreviewMismatch" xml:space="preserve">
     <value>PowerShell 模块预览复核失败；文件可能在预览后发生了变化。</value>
   </data>
+
+  <data name="LanguageDetail.Back.AccessibleName" xml:space="preserve">
+    <value>返回语言列表</value>
+  </data>
+  <data name="LanguageDetail.Progress.AccessibleName" xml:space="preserve">
+    <value>语言工具操作进度</value>
+  </data>
+  <data name="LanguageDetail.Scan.AccessibleName" xml:space="preserve">
+    <value>扫描当前语言</value>
+  </data>
+  <data name="LanguageDetail.Scan.ToolTip" xml:space="preserve">
+    <value>显式扫描当前语言的 PATH 与专用工具</value>
+  </data>
+  <data name="LanguageDetail.CancelOperation.AccessibleName" xml:space="preserve">
+    <value>取消当前操作</value>
+  </data>
+  <data name="LanguageDetail.Homepage.Label" xml:space="preserve">
+    <value>官方主页</value>
+  </data>
+  <data name="LanguageDetail.Pivot.Overview" xml:space="preserve">
+    <value>概览</value>
+  </data>
+  <data name="LanguageDetail.Pivot.Tools" xml:space="preserve">
+    <value>工具与版本</value>
+  </data>
+  <data name="LanguageDetail.Pivot.Sources" xml:space="preserve">
+    <value>Provider 来源</value>
+  </data>
+  <data name="LanguageDetail.Pivot.Project" xml:space="preserve">
+    <value>项目环境</value>
+  </data>
+  <data name="LanguageDetail.Pivot.Plugins" xml:space="preserve">
+    <value>Provider 插件</value>
+  </data>
+  <data name="LanguageDetail.Common.LanguageTool" xml:space="preserve">
+    <value>语言工具</value>
+  </data>
+  <data name="LanguageDetail.Overview.DetectedLabel" xml:space="preserve">
+    <value>PATH 已检测</value>
+  </data>
+  <data name="LanguageDetail.Overview.ManagedLabel" xml:space="preserve">
+    <value>AutoEnvPlus 安装适配器</value>
+  </data>
+  <data name="LanguageDetail.Overview.DefinitionTitle" xml:space="preserve">
+    <value>语言定义</value>
+  </data>
+  <data name="LanguageDetail.Overview.HierarchyInfoMessage" xml:space="preserve">
+    <value>语言是稳定配置容器；每个语言工具拥有自己的 Provider，Provider Source 只能在其归属 Provider 下配置。目录声明不会自动获得安装、切换或卸载能力。</value>
+  </data>
+  <data name="LanguageDetail.Tools.InfoTitle" xml:space="preserve">
+    <value>操作能力以实际适配器为准</value>
+  </data>
+  <data name="LanguageDetail.Tools.InfoMessage" xml:space="preserve">
+    <value>“AutoEnvPlus 操作”表示应用内有实际适配器；“目录元数据”只声明厂商、许可证、发现命令和 Provider。受管卸载只处理 AutoEnvPlus 注册的运行时，并在执行前重新检查全局和项目引用。</value>
+  </data>
+  <data name="LanguageDetail.Tools.ListAccessibleName" xml:space="preserve">
+    <value>当前语言的语言工具</value>
+  </data>
+  <data name="LanguageDetail.Tools.EmptyAccessibleName" xml:space="preserve">
+    <value>当前语言没有可显示的语言工具</value>
+  </data>
+  <data name="LanguageDetail.Tools.EmptyTitle" xml:space="preserve">
+    <value>没有可显示的语言工具</value>
+  </data>
+  <data name="LanguageDetail.Tools.EmptyMessage" xml:space="preserve">
+    <value>当前目录或实验性工具显示策略没有返回工具项。</value>
+  </data>
+  <data name="LanguageDetail.Tool.Badge.Detected" xml:space="preserve">
+    <value>已检测</value>
+  </data>
+  <data name="LanguageDetail.Tool.Badge.Managed" xml:space="preserve">
+    <value>AutoEnvPlus 操作</value>
+  </data>
+  <data name="LanguageDetail.Tool.Badge.Metadata" xml:space="preserve">
+    <value>目录元数据</value>
+  </data>
+  <data name="LanguageDetail.Tool.MetadataLinksAccessibleName" xml:space="preserve">
+    <value>目录元数据外部链接</value>
+  </data>
+  <data name="LanguageDetail.Tool.SwitchToolTip" xml:space="preserve">
+    <value>全局、项目或新终端会话</value>
+  </data>
+  <data name="LanguageDetail.Tool.UninstallToolTip" xml:space="preserve">
+    <value>卸载 AutoEnvPlus 受管版本</value>
+  </data>
+  <data name="LanguageDetail.Sources.InfoTitle" xml:space="preserve">
+    <value>精确 Provider Source 归属</value>
+  </data>
+  <data name="LanguageDetail.Sources.AddAccessibleName" xml:space="preserve">
+    <value>为当前语言的 Provider 添加自定义源</value>
+  </data>
+  <data name="LanguageDetail.Sources.AddCustom" xml:space="preserve">
+    <value>添加自定义源</value>
+  </data>
+  <data name="LanguageDetail.Sources.ListAccessibleName" xml:space="preserve">
+    <value>当前语言的 Provider Source</value>
+  </data>
+  <data name="LanguageDetail.Sources.EmptyAccessibleName" xml:space="preserve">
+    <value>此语言的 Provider 暂未声明 Provider Source</value>
+  </data>
+  <data name="LanguageDetail.Sources.EmptyTitle" xml:space="preserve">
+    <value>没有 Provider Source</value>
+  </data>
+  <data name="LanguageDetail.Sources.EmptyMessage" xml:space="preserve">
+    <value>此语言的 Provider 暂未声明来源槽；通用代理策略仍可生效。</value>
+  </data>
+  <data name="LanguageDetail.Project.PathHeader" xml:space="preserve">
+    <value>项目目录</value>
+  </data>
+  <data name="LanguageDetail.Project.PathPlaceholder" xml:space="preserve">
+    <value>选择一个项目目录</value>
+  </data>
+  <data name="LanguageDetail.Project.ChooseAccessibleName" xml:space="preserve">
+    <value>选择项目目录</value>
+  </data>
+  <data name="LanguageDetail.Project.ParseLabel" xml:space="preserve">
+    <value>解析虚拟环境</value>
+  </data>
+  <data name="LanguageDetail.Project.InfoTitle" xml:space="preserve">
+    <value>等待选择项目</value>
+  </data>
+  <data name="LanguageDetail.Project.InfoMessage" xml:space="preserve">
+    <value>只读取固定候选路径和项目元数据，不递归扫描、不跟随重解析点，也不执行外部命令。</value>
+  </data>
+  <data name="LanguageDetail.Plugins.SectionTitle" xml:space="preserve">
+    <value>此语言的 Provider 插件</value>
+  </data>
+  <data name="LanguageDetail.Plugins.SectionSubtitle" xml:space="preserve">
+    <value>只显示桥接到当前语言工具类型的插件；导入、启用和停用均留在此语言上下文。</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ImportAccessibleName" xml:space="preserve">
+    <value>为当前语言导入 Provider 插件</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ImportLabel" xml:space="preserve">
+    <value>导入 Provider</value>
+  </data>
+  <data name="LanguageDetail.Plugins.TrustInfoTitle" xml:space="preserve">
+    <value>插件信任边界</value>
+  </data>
+  <data name="LanguageDetail.Plugins.TrustInfoMessage" xml:space="preserve">
+    <value>语言工具 Provider 插件仍是受限声明式 ZIP 目录：不能加载 DLL、脚本、任意命令、注册表或环境钩子。第三方 checksum 不等于官方签名。</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ListAccessibleName" xml:space="preserve">
+    <value>当前语言的 Provider 插件</value>
+  </data>
+  <data name="LanguageDetail.Plugins.EmptyAccessibleName" xml:space="preserve">
+    <value>此语言没有 Provider 插件</value>
+  </data>
+  <data name="LanguageDetail.Plugins.EmptyText" xml:space="preserve">
+    <value>此语言当前没有可桥接的语言工具 Provider 插件。</value>
+  </data>
+  <data name="LanguageDetail.Plugin.DeleteToolTip" xml:space="preserve">
+    <value>删除 Provider 插件</value>
+  </data>
+  <data name="LanguageDetail.Scan.BusyTitle" xml:space="preserve">
+    <value>正在扫描当前语言</value>
+  </data>
+  <data name="LanguageDetail.Scan.BusyMessage" xml:space="preserve">
+    <value>只检查此语言声明的 PATH 命令；不会运行版本命令或访问网络。</value>
+  </data>
+  <data name="LanguageDetail.Scan.CompletedTitle" xml:space="preserve">
+    <value>当前语言扫描已完成</value>
+  </data>
+  <data name="LanguageDetail.Scan.CompletedMessage" xml:space="preserve">
+    <value>已更新 {0} 的库存快照；检测到 {1} 个工具。</value>
+  </data>
+  <data name="LanguageDetail.Scan.CancelledTitle" xml:space="preserve">
+    <value>当前语言扫描已取消</value>
+  </data>
+  <data name="LanguageDetail.Scan.CancelledMessage" xml:space="preserve">
+    <value>未完成结果没有写入库存快照。</value>
+  </data>
+  <data name="LanguageDetail.Scan.FailedTitle" xml:space="preserve">
+    <value>无法扫描当前语言</value>
+  </data>
+  <data name="LanguageDetail.Header.Subtitle" xml:space="preserve">
+    <value>{0} · 编译器工具与运行时（语言工具）</value>
+  </data>
+  <data name="LanguageDetail.Definition.Id" xml:space="preserve">
+    <value>稳定 ID：{0}</value>
+  </data>
+  <data name="LanguageDetail.Definition.AliasesPrefix" xml:space="preserve">
+    <value>别名：</value>
+  </data>
+  <data name="LanguageDetail.Definition.NoneValue" xml:space="preserve">
+    <value>无</value>
+  </data>
+  <data name="LanguageDetail.AliasSeparator" xml:space="preserve">
+    <value>、</value>
+  </data>
+  <data name="LanguageDetail.Definition.ExtensionsPrefix" xml:space="preserve">
+    <value>文件扩展名：</value>
+  </data>
+  <data name="LanguageDetail.Definition.NoExtensions" xml:space="preserve">
+    <value>无固定扩展名</value>
+  </data>
+  <data name="LanguageDetail.Definition.VisibilityDefault" xml:space="preserve">
+    <value>显示策略：Top 10 默认语言；仍可由用户显式隐藏。</value>
+  </data>
+  <data name="LanguageDetail.Definition.VisibilityOptIn" xml:space="preserve">
+    <value>显示策略：PATH 检测或用户显式启用后进入有效集合。</value>
+  </data>
+  <data name="LanguageDetail.Load.BusyTitle" xml:space="preserve">
+    <value>正在读取语言工具</value>
+  </data>
+  <data name="LanguageDetail.Load.BusyMessage" xml:space="preserve">
+    <value>加载库存快照、托管版本和 Provider 状态…</value>
+  </data>
+  <data name="LanguageDetail.PackageManager.None" xml:space="preserve">
+    <value>此语言目录没有声明包管理工具。</value>
+  </data>
+  <data name="LanguageDetail.PackageManager.SummaryPrefix" xml:space="preserve">
+    <value>目录声明的包管理工具：</value>
+  </data>
+  <data name="LanguageDetail.Load.ReadyTitle" xml:space="preserve">
+    <value>语言详情已就绪</value>
+  </data>
+  <data name="LanguageDetail.Load.ReadyMessage" xml:space="preserve">
+    <value>{0} 个语言工具 · {1} 个已检测 · {2} 个 AutoEnvPlus 安装适配器 · {3} 个目录元数据项</value>
+  </data>
+  <data name="LanguageDetail.Load.FailedTitle" xml:space="preserve">
+    <value>无法加载语言详情</value>
+  </data>
+  <data name="LanguageDetail.Separator" xml:space="preserve">
+    <value>；</value>
+  </data>
+  <data name="LanguageDetail.Tool.WindowsSdkNone" xml:space="preserve">
+    <value>未发现完整 Windows SDK</value>
+  </data>
+  <data name="LanguageDetail.Tool.DiscoveredPrefix" xml:space="preserve">
+    <value>已发现：</value>
+  </data>
+  <data name="LanguageDetail.Tool.VersionUnknown" xml:space="preserve">
+    <value>版本未知</value>
+  </data>
+  <data name="LanguageDetail.Tool.ManagedVersionsPrefix" xml:space="preserve">
+    <value>AutoEnvPlus 受管版本（{0}）：</value>
+  </data>
+  <data name="LanguageDetail.Tool.PathSummary" xml:space="preserve">
+    <value>PATH：{0}</value>
+  </data>
+  <data name="LanguageDetail.Tool.NoVersions" xml:space="preserve">
+    <value>未发现托管版本或 PATH 入口</value>
+  </data>
+  <data name="LanguageDetail.Tool.GlobalSelection" xml:space="preserve">
+    <value> · 全局选择：{0}</value>
+  </data>
+  <data name="LanguageDetail.Operation.CancelledTitle" xml:space="preserve">
+    <value>操作已取消</value>
+  </data>
+  <data name="LanguageDetail.Operation.CancelledMessage" xml:space="preserve">
+    <value>未提交的安装已停止。</value>
+  </data>
+  <data name="LanguageDetail.Install.FailedTitle" xml:space="preserve">
+    <value>安装未完成</value>
+  </data>
+  <data name="LanguageDetail.Install.Completed" xml:space="preserve">
+    <value>安装完成</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CancelledTitle" xml:space="preserve">
+    <value>受管版本卸载已取消</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CancelledMessage" xml:space="preserve">
+    <value>运行时注册表、全局选择和项目引用均未修改。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CheckingTitle" xml:space="preserve">
+    <value>正在检查运行时引用</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ReferencedTitle" xml:space="preserve">
+    <value>运行时受引用保护</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ReferencedMessage" xml:space="preserve">
+    <value>发现 {0} 个全局或项目引用；未提供强制卸载，任何文件和状态都未修改。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ReferencedActivity" xml:space="preserve">
+    <value>引用保护阻止卸载（{0} 个引用）。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ConfirmClosedMessage" xml:space="preserve">
+    <value>确认已关闭；运行时注册表、全局选择和项目引用均未修改。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CancelledActivity" xml:space="preserve">
+    <value>用户在最终确认前取消。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.BusyTitle" xml:space="preserve">
+    <value>正在卸载受管运行时</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.IncompleteTitle" xml:space="preserve">
+    <value>卸载未完成，需要检查受管状态</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.FailedTitle" xml:space="preserve">
+    <value>受管运行时未卸载</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.IncompleteMessage" xml:space="preserve">
+    <value>服务报告注册表恢复或隔离目录清理未完全完成；请保留当前状态并运行诊断。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.FailedMessage" xml:space="preserve">
+    <value>计划已变化、出现新引用或受管路径未通过安全检查；请刷新后重新检查。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.IncompleteActivity" xml:space="preserve">
+    <value>一致性恢复或隔离目录清理未完全完成。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.FailedActivity" xml:space="preserve">
+    <value>提交时的引用或状态复核未通过。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.RemovedPendingTitle" xml:space="preserve">
+    <value>运行时已移除，隔离目录待清理</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SucceededTitle" xml:space="preserve">
+    <value>受管运行时已卸载</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.RemovedPendingSuffix" xml:space="preserve">
+    <value>；注册表已移除，但隔离目录仍等待系统释放后清理。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SucceededSuffix" xml:space="preserve">
+    <value>；受管文件和注册表项已移除。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.RemovedPendingActivity" xml:space="preserve">
+    <value>注册表已移除；隔离目录清理待完成。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SucceededActivity" xml:space="preserve">
+    <value>受管文件和注册表项已移除。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.RefreshFailedTitle" xml:space="preserve">
+    <value>运行时已卸载，列表刷新失败</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.RefreshFailedSuffix" xml:space="preserve">
+    <value>；卸载提交已成功，请重新打开语言页面刷新当前列表。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CancelledLateMessage" xml:space="preserve">
+    <value>取消请求已处理；若提交已经开始，服务会尝试恢复一致状态。请刷新列表确认当前状态。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CancelledLateActivity" xml:space="preserve">
+    <value>操作取消；提交开始后由服务执行一致性恢复。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ErrorTitle" xml:space="preserve">
+    <value>无法卸载受管运行时</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ErrorActivity" xml:space="preserve">
+    <value>创建或执行卸载计划失败。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SelectorHeader" xml:space="preserve">
+    <value>受管 Runtime（精确 ID / Provider）</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SelectTitle" xml:space="preserve">
+    <value>选择要卸载的 {0} 版本</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SelectInfoTitle" xml:space="preserve">
+    <value>仅列出 AutoEnvPlus 受管注册项</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SelectInfoMessage" xml:space="preserve">
+    <value>外部安装和仅由目录声明的工具不会出现在此列表。下一步会检查全局配置、已知项目清单和锁文件引用。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CheckReferencesButton" xml:space="preserve">
+    <value>检查引用</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.DetailVersionArch" xml:space="preserve">
+    <value>版本 / 架构</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.DetailInstallRoot" xml:space="preserve">
+    <value>受管安装目录</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ReferencedInfoTitle" xml:space="preserve">
+    <value>引用保护：{0} 个引用</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ReferencedInfoMessage" xml:space="preserve">
+    <value>此页面不会强制卸载被引用的运行时。请先更改全局选择或项目固定，再重新创建计划。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.NoReferencesInfoTitle" xml:space="preserve">
+    <value>未发现引用，仍会在提交前复核</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.NoReferencesInfoMessage" xml:space="preserve">
+    <value>只删除该 Runtime ID 的 AutoEnvPlus 受管目录和注册项；不会卸载外部软件、修改 PATH 或静默强制执行。</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ReferencedDialogTitle" xml:space="preserve">
+    <value>无法卸载被引用的受管运行时</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ConfirmDialogTitle" xml:space="preserve">
+    <value>确认卸载受管运行时</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ConfirmButton" xml:space="preserve">
+    <value>卸载受管版本</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.LogIdentityOutcome" xml:space="preserve">
+    <value>{0}：{1}</value>
+  </data>
+  <data name="LanguageDetail.Reference.GlobalProfile" xml:space="preserve">
+    <value>全局版本选择</value>
+  </data>
+  <data name="LanguageDetail.Reference.ProjectManifest" xml:space="preserve">
+    <value>项目清单引用</value>
+  </data>
+  <data name="LanguageDetail.Reference.ProjectLock" xml:space="preserve">
+    <value>项目锁文件引用</value>
+  </data>
+  <data name="LanguageDetail.Dialogs.Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="LanguageDetail.Dialogs.Back" xml:space="preserve">
+    <value>返回</value>
+  </data>
+  <data name="LanguageDetail.Dialogs.Continue" xml:space="preserve">
+    <value>继续</value>
+  </data>
+  <data name="LanguageDetail.Dialogs.Confirm" xml:space="preserve">
+    <value>确认</value>
+  </data>
+  <data name="LanguageDetail.Dialogs.Delete" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="LanguageDetail.Switch.BusyTitle" xml:space="preserve">
+    <value>正在读取已安装版本</value>
+  </data>
+  <data name="LanguageDetail.Switch.BusyMessage" xml:space="preserve">
+    <value>正在校验 {0} 的受管注册项。</value>
+  </data>
+  <data name="LanguageDetail.Switch.NoVersionsTitle" xml:space="preserve">
+    <value>没有可切换的已安装版本</value>
+  </data>
+  <data name="LanguageDetail.Switch.NoVersionsMessage" xml:space="preserve">
+    <value>受管注册表已刷新；请先安装此语言工具的版本。</value>
+  </data>
+  <data name="LanguageDetail.Switch.VersionHeader" xml:space="preserve">
+    <value>已安装版本</value>
+  </data>
+  <data name="LanguageDetail.Scope.Header" xml:space="preserve">
+    <value>生效范围</value>
+  </data>
+  <data name="LanguageDetail.Scope.GlobalLabel" xml:space="preserve">
+    <value>全局默认</value>
+  </data>
+  <data name="LanguageDetail.Scope.GlobalDescription" xml:space="preserve">
+    <value>保存精确 RuntimeId / ProviderId；项目和会话仍可覆盖。</value>
+  </data>
+  <data name="LanguageDetail.Scope.ProjectLabel" xml:space="preserve">
+    <value>当前项目</value>
+  </data>
+  <data name="LanguageDetail.Scope.ProjectDescription" xml:space="preserve">
+    <value>预览并更新项目根目录的 autoenvplus.toml。</value>
+  </data>
+  <data name="LanguageDetail.Scope.SessionLabel" xml:space="preserve">
+    <value>新终端会话</value>
+  </data>
+  <data name="LanguageDetail.Scope.SessionDescription" xml:space="preserve">
+    <value>打开带精确身份环境变量的新终端，不影响已打开终端。</value>
+  </data>
+  <data name="LanguageDetail.Switch.SelectTitle" xml:space="preserve">
+    <value>选择 {0} 版本</value>
+  </data>
+  <data name="LanguageDetail.Switch.PriorityInfoTitle" xml:space="preserve">
+    <value>选择优先级</value>
+  </data>
+  <data name="LanguageDetail.Switch.PriorityInfoMessage" xml:space="preserve">
+    <value>会话 &gt; 项目 &gt; 全局。三种方式都复用一次配置的 AutoEnvPlus Shim，不会重写用户 PATH。</value>
+  </data>
+  <data name="LanguageDetail.Switch.UnavailableInfoTitle" xml:space="preserve">
+    <value>部分候选不可用</value>
+  </data>
+  <data name="LanguageDetail.Switch.UnavailableInfoMessage" xml:space="preserve">
+    <value>入口文件缺失的注册项不能选择。同版本来自多个 Provider 时会保存精确 RuntimeId 和 ProviderId。</value>
+  </data>
+  <data name="LanguageDetail.Switch.SetGlobalButton" xml:space="preserve">
+    <value>设为全局默认</value>
+  </data>
+  <data name="LanguageDetail.Switch.PreviewProjectButton" xml:space="preserve">
+    <value>预览项目配置</value>
+  </data>
+  <data name="LanguageDetail.Switch.PreviewSessionButton" xml:space="preserve">
+    <value>预览新终端</value>
+  </data>
+  <data name="LanguageDetail.Switch.NotChangedTitle" xml:space="preserve">
+    <value>版本选择未更改</value>
+  </data>
+  <data name="LanguageDetail.Switch.UnchangedMessage" xml:space="preserve">
+    <value>项目、当前会话和 PATH 均未修改。</value>
+  </data>
+  <data name="LanguageDetail.Switch.BusyGlobalTitle" xml:space="preserve">
+    <value>正在切换全局版本</value>
+  </data>
+  <data name="LanguageDetail.Switch.FailedTitle" xml:space="preserve">
+    <value>无法切换全局版本</value>
+  </data>
+  <data name="LanguageDetail.Switch.FailedMessage" xml:space="preserve">
+    <value>所选注册项已变化、入口不可用或选择不再唯一；请重新打开选择器后再试。</value>
+  </data>
+  <data name="LanguageDetail.Switch.SucceededTitle" xml:space="preserve">
+    <value>全局版本已切换</value>
+  </data>
+  <data name="LanguageDetail.Switch.SucceededMessage" xml:space="preserve">
+    <value>{0} {1} · {2} · {3}。项目与当前会话未修改，PATH 未修改。</value>
+  </data>
+  <data name="LanguageDetail.Switch.SucceededActivity" xml:space="preserve">
+    <value>已把 {0} 全局版本切换到 {1} ({2} · {3})；项目、当前会话和 PATH 均未修改。</value>
+  </data>
+  <data name="LanguageDetail.Switch.CancelledTitle" xml:space="preserve">
+    <value>版本选择已取消</value>
+  </data>
+  <data name="LanguageDetail.Switch.ErrorTitle" xml:space="preserve">
+    <value>无法应用版本选择</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.NotChangedTitle" xml:space="preserve">
+    <value>项目版本未更改</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.NoProjectMessage" xml:space="preserve">
+    <value>没有选择项目目录；全局、会话和 PATH 均未修改。</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.BusyTitle" xml:space="preserve">
+    <value>正在生成项目配置预览</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.BusyMessage" xml:space="preserve">
+    <value>正在为 {0} {1} 生成修改前/修改后内容。</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.ManifestMissing" xml:space="preserve">
+    <value>（autoenvplus.toml 尚不存在）</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.BeforeLabel" xml:space="preserve">
+    <value>修改前</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.AfterLabel" xml:space="preserve">
+    <value>修改后</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.SafeWriteInfoTitle" xml:space="preserve">
+    <value>安全写入</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.SafeWriteInfoMessage" xml:space="preserve">
+    <value>只更新 [tools] 与 [tool-identities] 中当前工具的键；保留未知段落。应用前复核 SHA-256，并用同目录临时文件原子替换。</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.UpdateTitle" xml:space="preserve">
+    <value>更新项目中的 {0}</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.AddTitle" xml:space="preserve">
+    <value>为项目添加 {0}</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.ApplyButton" xml:space="preserve">
+    <value>应用项目配置</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.PreviewClosedMessage" xml:space="preserve">
+    <value>预览已关闭；项目文件、全局、会话和 PATH 均未修改。</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.FailedTitle" xml:space="preserve">
+    <value>项目版本未写入</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.FailedMessage" xml:space="preserve">
+    <value>项目文件在确认后发生变化；请刷新预览再试。</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.SavedTitle" xml:space="preserve">
+    <value>项目精确版本已保存</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.UpdatedTitle" xml:space="preserve">
+    <value>项目版本已更新</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.AlreadySelectedTitle" xml:space="preserve">
+    <value>项目版本已经是所选项</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.SavedMessage" xml:space="preserve">
+    <value>{0} {1} 仅对 {2} 及其子目录生效；全局、当前会话和 PATH 未修改。</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.SavedActivity" xml:space="preserve">
+    <value>已把项目 {0} 固定到 {1} ({2} / {3})；全局、会话和 PATH 未修改。</value>
+  </data>
+  <data name="LanguageDetail.Session.HostHeader" xml:space="preserve">
+    <value>终端主机</value>
+  </data>
+  <data name="LanguageDetail.Session.InfoTitle" xml:space="preserve">
+    <value>仅影响新终端</value>
+  </data>
+  <data name="LanguageDetail.Session.InfoMessage" xml:space="preserve">
+    <value>精确版本通过新进程环境传递；不会修改全局默认、项目文件、用户 PATH 或已打开终端。</value>
+  </data>
+  <data name="LanguageDetail.Session.DialogTitle" xml:space="preserve">
+    <value>打开 {0} {1} 新终端</value>
+  </data>
+  <data name="LanguageDetail.Session.OpenInWindowsTerminal" xml:space="preserve">
+    <value>在 Windows Terminal 中打开</value>
+  </data>
+  <data name="LanguageDetail.Session.OpenNewPowerShell" xml:space="preserve">
+    <value>打开新 PowerShell</value>
+  </data>
+  <data name="LanguageDetail.Session.NotOpenedTitle" xml:space="preserve">
+    <value>新终端未打开</value>
+  </data>
+  <data name="LanguageDetail.Session.NotOpenedMessage" xml:space="preserve">
+    <value>全局、项目、当前会话和 PATH 均未修改。</value>
+  </data>
+  <data name="LanguageDetail.Session.LaunchedTitle" xml:space="preserve">
+    <value>精确版本终端已启动</value>
+  </data>
+  <data name="LanguageDetail.Session.LaunchedMessage" xml:space="preserve">
+    <value>PID {0} · {1} {2} · {3} / {4}。全局、项目和 PATH 未修改。</value>
+  </data>
+  <data name="LanguageDetail.Session.LaunchedActivity" xml:space="preserve">
+    <value>已为 {0} {1} 打开精确版本新终端 ({2} / {3})；全局、项目和 PATH 未修改。</value>
+  </data>
+  <data name="LanguageDetail.Session.Preview.WorkingDirectory" xml:space="preserve">
+    <value>工作目录
+{0}</value>
+  </data>
+  <data name="LanguageDetail.Session.Preview.Host" xml:space="preserve">
+    <value>
+终端主机
+{0}</value>
+  </data>
+  <data name="LanguageDetail.Session.Preview.Selection" xml:space="preserve">
+    <value>
+精确选择
+{0} {1} · {2} / {3}</value>
+  </data>
+  <data name="LanguageDetail.Session.Preview.Network" xml:space="preserve">
+    <value>
+网络投影
+{0}</value>
+  </data>
+  <data name="LanguageDetail.Session.NetworkApplied" xml:space="preserve">
+    <value>已应用 Provider 来源与代理</value>
+  </data>
+  <data name="LanguageDetail.Session.NetworkNone" xml:space="preserve">
+    <value>无语言工具网络覆盖</value>
+  </data>
+  <data name="LanguageDetail.Session.Preview.WarningsHeader" xml:space="preserve">
+    <value>
+警告</value>
+  </data>
+  <data name="LanguageDetail.Session.Preview.ErrorsHeader" xml:space="preserve">
+    <value>
+无法启动</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.WinGetLabel" xml:space="preserve">
+    <value>内置 WinGet（推荐）</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.WinGetDetail" xml:space="preserve">
+    <value>固定包 ID 白名单；保留厂商安装和 workload 流程。</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.BuiltInLabel" xml:space="preserve">
+    <value>内置官方 Provider（推荐）</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.PluginDetail" xml:space="preserve">
+    <value>第三方声明式 ZIP · {0} · {1} 个版本</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.SelectorHeader" xml:space="preserve">
+    <value>安装来源</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.ThirdPartyInfoTitle" xml:space="preserve">
+    <value>第三方 Provider</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.ThirdPartyInfoMessage" xml:space="preserve">
+    <value>插件 checksum 是第三方声明，不等同于内置 Provider 的官方签名。不会在失败后静默回退到内置来源。</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.NoPluginsText" xml:space="preserve">
+    <value>当前语言没有此工具对应且已启用的声明式 Provider 插件。</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.SelectTitle" xml:space="preserve">
+    <value>选择 {0} 安装来源</value>
+  </data>
+  <data name="LanguageDetail.WinGet.InstallTitle" xml:space="preserve">
+    <value>安装 {0}</value>
+  </data>
+  <data name="LanguageDetail.WinGet.DetailPackageId" xml:space="preserve">
+    <value>固定包 ID</value>
+  </data>
+  <data name="LanguageDetail.WinGet.DetailSource" xml:space="preserve">
+    <value>来源</value>
+  </data>
+  <data name="LanguageDetail.WinGet.DetailElevation" xml:space="preserve">
+    <value>权限</value>
+  </data>
+  <data name="LanguageDetail.WinGet.MayRequireElevation" xml:space="preserve">
+    <value>可能请求管理员权限</value>
+  </data>
+  <data name="LanguageDetail.WinGet.UsuallyNoElevation" xml:space="preserve">
+    <value>通常不需要提升权限</value>
+  </data>
+  <data name="LanguageDetail.WinGet.InfoTitle" xml:space="preserve">
+    <value>留在语言详情</value>
+  </data>
+  <data name="LanguageDetail.WinGet.InfoMessage" xml:space="preserve">
+    <value>安装将由现有白名单服务执行；操作保留在当前语言页。</value>
+  </data>
+  <data name="LanguageDetail.WinGet.StartButton" xml:space="preserve">
+    <value>开始安装</value>
+  </data>
+  <data name="LanguageDetail.WinGet.BusyTitle" xml:space="preserve">
+    <value>正在安装 {0}</value>
+  </data>
+  <data name="LanguageDetail.WinGet.ExitCodeError" xml:space="preserve">
+    <value>WinGet 返回退出码 {0}。</value>
+  </data>
+  <data name="LanguageDetail.WinGet.SucceededTitle" xml:space="preserve">
+    <value>{0} 安装完成</value>
+  </data>
+  <data name="LanguageDetail.WinGet.SucceededMessage" xml:space="preserve">
+    <value>WinGet 包 {0} 已完成；重新检测可刷新 PATH 证据。</value>
+  </data>
+  <data name="LanguageDetail.WinGet.SucceededActivity" xml:space="preserve">
+    <value>已从语言详情安装 {0}（{1}）。</value>
+  </data>
+  <data name="LanguageDetail.Archive.LoadingThirdPartyTitle" xml:space="preserve">
+    <value>正在加载第三方声明式版本目录</value>
+  </data>
+  <data name="LanguageDetail.Archive.LoadingOfficialTitle" xml:space="preserve">
+    <value>正在加载官方版本目录</value>
+  </data>
+  <data name="LanguageDetail.Archive.ReleasePickerHeader" xml:space="preserve">
+    <value>要安装的版本</value>
+  </data>
+  <data name="LanguageDetail.Archive.SelectTitle" xml:space="preserve">
+    <value>选择 {0} 版本</value>
+  </data>
+  <data name="LanguageDetail.Archive.JavaFeatureLine" xml:space="preserve">
+    <value>已选择官方推荐 JDK {0} 版本线。</value>
+  </data>
+  <data name="LanguageDetail.Archive.ArchitectureProvider" xml:space="preserve">
+    <value>架构：{0} · Provider：{1}</value>
+  </data>
+  <data name="LanguageDetail.Archive.PreviewButton" xml:space="preserve">
+    <value>预览安装</value>
+  </data>
+  <data name="LanguageDetail.Archive.SetGlobalCheckBox" xml:space="preserve">
+    <value>安装后设为全局默认版本</value>
+  </data>
+  <data name="LanguageDetail.Archive.InstallTitle" xml:space="preserve">
+    <value>安装 {0} {1}</value>
+  </data>
+  <data name="LanguageDetail.Archive.DetailFile" xml:space="preserve">
+    <value>文件</value>
+  </data>
+  <data name="LanguageDetail.Archive.DetailInstallRoot" xml:space="preserve">
+    <value>安装目录</value>
+  </data>
+  <data name="LanguageDetail.Archive.DetailEntry" xml:space="preserve">
+    <value>入口</value>
+  </data>
+  <data name="LanguageDetail.Archive.ThirdPartyChecksumTitle" xml:space="preserve">
+    <value>第三方 checksum 声明</value>
+  </data>
+  <data name="LanguageDetail.Archive.ThirdPartyChecksumMessage" xml:space="preserve">
+    <value>将严格校验插件声明的摘要和 ZIP 入口，但该声明不等同于官方发布签名；安装失败不会改用内置来源。</value>
+  </data>
+  <data name="LanguageDetail.Archive.ProviderCollisionTitle" xml:space="preserve">
+    <value>同版本存在多个 Provider</value>
+  </data>
+  <data name="LanguageDetail.Archive.ProviderCollisionMessage" xml:space="preserve">
+    <value>安装会保留 Provider 身份，但不会自动改写全局默认。</value>
+  </data>
+  <data name="LanguageDetail.Archive.NoGlobalSelectorText" xml:space="preserve">
+    <value>此工具不使用全局版本选择器。</value>
+  </data>
+  <data name="LanguageDetail.Archive.ThirdPartyGlobalText" xml:space="preserve">
+    <value>第三方 Provider 默认不改写全局版本；需要时请显式勾选。</value>
+  </data>
+  <data name="LanguageDetail.Archive.BuiltInGlobalText" xml:space="preserve">
+    <value>内置官方 Provider 默认设为全局版本；可在安装前取消。</value>
+  </data>
+  <data name="LanguageDetail.Archive.StartButton" xml:space="preserve">
+    <value>开始受管安装</value>
+  </data>
+  <data name="LanguageDetail.Archive.FailedFallback" xml:space="preserve">
+    <value>受管安装失败。</value>
+  </data>
+  <data name="LanguageDetail.Archive.HashVerified" xml:space="preserve">
+    <value>已按 {0} 校验包完整性（{1}…）。</value>
+  </data>
+  <data name="LanguageDetail.Archive.HashVerifiedNoDigest" xml:space="preserve">
+    <value>包完整性校验已通过。</value>
+  </data>
+  <data name="LanguageDetail.Archive.GlobalDefaultSet" xml:space="preserve">
+    <value>已设为全局默认版本。</value>
+  </data>
+  <data name="LanguageDetail.Archive.GlobalDefaultUnchanged" xml:space="preserve">
+    <value>全局默认版本未变化。</value>
+  </data>
+  <data name="LanguageDetail.Archive.PendingCleanup" xml:space="preserve">
+    <value>存在待清理的临时目录。</value>
+  </data>
+  <data name="LanguageDetail.Archive.AlreadyInstalledTitle" xml:space="preserve">
+    <value>版本已确认</value>
+  </data>
+  <data name="LanguageDetail.Archive.SucceededActivity" xml:space="preserve">
+    <value>已从 {0} 详情安装 {1} {2}。</value>
+  </data>
+  <data name="LanguageDetail.Archive.RefreshFailedSuffix" xml:space="preserve">
+    <value> 列表刷新失败；请重新打开语言页面。</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.SelectorHeader" xml:space="preserve">
+    <value>Provider 下载/元数据端点</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.SelectTitle" xml:space="preserve">
+    <value>选择 {0} Provider 端点</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.SelectHint" xml:space="preserve">
+    <value>只列出此工具受管 Provider 下已启用的 GenericDownload 源；所选端点必须实现该 Provider 的兼容目录契约。</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.UseButton" xml:space="preserve">
+    <value>使用此端点</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.NonDefaultTitle" xml:space="preserve">
+    <value>使用非默认 Provider 端点</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.DetailEndpoint" xml:space="preserve">
+    <value>端点</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.DotNetInfoTitle" xml:space="preserve">
+    <value>.NET 元数据与摘要同源</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.SignatureInfoTitle" xml:space="preserve">
+    <value>固定签名策略保持启用</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.DotNetInfoMessage" xml:space="preserve">
+    <value>此非默认 release index 同时决定资产 URL 与 SHA-512 元数据，且没有独立发布者签名；不能视为 Microsoft 已验证来源。</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.SignatureInfoMessage" xml:space="preserve">
+    <value>Python、Node.js 或 Temurin 的现有固定签名/证明验证策略仍会执行；自定义端点必须提供与对应 Provider 兼容的目录和资产。</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.ContinueButton" xml:space="preserve">
+    <value>继续使用</value>
+  </data>
+  <data name="LanguageDetail.Sources.EmptyInfoMessage" xml:space="preserve">
+    <value>此语言的 Provider 暂未声明来源槽；通用代理仍按设置中的传输策略生效。</value>
+  </data>
+  <data name="LanguageDetail.Sources.Summary" xml:space="preserve">
+    <value>{0} 个 Provider 源 · {1} 个覆盖 · {2} 个自定义</value>
+  </data>
+  <data name="LanguageDetail.Sources.EndpointHeader" xml:space="preserve">
+    <value>HTTPS 端点</value>
+  </data>
+  <data name="LanguageDetail.Sources.EditTitle" xml:space="preserve">
+    <value>编辑 {0}</value>
+  </data>
+  <data name="LanguageDetail.Sources.SaveOverrideButton" xml:space="preserve">
+    <value>保存覆盖</value>
+  </data>
+  <data name="LanguageDetail.Sources.SaveFailedTitle" xml:space="preserve">
+    <value>无法保存 Provider 源</value>
+  </data>
+  <data name="LanguageDetail.Sources.DeleteTitle" xml:space="preserve">
+    <value>删除自定义源 {0}</value>
+  </data>
+  <data name="LanguageDetail.Sources.ResetTitle" xml:space="preserve">
+    <value>恢复内置默认源 {0}</value>
+  </data>
+  <data name="LanguageDetail.Sources.DeleteContent" xml:space="preserve">
+    <value>将删除自定义源
+{0}
+
+删除后该 Provider 的这个来源槽不再可用；已安装的运行时不受影响。</value>
+  </data>
+  <data name="LanguageDetail.Sources.ResetContent" xml:space="preserve">
+    <value>将丢弃对内置来源槽的覆盖
+当前值：{0}
+
+恢复为目录声明的默认端点；已安装的运行时不受影响。</value>
+  </data>
+  <data name="LanguageDetail.Sources.ResetButton" xml:space="preserve">
+    <value>恢复默认</value>
+  </data>
+  <data name="LanguageDetail.Sources.DeletedActivity" xml:space="preserve">
+    <value>已删除 {0} 的 Provider 自定义源 {1}。</value>
+  </data>
+  <data name="LanguageDetail.Sources.RestoredActivity" xml:space="preserve">
+    <value>已恢复 {0} 的 Provider 内置默认源 {1}。</value>
+  </data>
+  <data name="LanguageDetail.Sources.UpdateFailedTitle" xml:space="preserve">
+    <value>无法更新 Provider 源</value>
+  </data>
+  <data name="LanguageDetail.Sources.ProviderHeader" xml:space="preserve">
+    <value>归属 Provider</value>
+  </data>
+  <data name="LanguageDetail.Sources.SlotIdHeader" xml:space="preserve">
+    <value>源 ID</value>
+  </data>
+  <data name="LanguageDetail.Sources.NameHeader" xml:space="preserve">
+    <value>显示名称</value>
+  </data>
+  <data name="LanguageDetail.Sources.NamePlaceholder" xml:space="preserve">
+    <value>公司来源</value>
+  </data>
+  <data name="LanguageDetail.Sources.PurposeHeader" xml:space="preserve">
+    <value>用途</value>
+  </data>
+  <data name="LanguageDetail.Sources.PurposePlaceholder" xml:space="preserve">
+    <value>内部包和元数据</value>
+  </data>
+  <data name="LanguageDetail.Sources.KindHeader" xml:space="preserve">
+    <value>端点类型</value>
+  </data>
+  <data name="LanguageDetail.Sources.AddTitle" xml:space="preserve">
+    <value>添加 Provider 自定义源</value>
+  </data>
+  <data name="LanguageDetail.Sources.AddConfirmButton" xml:space="preserve">
+    <value>添加并启用</value>
+  </data>
+  <data name="LanguageDetail.Sources.AddFailedTitle" xml:space="preserve">
+    <value>无法添加自定义源</value>
+  </data>
+  <data name="LanguageDetail.Actions.Edit" xml:space="preserve">
+    <value>编辑</value>
+  </data>
+  <data name="LanguageDetail.Actions.Enable" xml:space="preserve">
+    <value>启用</value>
+  </data>
+  <data name="LanguageDetail.Actions.Disable" xml:space="preserve">
+    <value>停用</value>
+  </data>
+  <data name="LanguageDetail.Actions.DeleteCustom" xml:space="preserve">
+    <value>删除自定义源</value>
+  </data>
+  <data name="LanguageDetail.Actions.ResetEndpoint" xml:space="preserve">
+    <value>恢复 Provider 默认端点</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.SelectFolderTitle" xml:space="preserve">
+    <value>请选择项目目录</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.BusyTitle" xml:space="preserve">
+    <value>正在解析项目环境</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.BusyMessage" xml:space="preserve">
+    <value>只读取固定候选路径。</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.NoneFoundTitle" xml:space="preserve">
+    <value>未发现 {0} 项目环境</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.FoundTitle" xml:space="preserve">
+    <value>发现 {0} 项 {1} 环境证据</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.CheckedPaths" xml:space="preserve">
+    <value>检查 {0} 个固定路径</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.ScanLimitSuffix" xml:space="preserve">
+    <value> · 已达到扫描上限</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.WarningCountSuffix" xml:space="preserve">
+    <value> · 警告 {0} 项</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.FailedTitle" xml:space="preserve">
+    <value>无法解析项目环境</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.FailedMessage" xml:space="preserve">
+    <value>项目路径或固定候选元数据未通过安全检查。</value>
+  </data>
+  <data name="LanguageDetail.Plugins.PickerCommitButton" xml:space="preserve">
+    <value>预检此语言的 Provider</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ImportTitle" xml:space="preserve">
+    <value>导入 {0}</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DetailLanguage" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DetailAdapterKind" xml:space="preserve">
+    <value>内置适配器</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DetailContents" xml:space="preserve">
+    <value>内容</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ContentsValue" xml:space="preserve">
+    <value>{0} 个版本 · {1} 个资产</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ThirdPartyInfoTitle" xml:space="preserve">
+    <value>第三方声明</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ThirdPartyInfoMessage" xml:space="preserve">
+    <value>导入后保持停用；checksum 不等同于官方签名。</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ImportButton" xml:space="preserve">
+    <value>导入（保持停用）</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ImportedActivity" xml:space="preserve">
+    <value>已导入 {0} 的 Provider 插件 {1}（保持停用）。</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ImportFailedTitle" xml:space="preserve">
+    <value>无法导入此语言的 Provider</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DisabledActivity" xml:space="preserve">
+    <value>已停用 {0} 的 Provider 插件 {1}；已安装运行时不受影响。</value>
+  </data>
+  <data name="LanguageDetail.Plugins.EnableTitle" xml:space="preserve">
+    <value>启用 {0}</value>
+  </data>
+  <data name="LanguageDetail.Plugins.EnableContent" xml:space="preserve">
+    <value>启用后它会成为此语言工具的第三方安装来源；插件仍不能执行脚本或 DLL。</value>
+  </data>
+  <data name="LanguageDetail.Plugins.EnableButton" xml:space="preserve">
+    <value>显式启用</value>
+  </data>
+  <data name="LanguageDetail.Plugins.EnabledActivity" xml:space="preserve">
+    <value>已启用 {0} 的 Provider 插件 {1}；后续安装必须显式选择该 Provider。</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ToggleFailedTitle" xml:space="preserve">
+    <value>无法更改 Provider 插件状态</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DeleteTitle" xml:space="preserve">
+    <value>删除 {0}</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DeleteContent" xml:space="preserve">
+    <value>删除插件清单和启用状态；不会删除已经安装的托管工具。</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DeletedActivity" xml:space="preserve">
+    <value>已删除 {0} 的 Provider 插件 {1}；已安装运行时不受影响。</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DeleteFailedTitle" xml:space="preserve">
+    <value>无法删除 Provider 插件</value>
+  </data>
+  <data name="LanguageDetail.Plugins.AdapterLabel" xml:space="preserve">
+    <value>适配器 {0}</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ToggleAutomationName" xml:space="preserve">
+    <value>{0} Provider 插件：{1}</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DeleteAutomationName" xml:space="preserve">
+    <value>删除 Provider 插件：{0}</value>
+  </data>
+  <data name="LanguageDetail.Count.Releases" xml:space="preserve">
+    <value>{0} 个版本</value>
+  </data>
+  <data name="LanguageDetail.State.Enabled" xml:space="preserve">
+    <value>已启用</value>
+  </data>
+  <data name="LanguageDetail.State.Disabled" xml:space="preserve">
+    <value>已停用</value>
+  </data>
+  <data name="LanguageDetail.Trust.Python" xml:space="preserve">
+    <value>python.org 官方发布；验证 Sigstore/Fulcio、Rekor 透明日志和包摘要。</value>
+  </data>
+  <data name="LanguageDetail.Trust.NodeJs" xml:space="preserve">
+    <value>Node.js 官方发布；验证固定发布密钥签署的 OpenPGP checksum 清单。</value>
+  </data>
+  <data name="LanguageDetail.Trust.Java" xml:space="preserve">
+    <value>Eclipse Temurin；校验 API SHA-256 和包本体 detached OpenPGP 签名。</value>
+  </data>
+  <data name="LanguageDetail.Trust.DotNet" xml:space="preserve">
+    <value>Microsoft .NET 官方发行元数据；强制校验 SHA-512。</value>
+  </data>
+  <data name="LanguageDetail.Trust.Default" xml:space="preserve">
+    <value>使用 AutoEnvPlus 固定白名单的内置来源。</value>
+  </data>
+  <data name="LanguageDetail.Errors.HttpError" xml:space="preserve">
+    <value>官方端点返回 HTTP {0}；查询参数未显示。</value>
+  </data>
+  <data name="LanguageDetail.Errors.HttpConnectionFailed" xml:space="preserve">
+    <value>无法建立 HTTPS 连接；查询参数和凭据未显示。</value>
+  </data>
+  <data name="LanguageDetail.Errors.PluginValidationFailed" xml:space="preserve">
+    <value>Provider 插件未通过校验（{0}）。</value>
+  </data>
+  <data name="LanguageDetail.Errors.SourceValidationFailed" xml:space="preserve">
+    <value>Provider 源设置未通过校验（{0}）。</value>
+  </data>
+  <data name="LanguageDetail.Errors.LanguagePackValidationFailed" xml:space="preserve">
+    <value>语言包未通过校验（{0}）。</value>
+  </data>
+  <data name="LanguageDetail.Errors.Generic" xml:space="preserve">
+    <value>操作未完成；路径、端点查询参数和敏感值未回显。</value>
+  </data>
+  <data name="LanguageDetail.Stage.Downloading" xml:space="preserve">
+    <value>正在下载</value>
+  </data>
+  <data name="LanguageDetail.Stage.Verifying" xml:space="preserve">
+    <value>正在校验 {0}</value>
+  </data>
+  <data name="LanguageDetail.Stage.Extracting" xml:space="preserve">
+    <value>正在安全解压</value>
+  </data>
+  <data name="LanguageDetail.Stage.Committing" xml:space="preserve">
+    <value>正在提交安装</value>
+  </data>
+  <data name="LanguageDetail.SourceOrigin.Default" xml:space="preserve">
+    <value>Provider 默认</value>
+  </data>
+  <data name="LanguageDetail.SourceOrigin.Override" xml:space="preserve">
+    <value>用户覆盖</value>
+  </data>
+  <data name="LanguageDetail.SourceOrigin.Custom" xml:space="preserve">
+    <value>自定义</value>
+  </data>
+  <data name="LanguageDetail.SourceOrigin.CustomEnabled" xml:space="preserve">
+    <value>自定义 · 已启用</value>
+  </data>
+  <data name="LanguageDetail.SourceOrigin.CustomDisabled" xml:space="preserve">
+    <value>自定义 · 已停用</value>
+  </data>
+  <data name="LanguageDetail.VersionChoice.UnavailableSuffix" xml:space="preserve">
+    <value> · 不可用</value>
+  </data>
+  <data name="LanguageDetail.VersionChoice.MissingEntryHelp" xml:space="preserve">
+    <value>受管注册项对应的入口文件不存在。</value>
+  </data>
+  <data name="LanguageDetail.VersionChoice.Help" xml:space="preserve">
+    <value>精确切换到 {0} / {1}，不修改 PATH。</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.MetadataSummary" xml:space="preserve">
+    <value>目录元数据：厂商 {0} · 许可证 {1} · Windows {2}</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.OperationOfficialArchive" xml:space="preserve">
+    <value>AutoEnvPlus 操作：官方归档安装、精确版本选择和受管卸载 · 已注册 {0} 个受管版本</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.OperationWinGet" xml:space="preserve">
+    <value>AutoEnvPlus 操作：固定 WinGet 白名单安装 / 修复；厂商安装不作为 AutoEnvPlus 受管运行时卸载</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.OperationNone" xml:space="preserve">
+    <value>AutoEnvPlus 操作：未接通安装、切换或卸载适配器</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.NoProviders" xml:space="preserve">
+    <value>Provider（目录声明）：无</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.ProvidersPrefix" xml:space="preserve">
+    <value>Provider（目录声明）：</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.VendorSiteLink" xml:space="preserve">
+    <value>厂商网站</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.VendorSiteLinkAutomation" xml:space="preserve">
+    <value>打开 {0} 网站</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.LicenseLink" xml:space="preserve">
+    <value>许可证参考</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.LicenseLinkAutomation" xml:space="preserve">
+    <value>打开 {0} 许可证参考</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.HomepageLinkAutomation" xml:space="preserve">
+    <value>打开 {0} 官方主页</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.ManualInstallLink" xml:space="preserve">
+    <value>手动安装（厂商主页）</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.ManualInstallLinkAutomation" xml:space="preserve">
+    <value>打开 {0} 厂商主页以查找手动安装说明</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.ManageWinGetText" xml:space="preserve">
+    <value>安装 / 修复</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.ManageInstallText" xml:space="preserve">
+    <value>安装版本</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.SwitchActionAutomation" xml:space="preserve">
+    <value>选择 {0} 版本与生效范围</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.UninstallActionAutomation" xml:space="preserve">
+    <value>卸载 {0} 的 AutoEnvPlus 受管版本</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.CapabilityNone" xml:space="preserve">
+    <value>目录声明能力：仅元数据</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.CapabilitySummaryPrefix" xml:space="preserve">
+    <value>目录声明能力：</value>
+  </data>
+  <data name="LanguageDetail.Capability.Discover" xml:space="preserve">
+    <value>发现</value>
+  </data>
+  <data name="LanguageDetail.Capability.Install" xml:space="preserve">
+    <value>安装</value>
+  </data>
+  <data name="LanguageDetail.Capability.VersionSwitch" xml:space="preserve">
+    <value>版本切换</value>
+  </data>
+  <data name="LanguageDetail.Capability.ProjectPin" xml:space="preserve">
+    <value>项目固定</value>
+  </data>
+  <data name="LanguageDetail.Capability.PackageManagement" xml:space="preserve">
+    <value>包管理</value>
+  </data>
+  <data name="LanguageDetail.Capability.VirtualEnvironment" xml:space="preserve">
+    <value>虚拟环境</value>
+  </data>
+  <data name="LanguageDetail.Capability.MirrorConfiguration" xml:space="preserve">
+    <value>镜像配置</value>
+  </data>
+  <data name="LanguageDetail.Capability.Debug" xml:space="preserve">
+    <value>调试</value>
+  </data>
+  <data name="LanguageDetail.Capability.Format" xml:space="preserve">
+    <value>格式化</value>
+  </data>
+  <data name="LanguageDetail.Capability.Lint" xml:space="preserve">
+    <value>静态检查</value>
+  </data>
+  <data name="LanguageDetail.ProviderCapability.ManagedInstall" xml:space="preserve">
+    <value>可安装</value>
+  </data>
+  <data name="LanguageDetail.ProviderCapability.DiscoverOnly" xml:space="preserve">
+    <value>仅发现</value>
+  </data>
+  <data name="LanguageDetail.ProviderCapability.VersionSwitch" xml:space="preserve">
+    <value>可切换</value>
+  </data>
+  <data name="LanguageDetail.ProviderCapability.SourceConfiguration" xml:space="preserve">
+    <value>可配置源</value>
+  </data>
+  <data name="LanguageDetail.ProviderCapability.CacheManagement" xml:space="preserve">
+    <value>缓存</value>
+  </data>
+  <data name="LanguageDetail.AdapterKind.ManagedArchive" xml:space="preserve">
+    <value>AutoEnvPlus 归档适配器</value>
+  </data>
+  <data name="LanguageDetail.AdapterKind.WinGet" xml:space="preserve">
+    <value>AutoEnvPlus WinGet 适配器</value>
+  </data>
+  <data name="LanguageDetail.AdapterKind.Catalog" xml:space="preserve">
+    <value>目录 Provider</value>
+  </data>
+  <data name="LanguageDetail.WindowsSupport.Native" xml:space="preserve">
+    <value>原生</value>
+  </data>
+  <data name="LanguageDetail.WindowsSupport.Conditional" xml:space="preserve">
+    <value>有条件支持</value>
+  </data>
+  <data name="LanguageDetail.WindowsSupport.Unsupported" xml:space="preserve">
+    <value>不支持</value>
+  </data>
+  <data name="LanguageDetail.Role.Compiler" xml:space="preserve">
+    <value>编译器</value>
+  </data>
+  <data name="LanguageDetail.Role.Interpreter" xml:space="preserve">
+    <value>解释器</value>
+  </data>
+  <data name="LanguageDetail.Role.Runtime" xml:space="preserve">
+    <value>运行时</value>
+  </data>
+  <data name="LanguageDetail.Role.PackageManager" xml:space="preserve">
+    <value>包管理器</value>
+  </data>
+  <data name="LanguageDetail.Role.Build" xml:space="preserve">
+    <value>构建</value>
+  </data>
+  <data name="LanguageDetail.Role.Debugger" xml:space="preserve">
+    <value>调试器</value>
+  </data>
+  <data name="LanguageDetail.Role.VersionManager" xml:space="preserve">
+    <value>版本管理</value>
+  </data>
+  <data name="LanguageDetail.Role.LanguageServer" xml:space="preserve">
+    <value>语言服务器</value>
+  </data>
+  <data name="LanguageDetail.Role.TestRunner" xml:space="preserve">
+    <value>测试运行器</value>
+  </data>
 </root>

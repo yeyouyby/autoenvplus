@@ -100,17 +100,15 @@
                 <RowDefinition x:Name="HeaderActionRow" Height="0" />
             </Grid.RowDefinitions>
             <Button
-                AutomationProperties.Name="返回语言列表"
-                Click="OnBackClicked"
-                ToolTipService.ToolTip="返回语言列表">
+                x:Name="BackButton"
+                Click="OnBackClicked">
                 <SymbolIcon Symbol="Back" />
             </Button>
             <StackPanel Grid.Column="1" Spacing="3">
-                <TextBlock x:Name="LanguageTitle" Style="{StaticResource TitleTextBlockStyle}" Text="语言" />
+                <TextBlock x:Name="LanguageTitle" Style="{StaticResource TitleTextBlockStyle}" />
                 <TextBlock
                     x:Name="LanguageSubtitle"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="编译器工具与运行时"
                     TextWrapping="Wrap" />
             </StackPanel>
             <StackPanel
@@ -123,26 +121,20 @@
                     x:Name="OperationProgress"
                     Width="20"
                     Height="20"
-                    AutomationProperties.Name="语言工具操作进度"
                     IsActive="False" />
                 <Button
                     x:Name="ScanLanguageButton"
-                    AutomationProperties.Name="扫描当前语言"
-                    Click="OnScanLanguageClicked"
-                    ToolTipService.ToolTip="显式扫描当前语言的 PATH 与专用工具">
+                    Click="OnScanLanguageClicked">
                     <SymbolIcon Symbol="Refresh" />
                 </Button>
                 <Button
                     x:Name="CancelOperationButton"
-                    AutomationProperties.Name="取消当前操作"
                     Click="OnCancelOperationClicked"
-                    IsEnabled="False"
-                    ToolTipService.ToolTip="取消当前操作">
+                    IsEnabled="False">
                     <SymbolIcon Symbol="Cancel" />
                 </Button>
                 <HyperlinkButton
-                    x:Name="HomepageButton"
-                    Content="官方主页" />
+                    x:Name="HomepageButton" />
             </StackPanel>
         </Grid>
 
@@ -155,7 +147,7 @@
             IsOpen="False" />
 
         <Pivot x:Name="DetailPivot" Grid.Row="2">
-            <PivotItem Header="概览">
+            <PivotItem x:Name="OverviewPivotItem">
                 <ScrollViewer>
                     <StackPanel x:Name="OverviewContent" Padding="32,12,32,32" Spacing="18">
                         <Grid ColumnSpacing="12" RowSpacing="12">
@@ -176,7 +168,7 @@
                                 BorderThickness="1"
                                 CornerRadius="{StaticResource CardCornerRadius}">
                                 <StackPanel Spacing="4">
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="语言工具" />
+                                    <TextBlock x:Name="OverviewToolCountLabel" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                     <TextBlock x:Name="OverviewToolCount" FontSize="26" FontWeight="SemiBold" Text="—" />
                                 </StackPanel>
                             </Border>
@@ -189,7 +181,7 @@
                                 BorderThickness="1"
                                 CornerRadius="{StaticResource CardCornerRadius}">
                                 <StackPanel Spacing="4">
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="PATH 已检测" />
+                                    <TextBlock x:Name="OverviewDetectedLabel" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                     <TextBlock x:Name="OverviewDetectedCount" FontSize="26" FontWeight="SemiBold" Text="—" />
                                 </StackPanel>
                             </Border>
@@ -202,14 +194,14 @@
                                 BorderThickness="1"
                                 CornerRadius="{StaticResource CardCornerRadius}">
                                 <StackPanel Spacing="4">
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="AutoEnvPlus 安装适配器" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="OverviewManagedLabel" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
                                     <TextBlock x:Name="OverviewManagedCount" FontSize="26" FontWeight="SemiBold" Text="—" />
                                 </StackPanel>
                             </Border>
                         </Grid>
 
                         <StackPanel Spacing="8">
-                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="语言定义" />
+                            <TextBlock x:Name="LanguageDefinitionTitle" Style="{StaticResource SubtitleTextBlockStyle}" />
                             <Border
                                 Padding="16"
                                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
@@ -226,27 +218,25 @@
                         </StackPanel>
 
                         <InfoBar
+                            x:Name="HierarchyInfo"
                             IsClosable="False"
                             IsOpen="True"
-                            Message="语言是稳定配置容器；每个语言工具拥有自己的 Provider，Provider Source 只能在其归属 Provider 下配置。目录声明不会自动获得安装、切换或卸载能力。"
                             Severity="Informational"
                             Title="Language → Language Tool → Provider → Provider Source" />
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>
 
-            <PivotItem Header="工具与版本">
+            <PivotItem x:Name="ToolsPivotItem">
                 <ScrollViewer>
                     <StackPanel x:Name="ToolContent" Padding="32,12,32,32" Spacing="14">
                         <InfoBar
+                            x:Name="ToolCapabilityInfo"
                             IsClosable="False"
                             IsOpen="True"
-                            Message="“AutoEnvPlus 操作”表示应用内有实际适配器；“目录元数据”只声明厂商、许可证、发现命令和 Provider。受管卸载只处理 AutoEnvPlus 注册的运行时，并在执行前重新检查全局和项目引用。"
-                            Severity="Informational"
-                            Title="操作能力以实际适配器为准" />
+                            Severity="Informational" />
                         <ListView
                             x:Name="ToolList"
-                            AutomationProperties.Name="当前语言的语言工具"
                             IsItemClickEnabled="False"
                             SelectionMode="None">
                             <ListView.ItemContainerStyle>
@@ -310,21 +300,21 @@
                                                         Background="{ThemeResource AccentFillColorTertiaryBrush}"
                                                         CornerRadius="4"
                                                         Visibility="{Binding DetectedVisibility}">
-                                                        <TextBlock FontSize="12" Text="已检测" />
+                                                        <TextBlock FontSize="12" Loaded="OnDetectedBadgeLoaded" />
                                                     </Border>
                                                     <Border
                                                         Padding="6,2"
                                                         Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
                                                         CornerRadius="4"
                                                         Visibility="{Binding ManagedVisibility}">
-                                                        <TextBlock FontSize="12" Text="AutoEnvPlus 操作" />
+                                                        <TextBlock FontSize="12" Loaded="OnManagedBadgeLoaded" />
                                                     </Border>
                                                     <Border
                                                         Padding="6,2"
                                                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                                         CornerRadius="4"
                                                         Visibility="{Binding MetadataVisibility}">
-                                                        <TextBlock FontSize="12" Text="目录元数据" />
+                                                        <TextBlock FontSize="12" Loaded="OnMetadataBadgeLoaded" />
                                                     </Border>
                                                 </StackPanel>
                                                 <TextBlock
@@ -345,7 +335,7 @@
                                                     Text="{Binding ToolMetadataSummary}"
                                                     TextWrapping="Wrap" />
                                                 <ItemsControl
-                                                    AutomationProperties.Name="目录元数据外部链接"
+                                                    Loaded="OnMetadataLinksLoaded"
                                                     ItemsSource="{Binding MetadataLinks}"
                                                     Visibility="{Binding MetadataVisibility}">
                                                     <ItemsControl.ItemsPanel>
@@ -384,8 +374,8 @@
                                                     Padding="0"
                                                     AutomationProperties.Name="{Binding SwitchActionAutomationName}"
                                                     Click="OnSwitchGlobalVersionClicked"
+                                                    Loaded="OnSwitchVersionButtonLoaded"
                                                     Tag="{Binding}"
-                                                    ToolTipService.ToolTip="全局、项目或新终端会话"
                                                     Visibility="{Binding SwitchActionVisibility}">
                                                     <FontIcon FontSize="16" Glyph="&#xE895;" />
                                                 </Button>
@@ -395,8 +385,8 @@
                                                     Padding="0"
                                                     AutomationProperties.Name="{Binding UninstallActionAutomationName}"
                                                     Click="OnUninstallManagedRuntimeClicked"
+                                                    Loaded="OnUninstallButtonLoaded"
                                                     Tag="{Binding}"
-                                                    ToolTipService.ToolTip="卸载 AutoEnvPlus 受管版本"
                                                     Visibility="{Binding UninstallActionVisibility}">
                                                     <SymbolIcon Symbol="Delete" />
                                                 </Button>
@@ -416,21 +406,20 @@
                         <StackPanel
                             x:Name="EmptyToolState"
                             HorizontalAlignment="Center"
-                            AutomationProperties.Name="当前语言没有可显示的语言工具"
                             Spacing="4"
                             Visibility="Collapsed">
-                            <TextBlock HorizontalAlignment="Center" FontWeight="SemiBold" Text="没有可显示的语言工具" />
+                            <TextBlock x:Name="EmptyToolTitle" HorizontalAlignment="Center" FontWeight="SemiBold" />
                             <TextBlock
+                                x:Name="EmptyToolMessage"
                                 HorizontalAlignment="Center"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="当前目录或实验性工具显示策略没有返回工具项。"
                                 TextWrapping="Wrap" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>
 
-            <PivotItem Header="Provider 来源">
+            <PivotItem x:Name="SourcesPivotItem">
                 <ScrollViewer>
                     <StackPanel x:Name="SourceContent" Padding="32,12,32,32" Spacing="14">
                         <InfoBar
@@ -438,9 +427,7 @@
                             AutomationProperties.LiveSetting="Polite"
                             IsClosable="False"
                             IsOpen="True"
-                            Message="每个来源槽都保留 Language / Language Tool / Provider / Provider Source 四级归属；不会把同名端点应用到其他 Provider。HTTP/HTTPS 代理和 NO_PROXY 仍是通用传输策略。"
-                            Severity="Informational"
-                            Title="精确 Provider Source 归属" />
+                            Severity="Informational" />
                         <Grid ColumnSpacing="12" RowSpacing="8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition />
@@ -461,17 +448,15 @@
                             <Button
                                 x:Name="AddSourceButton"
                                 Grid.Column="1"
-                                AutomationProperties.Name="为当前语言的 Provider 添加自定义源"
                                 Click="OnAddCustomSourceClicked">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <SymbolIcon Symbol="Add" />
-                                    <TextBlock Text="添加自定义源" />
+                                    <TextBlock x:Name="AddSourceText" />
                                 </StackPanel>
                             </Button>
                         </Grid>
                         <ListView
                             x:Name="MirrorList"
-                            AutomationProperties.Name="当前语言的 Provider Source"
                             IsItemClickEnabled="False"
                             SelectionMode="None">
                             <ListView.ItemContainerStyle>
@@ -563,20 +548,19 @@
                         </ListView>
                         <StackPanel
                             x:Name="EmptyMirrorState"
-                            AutomationProperties.Name="此语言的 Provider 暂未声明 Provider Source"
                             Spacing="4"
                             Visibility="Collapsed">
-                            <TextBlock FontWeight="SemiBold" Text="没有 Provider Source" />
+                            <TextBlock x:Name="EmptyMirrorTitle" FontWeight="SemiBold" />
                             <TextBlock
+                                x:Name="EmptyMirrorMessage"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="此语言的 Provider 暂未声明来源槽；通用代理策略仍可生效。"
                                 TextWrapping="Wrap" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>
 
-            <PivotItem Header="项目环境">
+            <PivotItem x:Name="ProjectPivotItem">
                 <ScrollViewer>
                     <StackPanel x:Name="ProjectContent" Padding="32,12,32,32" Spacing="14">
                         <Grid ColumnSpacing="8">
@@ -584,17 +568,12 @@
                                 <ColumnDefinition />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <TextBox
-                                x:Name="ProjectPathBox"
-                                AutomationProperties.Name="项目目录"
-                                Header="项目目录"
-                                PlaceholderText="选择一个项目目录" />
+                            <TextBox x:Name="ProjectPathBox" />
                             <Button
+                                x:Name="ChooseProjectFolderButton"
                                 Grid.Column="1"
                                 VerticalAlignment="Bottom"
-                                AutomationProperties.Name="选择项目目录"
-                                Click="OnChooseProjectFolderClicked"
-                                ToolTipService.ToolTip="选择项目目录">
+                                Click="OnChooseProjectFolderClicked">
                                 <SymbolIcon Symbol="Folder" />
                             </Button>
                         </Grid>
@@ -604,7 +583,7 @@
                             Click="OnParseProjectClicked">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <SymbolIcon Symbol="Find" />
-                                <TextBlock Text="解析虚拟环境" />
+                                <TextBlock x:Name="ParseProjectText" />
                             </StackPanel>
                         </Button>
                         <InfoBar
@@ -612,9 +591,7 @@
                             AutomationProperties.LiveSetting="Polite"
                             IsClosable="False"
                             IsOpen="True"
-                            Message="只读取固定候选路径和项目元数据，不递归扫描、不跟随重解析点，也不执行外部命令。"
-                            Severity="Informational"
-                            Title="等待选择项目" />
+                            Severity="Informational" />
                         <ListView
                             x:Name="ProjectEnvironmentList"
                             IsItemClickEnabled="False"
@@ -651,7 +628,7 @@
                 </ScrollViewer>
             </PivotItem>
 
-            <PivotItem Header="Provider 插件">
+            <PivotItem x:Name="PluginsPivotItem">
                 <ScrollViewer>
                     <StackPanel x:Name="ExtensionContent" Padding="32,12,32,32" Spacing="14">
                         <Grid ColumnSpacing="12" RowSpacing="8">
@@ -664,32 +641,29 @@
                                 <RowDefinition x:Name="PluginActionRow" Height="0" />
                             </Grid.RowDefinitions>
                             <StackPanel Spacing="3">
-                                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="此语言的 Provider 插件" />
+                                <TextBlock x:Name="PluginSectionTitle" Style="{StaticResource SubtitleTextBlockStyle}" />
                                 <TextBlock
+                                    x:Name="PluginSectionSubtitle"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="只显示桥接到当前语言工具类型的插件；导入、启用和停用均留在此语言上下文。"
                                     TextWrapping="Wrap" />
                             </StackPanel>
                             <Button
                                 x:Name="ImportProviderButton"
                                 Grid.Column="1"
-                                AutomationProperties.Name="为当前语言导入 Provider 插件"
                                 Click="OnImportProviderPluginClicked">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <SymbolIcon Symbol="OpenFile" />
-                                    <TextBlock Text="导入 Provider" />
+                                    <TextBlock x:Name="ImportProviderText" />
                                 </StackPanel>
                             </Button>
                         </Grid>
                         <InfoBar
+                            x:Name="PluginTrustInfo"
                             IsClosable="False"
                             IsOpen="True"
-                            Message="语言工具 Provider 插件仍是受限声明式 ZIP 目录：不能加载 DLL、脚本、任意命令、注册表或环境钩子。第三方 checksum 不等于官方签名。"
-                            Severity="Warning"
-                            Title="插件信任边界" />
+                            Severity="Warning" />
                         <ListView
                             x:Name="ProviderPluginList"
-                            AutomationProperties.Name="当前语言的 Provider 插件"
                             IsItemClickEnabled="False"
                             SelectionMode="None">
                             <ListView.ItemContainerStyle>
@@ -761,8 +735,8 @@
                                                 <Button
                                                     AutomationProperties.Name="{Binding DeleteAutomationName}"
                                                     Click="OnDeleteProviderPluginClicked"
-                                                    Tag="{Binding}"
-                                                    ToolTipService.ToolTip="删除 Provider 插件">
+                                                    Loaded="OnDeletePluginButtonLoaded"
+                                                    Tag="{Binding}">
                                                     <SymbolIcon Symbol="Delete" />
                                                 </Button>
                                             </StackPanel>
@@ -773,9 +747,7 @@
                         </ListView>
                         <TextBlock
                             x:Name="EmptyProviderPluginText"
-                            AutomationProperties.Name="此语言没有 Provider 插件"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="此语言当前没有可桥接的语言工具 Provider 插件。" />
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>

@@ -4124,4 +4124,1238 @@ If the profile was modified after installation, AutoEnvPlus refuses to overwrite
   <data name="CoreError.PowerShell.ModulePreviewMismatch" xml:space="preserve">
     <value>The PowerShell module preview failed its re-check; the file may have changed after previewing.</value>
   </data>
+
+  <data name="LanguageDetail.Back.AccessibleName" xml:space="preserve">
+    <value>Back to language list</value>
+  </data>
+  <data name="LanguageDetail.Progress.AccessibleName" xml:space="preserve">
+    <value>Language tool operation progress</value>
+  </data>
+  <data name="LanguageDetail.Scan.AccessibleName" xml:space="preserve">
+    <value>Scan current language</value>
+  </data>
+  <data name="LanguageDetail.Scan.ToolTip" xml:space="preserve">
+    <value>Explicitly scan the current language&apos;s PATH and dedicated tools</value>
+  </data>
+  <data name="LanguageDetail.CancelOperation.AccessibleName" xml:space="preserve">
+    <value>Cancel current operation</value>
+  </data>
+  <data name="LanguageDetail.Homepage.Label" xml:space="preserve">
+    <value>Official homepage</value>
+  </data>
+  <data name="LanguageDetail.Pivot.Overview" xml:space="preserve">
+    <value>Overview</value>
+  </data>
+  <data name="LanguageDetail.Pivot.Tools" xml:space="preserve">
+    <value>Tools &amp; versions</value>
+  </data>
+  <data name="LanguageDetail.Pivot.Sources" xml:space="preserve">
+    <value>Provider sources</value>
+  </data>
+  <data name="LanguageDetail.Pivot.Project" xml:space="preserve">
+    <value>Project environments</value>
+  </data>
+  <data name="LanguageDetail.Pivot.Plugins" xml:space="preserve">
+    <value>Provider plugins</value>
+  </data>
+  <data name="LanguageDetail.Common.LanguageTool" xml:space="preserve">
+    <value>Language tool</value>
+  </data>
+  <data name="LanguageDetail.Overview.DetectedLabel" xml:space="preserve">
+    <value>PATH detected</value>
+  </data>
+  <data name="LanguageDetail.Overview.ManagedLabel" xml:space="preserve">
+    <value>AutoEnvPlus install adapters</value>
+  </data>
+  <data name="LanguageDetail.Overview.DefinitionTitle" xml:space="preserve">
+    <value>Language definition</value>
+  </data>
+  <data name="LanguageDetail.Overview.HierarchyInfoMessage" xml:space="preserve">
+    <value>A language is a stable configuration container; each language tool has its own Providers, and a Provider Source can only be configured under the Provider that owns it. Catalog declarations do not automatically gain install, switch, or uninstall capabilities.</value>
+  </data>
+  <data name="LanguageDetail.Tools.InfoTitle" xml:space="preserve">
+    <value>Operation capabilities follow the actual adapter</value>
+  </data>
+  <data name="LanguageDetail.Tools.InfoMessage" xml:space="preserve">
+    <value>&quot;AutoEnvPlus managed&quot; means a real adapter exists in the app; &quot;catalog metadata&quot; only declares vendor, license, discovery commands, and Providers. Managed uninstall only handles runtimes registered by AutoEnvPlus and re-checks global and project references before executing.</value>
+  </data>
+  <data name="LanguageDetail.Tools.ListAccessibleName" xml:space="preserve">
+    <value>Language tools of the current language</value>
+  </data>
+  <data name="LanguageDetail.Tools.EmptyAccessibleName" xml:space="preserve">
+    <value>The current language has no language tools to show</value>
+  </data>
+  <data name="LanguageDetail.Tools.EmptyTitle" xml:space="preserve">
+    <value>No language tools to show</value>
+  </data>
+  <data name="LanguageDetail.Tools.EmptyMessage" xml:space="preserve">
+    <value>The current catalog or experimental tool display policy returned no tool items.</value>
+  </data>
+  <data name="LanguageDetail.Tool.Badge.Detected" xml:space="preserve">
+    <value>Detected</value>
+  </data>
+  <data name="LanguageDetail.Tool.Badge.Managed" xml:space="preserve">
+    <value>AutoEnvPlus managed</value>
+  </data>
+  <data name="LanguageDetail.Tool.Badge.Metadata" xml:space="preserve">
+    <value>Catalog metadata</value>
+  </data>
+  <data name="LanguageDetail.Tool.MetadataLinksAccessibleName" xml:space="preserve">
+    <value>Catalog metadata external links</value>
+  </data>
+  <data name="LanguageDetail.Tool.SwitchToolTip" xml:space="preserve">
+    <value>Global, project, or new terminal session</value>
+  </data>
+  <data name="LanguageDetail.Tool.UninstallToolTip" xml:space="preserve">
+    <value>Uninstall AutoEnvPlus managed versions</value>
+  </data>
+  <data name="LanguageDetail.Sources.InfoTitle" xml:space="preserve">
+    <value>Exact Provider Source ownership</value>
+  </data>
+  <data name="LanguageDetail.Sources.AddAccessibleName" xml:space="preserve">
+    <value>Add a custom source for a Provider of the current language</value>
+  </data>
+  <data name="LanguageDetail.Sources.AddCustom" xml:space="preserve">
+    <value>Add custom source</value>
+  </data>
+  <data name="LanguageDetail.Sources.ListAccessibleName" xml:space="preserve">
+    <value>Provider Sources of the current language</value>
+  </data>
+  <data name="LanguageDetail.Sources.EmptyAccessibleName" xml:space="preserve">
+    <value>No Provider Source declared for this language&apos;s Providers yet</value>
+  </data>
+  <data name="LanguageDetail.Sources.EmptyTitle" xml:space="preserve">
+    <value>No Provider Source</value>
+  </data>
+  <data name="LanguageDetail.Sources.EmptyMessage" xml:space="preserve">
+    <value>This language&apos;s Providers have not declared source slots yet; the generic proxy policy still applies.</value>
+  </data>
+  <data name="LanguageDetail.Project.PathHeader" xml:space="preserve">
+    <value>Project directory</value>
+  </data>
+  <data name="LanguageDetail.Project.PathPlaceholder" xml:space="preserve">
+    <value>Choose a project directory</value>
+  </data>
+  <data name="LanguageDetail.Project.ChooseAccessibleName" xml:space="preserve">
+    <value>Choose project directory</value>
+  </data>
+  <data name="LanguageDetail.Project.ParseLabel" xml:space="preserve">
+    <value>Parse virtual environments</value>
+  </data>
+  <data name="LanguageDetail.Project.InfoTitle" xml:space="preserve">
+    <value>Waiting for a project selection</value>
+  </data>
+  <data name="LanguageDetail.Project.InfoMessage" xml:space="preserve">
+    <value>Only fixed candidate paths and project metadata are read; no recursive scanning, no reparse-point traversal, and no external commands are run.</value>
+  </data>
+  <data name="LanguageDetail.Plugins.SectionTitle" xml:space="preserve">
+    <value>Provider plugins for this language</value>
+  </data>
+  <data name="LanguageDetail.Plugins.SectionSubtitle" xml:space="preserve">
+    <value>Only plugins bridging to the current language&apos;s tool types are shown; import, enable, and disable all stay in this language context.</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ImportAccessibleName" xml:space="preserve">
+    <value>Import a Provider plugin for the current language</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ImportLabel" xml:space="preserve">
+    <value>Import Provider</value>
+  </data>
+  <data name="LanguageDetail.Plugins.TrustInfoTitle" xml:space="preserve">
+    <value>Plugin trust boundary</value>
+  </data>
+  <data name="LanguageDetail.Plugins.TrustInfoMessage" xml:space="preserve">
+    <value>Language tool Provider plugins remain restricted declarative ZIP catalogs: they cannot load DLLs, scripts, arbitrary commands, registry or environment hooks. A third-party checksum is not an official signature.</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ListAccessibleName" xml:space="preserve">
+    <value>Provider plugins of the current language</value>
+  </data>
+  <data name="LanguageDetail.Plugins.EmptyAccessibleName" xml:space="preserve">
+    <value>This language has no Provider plugins</value>
+  </data>
+  <data name="LanguageDetail.Plugins.EmptyText" xml:space="preserve">
+    <value>This language currently has no Provider plugins that bridge to its language tools.</value>
+  </data>
+  <data name="LanguageDetail.Plugin.DeleteToolTip" xml:space="preserve">
+    <value>Delete Provider plugin</value>
+  </data>
+  <data name="LanguageDetail.Scan.BusyTitle" xml:space="preserve">
+    <value>Scanning current language</value>
+  </data>
+  <data name="LanguageDetail.Scan.BusyMessage" xml:space="preserve">
+    <value>Only the PATH commands declared for this language are checked; no version commands are run and no network is accessed.</value>
+  </data>
+  <data name="LanguageDetail.Scan.CompletedTitle" xml:space="preserve">
+    <value>Current language scan completed</value>
+  </data>
+  <data name="LanguageDetail.Scan.CompletedMessage" xml:space="preserve">
+    <value>Updated the inventory snapshot for {0}; detected {1} tools.</value>
+  </data>
+  <data name="LanguageDetail.Scan.CancelledTitle" xml:space="preserve">
+    <value>Current language scan cancelled</value>
+  </data>
+  <data name="LanguageDetail.Scan.CancelledMessage" xml:space="preserve">
+    <value>The incomplete result was not written to the inventory snapshot.</value>
+  </data>
+  <data name="LanguageDetail.Scan.FailedTitle" xml:space="preserve">
+    <value>Could not scan the current language</value>
+  </data>
+  <data name="LanguageDetail.Header.Subtitle" xml:space="preserve">
+    <value>{0} · Compiler tools and runtimes (language tools)</value>
+  </data>
+  <data name="LanguageDetail.Definition.Id" xml:space="preserve">
+    <value>Stable ID: {0}</value>
+  </data>
+  <data name="LanguageDetail.Definition.AliasesPrefix" xml:space="preserve">
+    <value>Aliases: </value>
+  </data>
+  <data name="LanguageDetail.Definition.NoneValue" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="LanguageDetail.AliasSeparator" xml:space="preserve">
+    <value>, </value>
+  </data>
+  <data name="LanguageDetail.Definition.ExtensionsPrefix" xml:space="preserve">
+    <value>File extensions: </value>
+  </data>
+  <data name="LanguageDetail.Definition.NoExtensions" xml:space="preserve">
+    <value>No fixed extensions</value>
+  </data>
+  <data name="LanguageDetail.Definition.VisibilityDefault" xml:space="preserve">
+    <value>Display policy: top 10 default language; can still be hidden explicitly by the user.</value>
+  </data>
+  <data name="LanguageDetail.Definition.VisibilityOptIn" xml:space="preserve">
+    <value>Display policy: enters the effective set after PATH detection or explicit user enablement.</value>
+  </data>
+  <data name="LanguageDetail.Load.BusyTitle" xml:space="preserve">
+    <value>Reading language tools</value>
+  </data>
+  <data name="LanguageDetail.Load.BusyMessage" xml:space="preserve">
+    <value>Loading inventory snapshot, managed versions, and Provider state…</value>
+  </data>
+  <data name="LanguageDetail.PackageManager.None" xml:space="preserve">
+    <value>This language&apos;s catalog declares no package manager tool.</value>
+  </data>
+  <data name="LanguageDetail.PackageManager.SummaryPrefix" xml:space="preserve">
+    <value>Package manager tools declared by the catalog: </value>
+  </data>
+  <data name="LanguageDetail.Load.ReadyTitle" xml:space="preserve">
+    <value>Language details ready</value>
+  </data>
+  <data name="LanguageDetail.Load.ReadyMessage" xml:space="preserve">
+    <value>{0} language tools · {1} detected · {2} AutoEnvPlus install adapters · {3} catalog metadata items</value>
+  </data>
+  <data name="LanguageDetail.Load.FailedTitle" xml:space="preserve">
+    <value>Could not load language details</value>
+  </data>
+  <data name="LanguageDetail.Separator" xml:space="preserve">
+    <value>; </value>
+  </data>
+  <data name="LanguageDetail.Tool.WindowsSdkNone" xml:space="preserve">
+    <value>No complete Windows SDK found</value>
+  </data>
+  <data name="LanguageDetail.Tool.DiscoveredPrefix" xml:space="preserve">
+    <value>Discovered: </value>
+  </data>
+  <data name="LanguageDetail.Tool.VersionUnknown" xml:space="preserve">
+    <value>unknown version</value>
+  </data>
+  <data name="LanguageDetail.Tool.ManagedVersionsPrefix" xml:space="preserve">
+    <value>AutoEnvPlus managed versions ({0}): </value>
+  </data>
+  <data name="LanguageDetail.Tool.PathSummary" xml:space="preserve">
+    <value>PATH: {0}</value>
+  </data>
+  <data name="LanguageDetail.Tool.NoVersions" xml:space="preserve">
+    <value>No managed versions or PATH entries found</value>
+  </data>
+  <data name="LanguageDetail.Tool.GlobalSelection" xml:space="preserve">
+    <value> · Global selection: {0}</value>
+  </data>
+  <data name="LanguageDetail.Operation.CancelledTitle" xml:space="preserve">
+    <value>Operation cancelled</value>
+  </data>
+  <data name="LanguageDetail.Operation.CancelledMessage" xml:space="preserve">
+    <value>The uncommitted install was stopped.</value>
+  </data>
+  <data name="LanguageDetail.Install.FailedTitle" xml:space="preserve">
+    <value>Install not completed</value>
+  </data>
+  <data name="LanguageDetail.Install.Completed" xml:space="preserve">
+    <value>Install complete</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CancelledTitle" xml:space="preserve">
+    <value>Managed version uninstall cancelled</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CancelledMessage" xml:space="preserve">
+    <value>The runtime registry, global selection, and project references were not modified.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CheckingTitle" xml:space="preserve">
+    <value>Checking runtime references</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ReferencedTitle" xml:space="preserve">
+    <value>Runtime is reference-protected</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ReferencedMessage" xml:space="preserve">
+    <value>Found {0} global or project references; forced uninstall is not provided, and no files or state were modified.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ReferencedActivity" xml:space="preserve">
+    <value>Reference protection blocked the uninstall ({0} references).</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ConfirmClosedMessage" xml:space="preserve">
+    <value>Confirmation was closed; the runtime registry, global selection, and project references were not modified.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CancelledActivity" xml:space="preserve">
+    <value>The user cancelled before the final confirmation.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.BusyTitle" xml:space="preserve">
+    <value>Uninstalling managed runtime</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.IncompleteTitle" xml:space="preserve">
+    <value>Uninstall incomplete; managed state needs review</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.FailedTitle" xml:space="preserve">
+    <value>Managed runtime not uninstalled</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.IncompleteMessage" xml:space="preserve">
+    <value>The service reports that registry recovery or quarantine cleanup did not fully complete; keep the current state and run diagnostics.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.FailedMessage" xml:space="preserve">
+    <value>The plan changed, new references appeared, or the managed path failed the safety check; refresh and check again.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.IncompleteActivity" xml:space="preserve">
+    <value>Consistency recovery or quarantine cleanup did not fully complete.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.FailedActivity" xml:space="preserve">
+    <value>The reference or state re-check at commit time did not pass.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.RemovedPendingTitle" xml:space="preserve">
+    <value>Runtime removed; quarantine cleanup pending</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SucceededTitle" xml:space="preserve">
+    <value>Managed runtime uninstalled</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.RemovedPendingSuffix" xml:space="preserve">
+    <value>; the registry entry was removed, but the quarantine directory still waits for the system to release it for cleanup.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SucceededSuffix" xml:space="preserve">
+    <value>; managed files and registry entries were removed.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.RemovedPendingActivity" xml:space="preserve">
+    <value>Registry entry removed; quarantine directory cleanup pending.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SucceededActivity" xml:space="preserve">
+    <value>Managed files and registry entries were removed.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.RefreshFailedTitle" xml:space="preserve">
+    <value>Runtime uninstalled; list refresh failed</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.RefreshFailedSuffix" xml:space="preserve">
+    <value>; the uninstall commit succeeded, reopen the language page to refresh the current list.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CancelledLateMessage" xml:space="preserve">
+    <value>The cancellation request was processed; if the commit had already started, the service will try to restore a consistent state. Refresh the list to confirm the current state.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CancelledLateActivity" xml:space="preserve">
+    <value>Operation cancelled; the service performs consistency recovery after the commit started.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ErrorTitle" xml:space="preserve">
+    <value>Could not uninstall the managed runtime</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ErrorActivity" xml:space="preserve">
+    <value>Creating or executing the uninstall plan failed.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SelectorHeader" xml:space="preserve">
+    <value>Managed runtime (exact ID / Provider)</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SelectTitle" xml:space="preserve">
+    <value>Choose a {0} version to uninstall</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SelectInfoTitle" xml:space="preserve">
+    <value>Only AutoEnvPlus managed registry entries are listed</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.SelectInfoMessage" xml:space="preserve">
+    <value>External installs and tools that are only catalog-declared do not appear in this list. The next step checks global configuration, known project manifests, and lock file references.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.CheckReferencesButton" xml:space="preserve">
+    <value>Check references</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.DetailVersionArch" xml:space="preserve">
+    <value>Version / architecture</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.DetailInstallRoot" xml:space="preserve">
+    <value>Managed install directory</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ReferencedInfoTitle" xml:space="preserve">
+    <value>Reference protection: {0} references</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ReferencedInfoMessage" xml:space="preserve">
+    <value>This page does not force-uninstall a referenced runtime. Change the global selection or project pin first, then recreate the plan.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.NoReferencesInfoTitle" xml:space="preserve">
+    <value>No references found; still re-checked before commit</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.NoReferencesInfoMessage" xml:space="preserve">
+    <value>Only the AutoEnvPlus managed directory and registry entry of this Runtime ID are deleted; external software is not uninstalled, PATH is not modified, and nothing is silently forced.</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ReferencedDialogTitle" xml:space="preserve">
+    <value>Cannot uninstall a referenced managed runtime</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ConfirmDialogTitle" xml:space="preserve">
+    <value>Confirm managed runtime uninstall</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.ConfirmButton" xml:space="preserve">
+    <value>Uninstall managed version</value>
+  </data>
+  <data name="LanguageDetail.Uninstall.LogIdentityOutcome" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="LanguageDetail.Reference.GlobalProfile" xml:space="preserve">
+    <value>Global version selection</value>
+  </data>
+  <data name="LanguageDetail.Reference.ProjectManifest" xml:space="preserve">
+    <value>Project manifest reference</value>
+  </data>
+  <data name="LanguageDetail.Reference.ProjectLock" xml:space="preserve">
+    <value>Project lock file reference</value>
+  </data>
+  <data name="LanguageDetail.Dialogs.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="LanguageDetail.Dialogs.Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="LanguageDetail.Dialogs.Continue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="LanguageDetail.Dialogs.Confirm" xml:space="preserve">
+    <value>Confirm</value>
+  </data>
+  <data name="LanguageDetail.Dialogs.Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="LanguageDetail.Switch.BusyTitle" xml:space="preserve">
+    <value>Reading installed versions</value>
+  </data>
+  <data name="LanguageDetail.Switch.BusyMessage" xml:space="preserve">
+    <value>Validating the managed registry entries for {0}.</value>
+  </data>
+  <data name="LanguageDetail.Switch.NoVersionsTitle" xml:space="preserve">
+    <value>No installed versions available to switch</value>
+  </data>
+  <data name="LanguageDetail.Switch.NoVersionsMessage" xml:space="preserve">
+    <value>The managed registry was refreshed; install a version of this language tool first.</value>
+  </data>
+  <data name="LanguageDetail.Switch.VersionHeader" xml:space="preserve">
+    <value>Installed versions</value>
+  </data>
+  <data name="LanguageDetail.Scope.Header" xml:space="preserve">
+    <value>Scope</value>
+  </data>
+  <data name="LanguageDetail.Scope.GlobalLabel" xml:space="preserve">
+    <value>Global default</value>
+  </data>
+  <data name="LanguageDetail.Scope.GlobalDescription" xml:space="preserve">
+    <value>Saves the exact RuntimeId / ProviderId; projects and sessions can still override it.</value>
+  </data>
+  <data name="LanguageDetail.Scope.ProjectLabel" xml:space="preserve">
+    <value>Current project</value>
+  </data>
+  <data name="LanguageDetail.Scope.ProjectDescription" xml:space="preserve">
+    <value>Previews and updates autoenvplus.toml in the project root.</value>
+  </data>
+  <data name="LanguageDetail.Scope.SessionLabel" xml:space="preserve">
+    <value>New terminal session</value>
+  </data>
+  <data name="LanguageDetail.Scope.SessionDescription" xml:space="preserve">
+    <value>Opens a new terminal with exact identity environment variables; already-open terminals are unaffected.</value>
+  </data>
+  <data name="LanguageDetail.Switch.SelectTitle" xml:space="preserve">
+    <value>Choose a {0} version</value>
+  </data>
+  <data name="LanguageDetail.Switch.PriorityInfoTitle" xml:space="preserve">
+    <value>Selection priority</value>
+  </data>
+  <data name="LanguageDetail.Switch.PriorityInfoMessage" xml:space="preserve">
+    <value>Session &gt; project &gt; global. All three reuse the AutoEnvPlus shim configured once; the user PATH is never rewritten.</value>
+  </data>
+  <data name="LanguageDetail.Switch.UnavailableInfoTitle" xml:space="preserve">
+    <value>Some candidates unavailable</value>
+  </data>
+  <data name="LanguageDetail.Switch.UnavailableInfoMessage" xml:space="preserve">
+    <value>Registry entries with a missing entry file cannot be selected. When the same version comes from multiple Providers, the exact RuntimeId and ProviderId are saved.</value>
+  </data>
+  <data name="LanguageDetail.Switch.SetGlobalButton" xml:space="preserve">
+    <value>Set as global default</value>
+  </data>
+  <data name="LanguageDetail.Switch.PreviewProjectButton" xml:space="preserve">
+    <value>Preview project configuration</value>
+  </data>
+  <data name="LanguageDetail.Switch.PreviewSessionButton" xml:space="preserve">
+    <value>Preview new terminal</value>
+  </data>
+  <data name="LanguageDetail.Switch.NotChangedTitle" xml:space="preserve">
+    <value>Version selection not changed</value>
+  </data>
+  <data name="LanguageDetail.Switch.UnchangedMessage" xml:space="preserve">
+    <value>The project, current session, and PATH were not modified.</value>
+  </data>
+  <data name="LanguageDetail.Switch.BusyGlobalTitle" xml:space="preserve">
+    <value>Switching global version</value>
+  </data>
+  <data name="LanguageDetail.Switch.FailedTitle" xml:space="preserve">
+    <value>Could not switch the global version</value>
+  </data>
+  <data name="LanguageDetail.Switch.FailedMessage" xml:space="preserve">
+    <value>The selected registry entry changed, its entry is unavailable, or the selection is no longer unique; reopen the picker and try again.</value>
+  </data>
+  <data name="LanguageDetail.Switch.SucceededTitle" xml:space="preserve">
+    <value>Global version switched</value>
+  </data>
+  <data name="LanguageDetail.Switch.SucceededMessage" xml:space="preserve">
+    <value>{0} {1} · {2} · {3}. The project and current session were not modified; PATH was not modified.</value>
+  </data>
+  <data name="LanguageDetail.Switch.SucceededActivity" xml:space="preserve">
+    <value>Switched the global {0} version to {1} ({2} · {3}); the project, current session, and PATH were not modified.</value>
+  </data>
+  <data name="LanguageDetail.Switch.CancelledTitle" xml:space="preserve">
+    <value>Version selection cancelled</value>
+  </data>
+  <data name="LanguageDetail.Switch.ErrorTitle" xml:space="preserve">
+    <value>Could not apply the version selection</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.NotChangedTitle" xml:space="preserve">
+    <value>Project version not changed</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.NoProjectMessage" xml:space="preserve">
+    <value>No project directory was selected; global, session, and PATH were not modified.</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.BusyTitle" xml:space="preserve">
+    <value>Generating project configuration preview</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.BusyMessage" xml:space="preserve">
+    <value>Generating before/after content for {0} {1}.</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.ManifestMissing" xml:space="preserve">
+    <value>(autoenvplus.toml does not exist yet)</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.BeforeLabel" xml:space="preserve">
+    <value>Before</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.AfterLabel" xml:space="preserve">
+    <value>After</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.SafeWriteInfoTitle" xml:space="preserve">
+    <value>Safe write</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.SafeWriteInfoMessage" xml:space="preserve">
+    <value>Only the current tool&apos;s keys in [tools] and [tool-identities] are updated; unknown sections are preserved. SHA-256 is re-checked before applying, and an atomic same-directory temp-file replace is used.</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.UpdateTitle" xml:space="preserve">
+    <value>Update {0} in the project</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.AddTitle" xml:space="preserve">
+    <value>Add {0} to the project</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.ApplyButton" xml:space="preserve">
+    <value>Apply project configuration</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.PreviewClosedMessage" xml:space="preserve">
+    <value>The preview was closed; project files, global, session, and PATH were not modified.</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.FailedTitle" xml:space="preserve">
+    <value>Project version not written</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.FailedMessage" xml:space="preserve">
+    <value>The project file changed after confirmation; refresh the preview and try again.</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.SavedTitle" xml:space="preserve">
+    <value>Project exact version saved</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.UpdatedTitle" xml:space="preserve">
+    <value>Project version updated</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.AlreadySelectedTitle" xml:space="preserve">
+    <value>Project version is already the selected one</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.SavedMessage" xml:space="preserve">
+    <value>{0} {1} applies only to {2} and its subdirectories; global, current session, and PATH were not modified.</value>
+  </data>
+  <data name="LanguageDetail.ProjectVersion.SavedActivity" xml:space="preserve">
+    <value>Pinned the project&apos;s {0} to {1} ({2} / {3}); global, session, and PATH were not modified.</value>
+  </data>
+  <data name="LanguageDetail.Session.HostHeader" xml:space="preserve">
+    <value>Terminal host</value>
+  </data>
+  <data name="LanguageDetail.Session.InfoTitle" xml:space="preserve">
+    <value>Affects new terminals only</value>
+  </data>
+  <data name="LanguageDetail.Session.InfoMessage" xml:space="preserve">
+    <value>Exact versions are passed through the new process environment; the global default, project files, user PATH, and already-open terminals are not modified.</value>
+  </data>
+  <data name="LanguageDetail.Session.DialogTitle" xml:space="preserve">
+    <value>Open a new {0} {1} terminal</value>
+  </data>
+  <data name="LanguageDetail.Session.OpenInWindowsTerminal" xml:space="preserve">
+    <value>Open in Windows Terminal</value>
+  </data>
+  <data name="LanguageDetail.Session.OpenNewPowerShell" xml:space="preserve">
+    <value>Open new PowerShell</value>
+  </data>
+  <data name="LanguageDetail.Session.NotOpenedTitle" xml:space="preserve">
+    <value>New terminal not opened</value>
+  </data>
+  <data name="LanguageDetail.Session.NotOpenedMessage" xml:space="preserve">
+    <value>Global, project, current session, and PATH were not modified.</value>
+  </data>
+  <data name="LanguageDetail.Session.LaunchedTitle" xml:space="preserve">
+    <value>Exact-version terminal started</value>
+  </data>
+  <data name="LanguageDetail.Session.LaunchedMessage" xml:space="preserve">
+    <value>PID {0} · {1} {2} · {3} / {4}. Global, project, and PATH were not modified.</value>
+  </data>
+  <data name="LanguageDetail.Session.LaunchedActivity" xml:space="preserve">
+    <value>Opened an exact-version new terminal for {0} {1} ({2} / {3}); global, project, and PATH were not modified.</value>
+  </data>
+  <data name="LanguageDetail.Session.Preview.WorkingDirectory" xml:space="preserve">
+    <value>Working directory
+{0}</value>
+  </data>
+  <data name="LanguageDetail.Session.Preview.Host" xml:space="preserve">
+    <value>
+Terminal host
+{0}</value>
+  </data>
+  <data name="LanguageDetail.Session.Preview.Selection" xml:space="preserve">
+    <value>
+Exact selection
+{0} {1} · {2} / {3}</value>
+  </data>
+  <data name="LanguageDetail.Session.Preview.Network" xml:space="preserve">
+    <value>
+Network projection
+{0}</value>
+  </data>
+  <data name="LanguageDetail.Session.NetworkApplied" xml:space="preserve">
+    <value>Provider sources and proxy applied</value>
+  </data>
+  <data name="LanguageDetail.Session.NetworkNone" xml:space="preserve">
+    <value>No language tool network override</value>
+  </data>
+  <data name="LanguageDetail.Session.Preview.WarningsHeader" xml:space="preserve">
+    <value>
+Warnings</value>
+  </data>
+  <data name="LanguageDetail.Session.Preview.ErrorsHeader" xml:space="preserve">
+    <value>
+Cannot launch</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.WinGetLabel" xml:space="preserve">
+    <value>Built-in WinGet (recommended)</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.WinGetDetail" xml:space="preserve">
+    <value>Fixed package ID allow-list; vendor install and workload flows are preserved.</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.BuiltInLabel" xml:space="preserve">
+    <value>Built-in official Provider (recommended)</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.PluginDetail" xml:space="preserve">
+    <value>Third-party declarative ZIP · {0} · {1} releases</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.SelectorHeader" xml:space="preserve">
+    <value>Install source</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.ThirdPartyInfoTitle" xml:space="preserve">
+    <value>Third-party Provider</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.ThirdPartyInfoMessage" xml:space="preserve">
+    <value>The plugin checksum is a third-party declaration and is not equivalent to the built-in Provider&apos;s official signature. There is no silent fallback to the built-in source on failure.</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.NoPluginsText" xml:space="preserve">
+    <value>The current language has no enabled declarative Provider plugin for this tool.</value>
+  </data>
+  <data name="LanguageDetail.InstallSource.SelectTitle" xml:space="preserve">
+    <value>Choose an install source for {0}</value>
+  </data>
+  <data name="LanguageDetail.WinGet.InstallTitle" xml:space="preserve">
+    <value>Install {0}</value>
+  </data>
+  <data name="LanguageDetail.WinGet.DetailPackageId" xml:space="preserve">
+    <value>Fixed package ID</value>
+  </data>
+  <data name="LanguageDetail.WinGet.DetailSource" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="LanguageDetail.WinGet.DetailElevation" xml:space="preserve">
+    <value>Elevation</value>
+  </data>
+  <data name="LanguageDetail.WinGet.MayRequireElevation" xml:space="preserve">
+    <value>May request administrator privileges</value>
+  </data>
+  <data name="LanguageDetail.WinGet.UsuallyNoElevation" xml:space="preserve">
+    <value>Usually requires no elevation</value>
+  </data>
+  <data name="LanguageDetail.WinGet.InfoTitle" xml:space="preserve">
+    <value>Stays in language details</value>
+  </data>
+  <data name="LanguageDetail.WinGet.InfoMessage" xml:space="preserve">
+    <value>The install runs through the existing allow-list service; the operation stays on the current language page.</value>
+  </data>
+  <data name="LanguageDetail.WinGet.StartButton" xml:space="preserve">
+    <value>Start install</value>
+  </data>
+  <data name="LanguageDetail.WinGet.BusyTitle" xml:space="preserve">
+    <value>Installing {0}</value>
+  </data>
+  <data name="LanguageDetail.WinGet.ExitCodeError" xml:space="preserve">
+    <value>WinGet returned exit code {0}.</value>
+  </data>
+  <data name="LanguageDetail.WinGet.SucceededTitle" xml:space="preserve">
+    <value>{0} install complete</value>
+  </data>
+  <data name="LanguageDetail.WinGet.SucceededMessage" xml:space="preserve">
+    <value>WinGet package {0} completed; re-detect to refresh PATH evidence.</value>
+  </data>
+  <data name="LanguageDetail.WinGet.SucceededActivity" xml:space="preserve">
+    <value>Installed {0} ({1}) from language details.</value>
+  </data>
+  <data name="LanguageDetail.Archive.LoadingThirdPartyTitle" xml:space="preserve">
+    <value>Loading third-party declarative version catalog</value>
+  </data>
+  <data name="LanguageDetail.Archive.LoadingOfficialTitle" xml:space="preserve">
+    <value>Loading official version catalog</value>
+  </data>
+  <data name="LanguageDetail.Archive.ReleasePickerHeader" xml:space="preserve">
+    <value>Version to install</value>
+  </data>
+  <data name="LanguageDetail.Archive.SelectTitle" xml:space="preserve">
+    <value>Choose a {0} version</value>
+  </data>
+  <data name="LanguageDetail.Archive.JavaFeatureLine" xml:space="preserve">
+    <value>The officially recommended JDK {0} feature line is selected.</value>
+  </data>
+  <data name="LanguageDetail.Archive.ArchitectureProvider" xml:space="preserve">
+    <value>Architecture: {0} · Provider: {1}</value>
+  </data>
+  <data name="LanguageDetail.Archive.PreviewButton" xml:space="preserve">
+    <value>Preview install</value>
+  </data>
+  <data name="LanguageDetail.Archive.SetGlobalCheckBox" xml:space="preserve">
+    <value>Set as global default version after install</value>
+  </data>
+  <data name="LanguageDetail.Archive.InstallTitle" xml:space="preserve">
+    <value>Install {0} {1}</value>
+  </data>
+  <data name="LanguageDetail.Archive.DetailFile" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="LanguageDetail.Archive.DetailInstallRoot" xml:space="preserve">
+    <value>Install directory</value>
+  </data>
+  <data name="LanguageDetail.Archive.DetailEntry" xml:space="preserve">
+    <value>Entry</value>
+  </data>
+  <data name="LanguageDetail.Archive.ThirdPartyChecksumTitle" xml:space="preserve">
+    <value>Third-party checksum declaration</value>
+  </data>
+  <data name="LanguageDetail.Archive.ThirdPartyChecksumMessage" xml:space="preserve">
+    <value>The plugin-declared digest and ZIP entry are strictly verified, but the declaration is not equivalent to an official release signature; a failed install does not fall back to the built-in source.</value>
+  </data>
+  <data name="LanguageDetail.Archive.ProviderCollisionTitle" xml:space="preserve">
+    <value>Multiple Providers for the same version</value>
+  </data>
+  <data name="LanguageDetail.Archive.ProviderCollisionMessage" xml:space="preserve">
+    <value>The install preserves the Provider identity but does not automatically rewrite the global default.</value>
+  </data>
+  <data name="LanguageDetail.Archive.NoGlobalSelectorText" xml:space="preserve">
+    <value>This tool does not use the global version selector.</value>
+  </data>
+  <data name="LanguageDetail.Archive.ThirdPartyGlobalText" xml:space="preserve">
+    <value>Third-party Providers do not rewrite the global version by default; check explicitly if needed.</value>
+  </data>
+  <data name="LanguageDetail.Archive.BuiltInGlobalText" xml:space="preserve">
+    <value>Built-in official Providers set the global version by default; you can uncheck it before installing.</value>
+  </data>
+  <data name="LanguageDetail.Archive.StartButton" xml:space="preserve">
+    <value>Start managed install</value>
+  </data>
+  <data name="LanguageDetail.Archive.FailedFallback" xml:space="preserve">
+    <value>Managed install failed.</value>
+  </data>
+  <data name="LanguageDetail.Archive.HashVerified" xml:space="preserve">
+    <value>Package integrity verified with {0} ({1}…).</value>
+  </data>
+  <data name="LanguageDetail.Archive.HashVerifiedNoDigest" xml:space="preserve">
+    <value>Package integrity verification passed.</value>
+  </data>
+  <data name="LanguageDetail.Archive.GlobalDefaultSet" xml:space="preserve">
+    <value>Set as the global default version.</value>
+  </data>
+  <data name="LanguageDetail.Archive.GlobalDefaultUnchanged" xml:space="preserve">
+    <value>The global default version was unchanged.</value>
+  </data>
+  <data name="LanguageDetail.Archive.PendingCleanup" xml:space="preserve">
+    <value>A temporary directory is pending cleanup.</value>
+  </data>
+  <data name="LanguageDetail.Archive.AlreadyInstalledTitle" xml:space="preserve">
+    <value>Version confirmed</value>
+  </data>
+  <data name="LanguageDetail.Archive.SucceededActivity" xml:space="preserve">
+    <value>Installed {1} {2} from {0} details.</value>
+  </data>
+  <data name="LanguageDetail.Archive.RefreshFailedSuffix" xml:space="preserve">
+    <value> List refresh failed; reopen the language page.</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.SelectorHeader" xml:space="preserve">
+    <value>Provider download/metadata endpoint</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.SelectTitle" xml:space="preserve">
+    <value>Choose a {0} Provider endpoint</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.SelectHint" xml:space="preserve">
+    <value>Only enabled GenericDownload sources under this tool&apos;s managed Provider are listed; the chosen endpoint must implement that Provider&apos;s compatible catalog contract.</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.UseButton" xml:space="preserve">
+    <value>Use this endpoint</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.NonDefaultTitle" xml:space="preserve">
+    <value>Using a non-default Provider endpoint</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.DetailEndpoint" xml:space="preserve">
+    <value>Endpoint</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.DotNetInfoTitle" xml:space="preserve">
+    <value>.NET metadata and digests share the same source</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.SignatureInfoTitle" xml:space="preserve">
+    <value>Pinned signature policy stays enabled</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.DotNetInfoMessage" xml:space="preserve">
+    <value>This non-default release index determines both the asset URLs and the SHA-512 metadata, and has no independent publisher signature; it cannot be treated as a Microsoft-verified source.</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.SignatureInfoMessage" xml:space="preserve">
+    <value>The existing pinned signature/attestation verification policy for Python, Node.js, or Temurin still runs; a custom endpoint must provide a catalog and assets compatible with the corresponding Provider.</value>
+  </data>
+  <data name="LanguageDetail.Endpoint.ContinueButton" xml:space="preserve">
+    <value>Continue using</value>
+  </data>
+  <data name="LanguageDetail.Sources.EmptyInfoMessage" xml:space="preserve">
+    <value>This language&apos;s Providers have not declared source slots yet; the generic proxy still applies per the transport policy in settings.</value>
+  </data>
+  <data name="LanguageDetail.Sources.Summary" xml:space="preserve">
+    <value>{0} Provider sources · {1} overrides · {2} custom</value>
+  </data>
+  <data name="LanguageDetail.Sources.EndpointHeader" xml:space="preserve">
+    <value>HTTPS endpoint</value>
+  </data>
+  <data name="LanguageDetail.Sources.EditTitle" xml:space="preserve">
+    <value>Edit {0}</value>
+  </data>
+  <data name="LanguageDetail.Sources.SaveOverrideButton" xml:space="preserve">
+    <value>Save override</value>
+  </data>
+  <data name="LanguageDetail.Sources.SaveFailedTitle" xml:space="preserve">
+    <value>Could not save the Provider source</value>
+  </data>
+  <data name="LanguageDetail.Sources.DeleteTitle" xml:space="preserve">
+    <value>Delete custom source {0}</value>
+  </data>
+  <data name="LanguageDetail.Sources.ResetTitle" xml:space="preserve">
+    <value>Restore built-in default source {0}</value>
+  </data>
+  <data name="LanguageDetail.Sources.DeleteContent" xml:space="preserve">
+    <value>The custom source
+{0}
+
+will be deleted. After deletion this Provider&apos;s source slot is no longer available; installed runtimes are unaffected.</value>
+  </data>
+  <data name="LanguageDetail.Sources.ResetContent" xml:space="preserve">
+    <value>The override of the built-in source slot will be discarded
+Current value: {0}
+
+The catalog-declared default endpoint is restored; installed runtimes are unaffected.</value>
+  </data>
+  <data name="LanguageDetail.Sources.ResetButton" xml:space="preserve">
+    <value>Restore default</value>
+  </data>
+  <data name="LanguageDetail.Sources.DeletedActivity" xml:space="preserve">
+    <value>Deleted the Provider custom source {1} of {0}.</value>
+  </data>
+  <data name="LanguageDetail.Sources.RestoredActivity" xml:space="preserve">
+    <value>Restored the Provider built-in default source {1} of {0}.</value>
+  </data>
+  <data name="LanguageDetail.Sources.UpdateFailedTitle" xml:space="preserve">
+    <value>Could not update the Provider source</value>
+  </data>
+  <data name="LanguageDetail.Sources.ProviderHeader" xml:space="preserve">
+    <value>Owning Provider</value>
+  </data>
+  <data name="LanguageDetail.Sources.SlotIdHeader" xml:space="preserve">
+    <value>Source ID</value>
+  </data>
+  <data name="LanguageDetail.Sources.NameHeader" xml:space="preserve">
+    <value>Display name</value>
+  </data>
+  <data name="LanguageDetail.Sources.NamePlaceholder" xml:space="preserve">
+    <value>Company source</value>
+  </data>
+  <data name="LanguageDetail.Sources.PurposeHeader" xml:space="preserve">
+    <value>Purpose</value>
+  </data>
+  <data name="LanguageDetail.Sources.PurposePlaceholder" xml:space="preserve">
+    <value>Internal packages and metadata</value>
+  </data>
+  <data name="LanguageDetail.Sources.KindHeader" xml:space="preserve">
+    <value>Endpoint kind</value>
+  </data>
+  <data name="LanguageDetail.Sources.AddTitle" xml:space="preserve">
+    <value>Add a Provider custom source</value>
+  </data>
+  <data name="LanguageDetail.Sources.AddConfirmButton" xml:space="preserve">
+    <value>Add and enable</value>
+  </data>
+  <data name="LanguageDetail.Sources.AddFailedTitle" xml:space="preserve">
+    <value>Could not add the custom source</value>
+  </data>
+  <data name="LanguageDetail.Actions.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="LanguageDetail.Actions.Enable" xml:space="preserve">
+    <value>Enable</value>
+  </data>
+  <data name="LanguageDetail.Actions.Disable" xml:space="preserve">
+    <value>Disable</value>
+  </data>
+  <data name="LanguageDetail.Actions.DeleteCustom" xml:space="preserve">
+    <value>Delete custom source</value>
+  </data>
+  <data name="LanguageDetail.Actions.ResetEndpoint" xml:space="preserve">
+    <value>Restore Provider default endpoint</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.SelectFolderTitle" xml:space="preserve">
+    <value>Choose a project directory</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.BusyTitle" xml:space="preserve">
+    <value>Parsing project environments</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.BusyMessage" xml:space="preserve">
+    <value>Only fixed candidate paths are read.</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.NoneFoundTitle" xml:space="preserve">
+    <value>No {0} project environments found</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.FoundTitle" xml:space="preserve">
+    <value>Found {0} {1} environment evidence items</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.CheckedPaths" xml:space="preserve">
+    <value>Checked {0} fixed paths</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.ScanLimitSuffix" xml:space="preserve">
+    <value> · scan limit reached</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.WarningCountSuffix" xml:space="preserve">
+    <value> · {0} warnings</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.FailedTitle" xml:space="preserve">
+    <value>Could not parse project environments</value>
+  </data>
+  <data name="LanguageDetail.ProjectParse.FailedMessage" xml:space="preserve">
+    <value>The project path or fixed candidate metadata failed the safety check.</value>
+  </data>
+  <data name="LanguageDetail.Plugins.PickerCommitButton" xml:space="preserve">
+    <value>Vet this language&apos;s Provider</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ImportTitle" xml:space="preserve">
+    <value>Import {0}</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DetailLanguage" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DetailAdapterKind" xml:space="preserve">
+    <value>Built-in adapter</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DetailContents" xml:space="preserve">
+    <value>Contents</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ContentsValue" xml:space="preserve">
+    <value>{0} releases · {1} assets</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ThirdPartyInfoTitle" xml:space="preserve">
+    <value>Third-party declaration</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ThirdPartyInfoMessage" xml:space="preserve">
+    <value>Stays disabled after import; the checksum is not equivalent to an official signature.</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ImportButton" xml:space="preserve">
+    <value>Import (keep disabled)</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ImportedActivity" xml:space="preserve">
+    <value>Imported Provider plugin {1} of {0} (kept disabled).</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ImportFailedTitle" xml:space="preserve">
+    <value>Could not import a Provider for this language</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DisabledActivity" xml:space="preserve">
+    <value>Disabled Provider plugin {1} of {0}; installed runtimes are unaffected.</value>
+  </data>
+  <data name="LanguageDetail.Plugins.EnableTitle" xml:space="preserve">
+    <value>Enable {0}</value>
+  </data>
+  <data name="LanguageDetail.Plugins.EnableContent" xml:space="preserve">
+    <value>Once enabled it becomes a third-party install source for this language tool; the plugin still cannot run scripts or DLLs.</value>
+  </data>
+  <data name="LanguageDetail.Plugins.EnableButton" xml:space="preserve">
+    <value>Enable explicitly</value>
+  </data>
+  <data name="LanguageDetail.Plugins.EnabledActivity" xml:space="preserve">
+    <value>Enabled Provider plugin {1} of {0}; later installs must explicitly choose that Provider.</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ToggleFailedTitle" xml:space="preserve">
+    <value>Could not change the Provider plugin state</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DeleteTitle" xml:space="preserve">
+    <value>Delete {0}</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DeleteContent" xml:space="preserve">
+    <value>Deletes the plugin manifest and enabled state; already installed managed tools are not deleted.</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DeletedActivity" xml:space="preserve">
+    <value>Deleted Provider plugin {1} of {0}; installed runtimes are unaffected.</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DeleteFailedTitle" xml:space="preserve">
+    <value>Could not delete the Provider plugin</value>
+  </data>
+  <data name="LanguageDetail.Plugins.AdapterLabel" xml:space="preserve">
+    <value>Adapter {0}</value>
+  </data>
+  <data name="LanguageDetail.Plugins.ToggleAutomationName" xml:space="preserve">
+    <value>{0} Provider plugin: {1}</value>
+  </data>
+  <data name="LanguageDetail.Plugins.DeleteAutomationName" xml:space="preserve">
+    <value>Delete Provider plugin: {0}</value>
+  </data>
+  <data name="LanguageDetail.Count.Releases" xml:space="preserve">
+    <value>{0} releases</value>
+  </data>
+  <data name="LanguageDetail.State.Enabled" xml:space="preserve">
+    <value>Enabled</value>
+  </data>
+  <data name="LanguageDetail.State.Disabled" xml:space="preserve">
+    <value>Disabled</value>
+  </data>
+  <data name="LanguageDetail.Trust.Python" xml:space="preserve">
+    <value>python.org official releases; verifies Sigstore/Fulcio, the Rekor transparency log, and package digests.</value>
+  </data>
+  <data name="LanguageDetail.Trust.NodeJs" xml:space="preserve">
+    <value>Node.js official releases; verifies the OpenPGP checksum manifest signed by the pinned release key.</value>
+  </data>
+  <data name="LanguageDetail.Trust.Java" xml:space="preserve">
+    <value>Eclipse Temurin; verifies the API SHA-256 and the package&apos;s detached OpenPGP signature.</value>
+  </data>
+  <data name="LanguageDetail.Trust.DotNet" xml:space="preserve">
+    <value>Microsoft .NET official release metadata; SHA-512 verification is enforced.</value>
+  </data>
+  <data name="LanguageDetail.Trust.Default" xml:space="preserve">
+    <value>Uses the built-in source from AutoEnvPlus&apos;s pinned allow-list.</value>
+  </data>
+  <data name="LanguageDetail.Errors.HttpError" xml:space="preserve">
+    <value>The official endpoint returned HTTP {0}; query parameters are not shown.</value>
+  </data>
+  <data name="LanguageDetail.Errors.HttpConnectionFailed" xml:space="preserve">
+    <value>Could not establish an HTTPS connection; query parameters and credentials are not shown.</value>
+  </data>
+  <data name="LanguageDetail.Errors.PluginValidationFailed" xml:space="preserve">
+    <value>The Provider plugin failed validation ({0}).</value>
+  </data>
+  <data name="LanguageDetail.Errors.SourceValidationFailed" xml:space="preserve">
+    <value>The Provider source settings failed validation ({0}).</value>
+  </data>
+  <data name="LanguageDetail.Errors.LanguagePackValidationFailed" xml:space="preserve">
+    <value>The language pack failed validation ({0}).</value>
+  </data>
+  <data name="LanguageDetail.Errors.Generic" xml:space="preserve">
+    <value>The operation did not complete; paths, endpoint query parameters, and sensitive values are not echoed.</value>
+  </data>
+  <data name="LanguageDetail.Stage.Downloading" xml:space="preserve">
+    <value>Downloading</value>
+  </data>
+  <data name="LanguageDetail.Stage.Verifying" xml:space="preserve">
+    <value>Verifying {0}</value>
+  </data>
+  <data name="LanguageDetail.Stage.Extracting" xml:space="preserve">
+    <value>Extracting safely</value>
+  </data>
+  <data name="LanguageDetail.Stage.Committing" xml:space="preserve">
+    <value>Committing install</value>
+  </data>
+  <data name="LanguageDetail.SourceOrigin.Default" xml:space="preserve">
+    <value>Provider default</value>
+  </data>
+  <data name="LanguageDetail.SourceOrigin.Override" xml:space="preserve">
+    <value>User override</value>
+  </data>
+  <data name="LanguageDetail.SourceOrigin.Custom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="LanguageDetail.SourceOrigin.CustomEnabled" xml:space="preserve">
+    <value>Custom · enabled</value>
+  </data>
+  <data name="LanguageDetail.SourceOrigin.CustomDisabled" xml:space="preserve">
+    <value>Custom · disabled</value>
+  </data>
+  <data name="LanguageDetail.VersionChoice.UnavailableSuffix" xml:space="preserve">
+    <value> · unavailable</value>
+  </data>
+  <data name="LanguageDetail.VersionChoice.MissingEntryHelp" xml:space="preserve">
+    <value>The managed registry entry&apos;s entry file does not exist.</value>
+  </data>
+  <data name="LanguageDetail.VersionChoice.Help" xml:space="preserve">
+    <value>Switches exactly to {0} / {1} without modifying PATH.</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.MetadataSummary" xml:space="preserve">
+    <value>Catalog metadata: vendor {0} · license {1} · Windows {2}</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.OperationOfficialArchive" xml:space="preserve">
+    <value>AutoEnvPlus managed: official archive install, exact version selection, and managed uninstall · {0} managed versions registered</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.OperationWinGet" xml:space="preserve">
+    <value>AutoEnvPlus managed: pinned WinGet allow-list install / repair; vendor installs are not uninstalled as AutoEnvPlus managed runtimes</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.OperationNone" xml:space="preserve">
+    <value>AutoEnvPlus managed: no install, switch, or uninstall adapter is wired up</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.NoProviders" xml:space="preserve">
+    <value>Providers (catalog-declared): none</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.ProvidersPrefix" xml:space="preserve">
+    <value>Providers (catalog-declared): </value>
+  </data>
+  <data name="LanguageDetail.ToolRow.VendorSiteLink" xml:space="preserve">
+    <value>Vendor site</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.VendorSiteLinkAutomation" xml:space="preserve">
+    <value>Open the {0} site</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.LicenseLink" xml:space="preserve">
+    <value>License reference</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.LicenseLinkAutomation" xml:space="preserve">
+    <value>Open the {0} license reference</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.HomepageLinkAutomation" xml:space="preserve">
+    <value>Open the {0} official homepage</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.ManualInstallLink" xml:space="preserve">
+    <value>Manual install (vendor site)</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.ManualInstallLinkAutomation" xml:space="preserve">
+    <value>Open the {0} vendor site to find manual install instructions</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.ManageWinGetText" xml:space="preserve">
+    <value>Install / repair</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.ManageInstallText" xml:space="preserve">
+    <value>Install version</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.SwitchActionAutomation" xml:space="preserve">
+    <value>Choose a {0} version and scope</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.UninstallActionAutomation" xml:space="preserve">
+    <value>Uninstall the AutoEnvPlus managed versions of {0}</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.CapabilityNone" xml:space="preserve">
+    <value>Catalog-declared capabilities: metadata only</value>
+  </data>
+  <data name="LanguageDetail.ToolRow.CapabilitySummaryPrefix" xml:space="preserve">
+    <value>Catalog-declared capabilities: </value>
+  </data>
+  <data name="LanguageDetail.Capability.Discover" xml:space="preserve">
+    <value>Discovery</value>
+  </data>
+  <data name="LanguageDetail.Capability.Install" xml:space="preserve">
+    <value>Install</value>
+  </data>
+  <data name="LanguageDetail.Capability.VersionSwitch" xml:space="preserve">
+    <value>Version switching</value>
+  </data>
+  <data name="LanguageDetail.Capability.ProjectPin" xml:space="preserve">
+    <value>Project pinning</value>
+  </data>
+  <data name="LanguageDetail.Capability.PackageManagement" xml:space="preserve">
+    <value>Package management</value>
+  </data>
+  <data name="LanguageDetail.Capability.VirtualEnvironment" xml:space="preserve">
+    <value>Virtual environment</value>
+  </data>
+  <data name="LanguageDetail.Capability.MirrorConfiguration" xml:space="preserve">
+    <value>Mirror configuration</value>
+  </data>
+  <data name="LanguageDetail.Capability.Debug" xml:space="preserve">
+    <value>Debugging</value>
+  </data>
+  <data name="LanguageDetail.Capability.Format" xml:space="preserve">
+    <value>Formatting</value>
+  </data>
+  <data name="LanguageDetail.Capability.Lint" xml:space="preserve">
+    <value>Static analysis</value>
+  </data>
+  <data name="LanguageDetail.ProviderCapability.ManagedInstall" xml:space="preserve">
+    <value>Installable</value>
+  </data>
+  <data name="LanguageDetail.ProviderCapability.DiscoverOnly" xml:space="preserve">
+    <value>Discovery only</value>
+  </data>
+  <data name="LanguageDetail.ProviderCapability.VersionSwitch" xml:space="preserve">
+    <value>Switchable</value>
+  </data>
+  <data name="LanguageDetail.ProviderCapability.SourceConfiguration" xml:space="preserve">
+    <value>Configurable source</value>
+  </data>
+  <data name="LanguageDetail.ProviderCapability.CacheManagement" xml:space="preserve">
+    <value>Cache</value>
+  </data>
+  <data name="LanguageDetail.AdapterKind.ManagedArchive" xml:space="preserve">
+    <value>AutoEnvPlus archive adapter</value>
+  </data>
+  <data name="LanguageDetail.AdapterKind.WinGet" xml:space="preserve">
+    <value>AutoEnvPlus WinGet adapter</value>
+  </data>
+  <data name="LanguageDetail.AdapterKind.Catalog" xml:space="preserve">
+    <value>Catalog Provider</value>
+  </data>
+  <data name="LanguageDetail.WindowsSupport.Native" xml:space="preserve">
+    <value>Native</value>
+  </data>
+  <data name="LanguageDetail.WindowsSupport.Conditional" xml:space="preserve">
+    <value>Conditional support</value>
+  </data>
+  <data name="LanguageDetail.WindowsSupport.Unsupported" xml:space="preserve">
+    <value>Unsupported</value>
+  </data>
+  <data name="LanguageDetail.Role.Compiler" xml:space="preserve">
+    <value>Compiler</value>
+  </data>
+  <data name="LanguageDetail.Role.Interpreter" xml:space="preserve">
+    <value>Interpreter</value>
+  </data>
+  <data name="LanguageDetail.Role.Runtime" xml:space="preserve">
+    <value>Runtime</value>
+  </data>
+  <data name="LanguageDetail.Role.PackageManager" xml:space="preserve">
+    <value>Package manager</value>
+  </data>
+  <data name="LanguageDetail.Role.Build" xml:space="preserve">
+    <value>Build</value>
+  </data>
+  <data name="LanguageDetail.Role.Debugger" xml:space="preserve">
+    <value>Debugger</value>
+  </data>
+  <data name="LanguageDetail.Role.VersionManager" xml:space="preserve">
+    <value>Version manager</value>
+  </data>
+  <data name="LanguageDetail.Role.LanguageServer" xml:space="preserve">
+    <value>Language server</value>
+  </data>
+  <data name="LanguageDetail.Role.TestRunner" xml:space="preserve">
+    <value>Test runner</value>
+  </data>
 </root>
