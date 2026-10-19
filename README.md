@@ -15,7 +15,7 @@
 </p>
 
 > [!IMPORTANT]
-> 当前发布版本为 `v0.0.3`（Windows x64 测试版，面向验证而非生产部署）。每个 GitHub prerelease 必须同时提供三类经过发布工作流签名处理的主资产：`AutoEnvPlus-win-x64.exe`、`AutoEnvPlus-win-x64-portable.zip` 和 `AutoEnvPlus-win-x64.msi`，外加各自的 `.sha256` 校验文件与聚合 `SHA256SUMS.txt`。如果 [GitHub Releases](https://github.com/yeyouyby/autoenvplus/releases) 尚无这些文件，表示该版本预发布尚未完成；仓库中的工作流定义、本地构建或未签候选都不等于已经发布。签名使用自签名测试证书，Windows 会显示“未知发布者”，这是测试版的预期行为。
+> 当前发布版本为 `v0.0.4`（Windows x64 测试版，面向验证而非生产部署）。每个 GitHub prerelease 必须同时提供三类经过发布工作流签名处理的主资产：`AutoEnvPlus-win-x64.exe`、`AutoEnvPlus-win-x64-portable.zip` 和 `AutoEnvPlus-win-x64.msi`，外加各自的 `.sha256` 校验文件与聚合 `SHA256SUMS.txt`。如果 [GitHub Releases](https://github.com/yeyouyby/autoenvplus/releases) 尚无这些文件，表示该版本预发布尚未完成；仓库中的工作流定义、本地构建或未签候选都不等于已经发布。签名使用自签名测试证书，Windows 会显示“未知发布者”，这是测试版的预期行为。
 
 ## 为什么是 AutoEnvPlus
 

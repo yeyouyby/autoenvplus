@@ -2,7 +2,7 @@
 
 ## 发布状态
 
-AutoEnvPlus 是 Windows 10/11 x64 测试版，当前发布版本 `v0.0.3`（产品版本 `0.0.3`，tag `v0.0.3`）。`v0.0.1`–`v0.0.3` 均已通过 tag 工作流签名发布并完成资产回读；每个新版本仍以对应 tag 工作流成功且从 GitHub 回读签名与资产为准，仓库内容本身不能证明未来版本已发布。
+AutoEnvPlus 是 Windows 10/11 x64 测试版，当前发布版本 `v0.0.4`（产品版本 `0.0.4`，tag `v0.0.4`）。`v0.0.1`–`v0.0.4` 均已通过 tag 工作流签名发布并完成资产回读；每个新版本仍以对应 tag 工作流成功且从 GitHub 回读签名与资产为准，仓库内容本身不能证明未来版本已发布。
 
 权威 GitHub Release 主资产只有三类：
 
@@ -87,7 +87,7 @@ ZIP 格式不能承载 Authenticode。发布时所谓“signed portable”准确
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msi.ps1 `
   -Configuration Release `
-  -Version 0.0.3 `
+  -Version 0.0.4 `
   -BuildCacheRoot D:\codex `
   -PortableRoot artifacts\AutoEnvPlus-win-x64
 ```

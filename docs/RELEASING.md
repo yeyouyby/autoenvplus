@@ -1,15 +1,15 @@
 # AutoEnvPlus 发布指南
 
-本文是 AutoEnvPlus 各 Windows x64 测试版（当前 `v0.0.3`）的不可跳过检查表。文档和工作流定义不证明 PR、tag 或 GitHub prerelease 已存在；每个外部状态都必须回读。
+本文是 AutoEnvPlus 各 Windows x64 测试版（当前 `v0.0.4`）的不可跳过检查表。文档和工作流定义不证明 PR、tag 或 GitHub prerelease 已存在；每个外部状态都必须回读。
 
 ## 权威版本与资产
 
 [`Directory.Build.props`](../Directory.Build.props) 是版本权威源：
 
 ```text
-Product version: 0.0.3
-Package version: 0.0.3.0
-Release tag:     v0.0.3
+Product version: 0.0.4
+Package version: 0.0.4.0
+Release tag:     v0.0.4
 License:         AGPL-3.0-only
 ```
 
@@ -64,10 +64,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-single-file.
   -Configuration Release -BuildCacheRoot D:\codex
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish.ps1 `
-  -Configuration Release -Version 0.0.3 -BuildCacheRoot D:\codex -NoArchive
+  -Configuration Release -Version 0.0.4 -BuildCacheRoot D:\codex -NoArchive
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msi.ps1 `
-  -Configuration Release -Version 0.0.3 -BuildCacheRoot D:\codex `
+  -Configuration Release -Version 0.0.4 -BuildCacheRoot D:\codex `
   -PortableRoot artifacts\AutoEnvPlus-win-x64
 ```
 
@@ -122,8 +122,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File eng\publish-msi.ps1 `
 ```powershell
 git switch main
 git pull --ff-only
-git tag -a v0.0.3 -m "AutoEnvPlus v0.0.3 test release"
-git push origin v0.0.3
+git tag -a v0.0.4 -m "AutoEnvPlus v0.0.4 test release"
+git push origin v0.0.4
 ```
 
 `.github/workflows/release.yml` 会验证 tag/仓库/版本，构建未签候选，强制检查签名配置，用 signtool + RFC3161 时间戳签第一方 PE，逐项验签，重建 portable，构建 MSI，签 MSI 外层并复核其 payload，再生成七个文件。只有全部完成才创建或发布 prerelease；已有资产时拒绝覆盖或追加。

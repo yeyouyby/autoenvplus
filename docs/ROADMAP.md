@@ -1,6 +1,15 @@
 # AutoEnvPlus 路线图
 
-路线图以可验证能力为单位，不以目录条目数量代替实现进度。`v0.0.1`–`v0.0.3` 均已作为 GitHub prerelease 发布并完成签名与资产回读；后续版本仍以 tag、工作流和 GitHub Release 回读成功为准。
+路线图以可验证能力为单位，不以目录条目数量代替实现进度。`v0.0.1`–`v0.0.4` 均已作为 GitHub prerelease 发布并完成签名与资产回读；后续版本仍以 tag、工作流和 GitHub Release 回读成功为准。
+
+## Unreleased 功能增强（进行中）
+
+- [x] 全局镜像源管理页（分组查看/编辑/重置/启停/自定义镜像）；
+- [x] 用户 PATH 编辑器：逐条目状态与移除、智能修复（清失效 + 去重）、快照类型标记与回滚；
+- [x] 诊断一键修复（PATH 智能修复 / Shim 重装 / Shim 置顶，确认 + 快照 + 自动重扫）；
+- [x] 概览统计后台持续（切页不中断）；
+- [x] 本地化全量抽取（全部页面 + 外壳 + 后台服务，zh-CN/en-US 资源表）；
+- [ ] Core 层诊断文案本地化（问题标题/详情目前仍为中文直出，需改为结构化数据 + UI 映射）。
 
 ## v0.0.3 产品打磨（已交付）
 
@@ -65,7 +74,7 @@
 - [x] 自签名发布证书、`release-signing` environment secrets 与指纹 variable 实际配置；
 - [x] `AutoEnvPlus-win-x64.exe`、`AutoEnvPlus-win-x64-portable.zip`、`AutoEnvPlus-win-x64.msi` 三个主资产及其 sidecar/聚合 SHA-256 从 GitHub 下载回读通过；
 - [x] 单文件 EXE、便携包内第一方 PE、MSI 内 payload 与 MSI 外层 Authenticode 回读通过；
-- [x] `v0.0.1`–`v0.0.3` tag 与 GitHub prerelease 实际创建并回读；
+- [x] `v0.0.1`–`v0.0.4` tag 与 GitHub prerelease 实际创建并回读；
 - [x] 三类主资产缺一、签名失败或签名复检失败时均不发布，且没有未签名回退。
 
 ## v0.0.x 稳定化

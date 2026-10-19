@@ -1,6 +1,6 @@
 # AutoEnvPlus 功能清单
 
-本文描述 AutoEnvPlus `v0.0.3` 的真实功能边界。状态含义：
+本文描述 AutoEnvPlus `v0.0.4` 的真实功能边界。状态含义：
 
 - **受管**：AutoEnvPlus 有可执行的内置适配器并管理安装状态；
 - **发现/配置**：能够检查、展示或投影配置，但不代表可以安装；
@@ -124,11 +124,11 @@
 | WinUI single-file | 构建已实现 | `AutoEnvPlus-win-x64.exe` 是 GUI 主程序，不是 CLI；self-contained bundle 可能在启动时自解压原生库与 PRI/XBF。 |
 | 完整便携包 | 构建已实现 | `AutoEnvPlus-win-x64-portable.zip` 保留普通 WinUI EXE + DLL 布局，并包含 CLI 与原生 Shim。 |
 | per-user MSI | 构建已实现 | `AutoEnvPlus-win-x64.msi` 安装到当前用户，支持开始菜单、卸载和 major upgrade；卸载不删除用户数据或受管工具。 |
-| 自签名发布门禁 | 已实现并回读 | tag 工作流用 signtool + RFC3161 时间戳签三类资产并复检指纹；缺少证书配置或签名失败时不发布。`v0.0.1`–`v0.0.3` 均已签名发布并完成资产回读。自签名测试证书不受 Windows 信任，显示“未知发布者”。 |
+| 自签名发布门禁 | 已实现并回读 | tag 工作流用 signtool + RFC3161 时间戳签三类资产并复检指纹；缺少证书配置或签名失败时不发布。`v0.0.1`–`v0.0.4` 均已签名发布并完成资产回读。自签名测试证书不受 Windows 信任，显示“未知发布者”。 |
 
 ## 当前限制
 
-- AutoEnvPlus 当前是 x64 测试版本（`v0.0.3`），不是生产就绪版本；Windows 10/11 完整安装升级 E2E、可访问性与视觉矩阵尚未完成。
+- AutoEnvPlus 当前是 x64 测试版本（`v0.0.4`），不是生产就绪版本；Windows 10/11 完整安装升级 E2E、可访问性与视觉矩阵尚未完成。
 - 目录包含 136 个工具，但只有 9 个受管适配器；不能根据目录条目推断可安装性。
 - .NET 官方 Provider 和自定义 .NET index 当前只有元数据 checksum evidence，没有独立发布者签名结论。
 - 声明式插件没有签名包、自动更新、撤销列表或组织允许策略；启用意味着用户信任清单作者和其选择的资产。
