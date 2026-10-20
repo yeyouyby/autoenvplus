@@ -5361,4 +5361,14 @@ AutoEnvPlus 只会写入用户级 {2}。不会自动迁移语言工具、缓存�
   <data name="LanguageDetail.Role.TestRunner" xml:space="preserve">
     <value>测试运行器</value>
   </data>
+
+    <data name="LanguageDetail.SentenceSeparator" xml:space="preserve">
+      <value>。</value>
+    </data>
+    <data name="Shell.Search.AliasSeparator" xml:space="preserve">
+      <value>、</value>
+    </data>
+    <data name="LanguageDetail.ColonSeparator" xml:space="preserve">
+      <value>：</value>
+    </data>
 </root>

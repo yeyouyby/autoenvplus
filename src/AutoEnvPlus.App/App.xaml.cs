@@ -144,13 +144,24 @@ public partial class App : Application
             catch (Microsoft.UI.Xaml.Markup.XamlParseException exception)
                 when (attempt < MainWindowCreateAttempts)
             {
-                System.IO.File.AppendAllText(
-                    System.IO.Path.Combine(
-                        System.IO.Path.GetTempPath(),
-                        "autoenvplus-startup-retry.log"),
-                    $"[{DateTimeOffset.Now:O}] attempt {attempt} failed: "
-                        + exception.Message
-                        + Environment.NewLine);
+                // Best-effort diagnostics: the same interference that broke
+                // the XAML read can block this log write, and a logging
+                // failure must never abort the retry itself.
+                try
+                {
+                    System.IO.File.AppendAllText(
+                        System.IO.Path.Combine(
+                            System.IO.Path.GetTempPath(),
+                            "autoenvplus-startup-retry.log"),
+                        $"[{DateTimeOffset.Now:O}] attempt {attempt} failed: "
+                            + exception.Message
+                            + Environment.NewLine);
+                }
+                catch (Exception logException) when (logException is IOException
+                    or UnauthorizedAccessException)
+                {
+                }
+
                 await Task.Delay(TimeSpan.FromSeconds(2 * attempt));
             }
         }

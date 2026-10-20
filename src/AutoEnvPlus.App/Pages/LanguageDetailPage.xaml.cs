@@ -3083,7 +3083,11 @@ public sealed partial class LanguageDetailPage : Page
             ? Loc.Get("LanguageDetail.ToolRow.ManageWinGetText")
             : Loc.Get("LanguageDetail.ToolRow.ManageInstallText");
 
-        public string AutomationName => $"{DisplayName}。{OperationSummary}。{VersionSummary}";
+        public string AutomationName => string.Join(
+            Loc.Get("LanguageDetail.SentenceSeparator"),
+            DisplayName,
+            OperationSummary,
+            VersionSummary);
 
         public string SwitchActionAutomationName => Loc.Format(
             "LanguageDetail.ToolRow.SwitchActionAutomation",
@@ -3093,7 +3097,8 @@ public sealed partial class LanguageDetailPage : Page
             "LanguageDetail.ToolRow.UninstallActionAutomation",
             DisplayName);
 
-        public string ManageActionAutomationName => $"{ManageActionText}：{DisplayName}";
+        public string ManageActionAutomationName =>
+            $"{ManageActionText}{Loc.Get("LanguageDetail.ColonSeparator")}{DisplayName}";
 
         private static string BuildCapabilitySummary(LanguageToolCapabilities capabilities)
         {
@@ -3267,7 +3272,10 @@ public sealed partial class LanguageDetailPage : Page
 
         public bool CanEdit => Source.Origin == ProviderSourceOrigin.Custom || UserOverridable;
 
-        public string AutomationName => $"{Ownership}。{Purpose}";
+        public string AutomationName => string.Join(
+            Loc.Get("LanguageDetail.SentenceSeparator"),
+            Ownership,
+            Purpose);
 
         public string PrimaryActionText => Source.Origin == ProviderSourceOrigin.Custom
             ? Source.IsEnabled
@@ -3275,7 +3283,8 @@ public sealed partial class LanguageDetailPage : Page
                 : Loc.Get("LanguageDetail.Actions.Enable")
             : Loc.Get("LanguageDetail.Actions.Edit");
 
-        public string PrimaryActionAutomationName => $"{PrimaryActionText} Provider Source：{DisplayName}";
+        public string PrimaryActionAutomationName =>
+            $"{PrimaryActionText} Provider Source{Loc.Get("LanguageDetail.ColonSeparator")}{DisplayName}";
 
         public Visibility SecondaryActionVisibility => Source.Origin is ProviderSourceOrigin.UserOverride
             or ProviderSourceOrigin.Custom
@@ -3323,7 +3332,10 @@ public sealed partial class LanguageDetailPage : Page
                 ? Loc.Get("LanguageDetail.State.Enabled")
                 : Loc.Get("LanguageDetail.State.Disabled"));
 
-        public string AutomationName => $"{DisplayName}。{Detail}";
+        public string AutomationName => string.Join(
+            Loc.Get("LanguageDetail.SentenceSeparator"),
+            DisplayName,
+            Detail);
 
         public string ToggleAutomationName => Loc.Format(
             "LanguageDetail.Plugins.ToggleAutomationName",

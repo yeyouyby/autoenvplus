@@ -677,7 +677,9 @@ public sealed partial class MainWindow : Window
 
             string aliases = language.Aliases.Count == 0
                 ? language.Id
-                : string.Join("、", language.Aliases.Take(4));
+                : string.Join(
+                    Loc.Get("Shell.Search.AliasSeparator"),
+                    language.Aliases.Take(4));
             suggestions.Add(new GlobalSearchSuggestion(
                 language.DisplayName,
                 Loc.Format("Shell.Search.LanguageDetail", aliases),

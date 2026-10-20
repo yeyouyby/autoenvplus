@@ -5358,4 +5358,14 @@ The catalog-declared default endpoint is restored; installed runtimes are unaffe
   <data name="LanguageDetail.Role.TestRunner" xml:space="preserve">
     <value>Test runner</value>
   </data>
+
+    <data name="LanguageDetail.SentenceSeparator" xml:space="preserve">
+      <value>. </value>
+    </data>
+    <data name="Shell.Search.AliasSeparator" xml:space="preserve">
+      <value>, </value>
+    </data>
+    <data name="LanguageDetail.ColonSeparator" xml:space="preserve">
+      <value>: </value>
+    </data>
 </root>
