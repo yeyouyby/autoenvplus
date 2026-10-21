@@ -1,6 +1,6 @@
 # AutoEnvPlus 用户指南
 
-AutoEnvPlus 的主界面按工作流组织，而不是为每个运行时或网络设置创建一级页面（当前发布版本 `v0.0.4`）。语言、工具、Provider 和来源始终遵循：
+AutoEnvPlus 的主界面按工作流组织，而不是为每个运行时或网络设置创建一级页面（当前发布版本 `v0.0.5`）。语言、工具、Provider 和来源始终遵循：
 
 ```text
 语言 -> 语言工具 -> Provider -> Provider 来源

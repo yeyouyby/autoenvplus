@@ -1,6 +1,6 @@
 # AutoEnvPlus 快速开始
 
-本指南面向 AutoEnvPlus 测试版本（当前 `v0.0.4`）。AutoEnvPlus 当前只发布 Windows x64 目标；Windows 10 和 Windows 11 均在产品范围内，但完整真机安装、升级、可访问性和视觉矩阵仍属于发布前验证项。
+本指南面向 AutoEnvPlus 测试版本（当前 `v0.0.5`）。AutoEnvPlus 当前只发布 Windows x64 目标；Windows 10 和 Windows 11 均在产品范围内，但完整真机安装、升级、可访问性和视觉矩阵仍属于发布前验证项。
 
 ## 1. 选择运行方式
 

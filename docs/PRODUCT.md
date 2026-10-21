@@ -1,6 +1,6 @@
-# AutoEnvPlus v0.0.4 产品规格
+# AutoEnvPlus v0.0.5 产品规格
 
-状态：测试版（`v0.0.4` 已发布）。本文是产品行为合同；使用入口见 [文档首页](README.md)，完整实现矩阵见 [功能清单](FEATURES.md)。每个版本的发布状态以对应 GitHub Release 资产回读为准。
+状态：测试版（`v0.0.5` 已发布）。本文是产品行为合同；使用入口见 [文档首页](README.md)，完整实现矩阵见 [功能清单](FEATURES.md)。每个版本的发布状态以对应 GitHub Release 资产回读为准。
 
 ## 产品目标
 
@@ -211,4 +211,4 @@ C/C++ 不是单个运行时。MSVC 激活还需要 `INCLUDE`、`LIB`、Windows S
 17. 本地 wheel 只能安装到受管根下的 Python 虚拟环境，执行前复检，失败时不虚假宣称事务回滚。
 18. `cpython`、`nodejs`、`eclipse-temurin`、`dotnet-sdk`、`msvc-build-tools`、`clang`、`gcc`、`cmake` 和 `ninja` 可通过默认停用的 schema 2 声明式 Provider 扩展来源；选择必须绑定精确 Provider，停用/删除插件不得卸载既有运行时，旧 schema 1 仅作为兼容导入格式。
 
-以上是产品验收目标；每个版本的公开分发合同是 WinUI single-file EXE、完整 portable ZIP 和 per-user MSI 三类 x64 主资产，三者必须通过自签名发布门禁。`v0.0.1`–`v0.0.4` 均已通过 tag 工作流签名发布并完成资产回读；本地未签候选或开发证书 MSIX 都不等同于已签名 GitHub prerelease。
+以上是产品验收目标；每个版本的公开分发合同是 WinUI single-file EXE、完整 portable ZIP 和 per-user MSI 三类 x64 主资产，三者必须通过自签名发布门禁。`v0.0.1`–`v0.0.5` 均已通过 tag 工作流签名发布并完成资产回读；本地未签候选或开发证书 MSIX 都不等同于已签名 GitHub prerelease。

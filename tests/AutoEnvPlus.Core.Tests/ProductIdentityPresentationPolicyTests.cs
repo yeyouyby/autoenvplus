@@ -11,7 +11,7 @@ public sealed class ProductIdentityPresentationPolicyTests
             ProductIdentityPresentationPolicy.FromAssembly(
                 typeof(ProductIdentityPresentationPolicyTests).Assembly);
 
-        Assert.Equal("0.0.4", identity.ProductVersion);
+        Assert.Equal("0.0.5", identity.ProductVersion);
         Assert.Equal("preview", identity.ReleaseStage);
         Assert.True(identity.IsPreview);
     }
