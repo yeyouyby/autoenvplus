@@ -8,9 +8,7 @@ namespace AutoEnvPlus.Core.Tests;
 
 public sealed class NativeShimContractTests : IDisposable
 {
-    private readonly string _root = Path.Combine(
-        Path.GetTempPath(),
-        $"AutoEnvPlus-NativeShim-{Guid.NewGuid():N}");
+    private readonly List<string> _roots = [];
 
     [Fact]
     public void NativeShim_EmbedsAuthoritativeProductVersion()
@@ -698,32 +696,42 @@ public sealed class NativeShimContractTests : IDisposable
 
     public void Dispose()
     {
-        for (int attempt = 0; attempt < 20 && Directory.Exists(_root); attempt++)
+        foreach (string root in _roots)
         {
-            try
+            for (int attempt = 0; attempt < 20 && Directory.Exists(root); attempt++)
             {
-                Directory.Delete(_root, recursive: true);
-            }
-            catch (Exception exception) when (
-                attempt < 19 &&
-                (exception is IOException or UnauthorizedAccessException))
-            {
-                Thread.Sleep(50);
+                try
+                {
+                    Directory.Delete(root, recursive: true);
+                }
+                catch (Exception exception) when (
+                    attempt < 19 &&
+                    (exception is IOException or UnauthorizedAccessException))
+                {
+                    Thread.Sleep(50);
+                }
             }
         }
     }
 
     private async Task<TestEnvironment> CreateEnvironmentAsync()
     {
+        // Each environment gets an isolated root: several tests deliberately
+        // corrupt the registry (for example with equivalent provider versions),
+        // and a shared root would leak that state into later shim resolutions.
+        string root = Path.Combine(
+            Path.GetTempPath(),
+            $"AutoEnvPlus-NativeShim-{Guid.NewGuid():N}");
+        _roots.Add(root);
         string native = Path.Combine(AppContext.BaseDirectory, "autoenvplus-shim.exe");
         Assert.True(File.Exists(native), $"Native Shim was not copied to test output: {native}");
-        string shims = Directory.CreateDirectory(Path.Combine(_root, "shims")).FullName;
-        string state = Directory.CreateDirectory(Path.Combine(_root, "state")).FullName;
-        string project = Directory.CreateDirectory(Path.Combine(_root, "project")).FullName;
+        string shims = Directory.CreateDirectory(Path.Combine(root, "shims")).FullName;
+        string state = Directory.CreateDirectory(Path.Combine(root, "state")).FullName;
+        string project = Directory.CreateDirectory(Path.Combine(root, "project")).FullName;
         string python312 = Directory.CreateDirectory(
-            Path.Combine(_root, "runtimes", "python", "3.12.8", "x64")).FullName;
+            Path.Combine(root, "runtimes", "python", "3.12.8", "x64")).FullName;
         string python313 = Directory.CreateDirectory(
-            Path.Combine(_root, "runtimes", "python", "3.13.5", "x64")).FullName;
+            Path.Combine(root, "runtimes", "python", "3.13.5", "x64")).FullName;
         string fakeRuntime = """
             @echo off
             set "exitCode=%AUTOENVPLUS_TEST_EXIT%"
@@ -741,15 +749,15 @@ public sealed class NativeShimContractTests : IDisposable
             """;
         await File.WriteAllTextAsync(Path.Combine(python312, "python.cmd"), fakeRuntime);
         await File.WriteAllTextAsync(Path.Combine(python313, "python.cmd"), fakeRuntime);
-        ManagedRuntimeRegistry registry = new(_root);
+        ManagedRuntimeRegistry registry = new(root);
         await registry.UpsertAsync(CreateEntry("3.12.8", python312));
         await registry.UpsertAsync(CreateEntry("3.13.5", python313));
-        await new GlobalRuntimeProfileStore(_root).SetAsync(
+        await new GlobalRuntimeProfileStore(root).SetAsync(
             RuntimeKind.Python,
             VersionSelector.Parse("3.12"));
         string shim = Path.Combine(shims, "python.exe");
         File.Copy(native, shim);
-        return new TestEnvironment(_root, project, shim);
+        return new TestEnvironment(root, project, shim);
     }
 
     private static ManagedRuntimeEntry CreateEntry(
