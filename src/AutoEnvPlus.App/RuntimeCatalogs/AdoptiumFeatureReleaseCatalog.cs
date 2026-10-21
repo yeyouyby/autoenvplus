@@ -30,7 +30,7 @@ internal sealed class AdoptiumFeatureReleaseCatalog
         JsonElement root = document.RootElement;
         if (root.ValueKind != JsonValueKind.Object)
         {
-            throw new InvalidDataException("Adoptium Java 版本目录格式无效。");
+            throw new InvalidDataException("The Adoptium Java release catalog is not a JSON object.");
         }
 
         HashSet<int> available = ReadFeatureVersions(root, "available_releases", required: true);
@@ -59,7 +59,8 @@ internal sealed class AdoptiumFeatureReleaseCatalog
         {
             if (required)
             {
-                throw new InvalidDataException($"Adoptium Java 版本目录缺少 {propertyName}。");
+                throw new InvalidDataException(
+                    $"The Adoptium Java release catalog is missing the '{propertyName}' array.");
             }
 
             return [];
@@ -78,7 +79,8 @@ internal sealed class AdoptiumFeatureReleaseCatalog
 
         if (required && versions.Count == 0)
         {
-            throw new InvalidDataException("Adoptium Java 版本目录没有可安装的 GA 版本线。");
+            throw new InvalidDataException(
+                "The Adoptium Java release catalog lists no installable GA feature line.");
         }
 
         return versions;

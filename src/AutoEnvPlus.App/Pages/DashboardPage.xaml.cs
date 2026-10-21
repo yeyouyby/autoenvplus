@@ -244,7 +244,7 @@ public sealed partial class DashboardPage : Page
 
             UpdateAvailableInfo.Message = Loc.Format(
                 "Dashboard.Update.Message",
-                identity.DisplayVersion,
+                ProductIdentityText.DisplayVersion(identity),
                 update.LatestVersion);
             UpdateReleaseLink.NavigateUri = update.ReleaseUrl;
             UpdateAvailableInfo.IsOpen = true;

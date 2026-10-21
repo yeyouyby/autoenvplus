@@ -41,4 +41,19 @@ public static class Loc
     {
         return string.Format(CultureInfo.CurrentCulture, Get(key), args);
     }
+
+    /// <summary>Returns the localized string for the key, or null when absent.</summary>
+    public static string? TryGet(string key)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        string value = Loader.GetString(key.Replace('.', '/'));
+        return string.IsNullOrEmpty(value) ? null : value;
+    }
+
+    /// <summary>Formats the localized template for the key, or null when absent.</summary>
+    public static string? TryFormat(string key, params object?[] args)
+    {
+        string? value = TryGet(key);
+        return value is null ? null : string.Format(CultureInfo.CurrentCulture, value, args);
+    }
 }

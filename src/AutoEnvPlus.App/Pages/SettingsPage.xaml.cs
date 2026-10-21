@@ -235,8 +235,8 @@ public sealed partial class SettingsPage : Page
         {
             ProductIdentityPresentation identity =
                 ProductIdentityPresentationPolicy.FromAssembly(typeof(SettingsPage).Assembly);
-            AboutVersionText.Text = $"AutoEnvPlus {identity.DisplayVersion} · "
-                + (identity.ReleaseStage == "preview"
+            AboutVersionText.Text = $"AutoEnvPlus {ProductIdentityText.DisplayVersion(identity)} · "
+                + (identity.IsPreview
                     ? Loc.Get("Settings.About.Stage.Preview")
                     : Loc.Get("Settings.About.Stage.Stable"));
         }

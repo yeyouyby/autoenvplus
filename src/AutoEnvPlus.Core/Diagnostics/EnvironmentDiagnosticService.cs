@@ -41,6 +41,14 @@ public enum DiagnosticRepairKind
     ShimEnsureFirst,
 }
 
+/// <summary>
+/// One diagnostic finding. <paramref name="Kind"/> is a stable kind name
+/// (e.g. "PathMissing") that the app UI resolves against the
+/// <c>Diagnostics.Issue.<Kind>.Title/.Detail</c> resource keys,
+/// formatted with <paramref name="Args"/>; when it is null the UI keeps the
+/// Core-produced text. The CLI and the core tests consume
+/// <paramref name="Title"/>/<paramref name="Detail"/> directly.
+/// </summary>
 public sealed record DiagnosticIssue(
     string Id,
     DiagnosticSeverity Severity,
@@ -48,7 +56,9 @@ public sealed record DiagnosticIssue(
     string Detail,
     string? Path = null,
     DiagnosticScanScope Scope = DiagnosticScanScope.PathAndCommands,
-    DiagnosticRepairKind? Repair = null);
+    DiagnosticRepairKind? Repair = null,
+    string? Kind = null,
+    object?[]? Args = null);
 
 public sealed record DiagnosticCommandStatus(
     string Command,
@@ -254,7 +264,8 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Warning,
                 "实时连接检查未执行",
                 "代理或兼容网络设置无法解析，因此没有发起 Provider/镜像请求。",
-                Scope: DiagnosticScanScope.ProviderConnectivity));
+                Scope: DiagnosticScanScope.ProviderConnectivity,
+                Kind: "ProviderConnectivitySkipped"));
         }
 
         return report with
@@ -349,7 +360,9 @@ public sealed class EnvironmentDiagnosticService
                 "PATH 目录不存在",
                 $"进程 PATH 第 {entry.Index + 1} 项无法访问。",
                 entry.ExpandedValue,
-                Repair: UserPathRepairFor(entry)));
+                Repair: UserPathRepairFor(entry),
+                Kind: "PathMissing",
+                Args: [entry.Index + 1]));
         }
 
         foreach (PathInspectionEntry entry in path.Entries.Where(entry => entry.IsDuplicate))
@@ -360,7 +373,9 @@ public sealed class EnvironmentDiagnosticService
                 "PATH 包含重复目录",
                 $"第 {entry.Index + 1} 项与第 {(entry.FirstOccurrenceIndex ?? 0) + 1} 项重复。",
                 entry.ExpandedValue,
-                Repair: UserPathRepairFor(entry)));
+                Repair: UserPathRepairFor(entry),
+                Kind: "PathDuplicate",
+                Args: [entry.Index + 1, (entry.FirstOccurrenceIndex ?? 0) + 1]));
         }
 
         foreach (CommandConflict conflict in path.Conflicts)
@@ -370,7 +385,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Warning,
                 $"{conflict.Command} 存在命令遮蔽",
                 $"将使用 {conflict.Candidates[0].ExecutablePath}；PATH 中还有 {conflict.Candidates.Count - 1} 个同名候选。",
-                conflict.Candidates[0].ExecutablePath));
+                conflict.Candidates[0].ExecutablePath,
+                Kind: "CommandConflict",
+                Args: [conflict.Command, conflict.Candidates[0].ExecutablePath, conflict.Candidates.Count - 1]));
         }
         foreach (DiscoveredRuntime runtime in runtimes.Where(runtime => !runtime.IsHealthy))
         {
@@ -379,7 +396,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Error,
                 $"{runtime.Command} 版本探测失败",
                 runtime.Error ?? "语言工具入口未返回可识别的版本。",
-                runtime.ExecutablePath));
+                runtime.ExecutablePath,
+                Kind: "RuntimeUnhealthy",
+                Args: [runtime.Command, runtime.Error ?? "语言工具入口未返回可识别的版本。"]));
         }
 
         foreach (IGrouping<RuntimeKind, DiscoveredRuntime> group in runtimes
@@ -410,7 +429,11 @@ public sealed class EnvironmentDiagnosticService
                 versions.Length > 1
                     ? $"PATH 中探测到 {candidates.Length} 个入口，版本为 {string.Join("、", versions)}。"
                     : $"PATH 中有 {candidates.Length} 个入口返回相同版本 {versions[0]}。",
-                candidates[0].ExecutablePath));
+                candidates[0].ExecutablePath,
+                Kind: versions.Length > 1 ? "RuntimeVersionDrift" : "RuntimeDuplicate",
+                Args: versions.Length > 1
+                    ? [group.Key, candidates.Length, string.Join("、", versions)]
+                    : [group.Key, candidates.Length, versions[0]]));
         }
     }
 
@@ -450,7 +473,8 @@ public sealed class EnvironmentDiagnosticService
                 "AutoEnvPlus Shim 目录失效",
                 "用户 PATH 仍引用 AutoEnvPlus Shim，但受管目录不存在。",
                 shimDirectory,
-                Repair: DiagnosticRepairKind.ShimReinstall));
+                Repair: DiagnosticRepairKind.ShimReinstall,
+                Kind: "ShimDirectoryMissing"));
             return;
         }
 
@@ -499,7 +523,9 @@ public sealed class EnvironmentDiagnosticService
                 "AutoEnvPlus Shim 不完整",
                 $"缺少命令：{string.Join("、", missing)}。",
                 shimDirectory,
-                Repair: DiagnosticRepairKind.ShimReinstall));
+                Repair: DiagnosticRepairKind.ShimReinstall,
+                Kind: "ShimAliasesMissing",
+                Args: [string.Join("、", missing)]));
         }
 
         if (ambiguous.Count > 0)
@@ -510,7 +536,9 @@ public sealed class EnvironmentDiagnosticService
                 "AutoEnvPlus Shim 存在旧实现残留",
                 $"以下命令同时存在 .exe 与 .cmd：{string.Join("、", ambiguous)}。",
                 shimDirectory,
-                Repair: DiagnosticRepairKind.ShimReinstall));
+                Repair: DiagnosticRepairKind.ShimReinstall,
+                Kind: "ShimAliasesAmbiguous",
+                Args: [string.Join("、", ambiguous)]));
         }
 
         if (empty.Count > 0)
@@ -521,7 +549,9 @@ public sealed class EnvironmentDiagnosticService
                 "AutoEnvPlus Shim 文件无效",
                 $"以下命令的 Shim 为空或无法读取：{string.Join("、", empty.Distinct(StringComparer.OrdinalIgnoreCase))}。",
                 shimDirectory,
-                Repair: DiagnosticRepairKind.ShimReinstall));
+                Repair: DiagnosticRepairKind.ShimReinstall,
+                Kind: "ShimAliasesEmpty",
+                Args: [string.Join("、", empty.Distinct(StringComparer.OrdinalIgnoreCase))]));
         }
 
         if (!persisted)
@@ -532,7 +562,8 @@ public sealed class EnvironmentDiagnosticService
                 "Shim 尚未写入用户 PATH",
                 "受管 Shim 已存在，但持久用户 PATH 不包含该目录。",
                 shimDirectory,
-                Repair: DiagnosticRepairKind.ShimEnsureFirst));
+                Repair: DiagnosticRepairKind.ShimEnsureFirst,
+                Kind: "ShimNotInUserPath"));
             return;
         }
 
@@ -544,7 +575,9 @@ public sealed class EnvironmentDiagnosticService
                 "Shim 不是用户 PATH 第一项",
                 $"Shim 位于持久用户 PATH 第 {persistedIndex + 1} 项，前面的同名命令可能绕过版本选择。",
                 shimDirectory,
-                Repair: DiagnosticRepairKind.ShimEnsureFirst));
+                Repair: DiagnosticRepairKind.ShimEnsureFirst,
+                Kind: "ShimNotFirstInUserPath",
+                Args: [persistedIndex + 1]));
         }
 
         int currentIndex = path.Entries
@@ -560,7 +593,8 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Information,
                 "当前进程尚未加载 Shim PATH",
                 "持久用户 PATH 已配置；新终端会读取该设置，当前进程仍保留旧 PATH。",
-                shimDirectory));
+                shimDirectory,
+                Kind: "ShimNotInCurrentProcess"));
             return;
         }
 
@@ -571,7 +605,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Warning,
                 "当前进程中 Shim 排序靠后",
                 $"Shim 位于当前进程 PATH 第 {currentIndex + 1} 项。",
-                shimDirectory));
+                shimDirectory,
+                Kind: "ShimShadowedInProcessPath",
+                Args: [currentIndex + 1]));
         }
 
         string[] bypassed = path.CommandResolutions
@@ -591,7 +627,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Warning,
                 "部分命令绕过 AutoEnvPlus Shim",
                 $"当前解析未经过 Shim：{string.Join("、", bypassed)}。",
-                shimDirectory));
+                shimDirectory,
+                Kind: "ShimCommandsBypassed",
+                Args: [string.Join("、", bypassed)]));
         }
     }
 
@@ -612,7 +650,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Error,
                 "AutoEnvPlus 状态无法读取",
                 error,
-                Scope: DiagnosticScanScope.ManagedTools));
+                Scope: DiagnosticScanScope.ManagedTools,
+                Kind: "StateError",
+                Args: [error]));
         }
 
         foreach (ManagedRuntimeEntry entry in registry.Entries.Where(entry =>
@@ -624,7 +664,9 @@ public sealed class EnvironmentDiagnosticService
                 "托管语言工具入口缺失",
                 $"{entry.Id} 仍在注册表中，但入口文件不存在。",
                 entry.ExecutablePath,
-                DiagnosticScanScope.ManagedTools));
+                DiagnosticScanScope.ManagedTools,
+                Kind: "ManagedMissing",
+                Args: [entry.Id]));
         }
 
         foreach (IGrouping<string, ManagedRuntimeEntry> duplicates in registry.Entries
@@ -640,7 +682,9 @@ public sealed class EnvironmentDiagnosticService
                 "托管语言工具记录重复",
                 $"{first.Kind} {first.Version} {first.Architecture} 存在 {duplicates.Count()} 条记录。",
                 first.InstallRoot,
-                DiagnosticScanScope.ManagedTools));
+                DiagnosticScanScope.ManagedTools,
+                Kind: "ManagedDuplicate",
+                Args: [first.Kind, first.Version, first.Architecture, duplicates.Count()]));
         }
 
         foreach ((RuntimeKind kind, VersionSelector selector) in globalProfile.Selections)
@@ -672,7 +716,9 @@ public sealed class EnvironmentDiagnosticService
                         ? $"{kind} 精确全局身份失效"
                         : $"{kind} 全局选择无法解析",
                     $"选择器 {selector}：{string.Join("；", managedResolution.Errors)}",
-                    Scope: DiagnosticScanScope.ManagedTools));
+                    Scope: DiagnosticScanScope.ManagedTools,
+                    Kind: exact ? "GlobalExactUnresolved" : "GlobalUnresolved",
+                    Args: [kind, selector, string.Join("；", managedResolution.Errors)]));
                 continue;
             }
 
@@ -710,7 +756,9 @@ public sealed class EnvironmentDiagnosticService
                     $"{kind} 全局选择被当前 PATH 绕过",
                     $"全局选择解析为 {installation.Version}，当前命令来自 {winner.ExecutablePath}。",
                     winner.ExecutablePath,
-                    DiagnosticScanScope.ManagedTools));
+                    DiagnosticScanScope.ManagedTools,
+                    Kind: "GlobalBypassed",
+                    Args: [kind, installation.Version, winner.ExecutablePath]));
             }
             else if (!versionMatches)
             {
@@ -720,7 +768,9 @@ public sealed class EnvironmentDiagnosticService
                     $"{kind} 命令版本与全局选择不一致",
                     $"全局选择为 {installation.Version}，当前入口报告 {winnerProbe!.Version}。",
                     winner.ExecutablePath,
-                    DiagnosticScanScope.ManagedTools));
+                    DiagnosticScanScope.ManagedTools,
+                    Kind: "GlobalVersionDrift",
+                    Args: [kind, installation.Version, winnerProbe!.Version]));
             }
         }
     }
@@ -742,7 +792,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Error,
                 "语言工具库存无法投影到有效目录",
                 exception.Message,
-                Scope: DiagnosticScanScope.ManagedTools));
+                Scope: DiagnosticScanScope.ManagedTools,
+                Kind: "InventoryLanguagePack",
+                Args: [exception.Code, exception.Message]));
             return;
         }
 
@@ -763,7 +815,9 @@ public sealed class EnvironmentDiagnosticService
                 "语言工具库存快照无效",
                 $"快照无法安全读取（{exception.GetType().Name}）；只有显式重新扫描才会重建它。",
                 store.SnapshotPath,
-                DiagnosticScanScope.ManagedTools));
+                DiagnosticScanScope.ManagedTools,
+                Kind: "InventoryInvalid",
+                Args: [exception.GetType().Name]));
             return;
         }
 
@@ -775,7 +829,8 @@ public sealed class EnvironmentDiagnosticService
                 "尚未建立语言工具库存快照",
                 "打开首页或语言页不会触发扫描；请在语言页显式扫描需要的语言。",
                 store.SnapshotPath,
-                DiagnosticScanScope.ManagedTools));
+                DiagnosticScanScope.ManagedTools,
+                Kind: "InventoryMissing"));
             return;
         }
 
@@ -787,7 +842,8 @@ public sealed class EnvironmentDiagnosticService
                 "语言目录已变化，库存投影已过期",
                 "目录指纹与扫描时不同；旧证据仍可只读显示，但应按语言显式刷新。",
                 store.SnapshotPath,
-                DiagnosticScanScope.ManagedTools));
+                DiagnosticScanScope.ManagedTools,
+                Kind: "InventoryCatalogDrift"));
         }
 
         DateTimeOffset staleBefore = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(30));
@@ -803,7 +859,9 @@ public sealed class EnvironmentDiagnosticService
                 "部分语言工具库存长期未刷新",
                 $"{stale.Length} 个工具超过 30 天未显式扫描；最早为 {stale[0].ScannedAtUtc.LocalDateTime:g}。",
                 store.SnapshotPath,
-                DiagnosticScanScope.ManagedTools));
+                DiagnosticScanScope.ManagedTools,
+                Kind: "InventoryStale",
+                Args: [stale.Length, stale[0].ScannedAtUtc.LocalDateTime]));
         }
 
         int unknownToolCount = snapshot.Tools.Count(entry =>
@@ -816,7 +874,9 @@ public sealed class EnvironmentDiagnosticService
                 "库存包含目录中已不存在的工具",
                 $"{unknownToolCount} 条旧工具记录不会参与当前投影；重新扫描会清理可淘汰证据。",
                 store.SnapshotPath,
-                DiagnosticScanScope.ManagedTools));
+                DiagnosticScanScope.ManagedTools,
+                Kind: "InventoryUnknownTools",
+                Args: [unknownToolCount]));
         }
     }
 
@@ -840,7 +900,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Error,
                 "有效语言目录无法加载",
                 exception.Message,
-                Scope: issueScope));
+                Scope: issueScope,
+                Kind: "LanguagePack",
+                Args: [exception.Code, exception.Message]));
             catalog = BuiltInLanguageCatalog.Current;
         }
 
@@ -860,7 +922,9 @@ public sealed class EnvironmentDiagnosticService
                         DiagnosticSeverity.Error,
                         "Provider 声明可安装但没有执行适配器",
                         $"{profile.Identity.ScopedId} 已降级为目录元数据；不会显示虚假安装入口。",
-                        Scope: issueScope));
+                        Scope: issueScope,
+                        Kind: "ProviderAdapterMissing",
+                        Args: [profile.Identity.ScopedId]));
                 }
             }
         }
@@ -879,7 +943,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Error,
                 "Provider 来源配置无效",
                 $"{exception.Error.Path}：{exception.Error.Message}",
-                Scope: issueScope));
+                Scope: issueScope,
+                Kind: "ProviderSource",
+                Args: [exception.Error.Path, exception.Error.Message]));
             sourcePreferences = ProviderSourcePreferences.Empty;
         }
         catch (Exception exception) when (exception is IOException
@@ -893,7 +959,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Error,
                 "Provider 来源配置无法读取",
                 $"读取失败：{exception.GetType().Name}。",
-                Scope: issueScope));
+                Scope: issueScope,
+                Kind: "ProviderSourceStateIo",
+                Args: [exception.GetType().Name]));
             sourcePreferences = ProviderSourcePreferences.Empty;
         }
 
@@ -908,7 +976,9 @@ public sealed class EnvironmentDiagnosticService
                     DiagnosticSeverity.Error,
                     "代理与兼容网络设置无效",
                     $"{error.Path}：{error.Message}",
-                    Scope: issueScope));
+                    Scope: issueScope,
+                    Kind: "NetworkSettings",
+                    Args: [error.Path, error.Message]));
             }
         }
 
@@ -926,7 +996,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Error,
                 "Provider 插件状态无效",
                 exception.Message,
-                Scope: issueScope));
+                Scope: issueScope,
+                Kind: "ProviderPlugin",
+                Args: [exception.Message]));
             plugins = new RuntimeProviderPluginListResult([], []);
         }
         catch (Exception exception) when (exception is IOException
@@ -939,7 +1011,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Error,
                 "Provider 插件状态无法读取",
                 $"读取失败：{exception.GetType().Name}。",
-                Scope: issueScope));
+                Scope: issueScope,
+                Kind: "ProviderPluginStateIo",
+                Args: [exception.GetType().Name]));
             plugins = new RuntimeProviderPluginListResult([], []);
         }
 
@@ -952,7 +1026,9 @@ public sealed class EnvironmentDiagnosticService
                 "Provider 插件状态无效",
                 error.Message,
                 error.FileName,
-                issueScope));
+                issueScope,
+                Kind: "ProviderPluginState",
+                Args: [error.Message]));
         }
 
         foreach (RuntimeProviderPluginDescriptor plugin in plugins.Plugins)
@@ -973,7 +1049,9 @@ public sealed class EnvironmentDiagnosticService
                     "Provider 插件工具身份漂移",
                     $"{plugin.Manifest.DisplayName} 声明 {plugin.LanguageToolId}/{plugin.Manifest.Kind}，但当前语言目录与受控桥接表不再一致。",
                     plugin.ManifestPath,
-                    issueScope));
+                    issueScope,
+                    Kind: "ProviderPluginIdentityDrift",
+                    Args: [plugin.Manifest.DisplayName, plugin.LanguageToolId, plugin.Manifest.Kind]));
             }
         }
 
@@ -993,7 +1071,9 @@ public sealed class EnvironmentDiagnosticService
                     "已启用 Provider 不支持当前架构",
                     $"{plugin.Manifest.DisplayName} 没有 {architecture} 资产。",
                     plugin.ManifestPath,
-                    issueScope));
+                    issueScope,
+                    Kind: "ProviderArchitecture",
+                    Args: [plugin.Manifest.DisplayName, architecture]));
             }
         }
 
@@ -1025,7 +1105,8 @@ public sealed class EnvironmentDiagnosticService
                     "项目目录不存在",
                     "无法执行项目锁与虚拟环境检查。",
                     fullRoot,
-                    DiagnosticScanScope.ProjectEnvironment));
+                    DiagnosticScanScope.ProjectEnvironment,
+                    Kind: "ProjectRootMissing"));
                 return;
             }
 
@@ -1039,7 +1120,8 @@ public sealed class EnvironmentDiagnosticService
                     "未找到 AutoEnvPlus 项目锁",
                     "所选目录及其父目录中没有 autoenvplus.toml。",
                     fullRoot,
-                    DiagnosticScanScope.ProjectEnvironment));
+                    DiagnosticScanScope.ProjectEnvironment,
+                    Kind: "ProjectManifestNotFound"));
             }
             else
             {
@@ -1051,7 +1133,9 @@ public sealed class EnvironmentDiagnosticService
                         "项目锁无法解析",
                         $"第 {error.LineNumber} 行：{error.Message}",
                         manifest.Manifest.ManifestPath,
-                        DiagnosticScanScope.ProjectEnvironment));
+                        DiagnosticScanScope.ProjectEnvironment,
+                        Kind: "ProjectManifest",
+                        Args: [error.LineNumber, error.Message]));
                 }
 
                 if (manifest.Success)
@@ -1072,7 +1156,9 @@ public sealed class EnvironmentDiagnosticService
                     "项目环境扫描未完全覆盖",
                     warning,
                     fullRoot,
-                    DiagnosticScanScope.ProjectEnvironment));
+                    DiagnosticScanScope.ProjectEnvironment,
+                    Kind: "ProjectScan",
+                    Args: [warning]));
             }
 
             foreach (ProjectVirtualEnvironment environment in environments.Environments
@@ -1100,7 +1186,18 @@ public sealed class EnvironmentDiagnosticService
                         ? string.Join("；", environment.Warnings)
                         : $"{environment.Manager} 报告 {environment.Health}。",
                     environment.Root,
-                    DiagnosticScanScope.ProjectEnvironment));
+                    DiagnosticScanScope.ProjectEnvironment,
+                    Kind: isDefinition
+                        ? "ProjectEnvironmentDeclared"
+                        : isOrphanedPythonEnvironment
+                            ? "ProjectEnvironmentOrphaned"
+                            : "ProjectEnvironmentCheck",
+                    Args: [
+                        environment.LanguageId,
+                        environment.Warnings.Count > 0
+                            ? string.Join("；", environment.Warnings)
+                            : $"{environment.Manager} 报告 {environment.Health}。"
+                    ]));
             }
 
             if (manifest is { Success: true })
@@ -1127,7 +1224,9 @@ public sealed class EnvironmentDiagnosticService
                 "无法检查项目环境",
                 exception.Message,
                 projectRoot,
-                DiagnosticScanScope.ProjectEnvironment));
+                DiagnosticScanScope.ProjectEnvironment,
+                Kind: "ProjectInspectionFailed",
+                Args: [exception.Message]));
         }
     }
 
@@ -1161,7 +1260,16 @@ public sealed class EnvironmentDiagnosticService
                         ? $"选择器 {selector} 固定到 {identity!.RuntimeId} / {identity.ProviderId}：{string.Join("；", resolved.Errors)}"
                         : $"选择器 {selector} 没有匹配的托管语言工具：{string.Join("；", resolved.Errors)}",
                     manifest.ManifestPath,
-                    DiagnosticScanScope.ProjectEnvironment));
+                    DiagnosticScanScope.ProjectEnvironment,
+                    Kind: exact ? "ProjectExactUnresolved" : "ProjectLockUnresolved",
+                    Args: [
+                        kind,
+                        selector,
+                        exact
+                            ? $"{identity!.RuntimeId} / {identity.ProviderId}"
+                            : string.Empty,
+                        string.Join("；", resolved.Errors)
+                    ]));
             }
         }
     }
@@ -1204,7 +1312,9 @@ public sealed class EnvironmentDiagnosticService
                     "Python 虚拟环境与项目锁不一致",
                     $"项目锁要求 {selector}，虚拟环境报告 {version}。",
                     environment.Root,
-                    DiagnosticScanScope.ProjectEnvironment));
+                    DiagnosticScanScope.ProjectEnvironment,
+                    Kind: "ProjectPythonVersionDrift",
+                    Args: [selector, version]));
             }
         }
     }
@@ -1234,7 +1344,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Error,
                 "无法读取缓存位置",
                 exception.Message,
-                Scope: DiagnosticScanScope.StoragePressure));
+                Scope: DiagnosticScanScope.StoragePressure,
+                Kind: "CacheDiscoveryFailed",
+                Args: [exception.Message]));
             locations = [];
         }
 
@@ -1247,7 +1359,9 @@ public sealed class EnvironmentDiagnosticService
                 $"{location.Definition.DisplayName} 缓存配置需要检查",
                 location.Warning!,
                 location.ConfigurationFilePath ?? location.DirectoryPath,
-                DiagnosticScanScope.StoragePressure));
+                DiagnosticScanScope.StoragePressure,
+                Kind: "CacheConfig",
+                Args: [location.Definition.DisplayName, location.Warning!]));
         }
 
         List<CacheDirectoryLocation> safeLocations = [];
@@ -1270,7 +1384,9 @@ public sealed class EnvironmentDiagnosticService
                     $"{location.Definition.DisplayName} 缓存路径不安全",
                     exception.Message,
                     location.DirectoryPath,
-                    DiagnosticScanScope.StoragePressure));
+                    DiagnosticScanScope.StoragePressure,
+                    Kind: "CachePathUnsafe",
+                    Args: [location.Definition.DisplayName, exception.Message]));
             }
         }
 
@@ -1287,7 +1403,9 @@ public sealed class EnvironmentDiagnosticService
                     $"{location.Definition.DisplayName} 缓存仍位于系统盘",
                     "可在存储页面预览并迁移；诊断不会自动移动或删除文件。",
                     location.DirectoryPath,
-                    DiagnosticScanScope.StoragePressure));
+                    DiagnosticScanScope.StoragePressure,
+                    Kind: "CacheSystemDrive",
+                    Args: [location.Definition.DisplayName]));
             }
         }
 
@@ -1310,7 +1428,14 @@ public sealed class EnvironmentDiagnosticService
                     $"{measurement.Location.Definition.DisplayName} 缓存占用较大",
                     $"{FormatBytes(measurement.TotalBytes)}，共 {measurement.FileCount} 个文件；阈值为 {FormatBytes(options.LargeCacheBytes)}。",
                     measurement.Location.DirectoryPath,
-                    DiagnosticScanScope.StoragePressure));
+                    DiagnosticScanScope.StoragePressure,
+                    Kind: "CacheLarge",
+                    Args: [
+                        measurement.Location.Definition.DisplayName,
+                        FormatBytes(measurement.TotalBytes),
+                        measurement.FileCount,
+                        FormatBytes(options.LargeCacheBytes)
+                    ]));
             }
 
             if (measurement.Errors.Count > 0)
@@ -1321,7 +1446,9 @@ public sealed class EnvironmentDiagnosticService
                     $"{measurement.Location.Definition.DisplayName} 缓存未完整统计",
                     $"{measurement.Errors.Count} 个路径无法读取；报告的大小可能偏小。",
                     measurement.Location.DirectoryPath,
-                    DiagnosticScanScope.StoragePressure));
+                    DiagnosticScanScope.StoragePressure,
+                    Kind: "CacheMeasurement",
+                    Args: [measurement.Location.Definition.DisplayName, measurement.Errors.Count]));
             }
         }
 
@@ -1353,7 +1480,15 @@ public sealed class EnvironmentDiagnosticService
                         $"{root} 磁盘空间偏低",
                         $"可用 {FormatBytes(drive.AvailableFreeSpace)}（{freeRatio:P0}）；检查阈值为 {FormatBytes(options.LowDiskFreeBytes)} 或 {options.LowDiskFreeRatio:P0}。",
                         root,
-                        DiagnosticScanScope.StoragePressure));
+                        DiagnosticScanScope.StoragePressure,
+                        Kind: "DiskPressure",
+                        Args: [
+                            root,
+                            FormatBytes(drive.AvailableFreeSpace),
+                            $"{freeRatio:P0}",
+                            FormatBytes(options.LowDiskFreeBytes),
+                            $"{options.LowDiskFreeRatio:P0}"
+                        ]));
                 }
             }
             catch (Exception exception) when (exception is IOException
@@ -1366,7 +1501,9 @@ public sealed class EnvironmentDiagnosticService
                     "无法读取磁盘容量",
                     exception.Message,
                     root,
-                    DiagnosticScanScope.StoragePressure));
+                    DiagnosticScanScope.StoragePressure,
+                    Kind: "DiskInspection",
+                    Args: [exception.Message]));
             }
         }
     }
@@ -1385,7 +1522,9 @@ public sealed class EnvironmentDiagnosticService
                 "AutoEnvPlus 受管根无法安全检查",
                 exception.Message,
                 _managedRoot,
-                DiagnosticScanScope.StoragePressure));
+                DiagnosticScanScope.StoragePressure,
+                Kind: "ManagedRootUnsafe",
+                Args: [exception.Message]));
             return false;
         }
 
@@ -1398,7 +1537,8 @@ public sealed class EnvironmentDiagnosticService
                 "AutoEnvPlus 受管根位于系统盘",
                 "语言工具、下载、状态与 Shim 将占用系统盘；可迁移到非系统盘后再更新 AUTOENVPLUS_HOME。",
                 _managedRoot,
-                DiagnosticScanScope.StoragePressure));
+                DiagnosticScanScope.StoragePressure,
+                Kind: "ManagedRootSystemDrive"));
         }
 
         string localApplicationData = System.Environment.GetFolderPath(
@@ -1421,7 +1561,9 @@ public sealed class EnvironmentDiagnosticService
                     "旧 AutoEnvPlus 数据路径无法安全检查",
                     exception.Message,
                     legacyRoot,
-                    DiagnosticScanScope.StoragePressure));
+                    DiagnosticScanScope.StoragePressure,
+                    Kind: "LegacyLocalAppDataStateUnsafe",
+                    Args: [exception.Message]));
             }
 
             if (legacyExists
@@ -1440,7 +1582,10 @@ public sealed class EnvironmentDiagnosticService
                         ? "当前受管根不会自动合并或删除这份系统盘旧数据；确认无引用后再从存储页面处理。"
                         : "当前受管根不会自动合并或删除这份旧数据；确认无引用后再从存储页面处理。",
                     legacyRoot,
-                    DiagnosticScanScope.StoragePressure));
+                    DiagnosticScanScope.StoragePressure,
+                    Kind: legacyOnSystemDrive
+                        ? "LegacyLocalAppDataStateOnSystemDrive"
+                        : "LegacyLocalAppDataState"));
             }
         }
 
@@ -1453,11 +1598,13 @@ public sealed class EnvironmentDiagnosticService
             Path.Combine(_managedRoot, ".staging"),
             "runtime-staging-pending",
             "存在未完成的语言工具安装暂存",
+            "RuntimeStagingPending",
             issues);
         InspectPendingDirectory(
             Path.Combine(_managedRoot, "downloads", "library", ".autoenvplus-staging"),
             "download-staging-pending",
             "存在未完成的分段下载或导入暂存",
+            "DownloadStagingPending",
             issues);
 
         string downloadsRoot = Path.Combine(_managedRoot, "downloads");
@@ -1476,7 +1623,9 @@ public sealed class EnvironmentDiagnosticService
                 "无法完整检查下载残留",
                 exception.Message,
                 downloadsRoot,
-                DiagnosticScanScope.StoragePressure));
+                DiagnosticScanScope.StoragePressure,
+                Kind: "DownloadPartialInspectionFailed",
+                Args: [exception.Message]));
             return;
         }
 
@@ -1488,7 +1637,9 @@ public sealed class EnvironmentDiagnosticService
                 "存在未完成的语言工具下载",
                 $"发现 {partialCount} 个 .partial 或恢复元数据文件；可能来自中断下载，也可能正被活动任务使用。",
                 downloadsRoot,
-                DiagnosticScanScope.StoragePressure));
+                DiagnosticScanScope.StoragePressure,
+                Kind: "DownloadPartialsPending",
+                Args: [partialCount]));
         }
     }
 
@@ -1496,6 +1647,7 @@ public sealed class EnvironmentDiagnosticService
         string path,
         string issueId,
         string title,
+        string kind,
         ICollection<DiagnosticIssue> issues)
     {
         try
@@ -1522,7 +1674,9 @@ public sealed class EnvironmentDiagnosticService
                         ? "至少有 129 个暂存项；诊断只读取，不会清理活动或恢复证据。"
                         : $"发现 {count} 个暂存项；诊断只读取，不会清理活动或恢复证据。",
                     path,
-                    DiagnosticScanScope.StoragePressure));
+                    DiagnosticScanScope.StoragePressure,
+                    Kind: count > 128 ? kind + "Capped" : kind,
+                    Args: [count]));
             }
         }
         catch (Exception exception) when (exception is IOException
@@ -1535,7 +1689,9 @@ public sealed class EnvironmentDiagnosticService
                 "暂存目录无法安全检查",
                 exception.Message,
                 path,
-                DiagnosticScanScope.StoragePressure));
+                DiagnosticScanScope.StoragePressure,
+                Kind: "StagingUnsafe",
+                Args: [exception.Message]));
         }
     }
 
@@ -1738,7 +1894,8 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Warning,
                 "实时连接检查仅覆盖可解析来源",
                 "语言包、Provider 插件或用户来源状态存在错误；未对无法加载的来源发起请求。",
-                Scope: DiagnosticScanScope.ProviderConnectivity));
+                Scope: DiagnosticScanScope.ProviderConnectivity,
+                Kind: "ProviderConnectivityPartial"));
         }
 
         IEnumerable<ProviderSourceOwner> preferredOwners =
@@ -1856,7 +2013,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Information,
                 "实时连接检查已按上限取样",
                 $"共有 {distinct.Length} 个唯一 Provider/镜像端点，本次检查前 {options.MaximumConnectivityEndpoints} 个。",
-                Scope: DiagnosticScanScope.ProviderConnectivity));
+                Scope: DiagnosticScanScope.ProviderConnectivity,
+                Kind: "ProviderConnectivityLimit",
+                Args: [distinct.Length, options.MaximumConnectivityEndpoints]));
             distinct = distinct[..options.MaximumConnectivityEndpoints];
         }
 
@@ -1944,7 +2103,9 @@ public sealed class EnvironmentDiagnosticService
                     DiagnosticSeverity.Warning,
                     "Provider 或镜像响应异常",
                     $"{candidate.Name}：{candidate.Endpoint.IdnHost} 返回 HTTP {status}。",
-                    Scope: DiagnosticScanScope.ProviderConnectivity);
+                    Scope: DiagnosticScanScope.ProviderConnectivity,
+                    Kind: "ProviderHttp",
+                    Args: [candidate.Name, candidate.Endpoint.IdnHost, status]);
             }
 
             return null;
@@ -1960,7 +2121,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Warning,
                 "Provider 或镜像连接超时",
                 $"{candidate.Name}：{candidate.Endpoint.IdnHost}。",
-                Scope: DiagnosticScanScope.ProviderConnectivity);
+                Scope: DiagnosticScanScope.ProviderConnectivity,
+                Kind: "ProviderTimeout",
+                Args: [candidate.Name, candidate.Endpoint.IdnHost]);
         }
         catch (HttpRequestException exception)
         {
@@ -1972,7 +2135,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Warning,
                 "Provider 或镜像无法连接",
                 $"{candidate.Name}：{detail}",
-                Scope: DiagnosticScanScope.ProviderConnectivity);
+                Scope: DiagnosticScanScope.ProviderConnectivity,
+                Kind: "ProviderTransport",
+                Args: [candidate.Name, detail]);
         }
         catch (Exception exception) when (exception is IOException
             or InvalidOperationException)
@@ -1982,7 +2147,9 @@ public sealed class EnvironmentDiagnosticService
                 DiagnosticSeverity.Warning,
                 "Provider 或镜像无法连接",
                 $"{candidate.Name}：{candidate.Endpoint.IdnHost} 传输失败。",
-                Scope: DiagnosticScanScope.ProviderConnectivity);
+                Scope: DiagnosticScanScope.ProviderConnectivity,
+                Kind: "ProviderIo",
+                Args: [candidate.Name, candidate.Endpoint.IdnHost]);
         }
     }
 

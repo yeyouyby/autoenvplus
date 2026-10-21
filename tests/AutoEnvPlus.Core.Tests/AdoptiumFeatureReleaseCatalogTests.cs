@@ -73,7 +73,7 @@ public sealed class AdoptiumFeatureReleaseCatalogTests
                 client,
                 new Uri("https://api.example.test/v3/")).GetAsync());
 
-        Assert.Contains("没有可安装的 GA 版本线", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("no installable GA feature line", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -490,6 +490,7 @@ public sealed class EnvironmentDiagnosticServiceTests : IDisposable
             staging,
             "runtime-staging-pending",
             "pending",
+            "RuntimeStagingPending",
             issues);
 
         DiagnosticIssue issue = Assert.Single(issues);

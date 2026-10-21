@@ -5368,4 +5368,471 @@ The catalog-declared default endpoint is restored; installed runtimes are unaffe
     <data name="LanguageDetail.ColonSeparator" xml:space="preserve">
       <value>: </value>
     </data>
+
+    <data name="Identity.Version.Stable" xml:space="preserve">
+      <value>v{0}</value>
+    </data>
+    <data name="Identity.Version.Preview" xml:space="preserve">
+      <value>v{0} Preview</value>
+    </data>
+    <data name="Identity.Window.Title" xml:space="preserve">
+      <value>AutoEnvPlus {0}</value>
+    </data>
+
+    <data name="Diagnostics.Issue.ProviderConnectivitySkipped.Title" xml:space="preserve">
+      <value>Live connectivity check not run</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderConnectivitySkipped.Detail" xml:space="preserve">
+      <value>The proxy or compatibility network settings could not be resolved, so no Provider/mirror requests were made.</value>
+    </data>
+    <data name="Diagnostics.Issue.PathMissing.Title" xml:space="preserve">
+      <value>PATH directory does not exist</value>
+    </data>
+    <data name="Diagnostics.Issue.PathMissing.Detail" xml:space="preserve">
+      <value>Entry {0} of the process PATH is not accessible.</value>
+    </data>
+    <data name="Diagnostics.Issue.PathDuplicate.Title" xml:space="preserve">
+      <value>PATH contains duplicate directories</value>
+    </data>
+    <data name="Diagnostics.Issue.PathDuplicate.Detail" xml:space="preserve">
+      <value>Entry {0} duplicates entry {1}.</value>
+    </data>
+    <data name="Diagnostics.Issue.CommandConflict.Title" xml:space="preserve">
+      <value>{0} command is shadowed</value>
+    </data>
+    <data name="Diagnostics.Issue.CommandConflict.Detail" xml:space="preserve">
+      <value>{1} will be used; PATH holds {2} more candidates with the same name.</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeUnhealthy.Title" xml:space="preserve">
+      <value>{0} version probe failed</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeUnhealthy.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeVersionDrift.Title" xml:space="preserve">
+      <value>{0} has multiple executable versions</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeVersionDrift.Detail" xml:space="preserve">
+      <value>{1} entries were probed on PATH, with versions {2}.</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeDuplicate.Title" xml:space="preserve">
+      <value>{0} has duplicate language tools</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeDuplicate.Detail" xml:space="preserve">
+      <value>{1} entries on PATH report the same version {2}.</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimDirectoryMissing.Title" xml:space="preserve">
+      <value>AutoEnvPlus shim directory is broken</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimDirectoryMissing.Detail" xml:space="preserve">
+      <value>The user PATH still references the AutoEnvPlus shim, but the managed directory does not exist.</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimAliasesMissing.Title" xml:space="preserve">
+      <value>AutoEnvPlus shim is incomplete</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimAliasesMissing.Detail" xml:space="preserve">
+      <value>Missing commands: {0}.</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimAliasesAmbiguous.Title" xml:space="preserve">
+      <value>AutoEnvPlus shim has legacy leftovers</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimAliasesAmbiguous.Detail" xml:space="preserve">
+      <value>These commands exist as both .exe and .cmd: {0}.</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimAliasesEmpty.Title" xml:space="preserve">
+      <value>AutoEnvPlus shim files are invalid</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimAliasesEmpty.Detail" xml:space="preserve">
+      <value>Shims for these commands are empty or unreadable: {0}.</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimNotInUserPath.Title" xml:space="preserve">
+      <value>Shim is not on the user PATH yet</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimNotInUserPath.Detail" xml:space="preserve">
+      <value>The managed shim exists, but the persisted user PATH does not include its directory.</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimNotFirstInUserPath.Title" xml:space="preserve">
+      <value>Shim is not the first user PATH entry</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimNotFirstInUserPath.Detail" xml:space="preserve">
+      <value>The shim is entry {0} of the persisted user PATH; same-named commands before it may bypass version selection.</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimNotInCurrentProcess.Title" xml:space="preserve">
+      <value>Current process has not loaded the shim PATH</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimNotInCurrentProcess.Detail" xml:space="preserve">
+      <value>The persisted user PATH is configured; new terminals will pick it up, while this process keeps the old PATH.</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimShadowedInProcessPath.Title" xml:space="preserve">
+      <value>Shim sits late in the current process PATH</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimShadowedInProcessPath.Detail" xml:space="preserve">
+      <value>The shim is entry {0} of the current process PATH.</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimCommandsBypassed.Title" xml:space="preserve">
+      <value>Some commands bypass the AutoEnvPlus shim</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimCommandsBypassed.Detail" xml:space="preserve">
+      <value>Current resolution skipped the shim: {0}.</value>
+    </data>
+    <data name="Diagnostics.Issue.StateError.Title" xml:space="preserve">
+      <value>AutoEnvPlus state cannot be read</value>
+    </data>
+    <data name="Diagnostics.Issue.StateError.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedMissing.Title" xml:space="preserve">
+      <value>Managed language tool entry is missing</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedMissing.Detail" xml:space="preserve">
+      <value>{0} is still registered, but its entry file does not exist.</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedDuplicate.Title" xml:space="preserve">
+      <value>Managed language tool records are duplicated</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedDuplicate.Detail" xml:space="preserve">
+      <value>{0} {1} {2} has {3} records.</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalExactUnresolved.Title" xml:space="preserve">
+      <value>{0} exact global identity is broken</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalExactUnresolved.Detail" xml:space="preserve">
+      <value>Selector {1}: {2}</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalUnresolved.Title" xml:space="preserve">
+      <value>{0} global selection cannot be resolved</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalUnresolved.Detail" xml:space="preserve">
+      <value>Selector {1}: {2}</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalBypassed.Title" xml:space="preserve">
+      <value>{0} global selection is bypassed by the current PATH</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalBypassed.Detail" xml:space="preserve">
+      <value>The global selection resolves to {1}; the current command comes from {2}.</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalVersionDrift.Title" xml:space="preserve">
+      <value>{0} command version disagrees with the global selection</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalVersionDrift.Detail" xml:space="preserve">
+      <value>The global selection is {1}; the current entry reports {2}.</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryLanguagePack.Title" xml:space="preserve">
+      <value>Language tool inventory cannot project onto a valid catalog</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryLanguagePack.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryInvalid.Title" xml:space="preserve">
+      <value>Language tool inventory snapshot is invalid</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryInvalid.Detail" xml:space="preserve">
+      <value>The snapshot cannot be read safely ({0}); only an explicit rescan rebuilds it.</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryMissing.Title" xml:space="preserve">
+      <value>No language tool inventory snapshot yet</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryMissing.Detail" xml:space="preserve">
+      <value>Opening the dashboard or languages page does not trigger a scan; scan the languages you need from the languages page.</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryCatalogDrift.Title" xml:space="preserve">
+      <value>The language catalog changed; the inventory projection is stale</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryCatalogDrift.Detail" xml:space="preserve">
+      <value>The catalog fingerprint differs from scan time; old evidence stays read-only, but refresh per language explicitly.</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryStale.Title" xml:space="preserve">
+      <value>Some language tool inventory entries are long unrefreshed</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryStale.Detail" xml:space="preserve">
+      <value>{0} tools have not been explicitly scanned for over 30 days; the oldest is {1:g}.</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryUnknownTools.Title" xml:space="preserve">
+      <value>Inventory holds tools that no longer exist in the catalog</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryUnknownTools.Detail" xml:space="preserve">
+      <value>{0} stale tool records are excluded from the current projection; a rescan cleans up the retired evidence.</value>
+    </data>
+    <data name="Diagnostics.Issue.LanguagePack.Title" xml:space="preserve">
+      <value>The effective language catalog cannot be loaded</value>
+    </data>
+    <data name="Diagnostics.Issue.LanguagePack.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderAdapterMissing.Title" xml:space="preserve">
+      <value>Provider claims installability but has no execution adapter</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderAdapterMissing.Detail" xml:space="preserve">
+      <value>{0} was demoted to catalog metadata; no fake install entries are shown.</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderSource.Title" xml:space="preserve">
+      <value>Provider source configuration is invalid</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderSource.Detail" xml:space="preserve">
+      <value>{0}: {1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderSourceStateIo.Title" xml:space="preserve">
+      <value>Provider source configuration cannot be read</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderSourceStateIo.Detail" xml:space="preserve">
+      <value>Read failed: {0}.</value>
+    </data>
+    <data name="Diagnostics.Issue.NetworkSettings.Title" xml:space="preserve">
+      <value>Proxy or compatibility network settings are invalid</value>
+    </data>
+    <data name="Diagnostics.Issue.NetworkSettings.Detail" xml:space="preserve">
+      <value>{0}: {1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPlugin.Title" xml:space="preserve">
+      <value>Provider plugin state is invalid</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPlugin.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPluginStateIo.Title" xml:space="preserve">
+      <value>Provider plugin state cannot be read</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPluginStateIo.Detail" xml:space="preserve">
+      <value>Read failed: {0}.</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPluginState.Title" xml:space="preserve">
+      <value>Provider plugin state is invalid</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPluginState.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPluginIdentityDrift.Title" xml:space="preserve">
+      <value>Provider plugin tool identity drifted</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPluginIdentityDrift.Detail" xml:space="preserve">
+      <value>{0} declares {1}/{2}, but the current language catalog and the controlled bridge table no longer agree.</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderArchitecture.Title" xml:space="preserve">
+      <value>An enabled Provider does not support this architecture</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderArchitecture.Detail" xml:space="preserve">
+      <value>{0} has no {1} assets.</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectRootMissing.Title" xml:space="preserve">
+      <value>Project directory does not exist</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectRootMissing.Detail" xml:space="preserve">
+      <value>Project lock and virtual environment checks cannot run.</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectManifestNotFound.Title" xml:space="preserve">
+      <value>No AutoEnvPlus project lock found</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectManifestNotFound.Detail" xml:space="preserve">
+      <value>No autoenvplus.toml exists in the selected directory or its parents.</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectManifest.Title" xml:space="preserve">
+      <value>Project lock cannot be parsed</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectManifest.Detail" xml:space="preserve">
+      <value>Line {0}: {1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectScan.Title" xml:space="preserve">
+      <value>Project environment scan was not fully covered</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectScan.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectEnvironmentDeclared.Title" xml:space="preserve">
+      <value>Virtual environment is declared but not created yet</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectEnvironmentDeclared.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectEnvironmentOrphaned.Title" xml:space="preserve">
+      <value>Possibly orphaned or corrupted Python virtual environment</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectEnvironmentOrphaned.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectEnvironmentCheck.Title" xml:space="preserve">
+      <value>{0} project environment needs attention</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectEnvironmentCheck.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectInspectionFailed.Title" xml:space="preserve">
+      <value>Project environment cannot be inspected</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectInspectionFailed.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectExactUnresolved.Title" xml:space="preserve">
+      <value>{0} project exact identity is broken</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectExactUnresolved.Detail" xml:space="preserve">
+      <value>Selector {1} is pinned to {2}: {3}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectLockUnresolved.Title" xml:space="preserve">
+      <value>{0} project lock cannot be resolved</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectLockUnresolved.Detail" xml:space="preserve">
+      <value>Selector {1} has no matching managed language tool: {3}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectPythonVersionDrift.Title" xml:space="preserve">
+      <value>Python virtual environment disagrees with the project lock</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectPythonVersionDrift.Detail" xml:space="preserve">
+      <value>The project lock requires {0}; the virtual environment reports {1}.</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheDiscoveryFailed.Title" xml:space="preserve">
+      <value>Cache locations cannot be read</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheDiscoveryFailed.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheConfig.Title" xml:space="preserve">
+      <value>{0} cache configuration needs attention</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheConfig.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.CachePathUnsafe.Title" xml:space="preserve">
+      <value>{0} cache path is unsafe</value>
+    </data>
+    <data name="Diagnostics.Issue.CachePathUnsafe.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheSystemDrive.Title" xml:space="preserve">
+      <value>{0} cache still sits on the system drive</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheSystemDrive.Detail" xml:space="preserve">
+      <value>Preview and migrate it on the storage page; diagnostics never move or delete files on its own.</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheLarge.Title" xml:space="preserve">
+      <value>{0} cache is large</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheLarge.Detail" xml:space="preserve">
+      <value>{1} across {2} files; the threshold is {3}.</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheMeasurement.Title" xml:space="preserve">
+      <value>{0} cache was not fully measured</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheMeasurement.Detail" xml:space="preserve">
+      <value>{1} paths could not be read; the reported size may be understated.</value>
+    </data>
+    <data name="Diagnostics.Issue.DiskPressure.Title" xml:space="preserve">
+      <value>{0} is low on disk space</value>
+    </data>
+    <data name="Diagnostics.Issue.DiskPressure.Detail" xml:space="preserve">
+      <value>{1} free ({2}); the check threshold is {3} or {4}.</value>
+    </data>
+    <data name="Diagnostics.Issue.DiskInspection.Title" xml:space="preserve">
+      <value>Disk capacity cannot be read</value>
+    </data>
+    <data name="Diagnostics.Issue.DiskInspection.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedRootUnsafe.Title" xml:space="preserve">
+      <value>The AutoEnvPlus managed root cannot be inspected safely</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedRootUnsafe.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedRootSystemDrive.Title" xml:space="preserve">
+      <value>The AutoEnvPlus managed root sits on the system drive</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedRootSystemDrive.Detail" xml:space="preserve">
+      <value>Language tools, downloads, state, and the shim will consume the system drive; migrate to a non-system drive, then update AUTOENVPLUS_HOME.</value>
+    </data>
+    <data name="Diagnostics.Issue.LegacyLocalAppDataStateUnsafe.Title" xml:space="preserve">
+      <value>The legacy AutoEnvPlus data path cannot be inspected safely</value>
+    </data>
+    <data name="Diagnostics.Issue.LegacyLocalAppDataStateUnsafe.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.LegacyLocalAppDataStateOnSystemDrive.Title" xml:space="preserve">
+      <value>Legacy AutoEnvPlus data still sits on the system drive</value>
+    </data>
+    <data name="Diagnostics.Issue.LegacyLocalAppDataStateOnSystemDrive.Detail" xml:space="preserve">
+      <value>The current managed root will not merge or delete this legacy system-drive data automatically; handle it from the storage page after confirming nothing references it.</value>
+    </data>
+    <data name="Diagnostics.Issue.LegacyLocalAppDataState.Title" xml:space="preserve">
+      <value>Legacy AutoEnvPlus data still exists</value>
+    </data>
+    <data name="Diagnostics.Issue.LegacyLocalAppDataState.Detail" xml:space="preserve">
+      <value>The current managed root will not merge or delete this legacy data automatically; handle it from the storage page after confirming nothing references it.</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadPartialInspectionFailed.Title" xml:space="preserve">
+      <value>Download leftovers cannot be fully inspected</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadPartialInspectionFailed.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadPartialsPending.Title" xml:space="preserve">
+      <value>Unfinished language tool downloads exist</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadPartialsPending.Detail" xml:space="preserve">
+      <value>{0} .partial or resume metadata files were found; they may come from interrupted downloads or be in use by active tasks.</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeStagingPending.Title" xml:space="preserve">
+      <value>Unfinished language tool install staging exists</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeStagingPending.Detail" xml:space="preserve">
+      <value>{0} staging entries were found; diagnostics only read and never clean active or resume evidence.</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeStagingPendingCapped.Title" xml:space="preserve">
+      <value>Unfinished language tool install staging exists</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeStagingPendingCapped.Detail" xml:space="preserve">
+      <value>At least 129 staging entries exist; diagnostics only read and never clean active or resume evidence.</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadStagingPending.Title" xml:space="preserve">
+      <value>Unfinished segmented download or import staging exists</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadStagingPending.Detail" xml:space="preserve">
+      <value>{0} staging entries were found; diagnostics only read and never clean active or resume evidence.</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadStagingPendingCapped.Title" xml:space="preserve">
+      <value>Unfinished segmented download or import staging exists</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadStagingPendingCapped.Detail" xml:space="preserve">
+      <value>At least 129 staging entries exist; diagnostics only read and never clean active or resume evidence.</value>
+    </data>
+    <data name="Diagnostics.Issue.StagingUnsafe.Title" xml:space="preserve">
+      <value>The staging directory cannot be inspected safely</value>
+    </data>
+    <data name="Diagnostics.Issue.StagingUnsafe.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderConnectivityPartial.Title" xml:space="preserve">
+      <value>Live connectivity check covered only resolvable sources</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderConnectivityPartial.Detail" xml:space="preserve">
+      <value>Language packs, Provider plugins, or user sources have errors; no requests were made for sources that failed to load.</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderConnectivityLimit.Title" xml:space="preserve">
+      <value>Live connectivity check sampled up to the limit</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderConnectivityLimit.Detail" xml:space="preserve">
+      <value>{0} unique Provider/mirror endpoints exist; this check covered the first {1}.</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderHttp.Title" xml:space="preserve">
+      <value>Provider or mirror returned an abnormal response</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderHttp.Detail" xml:space="preserve">
+      <value>{0}: {1} returned HTTP {2}.</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderTimeout.Title" xml:space="preserve">
+      <value>Provider or mirror connection timed out</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderTimeout.Detail" xml:space="preserve">
+      <value>{0}: {1}.</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderTransport.Title" xml:space="preserve">
+      <value>Provider or mirror is unreachable</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderTransport.Detail" xml:space="preserve">
+      <value>{0}: {1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderIo.Title" xml:space="preserve">
+      <value>Provider or mirror is unreachable</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderIo.Detail" xml:space="preserve">
+      <value>{0}: {1} transport failed.</value>
+    </data>
 </root>

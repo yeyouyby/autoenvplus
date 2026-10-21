@@ -2,17 +2,16 @@ using System.Reflection;
 
 namespace AutoEnvPlus.App.Appearance;
 
+/// <summary>
+/// Structured product identity. This file is compiled into the core test
+/// project, so it must stay free of resource lookups; the display strings
+/// are formatted by <see cref="ProductIdentityText"/> in the app assembly.
+/// </summary>
 internal sealed record ProductIdentityPresentation(
     string ProductVersion,
     string ReleaseStage)
 {
-    public string DisplayVersion => ReleaseStage == "preview"
-        ? $"v{ProductVersion} 预览版"
-        : $"v{ProductVersion}";
-
-    public string WindowTitle => $"AutoEnvPlus {DisplayVersion}";
-
-    public string AutomationName => $"AutoEnvPlus {DisplayVersion}";
+    public bool IsPreview => ReleaseStage == "preview";
 }
 
 internal static class ProductIdentityPresentationPolicy

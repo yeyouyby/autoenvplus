@@ -5371,4 +5371,471 @@ AutoEnvPlus 只会写入用户级 {2}。不会自动迁移语言工具、缓存�
     <data name="LanguageDetail.ColonSeparator" xml:space="preserve">
       <value>：</value>
     </data>
+
+    <data name="Identity.Version.Stable" xml:space="preserve">
+      <value>v{0}</value>
+    </data>
+    <data name="Identity.Version.Preview" xml:space="preserve">
+      <value>v{0} 预览版</value>
+    </data>
+    <data name="Identity.Window.Title" xml:space="preserve">
+      <value>AutoEnvPlus {0}</value>
+    </data>
+
+    <data name="Diagnostics.Issue.ProviderConnectivitySkipped.Title" xml:space="preserve">
+      <value>实时连接检查未执行</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderConnectivitySkipped.Detail" xml:space="preserve">
+      <value>代理或兼容网络设置无法解析，因此没有发起 Provider/镜像请求。</value>
+    </data>
+    <data name="Diagnostics.Issue.PathMissing.Title" xml:space="preserve">
+      <value>PATH 目录不存在</value>
+    </data>
+    <data name="Diagnostics.Issue.PathMissing.Detail" xml:space="preserve">
+      <value>进程 PATH 第 {0} 项无法访问。</value>
+    </data>
+    <data name="Diagnostics.Issue.PathDuplicate.Title" xml:space="preserve">
+      <value>PATH 包含重复目录</value>
+    </data>
+    <data name="Diagnostics.Issue.PathDuplicate.Detail" xml:space="preserve">
+      <value>第 {0} 项与第 {1} 项重复。</value>
+    </data>
+    <data name="Diagnostics.Issue.CommandConflict.Title" xml:space="preserve">
+      <value>{0} 存在命令遮蔽</value>
+    </data>
+    <data name="Diagnostics.Issue.CommandConflict.Detail" xml:space="preserve">
+      <value>将使用 {1}；PATH 中还有 {2} 个同名候选。</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeUnhealthy.Title" xml:space="preserve">
+      <value>{0} 版本探测失败</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeUnhealthy.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeVersionDrift.Title" xml:space="preserve">
+      <value>{0} 存在多个可执行版本</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeVersionDrift.Detail" xml:space="preserve">
+      <value>PATH 中探测到 {1} 个入口，版本为 {2}。</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeDuplicate.Title" xml:space="preserve">
+      <value>{0} 存在重复语言工具</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeDuplicate.Detail" xml:space="preserve">
+      <value>PATH 中有 {1} 个入口返回相同版本 {2}。</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimDirectoryMissing.Title" xml:space="preserve">
+      <value>AutoEnvPlus Shim 目录失效</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimDirectoryMissing.Detail" xml:space="preserve">
+      <value>用户 PATH 仍引用 AutoEnvPlus Shim，但受管目录不存在。</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimAliasesMissing.Title" xml:space="preserve">
+      <value>AutoEnvPlus Shim 不完整</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimAliasesMissing.Detail" xml:space="preserve">
+      <value>缺少命令：{0}。</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimAliasesAmbiguous.Title" xml:space="preserve">
+      <value>AutoEnvPlus Shim 存在旧实现残留</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimAliasesAmbiguous.Detail" xml:space="preserve">
+      <value>以下命令同时存在 .exe 与 .cmd：{0}。</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimAliasesEmpty.Title" xml:space="preserve">
+      <value>AutoEnvPlus Shim 文件无效</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimAliasesEmpty.Detail" xml:space="preserve">
+      <value>以下命令的 Shim 为空或无法读取：{0}。</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimNotInUserPath.Title" xml:space="preserve">
+      <value>Shim 尚未写入用户 PATH</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimNotInUserPath.Detail" xml:space="preserve">
+      <value>受管 Shim 已存在，但持久用户 PATH 不包含该目录。</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimNotFirstInUserPath.Title" xml:space="preserve">
+      <value>Shim 不是用户 PATH 第一项</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimNotFirstInUserPath.Detail" xml:space="preserve">
+      <value>Shim 位于持久用户 PATH 第 {0} 项，前面的同名命令可能绕过版本选择。</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimNotInCurrentProcess.Title" xml:space="preserve">
+      <value>当前进程尚未加载 Shim PATH</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimNotInCurrentProcess.Detail" xml:space="preserve">
+      <value>持久用户 PATH 已配置；新终端会读取该设置，当前进程仍保留旧 PATH。</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimShadowedInProcessPath.Title" xml:space="preserve">
+      <value>当前进程中 Shim 排序靠后</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimShadowedInProcessPath.Detail" xml:space="preserve">
+      <value>Shim 位于当前进程 PATH 第 {0} 项。</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimCommandsBypassed.Title" xml:space="preserve">
+      <value>部分命令绕过 AutoEnvPlus Shim</value>
+    </data>
+    <data name="Diagnostics.Issue.ShimCommandsBypassed.Detail" xml:space="preserve">
+      <value>当前解析未经过 Shim：{0}。</value>
+    </data>
+    <data name="Diagnostics.Issue.StateError.Title" xml:space="preserve">
+      <value>AutoEnvPlus 状态无法读取</value>
+    </data>
+    <data name="Diagnostics.Issue.StateError.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedMissing.Title" xml:space="preserve">
+      <value>托管语言工具入口缺失</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedMissing.Detail" xml:space="preserve">
+      <value>{0} 仍在注册表中，但入口文件不存在。</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedDuplicate.Title" xml:space="preserve">
+      <value>托管语言工具记录重复</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedDuplicate.Detail" xml:space="preserve">
+      <value>{0} {1} {2} 存在 {3} 条记录。</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalExactUnresolved.Title" xml:space="preserve">
+      <value>{0} 精确全局身份失效</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalExactUnresolved.Detail" xml:space="preserve">
+      <value>选择器 {1}：{2}</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalUnresolved.Title" xml:space="preserve">
+      <value>{0} 全局选择无法解析</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalUnresolved.Detail" xml:space="preserve">
+      <value>选择器 {1}：{2}</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalBypassed.Title" xml:space="preserve">
+      <value>{0} 全局选择被当前 PATH 绕过</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalBypassed.Detail" xml:space="preserve">
+      <value>全局选择解析为 {1}，当前命令来自 {2}。</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalVersionDrift.Title" xml:space="preserve">
+      <value>{0} 命令版本与全局选择不一致</value>
+    </data>
+    <data name="Diagnostics.Issue.GlobalVersionDrift.Detail" xml:space="preserve">
+      <value>全局选择为 {1}，当前入口报告 {2}。</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryLanguagePack.Title" xml:space="preserve">
+      <value>语言工具库存无法投影到有效目录</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryLanguagePack.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryInvalid.Title" xml:space="preserve">
+      <value>语言工具库存快照无效</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryInvalid.Detail" xml:space="preserve">
+      <value>快照无法安全读取（{0}）；只有显式重新扫描才会重建它。</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryMissing.Title" xml:space="preserve">
+      <value>尚未建立语言工具库存快照</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryMissing.Detail" xml:space="preserve">
+      <value>打开首页或语言页不会触发扫描；请在语言页显式扫描需要的语言。</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryCatalogDrift.Title" xml:space="preserve">
+      <value>语言目录已变化，库存投影已过期</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryCatalogDrift.Detail" xml:space="preserve">
+      <value>目录指纹与扫描时不同；旧证据仍可只读显示，但应按语言显式刷新。</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryStale.Title" xml:space="preserve">
+      <value>部分语言工具库存长期未刷新</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryStale.Detail" xml:space="preserve">
+      <value>{0} 个工具超过 30 天未显式扫描；最早为 {1:g}。</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryUnknownTools.Title" xml:space="preserve">
+      <value>库存包含目录中已不存在的工具</value>
+    </data>
+    <data name="Diagnostics.Issue.InventoryUnknownTools.Detail" xml:space="preserve">
+      <value>{0} 条旧工具记录不会参与当前投影；重新扫描会清理可淘汰证据。</value>
+    </data>
+    <data name="Diagnostics.Issue.LanguagePack.Title" xml:space="preserve">
+      <value>有效语言目录无法加载</value>
+    </data>
+    <data name="Diagnostics.Issue.LanguagePack.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderAdapterMissing.Title" xml:space="preserve">
+      <value>Provider 声明可安装但没有执行适配器</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderAdapterMissing.Detail" xml:space="preserve">
+      <value>{0} 已降级为目录元数据；不会显示虚假安装入口。</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderSource.Title" xml:space="preserve">
+      <value>Provider 来源配置无效</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderSource.Detail" xml:space="preserve">
+      <value>{0}：{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderSourceStateIo.Title" xml:space="preserve">
+      <value>Provider 来源配置无法读取</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderSourceStateIo.Detail" xml:space="preserve">
+      <value>读取失败：{0}。</value>
+    </data>
+    <data name="Diagnostics.Issue.NetworkSettings.Title" xml:space="preserve">
+      <value>代理与兼容网络设置无效</value>
+    </data>
+    <data name="Diagnostics.Issue.NetworkSettings.Detail" xml:space="preserve">
+      <value>{0}：{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPlugin.Title" xml:space="preserve">
+      <value>Provider 插件状态无效</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPlugin.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPluginStateIo.Title" xml:space="preserve">
+      <value>Provider 插件状态无法读取</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPluginStateIo.Detail" xml:space="preserve">
+      <value>读取失败：{0}。</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPluginState.Title" xml:space="preserve">
+      <value>Provider 插件状态无效</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPluginState.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPluginIdentityDrift.Title" xml:space="preserve">
+      <value>Provider 插件工具身份漂移</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderPluginIdentityDrift.Detail" xml:space="preserve">
+      <value>{0} 声明 {1}/{2}，但当前语言目录与受控桥接表不再一致。</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderArchitecture.Title" xml:space="preserve">
+      <value>已启用 Provider 不支持当前架构</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderArchitecture.Detail" xml:space="preserve">
+      <value>{0} 没有 {1} 资产。</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectRootMissing.Title" xml:space="preserve">
+      <value>项目目录不存在</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectRootMissing.Detail" xml:space="preserve">
+      <value>无法执行项目锁与虚拟环境检查。</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectManifestNotFound.Title" xml:space="preserve">
+      <value>未找到 AutoEnvPlus 项目锁</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectManifestNotFound.Detail" xml:space="preserve">
+      <value>所选目录及其父目录中没有 autoenvplus.toml。</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectManifest.Title" xml:space="preserve">
+      <value>项目锁无法解析</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectManifest.Detail" xml:space="preserve">
+      <value>第 {0} 行：{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectScan.Title" xml:space="preserve">
+      <value>项目环境扫描未完全覆盖</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectScan.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectEnvironmentDeclared.Title" xml:space="preserve">
+      <value>虚拟环境已声明但尚未创建</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectEnvironmentDeclared.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectEnvironmentOrphaned.Title" xml:space="preserve">
+      <value>可能孤立或损坏的 Python 虚拟环境</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectEnvironmentOrphaned.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectEnvironmentCheck.Title" xml:space="preserve">
+      <value>{0} 项目环境需要检查</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectEnvironmentCheck.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectInspectionFailed.Title" xml:space="preserve">
+      <value>无法检查项目环境</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectInspectionFailed.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectExactUnresolved.Title" xml:space="preserve">
+      <value>{0} 项目精确身份失效</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectExactUnresolved.Detail" xml:space="preserve">
+      <value>选择器 {1} 固定到 {2}：{3}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectLockUnresolved.Title" xml:space="preserve">
+      <value>{0} 项目锁无法解析</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectLockUnresolved.Detail" xml:space="preserve">
+      <value>选择器 {1} 没有匹配的托管语言工具：{3}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectPythonVersionDrift.Title" xml:space="preserve">
+      <value>Python 虚拟环境与项目锁不一致</value>
+    </data>
+    <data name="Diagnostics.Issue.ProjectPythonVersionDrift.Detail" xml:space="preserve">
+      <value>项目锁要求 {0}，虚拟环境报告 {1}。</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheDiscoveryFailed.Title" xml:space="preserve">
+      <value>无法读取缓存位置</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheDiscoveryFailed.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheConfig.Title" xml:space="preserve">
+      <value>{0} 缓存配置需要检查</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheConfig.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.CachePathUnsafe.Title" xml:space="preserve">
+      <value>{0} 缓存路径不安全</value>
+    </data>
+    <data name="Diagnostics.Issue.CachePathUnsafe.Detail" xml:space="preserve">
+      <value>{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheSystemDrive.Title" xml:space="preserve">
+      <value>{0} 缓存仍位于系统盘</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheSystemDrive.Detail" xml:space="preserve">
+      <value>可在存储页面预览并迁移；诊断不会自动移动或删除文件。</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheLarge.Title" xml:space="preserve">
+      <value>{0} 缓存占用较大</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheLarge.Detail" xml:space="preserve">
+      <value>{1}，共 {2} 个文件；阈值为 {3}。</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheMeasurement.Title" xml:space="preserve">
+      <value>{0} 缓存未完整统计</value>
+    </data>
+    <data name="Diagnostics.Issue.CacheMeasurement.Detail" xml:space="preserve">
+      <value>{1} 个路径无法读取；报告的大小可能偏小。</value>
+    </data>
+    <data name="Diagnostics.Issue.DiskPressure.Title" xml:space="preserve">
+      <value>{0} 磁盘空间偏低</value>
+    </data>
+    <data name="Diagnostics.Issue.DiskPressure.Detail" xml:space="preserve">
+      <value>可用 {1}（{2}）；检查阈值为 {3} 或 {4}。</value>
+    </data>
+    <data name="Diagnostics.Issue.DiskInspection.Title" xml:space="preserve">
+      <value>无法读取磁盘容量</value>
+    </data>
+    <data name="Diagnostics.Issue.DiskInspection.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedRootUnsafe.Title" xml:space="preserve">
+      <value>AutoEnvPlus 受管根无法安全检查</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedRootUnsafe.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedRootSystemDrive.Title" xml:space="preserve">
+      <value>AutoEnvPlus 受管根位于系统盘</value>
+    </data>
+    <data name="Diagnostics.Issue.ManagedRootSystemDrive.Detail" xml:space="preserve">
+      <value>语言工具、下载、状态与 Shim 将占用系统盘；可迁移到非系统盘后再更新 AUTOENVPLUS_HOME。</value>
+    </data>
+    <data name="Diagnostics.Issue.LegacyLocalAppDataStateUnsafe.Title" xml:space="preserve">
+      <value>旧 AutoEnvPlus 数据路径无法安全检查</value>
+    </data>
+    <data name="Diagnostics.Issue.LegacyLocalAppDataStateUnsafe.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.LegacyLocalAppDataStateOnSystemDrive.Title" xml:space="preserve">
+      <value>系统盘仍有旧 AutoEnvPlus 数据</value>
+    </data>
+    <data name="Diagnostics.Issue.LegacyLocalAppDataStateOnSystemDrive.Detail" xml:space="preserve">
+      <value>当前受管根不会自动合并或删除这份系统盘旧数据；确认无引用后再从存储页面处理。</value>
+    </data>
+    <data name="Diagnostics.Issue.LegacyLocalAppDataState.Title" xml:space="preserve">
+      <value>仍有旧 AutoEnvPlus 数据</value>
+    </data>
+    <data name="Diagnostics.Issue.LegacyLocalAppDataState.Detail" xml:space="preserve">
+      <value>当前受管根不会自动合并或删除这份旧数据；确认无引用后再从存储页面处理。</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadPartialInspectionFailed.Title" xml:space="preserve">
+      <value>无法完整检查下载残留</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadPartialInspectionFailed.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadPartialsPending.Title" xml:space="preserve">
+      <value>存在未完成的语言工具下载</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadPartialsPending.Detail" xml:space="preserve">
+      <value>发现 {0} 个 .partial 或恢复元数据文件；可能来自中断下载，也可能正被活动任务使用。</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeStagingPending.Title" xml:space="preserve">
+      <value>存在未完成的语言工具安装暂存</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeStagingPending.Detail" xml:space="preserve">
+      <value>发现 {0} 个暂存项；诊断只读取，不会清理活动或恢复证据。</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeStagingPendingCapped.Title" xml:space="preserve">
+      <value>存在未完成的语言工具安装暂存</value>
+    </data>
+    <data name="Diagnostics.Issue.RuntimeStagingPendingCapped.Detail" xml:space="preserve">
+      <value>至少有 129 个暂存项；诊断只读取，不会清理活动或恢复证据。</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadStagingPending.Title" xml:space="preserve">
+      <value>存在未完成的分段下载或导入暂存</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadStagingPending.Detail" xml:space="preserve">
+      <value>发现 {0} 个暂存项；诊断只读取，不会清理活动或恢复证据。</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadStagingPendingCapped.Title" xml:space="preserve">
+      <value>存在未完成的分段下载或导入暂存</value>
+    </data>
+    <data name="Diagnostics.Issue.DownloadStagingPendingCapped.Detail" xml:space="preserve">
+      <value>至少有 129 个暂存项；诊断只读取，不会清理活动或恢复证据。</value>
+    </data>
+    <data name="Diagnostics.Issue.StagingUnsafe.Title" xml:space="preserve">
+      <value>暂存目录无法安全检查</value>
+    </data>
+    <data name="Diagnostics.Issue.StagingUnsafe.Detail" xml:space="preserve">
+      <value>{0}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderConnectivityPartial.Title" xml:space="preserve">
+      <value>实时连接检查仅覆盖可解析来源</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderConnectivityPartial.Detail" xml:space="preserve">
+      <value>语言包、Provider 插件或用户来源状态存在错误；未对无法加载的来源发起请求。</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderConnectivityLimit.Title" xml:space="preserve">
+      <value>实时连接检查已按上限取样</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderConnectivityLimit.Detail" xml:space="preserve">
+      <value>共有 {0} 个唯一 Provider/镜像端点，本次检查前 {1} 个。</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderHttp.Title" xml:space="preserve">
+      <value>Provider 或镜像响应异常</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderHttp.Detail" xml:space="preserve">
+      <value>{0}：{1} 返回 HTTP {2}。</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderTimeout.Title" xml:space="preserve">
+      <value>Provider 或镜像连接超时</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderTimeout.Detail" xml:space="preserve">
+      <value>{0}：{1}。</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderTransport.Title" xml:space="preserve">
+      <value>Provider 或镜像无法连接</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderTransport.Detail" xml:space="preserve">
+      <value>{0}：{1}</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderIo.Title" xml:space="preserve">
+      <value>Provider 或镜像无法连接</value>
+    </data>
+    <data name="Diagnostics.Issue.ProviderIo.Detail" xml:space="preserve">
+      <value>{0}：{1} 传输失败。</value>
+    </data>
 </root>

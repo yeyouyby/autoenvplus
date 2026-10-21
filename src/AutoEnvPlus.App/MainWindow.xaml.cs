@@ -623,9 +623,9 @@ public sealed partial class MainWindow : Window
     {
         ProductIdentityPresentation identity =
             ProductIdentityPresentationPolicy.FromAssembly(typeof(MainWindow).Assembly);
-        Title = identity.WindowTitle;
-        VersionBadgeText.Text = identity.DisplayVersion;
-        AutomationProperties.SetName(AppTitleBar, identity.AutomationName);
+        Title = ProductIdentityText.WindowTitle(identity);
+        VersionBadgeText.Text = ProductIdentityText.DisplayVersion(identity);
+        AutomationProperties.SetName(AppTitleBar, ProductIdentityText.WindowTitle(identity));
     }
 
     private void OnWindowClosed(object sender, WindowEventArgs args)

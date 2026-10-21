@@ -814,8 +814,8 @@ public sealed partial class DiagnosticsPage : Page
                 DiagnosticSeverity.Warning => Loc.Get("Diagnostics.Severity.Warning"),
                 _ => Loc.Get("Diagnostics.Severity.Info"),
             },
-            issue.Title,
-            issue.Detail,
+            LocalizeIssueText(issue, isTitle: true) ?? issue.Title,
+            LocalizeIssueText(issue, isTitle: false) ?? issue.Detail,
             issue.Path ?? string.Empty,
             new SolidColorBrush(issue.Severity switch
             {
@@ -825,6 +825,24 @@ public sealed partial class DiagnosticsPage : Page
             }),
             issue.Repair,
             issue);
+    }
+
+    /// <summary>
+    /// Resolves the issue text from the <c>Diagnostics.Issue.<Kind>.Title/.Detail</c>
+    /// resource keys, formatted with the issue's ordered <c>Args</c>. Issues
+    /// without a kind (or without matching keys) keep the Core-produced text,
+    /// which the CLI and exports also use.
+    /// </summary>
+    private static string? LocalizeIssueText(DiagnosticIssue issue, bool isTitle)
+    {
+        if (string.IsNullOrEmpty(issue.Kind))
+        {
+            return null;
+        }
+
+        return Loc.TryFormat(
+            "Diagnostics.Issue." + issue.Kind + (isTitle ? ".Title" : ".Detail"),
+            issue.Args ?? []);
     }
 
     private sealed record CommandRow(string Command, string Winner, string CandidateText);
