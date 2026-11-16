@@ -5,7 +5,7 @@
     <AssemblyName>AutoEnvPlus.Core</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
     <PackageReference Include="Sigstore.Net" Version="1.0.3" />
   </ItemGroup>
   <ItemGroup>
