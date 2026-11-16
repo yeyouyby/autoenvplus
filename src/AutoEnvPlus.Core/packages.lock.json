@@ -4,9 +4,9 @@
     "net8.0": {
       "BouncyCastle.Cryptography": {
         "type": "Direct",
-        "requested": "[2.6.2, )",
-        "resolved": "2.6.2",
-        "contentHash": "7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w=="
+        "requested": "[2.7.0, )",
+        "resolved": "2.7.0",
+        "contentHash": "U+12df8UEWHgBi04YVf/Lgi2dy3SItlIYvHjjEVa/BngCQIzDCDRBk50DDByCfDvSbe5pRNFr3b7UrVK2kMcLw=="
       },
       "Sigstore.Net": {
         "type": "Direct",
@@ -161,17 +161,6 @@
         "resolved": "9.0.0",
         "contentHash": "VRDjgfqV0hCma5HBQa46nZTRuqfYMWZClwxUtvLJVTCeDp9Esdvr91AfEWP98IMO8ooSv1yXb6/oCc6jApoXvQ=="
       },
-      "System.Security.Cryptography.Pkcs": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "8tluJF8w9si+2yoHeL8rgVJS6lKvWomTDC8px65Z8MCzzdME5eaPtEQf4OfVGrAxB5fW93ncucy1+221O9EQaw==",
-        "dependencies": {
-          "Microsoft.Bcl.Cryptography": "9.0.0",
-          "System.Formats.Asn1": "9.0.0"
-        }
-      }
-    },
-    "net8.0/win-x64": {
       "System.Security.Cryptography.Pkcs": {
         "type": "Transitive",
         "resolved": "9.0.0",

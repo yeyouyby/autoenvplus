@@ -4,18 +4,18 @@
     "net8.0": {
       "coverlet.collector": {
         "type": "Direct",
-        "requested": "[10.1.0, )",
-        "resolved": "10.1.0",
-        "contentHash": "SlYCIHnBYxINSUpR75SiM5JEmnx11pqT+Ac/C/fUqTTA0dLPl9eYzmFXKKuxmQhL3ZdTQl4PBD3YdAxAauaKLQ=="
+        "requested": "[10.1.1, )",
+        "resolved": "10.1.1",
+        "contentHash": "iRWGpNzKG6/pA0VzAt+WDzFAPMHvs/E4ZxeSYiEaAa7MzFhAcWcIWd7RDNLhCBenpSNdJCwm42UcQP4nGUbwJQ=="
       },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
-        "requested": "[17.14.1, )",
-        "resolved": "17.14.1",
-        "contentHash": "HJKqKOE+vshXra2aEHpi2TlxYX7Z9VFYkr+E5rwEvHC8eIXiyO+K9kNm8vmNom3e2rA56WqxU+/N9NJlLGXsJQ==",
+        "requested": "[17.14.2, )",
+        "resolved": "17.14.2",
+        "contentHash": "SvwMteSx1nlKYMx2oKAYBFQz4eBjhv82QdruQeybp6OSlhATzW8pK/wtDuAOSlNaf5UnFykaxd/7/eosRN9k0g==",
         "dependencies": {
-          "Microsoft.CodeCoverage": "17.14.1",
-          "Microsoft.TestPlatform.TestHost": "17.14.1"
+          "Microsoft.CodeCoverage": "17.14.2",
+          "Microsoft.TestPlatform.TestHost": "17.14.2"
         }
       },
       "xunit": {
@@ -37,8 +37,8 @@
       },
       "BouncyCastle.Cryptography": {
         "type": "Transitive",
-        "resolved": "2.6.2",
-        "contentHash": "7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w=="
+        "resolved": "2.7.0",
+        "contentHash": "U+12df8UEWHgBi04YVf/Lgi2dy3SItlIYvHjjEVa/BngCQIzDCDRBk50DDByCfDvSbe5pRNFr3b7UrVK2kMcLw=="
       },
       "Google.Protobuf": {
         "type": "Transitive",
@@ -55,8 +55,8 @@
       },
       "Microsoft.CodeCoverage": {
         "type": "Transitive",
-        "resolved": "17.14.1",
-        "contentHash": "pmTrhfFIoplzFVbhVwUquT+77CbGH+h4/3mBpdmIlYtBi9nAB+kKI6dN3A/nV4DFi3wLLx/BlHIPK+MkbQ6Tpg=="
+        "resolved": "17.14.2",
+        "contentHash": "ClUZus3UFavgM3ut4t0cfH7WHgrhc9RP1VCduJpmEGdt8Qn8NsF1IxP3GaUb2rnPck1HIO+IYSmIMZxeftCfhA=="
       },
       "Microsoft.Extensions.Configuration": {
         "type": "Transitive",
@@ -176,18 +176,18 @@
       },
       "Microsoft.TestPlatform.ObjectModel": {
         "type": "Transitive",
-        "resolved": "17.14.1",
-        "contentHash": "xTP1W6Mi6SWmuxd3a+jj9G9UoC850WGwZUps1Wah9r1ZxgXhdJfj1QqDLJkFjHDCvN42qDL2Ps5KjQYWUU0zcQ==",
+        "resolved": "17.14.2",
+        "contentHash": "Bd6FxwMQlDLwxPoAUTLvLtpkVYZK0zfvdMMtoxgV+4+gzS4u4lag0vd2/hazZI4i/GRd/mGndMrZWTZT5lyIdw==",
         "dependencies": {
           "System.Reflection.Metadata": "8.0.0"
         }
       },
       "Microsoft.TestPlatform.TestHost": {
         "type": "Transitive",
-        "resolved": "17.14.1",
-        "contentHash": "d78LPzGKkJwsJXAQwsbJJ7LE7D1wB+rAyhHHAaODF+RDSQ0NgMjDFkSA1Djw18VrxO76GlKAjRUhl+H8NL8Z+Q==",
+        "resolved": "17.14.2",
+        "contentHash": "caKAaaKcr2Yk3kBMozodubTFEGbCFPbw5tF3rBY0YU6B/nuIvo5vXHMPnjtIw57dYUKYVJmDpSkme/8Eastkzw==",
         "dependencies": {
-          "Microsoft.TestPlatform.ObjectModel": "17.14.1",
+          "Microsoft.TestPlatform.ObjectModel": "17.14.2",
           "Newtonsoft.Json": "13.0.3"
         }
       },
@@ -284,25 +284,14 @@
       "autoenvplus": {
         "type": "Project",
         "dependencies": {
-          "AutoEnvPlus.Core": "[0.0.1, )"
+          "AutoEnvPlus.Core": "[0.0.5, )"
         }
       },
       "autoenvplus.core": {
         "type": "Project",
         "dependencies": {
-          "BouncyCastle.Cryptography": "[2.6.2, )",
+          "BouncyCastle.Cryptography": "[2.7.0, )",
           "Sigstore.Net": "[1.0.3, )"
-        }
-      }
-    },
-    "net8.0/win-x64": {
-      "System.Security.Cryptography.Pkcs": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "8tluJF8w9si+2yoHeL8rgVJS6lKvWomTDC8px65Z8MCzzdME5eaPtEQf4OfVGrAxB5fW93ncucy1+221O9EQaw==",
-        "dependencies": {
-          "Microsoft.Bcl.Cryptography": "9.0.0",
-          "System.Formats.Asn1": "9.0.0"
         }
       }
     }

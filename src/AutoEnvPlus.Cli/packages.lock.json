@@ -4,8 +4,8 @@
     "net8.0": {
       "BouncyCastle.Cryptography": {
         "type": "Transitive",
-        "resolved": "2.6.2",
-        "contentHash": "7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w=="
+        "resolved": "2.7.0",
+        "contentHash": "U+12df8UEWHgBi04YVf/Lgi2dy3SItlIYvHjjEVa/BngCQIzDCDRBk50DDByCfDvSbe5pRNFr3b7UrVK2kMcLw=="
       },
       "Google.Protobuf": {
         "type": "Transitive",
@@ -171,19 +171,8 @@
       "autoenvplus.core": {
         "type": "Project",
         "dependencies": {
-          "BouncyCastle.Cryptography": "[2.6.2, )",
+          "BouncyCastle.Cryptography": "[2.7.0, )",
           "Sigstore.Net": "[1.0.3, )"
-        }
-      }
-    },
-    "net8.0/win-x64": {
-      "System.Security.Cryptography.Pkcs": {
-        "type": "Transitive",
-        "resolved": "9.0.0",
-        "contentHash": "8tluJF8w9si+2yoHeL8rgVJS6lKvWomTDC8px65Z8MCzzdME5eaPtEQf4OfVGrAxB5fW93ncucy1+221O9EQaw==",
-        "dependencies": {
-          "Microsoft.Bcl.Cryptography": "9.0.0",
-          "System.Formats.Asn1": "9.0.0"
         }
       }
     }
